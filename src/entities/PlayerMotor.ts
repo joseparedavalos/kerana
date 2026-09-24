@@ -13,6 +13,8 @@ export interface MoveInput {
   jumpHeld: boolean;
   /** Atacar se pulsó en este frame. */
   attackPressed: boolean;
+  /** Atacar está mantenido (tajo cargado, don 1). */
+  attackHeld?: boolean;
 }
 
 export interface MotorBody {
@@ -30,6 +32,11 @@ export interface AttackConfig {
   activeFromFrame: number;
   activeMs: number;
   totalMs: number;
+}
+
+export interface ChargeConfig {
+  holdMs: number;
+  glowFromMs: number;
 }
 
 /** Duración de un frame a 60 fps (GDD §3.4 da los tiempos de ataque en frames). */
@@ -62,6 +69,12 @@ export class PlayerMotor {
   facing: 1 | -1 = 1;
   /** La hitbox del sable está activa este frame (GDD §3.4). */
   attackHitboxActive = false;
+  /** El tajo en curso es el cargado (más grande, 3 de daño, rompe rocas agrietadas). */
+  chargedSwing = false;
+  /** Don del tajo cargado desbloqueado (GDD §3.7). */
+  chargeEnabled = false;
+  /** Tiempo manteniendo atacar (ms). */
+  chargeMs = 0;
 
   private coyoteLeftMs = 0;
   private bufferLeftMs = 0;
@@ -74,7 +87,15 @@ export class PlayerMotor {
   constructor(
     private readonly cfg: PlayerConfig = GAMEPLAY.player,
     private readonly attackCfg: AttackConfig = GAMEPLAY.attack,
+    private readonly chargeCfg: ChargeConfig = GAMEPLAY.chargedSlash,
   ) {}
+
+  /** Carga del tajo para el brillo (0 = nada, 1 = lista para soltar). */
+  get chargeFraction(): number {
+    const { holdMs, glowFromMs } = this.chargeCfg;
+    if (this.chargeMs <= glowFromMs) return 0;
+    return Math.min(1, (this.chargeMs - glowFromMs) / Math.max(1, holdMs - glowFromMs));
+  }
 
   /** Avanza la lógica un paso. Devuelve la velocidad deseada (objeto reutilizado). */
   step(dtMs: number, input: MoveInput, body: MotorBody): MotorOutput {
@@ -127,9 +148,22 @@ export class PlayerMotor {
     // Caída limitada
     if (vy > cfg.maxFallSpeed) vy = cfg.maxFallSpeed;
 
+    // Tajo cargado: mantener atacar y soltar (el primer tajo normal sale igual al pulsar).
+    if (this.chargeEnabled && !hurt && input.attackHeld) {
+      this.chargeMs += dt;
+    } else if (this.chargeMs > 0) {
+      const ready = !hurt && this.chargeMs >= this.chargeCfg.holdMs;
+      this.chargeMs = 0;
+      if (ready) {
+        this.attackMsLeft = this.attackCfg.totalMs;
+        this.chargedSwing = true;
+      }
+    }
+
     // Ataque: se puede iniciar en el suelo o en el aire, en cualquier estado móvil, salvo aturdida.
     if (!hurt && input.attackPressed && this.attackMsLeft <= 0) {
       this.attackMsLeft = this.attackCfg.totalMs;
+      this.chargedSwing = false;
     }
     if (this.attackMsLeft > 0) {
       this.attackMsLeft = Math.max(0, this.attackMsLeft - dt);
@@ -138,6 +172,7 @@ export class PlayerMotor {
       this.attackHitboxActive = elapsed >= activeFromMs && elapsed < activeFromMs + this.attackCfg.activeMs;
     } else {
       this.attackHitboxActive = false;
+      this.chargedSwing = false;
     }
 
     if (hurt) this.setState('hurt');
@@ -156,6 +191,8 @@ export class PlayerMotor {
     this.hurtMsLeft = ms;
     this.attackMsLeft = 0;
     this.attackHitboxActive = false;
+    this.chargedSwing = false;
+    this.chargeMs = 0;
   }
 
   /** Reinicia tiempos y estado (al reaparecer). */
@@ -166,6 +203,8 @@ export class PlayerMotor {
     this.attackMsLeft = 0;
     this.hurtMsLeft = 0;
     this.attackHitboxActive = false;
+    this.chargedSwing = false;
+    this.chargeMs = 0;
     this.setState('idle');
   }
 

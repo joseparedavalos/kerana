@@ -139,7 +139,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-09-24 | Opus 5.5 | 100 | 95 | 5 | 5 | Verde |
 | S2 | 2026-09-24 | Sonnet 5 | 95 | 78 | 17 | 22 | Rojo |
-| S3 | | | | | | | |
+| S3 | 2026-09-24 | Opus 5.5 | 68 | 65 | 3 | 35 | Verde |
 | S4 | 2026-09-24 | Sonnet 5 | 78 | 68 | 10 | 32 | Rojo |
 | S5 | | | | | | | |
 | S6 | | | | | | | |
@@ -153,6 +153,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S14 | | | | | | | |
 | S15 | | | | | | | |
 
+**Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
+
 ---
 
 ## 7. Estado de las sesiones (lo actualiza Claude)
@@ -164,7 +166,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S3 | Hecha | rama `claude/blissful-heisenberg-0wtc7o` | `npm run sprites` (pngjs), Kerana animada (idle/parpadeo, run, jump, fall, aterrizaje, attack, hurt por código), hitbox al cuerpo, brillo de carga listo. Build, tests y smoke OK |
 | S4 | Hecha (se saltó S3) | rama `claude/practical-carson-4q13pz` | Título, prólogo/final, mapa del mundo (fondo liso), guardado, i18n, diálogos de liberación, pausa/opciones, nivel completado, créditos, fuente con guaraní. Ver notas abajo. Build, tests y smoke OK |
 | S5 | Eliminada (música → S13; táctil recortado) | | |
-| S6 | Pendiente | | |
+| S6 | Hecha | rama `claude/eloquent-fermi-bek28y` | Nivel 1 Paraguarí (ASCII), `teju_i` y `mbopi`, estalactitas, `Breakable` (liana y roca agrietada), base de jefes (`BossBrain`, `Boss`, `BossArena`, `LiberationSequence`, barra), Teju Jagua completo, tajo cargado. Build, tests y smoke OK |
 | S7 | Pendiente | | |
 | S8 | Pendiente | | |
 | S9 | Pendiente | | |
@@ -355,7 +357,18 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 
 **Criterios:** el nivel 1 se juega de principio a fin · `?level=1&boss=1` va directo al jefe · todos los ataques se pueden evitar · al ganar, el mapa muestra la primera estrella.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S6 → S7):**
+- **Mapa:** `tools/levels/l1.txt` (240 × 34) → `map_l1`. A: cueva alta (x 0–45) con liana que tapa la salida (`rect Breakable … kind=liana`, basta un tajo normal); pluma 1 sobre la entrada (desde la roca de x 50). B: ladera (x 45–105) con escalón de 3 tiles, mbopi, Luz de Arasy y pasillo de 4 teju'i; pluma 2 en un bolsillo tras 3 rocas `B` (tajo cargado). Checkpoint 1 en x 112. C: descenso en escalones (x 116–175) con estalactitas (`point FallingHazard`), karaguatá en los bordes y pluma 3 en una cornisa `=` a 6 tiles (salto doble). Antesala x 176–199 (fuego, guavirá, cartel). Arena x 200–239 con repisas `=` a 3 tiles del suelo.
+- **Base de jefes** (reutilizable en S7–S12): `src/data/bosses.ts` (fases con `untilHpRatio`, `idleMs` y ataques con pesos; `punishable: false` = sin ventana), `src/entities/bosses/BossBrain.ts` (lógica pura, con tests), `Boss.ts` (barra por `EventBus`, `tryHit`, `resetFight`; cada jefe implementa `playIntro`, `onTransition`, `applyHit`, `hurtsPlayer`, `markPosition`, `fadeOut`), `index.ts` (`createBoss`), `src/systems/BossArena.ts` (cámara fija y muro de rocas **a la izquierda** de la arena) y `src/systems/LiberationSequence.ts`. Un jefe nuevo = datos en `bosses.ts` + un archivo en `bosses/` + un `case` en `createBoss`.
+- **Reinicio:** si Kerana cae (0 corazones) dentro de la arena, la pelea se reinicia entera y reaparece en la antesala; al volver a entrar arranca de nuevo la presentación.
+- **Teju Jagua:** 14 de vida (7 cabezas × 2). Mordida (apunta a donde estaba Kerana, a ras del suelo o de la repisa si está arriba; queda clavada 1,5 s), coletazo (onda por el suelo; en fase 2 suelta 3–4 estalactitas), fuego (1–2 cabezas sobre el tercio de Kerana; bajan cansadas 1 s). Solo se le pega en la ventana. Cuerpo = elipse oscura; cabezas = placeholder gris teñido de arcoíris (si existe la textura `teju_jagua_head` la usa, pero **no está en el manifiesto**: al procesar `raw/teju_jagua/head/`, agregar la entrada). Todos los tiempos en `bosses.ts` y `GAMEPLAY.tejuJagua`.
+- **Tajo cargado:** `PlayerMotor.chargeEnabled` (don guardado o `?gifts=all`); mantener atacar ≥ 600 ms y soltar. Brillo oro desde 200 ms (`GAMEPLAY.chargedSlash.glowFromMs`). 3 de daño, hitbox 40 × 28, rompe rocas `B` (quita los tiles de `Ground`).
+- **Ahora sí se aplican del guardado:** `maxHearts` a Kerana, el don del tajo cargado, y `?god=1` (sin daño). La sacudida y los destellos respetan Opciones en todo lo nuevo (y en el daño de Kerana); el resto de S5 sigue pendiente.
+- **Plumas:** siguen con conteo simple (`setFeatherCount`); el ASCII ya les pone `index` 0–2, así que pasar a `collectFeather(levelId, index)` es chico si hace falta.
+- **Smoke:** ahora recorre Título → Mapa → nivel 1 → `__KERANA_DEBUG__.defeatBoss()` → liberación → Nivel completado → Mapa, comprueba el guardado, y abre `?level=1&boss=1&god=1` para entrar a la arena y ver atacar al jefe.
+- **Sin probar a mano (Jose):** la dificultad de los saltos del mapa (pluma 1, escalón alto), la legibilidad de los avisos y si el fuego de un tercio se esquiva cómodo. Todo se ajusta en `gameplay.ts`, `bosses.ts` y `l1.txt` (+ `npm run maps`).
+- **No hecho (anotado):** mbopi no "sale de las grietas" (vuela en onda desde su lugar); sin Luz de Arasy extra en la arena para el modo asistido (GDD §4.7); la música que se oscurece en la caverna va con S13.
+- **Assets faltantes:** `raw/teju_jagua/head/` (cabeza), `raw/backgrounds/l1_boss_body.png` (silueta), sprites de `teju_i` y `mbopi`, estalactita, liana y roca agrietada (placeholders por código).
 
 ### S7: Nivel 2 Ñeembucú + Mbói Tu'i
 **Lee:** GDD §6.2, §4.8 (agua baja) y §5.3 (jakare, nakurutu, mboi).

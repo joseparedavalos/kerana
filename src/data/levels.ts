@@ -2,7 +2,7 @@ import type { LevelDef, LevelId } from './types';
 
 // Los 7 niveles (GDD §6, coordenadas §8.4) más el nivel de prueba.
 // Hasta que cada sesión de nivel (S6-S12) genere su propio `tools/levels/l<N>.txt`,
-// el nodo usa el mapa de prueba como mapa provisional: así el flujo Mapa → Nivel → Nivel
+// el nodo apunta a su `map_lN` futuro (l1 ya tiene el suyo desde S6). El flujo Mapa → Nivel → Nivel
 // completado → Mapa se puede jugar de punta a punta desde ya (criterio de aceptación de S4).
 export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
   test: {
@@ -24,7 +24,7 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     order: 1,
     nameKey: 'level.l1.name',
     subtitleKey: 'level.l1.subtitle',
-    mapKey: 'map_test',
+    mapKey: 'map_l1',
     mapSource: 'ascii',
     biome: 'cerro',
     backgrounds: [],

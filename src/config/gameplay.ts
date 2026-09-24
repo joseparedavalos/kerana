@@ -53,10 +53,74 @@ export const GAMEPLAY = {
   },
 
   chargedSlash: {
+    /** Tiempo manteniendo atacar para que el tajo salga cargado (ms). */
     holdMs: 600,
+    /** El brillo de carga empieza a verse después de esto (ms), para no confundirlo con un tajo normal. */
+    glowFromMs: 200,
     hitboxWidth: 40,
     hitboxHeight: 28,
     damage: 3,
+  },
+
+  /** Estalactitas y otros objetos que caen (GDD §6.1): aviso de polvo y caída. */
+  fallingHazard: {
+    /** Distancia horizontal (px) a la que Kerana dispara la estalactita. */
+    triggerRangeX: 28,
+    /** Aviso por defecto si el mapa no trae `delayMs`. */
+    warnMs: 800,
+    gravity: 900,
+    maxFallSpeed: 520,
+    /** Tiempo hasta que vuelve a colgar del techo (ms). */
+    respawnMs: 3000,
+    width: 10,
+    height: 16,
+    /** Temblor durante el aviso (px). */
+    shakePx: 1,
+  },
+
+  /** Rocas agrietadas y lianas (objeto Breakable). */
+  breakable: {
+    /** Golpes normales que aguanta una liana. */
+    lianaHits: 1,
+  },
+
+  /** Base común de jefes (GDD §11.5). */
+  boss: {
+    /** Cámara lenta del último golpe (ms, tiempo real) y factor de velocidad. */
+    slowMoMs: 500,
+    slowMoScale: 0.25,
+    /** Estallido de la marca de Tau y ascenso del hijo liberado (ms). */
+    markBurstMs: 700,
+    ascendMs: 1400,
+    /** Cartel "Don obtenido" (ms). */
+    giftBannerMs: 2200,
+    /** Avisos más largos en modo asistido (GDD §4.7). */
+    assistTelegraphScale: 1.3,
+    /** Parpadeo del jefe al recibir un golpe (ms). */
+    hitFlashMs: 80,
+    /** Sacudida al cerrar la arena. */
+    lockShakeMs: 250,
+    lockShakeIntensity: 0.008,
+  },
+
+  /** Teju Jagua (GDD §6.1). Los tiempos de cada ataque están en src/data/bosses.ts. */
+  tejuJagua: {
+    /** Presentación: un par de ojos cada tantos ms. */
+    introEyeMs: 260,
+    headWidth: 30,
+    headHeight: 18,
+    neckWidth: 7,
+    /** Distancia que recorre la mordida (fracción del ancho de la arena). */
+    biteReach: 0.62,
+    /** Velocidad del coletazo por el suelo (px/s) y tamaño de la onda. */
+    tailWaveSpeed: 260,
+    tailWaveWidth: 26,
+    tailWaveHeight: 12,
+    /** Estalactitas que caen después de cada coletazo en la fase 2 (mínimo y máximo). */
+    stalactitesMin: 3,
+    stalactitesMax: 4,
+    /** Altura (px sobre el suelo) de las cabezas vulnerables tras el fuego. */
+    fireRecoverHeadHeight: 26,
   },
 
   hurt: {

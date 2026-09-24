@@ -26,6 +26,14 @@ export const es = {
   'level.l7.subtitle': 'Pyhare: la noche del camposanto',
 
   'hint.test.move': 'Movete con {left} y {right}. Saltá con {jump}: mantenelo para llegar más alto.',
+  'hint.l1.move': '¡Kerana! ¡Por fin! Movete con {left} y {right}.',
+  'hint.l1.jump': 'Saltá con {jump}. Si lo mantenés, llegás más alto.',
+  'hint.l1.attack': 'Una liana tapa la salida. Cortala con {attack}.',
+  'hint.l1.high_jump': 'Ese escalón es alto: mantené {jump} hasta arriba.',
+  'hint.l1.luz_arasy': 'La Luz de Arasy te protege un rato. Con ella, basta tocarlos para purificarlos.',
+  'hint.l1.cracked': 'Esas rocas están agrietadas. Algún día vas a poder romperlas.',
+  'hint.l1.stalactites': 'Cuidado: si cae polvo del techo, algo se viene abajo.',
+  'hint.l1.antesala': 'Algo grande respira ahí abajo…',
   'hint.test.water': 'El agua honda y los pozos te devuelven al último suelo firme.',
 
   'debug.state': 'Estado: {state}',
@@ -87,6 +95,13 @@ export const es = {
   'dialogue.l7.2': 'Y en la oscuridad te encontré. Vení, che memby. Tus hermanos te esperan arriba.',
 
   // Dones (GDD §3.7).
+  'boss.teju_jagua.name': 'Teju Jagua',
+  'boss.teju_jagua.epithet': 'Guardián de las cavernas y los frutos',
+  'liberation.gift': 'Don obtenido: {gift}',
+  'gift_hint.charged_slash': 'Mainumby: «¡Mantené el ataque y soltalo! Así se rompen las rocas agrietadas.»',
+  'gift_hint.double_jump': 'Mainumby: «¡El aire es de Moñái! Saltá otra vez en el aire.»',
+  'gift_hint.dash': 'Mainumby: «¡Ahora podés pasar como la siesta, sin que nada te toque!»',
+  'gift_hint.heart_up': 'Mainumby: «¡Tu corazón creció!»',
   'gift.charged_slash': 'Tajo cargado',
   'gift.double_jump': 'Salto doble',
   'gift.dash': 'Paso de la siesta',
