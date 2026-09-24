@@ -33,3 +33,9 @@ export function makePlaceholderTexture(
   }
   tex.refresh();
 }
+
+/** Genera la textura solo si todavía no existe (para no repetirla por instancia). */
+export function ensurePlaceholder(scene: Phaser.Scene, key: string, frameWidth: number, frameHeight: number, frames = 1): void {
+  if (scene.textures.exists(key)) return;
+  makePlaceholderTexture(scene, key, frameWidth, frameHeight, frames);
+}
