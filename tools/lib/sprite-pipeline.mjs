@@ -14,6 +14,8 @@ export const DEFAULTS = {
   frame: [64, 64],
   /** Altura visible del personaje en el juego (px); GDD §9.2: Kerana ≈ 44 a 48. */
   height: 46,
+  /** Píxeles de textura por unidad del mundo: el juego dibuja el sprite a escala 1/detail (GDD §9). */
+  detail: 1,
 };
 
 /** `idle_8x1.png` → { anim: 'idle', cols: 8, rows: 1 }. */
@@ -269,12 +271,13 @@ export function processCharacter(name, sheets, config = {}) {
     };
   }
 
-  const meta = { key: name, frameWidth: fw, frameHeight: fh, frames: frames.length, anims };
+  const detail = config.detail ?? DEFAULTS.detail;
+  const meta = { key: name, frameWidth: fw, frameHeight: fh, frames: frames.length, detail, anims };
   const summary = Object.entries(sheetInfo).map(
     ([anim, s]) =>
       `  ${anim}: ${s.count} frames · escala ${s.scale.toFixed(4)} (ref ${s.refHeight}px → ${targetHeight}px) · píxel aparente ${s.pixelSize} · fondo ${s.background}`,
   );
-  summary.push(`  → ${image.width}×${image.height} (${frames.length} frames de ${fw}×${fh}); animaciones: ${Object.keys(anims).join(', ')}`);
+  summary.push(`  → ${image.width}×${image.height} (${frames.length} frames de ${fw}×${fh}, detail ${detail}); animaciones: ${Object.keys(anims).join(', ')}`);
   return { image, meta, summary };
 }
 
