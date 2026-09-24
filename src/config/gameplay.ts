@@ -30,9 +30,9 @@ export const GAMEPLAY = {
     idleSpeedThreshold: 5,
     /** Paso máximo de simulación (ms) para evitar saltos enormes al cambiar de pestaña. */
     maxStepMs: 50,
-    /** Hitbox provisional de Kerana (px). */
+    /** Hitbox de Kerana (px): el cuerpo, no el frame de 64 × 64. Los pies coinciden con el borde inferior del frame. */
     bodyWidth: 16,
-    bodyHeight: 40,
+    bodyHeight: 42,
   },
 
   dash: {
@@ -67,6 +67,21 @@ export const GAMEPLAY = {
     knockbackY: -220,
     /** Control reducido tras el daño (GDD §3.5). */
     reducedControlMs: 250,
+  },
+
+  /** Efectos por código sobre el sprite de Kerana (GDD §9.4). */
+  playerFx: {
+    /** Parpadeo ocasional de ojos en idle: espera al azar entre estos dos valores (ms). */
+    blinkMinMs: 2500,
+    blinkMaxMs: 6000,
+    /** Destello al recibir daño: duración total y cambio rojo/blanco (ms). */
+    hurtFlashMs: 240,
+    hurtFlashPeriodMs: 60,
+    hurtFlashRed: 0xff3030,
+    hurtFlashWhite: 0xffffff,
+    /** Brillo de carga del tajo cargado (S6): color oro y fuerza máxima del Glow. */
+    chargeGlowColor: 0xf2c14e,
+    chargeGlowStrength: 4,
   },
 
   hitStop: {

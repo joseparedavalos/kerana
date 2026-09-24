@@ -1,12 +1,25 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
-import { PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
+import { PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
 import type { InputManager } from '../systems/InputManager';
 import { Health } from '../systems/Health';
-import { PlayerMotor, type MotorBody, type MoveInput } from './PlayerMotor';
+import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
 import type { EnemyBase } from './enemies/EnemyBase';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
+const FX = GAMEPLAY.playerFx;
+
+/** Animación de cada estado de la máquina de Kerana (GDD §3.5). */
+const STATE_ANIM: Record<PlayerStateName, string> = {
+  idle: `${PLAYER_KEY}_idle`,
+  run: `${PLAYER_KEY}_run`,
+  jump: `${PLAYER_KEY}_jump`,
+  fall: `${PLAYER_KEY}_fall`,
+  attack: `${PLAYER_KEY}_attack`,
+  hurt: `${PLAYER_KEY}_hurt`,
+};
+const ANIM_BLINK = `${PLAYER_KEY}_blink`;
+const ANIM_LAND = `${PLAYER_KEY}_land`;
 
 // Kerana: sprite con física; el movimiento lo decide PlayerMotor (lógica pura).
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -27,9 +40,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private luzArasyMsLeft = 0;
   private luzArasyDurationMs = 1;
   private blinkMs = 0;
+  /** Hay sprite real con animaciones (si no, rectángulo provisional). */
+  private readonly animated: boolean;
+  private animState?: PlayerStateName;
+  private nextEyeBlinkMs = 0;
+  private hurtFlashMsLeft = 0;
+  private chargeGlow?: Phaser.Filters.Glow;
 
   constructor(scene: Phaser.Scene, x: number, feetY: number, assist = false) {
-    super(scene, x, feetY, PLAYER_PLACEHOLDER_KEY);
+    const animated = scene.anims.exists(STATE_ANIM.idle);
+    super(scene, x, feetY, animated ? PLAYER_KEY : PLAYER_PLACEHOLDER_KEY);
+    this.animated = animated;
     this.assist = assist;
     const startHearts = GAMEPLAY.hearts.start + (assist ? GAMEPLAY.hearts.assistBonus : 0);
     this.health = new Health(startHearts, startHearts);
@@ -37,7 +58,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     // Origen en los pies: x, y = centro inferior.
     this.setOrigin(0.5, 1);
-    this.body.setSize(GAMEPLAY.player.bodyWidth, GAMEPLAY.player.bodyHeight);
+    // Hitbox del cuerpo, centrada en X y apoyada en el borde inferior del frame (donde están los pies).
+    const bw = GAMEPLAY.player.bodyWidth;
+    const bh = GAMEPLAY.player.bodyHeight;
+    this.body.setSize(bw, bh, false);
+    this.body.setOffset((this.width - bw) / 2, this.height - bh);
     this.body.setMaxVelocityY(GAMEPLAY.player.maxFallSpeed);
     this.setCollideWorldBounds(true);
     this.body.reset(x, feetY);
@@ -93,6 +118,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateAttackHitbox();
     this.updateLuzArasy(deltaMs);
     this.updateBlink(deltaMs);
+    this.updateAnimation(deltaMs);
+    this.updateHurtFlash(deltaMs);
+  }
+
+  /** Brillo de carga del tajo cargado (0 = apagado, 1 = carga completa). Listo para S6. */
+  setChargeGlow(fraction: number): void {
+    if (fraction <= 0) {
+      this.chargeGlow?.setActive(false);
+      return;
+    }
+    if (!this.chargeGlow) {
+      this.enableFilters();
+      this.chargeGlow = this.filters!.internal.addGlow(FX.chargeGlowColor, 0, 0, 1);
+    }
+    this.chargeGlow.setActive(true);
+    this.chargeGlow.outerStrength = FX.chargeGlowStrength * Math.min(1, fraction);
   }
 
   /** Kerana recibe daño; `knockbackFromX` es de dónde vino el golpe. Devuelve si se aplicó. */
@@ -104,6 +145,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const dir = this.x < knockbackFromX ? -1 : 1;
     this.body.setVelocity(dir * GAMEPLAY.hurt.knockbackX, GAMEPLAY.hurt.knockbackY);
     this.motor.triggerHurt(GAMEPLAY.hurt.reducedControlMs);
+    this.hurtFlashMsLeft = FX.hurtFlashMs;
     return true;
   }
 
@@ -171,6 +213,45 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.glow?.setActive(false);
       this.clearTint();
     }
+  }
+
+  /** Cambia la animación solo cuando cambia el estado; en idle, parpadeo de ojos ocasional. */
+  private updateAnimation(deltaMs: number): void {
+    if (!this.animated) return;
+    const state = this.motor.state;
+    if (state !== this.animState) {
+      const prev = this.animState;
+      this.animState = state;
+      if (state === 'idle' && prev === 'fall' && this.scene.anims.exists(ANIM_LAND)) {
+        this.play(ANIM_LAND);
+        this.chain(STATE_ANIM.idle);
+      } else {
+        this.play(STATE_ANIM[state]);
+      }
+      this.nextEyeBlinkMs = Phaser.Math.Between(FX.blinkMinMs, FX.blinkMaxMs);
+      return;
+    }
+    if (state !== 'idle' || !this.scene.anims.exists(ANIM_BLINK)) return;
+    this.nextEyeBlinkMs -= deltaMs;
+    if (this.nextEyeBlinkMs <= 0) {
+      this.nextEyeBlinkMs = Phaser.Math.Between(FX.blinkMinMs, FX.blinkMaxMs);
+      this.play(ANIM_BLINK);
+      this.chain(STATE_ANIM.idle);
+    }
+  }
+
+  /** Destello rojo/blanco al recibir daño (tinte en modo FILL); luego vuelve el tinte normal. */
+  private updateHurtFlash(deltaMs: number): void {
+    if (this.hurtFlashMsLeft <= 0) return;
+    this.hurtFlashMsLeft = Math.max(0, this.hurtFlashMsLeft - deltaMs);
+    if (this.hurtFlashMsLeft <= 0) {
+      this.setTintMode(Phaser.TintModes.MULTIPLY);
+      if (this.isImmune) this.setTint(LUZ_ARASY_COLOR);
+      else this.clearTint();
+      return;
+    }
+    const phase = Math.floor(this.hurtFlashMsLeft / FX.hurtFlashPeriodMs) % 2;
+    this.setTint(phase === 0 ? FX.hurtFlashWhite : FX.hurtFlashRed).setTintMode(Phaser.TintModes.FILL);
   }
 
   private updateBlink(deltaMs: number): void {

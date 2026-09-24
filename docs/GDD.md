@@ -191,13 +191,16 @@ Una ilustración por diapositiva (o fondo oscuro con partículas mientras no hay
 
 ### 3.1 Apariencia
 
-- Joven guaraní, pelo negro largo y lacio.
-- Vincha tejida con dos plumas rojas pequeñas.
-- **Tipoi** (tipoy) de algodón blanco con guardas geométricas rojas y ocres.
-- Collar de semillas. Líneas finas de pintura roja de urucú en mejillas y brazos **[Revisar]**.
+Diseño aprobado por Jose (S3; prompt en `docs/ASSETS.md` §3.2):
+
+- Joven guaraní del Paraguay, piel morena clara (#D4A07A), rasgos indígenas sudamericanos. **Sin plumas ni pintura facial.**
+- Pelo negro, lacio y largo, suelto sobre la espalda (sin trenzas).
+- Vincha tejida con un dibujo geométrico café y beige.
+- **Tipoi** (tipoy) suelto, sin mangas, de algodón natural beige crema (#E8D8BE) con una guarda geométrica café (#8B5A3C) en el borde, hasta las rodillas.
+- Collar de semillas blancas y cafés; pulsera sencilla.
 - Descalza.
-- Sable curvo con hoja de luz dorada y empuñadura de madera.
-- Silueta legible a 48 px de alto: pelo largo, plumas, vestido claro y sable brillante.
+- Sable curvo con hoja de luz dorada.
+- Silueta legible a 46 px de alto: pelo largo, vestido claro y sable brillante.
 
 ### 3.2 Controles
 Teclado [MVP]; mando y táctil [Núcleo].
@@ -874,7 +877,8 @@ Colores de referencia para la interfaz y para guiar la generación de arte:
 | Luz de Arasy (inmunidad) | Plata azulada | #CFE3F2 |
 | Urucú (Kerana, acentos) | Rojo | #B8322A |
 | Ocre (Kerana, tierra) | Ocre | #C98B2B |
-| Tipoi | Blanco algodón | #F2EEE3 |
+| Tipoi (Kerana) | Beige crema | #E8D8BE |
+| Guarda del tipoi y vincha | Café | #8B5A3C |
 | Monte | Verde oscuro | #2F5D3A |
 | Tierra colorada (N3) | Rojo tierra | #A8472C |
 | Cielo (N3) | Celeste | #7FB7E0 |
@@ -1254,9 +1258,9 @@ Si el gasto supera la meta (ver el semáforo en `docs/PLAN.md`), se recorta en e
 1. Jefe secreto Tau. **[RECORTADO desde S4: semáforo rojo tras S2, ver docs/PLAN.md §6.3]**
 2. Traducción al inglés. **[RECORTADO desde S4: idem]**
 3. Persecución del Ao Ao (queda solo la arena). **[RECORTADO desde S4: idem]**
-4. Tercera fase de los jefes 3 a 6.
-5. Controles táctiles.
-6. Parallax de 3 capas (queda 1).
+4. Tercera fase de los jefes 3 a 6. **[RECORTADO desde S3: semáforo rojo tras S4, ver docs/PLAN.md §6.3]**
+5. Controles táctiles. **[RECORTADO desde S3: idem]**
+6. Parallax de 3 capas (queda 1). **[RECORTADO desde S3: idem]**
 7. Mainumby visible (quedan solo los carteles de texto).
 8. Plumas coleccionables.
 9. Dones de habilidad (se dan desde el inicio).

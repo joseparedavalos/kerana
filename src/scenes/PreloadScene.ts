@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import existingAssets from 'virtual:kerana-assets';
-import { MANIFEST, PLAYER_PLACEHOLDER_KEY, type AssetEntry } from '../assets/manifest';
+import { ANIMS_SUFFIX, MANIFEST, PLAYER_PLACEHOLDER_KEY, type AssetEntry } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -8,6 +8,11 @@ import { t } from '../i18n';
 import { makePlaceholderTexture } from '../utils/placeholder';
 
 const ASSET_BASE = 'assets/';
+
+/** Formato del JSON que genera `npm run sprites` (tools/lib/sprite-pipeline.mjs). */
+interface SpriteMeta {
+  anims: Record<string, { frames: number[]; frameRate: number; repeat: number }>;
+}
 
 // Carga el manifest; lo que falte se reemplaza por un placeholder (GDD §11.8).
 export class PreloadScene extends Phaser.Scene {
@@ -40,6 +45,7 @@ export class PreloadScene extends Phaser.Scene {
       if (entry.type === 'image') this.load.image(entry.key, url);
       else if (entry.type === 'spritesheet')
         this.load.spritesheet(entry.key, url, { frameWidth: entry.frameWidth, frameHeight: entry.frameHeight });
+      else if (entry.type === 'json') this.load.json(entry.key, url);
       else this.load.tilemapTiledJSON(entry.key, url);
     }
   }
@@ -53,9 +59,29 @@ export class PreloadScene extends Phaser.Scene {
       // Un mapa faltante no tiene placeholder: LevelScene avisa y vuelve al título.
     }
     this.makePlayerPlaceholder();
+    this.registerSpriteAnims();
 
     if (DEBUG.level) this.scene.start('Level', { levelId: DEBUG.level });
     else this.scene.start('Title');
+  }
+
+  /** Crea las animaciones que describe cada JSON del pipeline (`<id>_anims`), si su hoja cargó de verdad. */
+  private registerSpriteAnims(): void {
+    for (const entry of MANIFEST) {
+      if (entry.type !== 'json' || !entry.key.endsWith(ANIMS_SUFFIX)) continue;
+      const textureKey = entry.key.slice(0, -ANIMS_SUFFIX.length);
+      const sheetMissing = this.missing.some((m) => m.key === textureKey);
+      const meta = this.cache.json.get(entry.key) as SpriteMeta | undefined;
+      if (sheetMissing || !meta) continue;
+      for (const [key, a] of Object.entries(meta.anims)) {
+        this.anims.create({
+          key,
+          frames: this.anims.generateFrameNumbers(textureKey, { frames: a.frames }),
+          frameRate: a.frameRate,
+          repeat: a.repeat,
+        });
+      }
+    }
   }
 
   /** Kerana provisional: rectángulo de 16 × 40 con un "ojo" mirando a la derecha. */
