@@ -103,6 +103,27 @@ export const GAMEPLAY = {
     /** Margen (px) bajo el mapa para considerar que cayó al pozo. */
     pitMargin: 32,
   },
+
+  damage: {
+    /** Daño al tocar un enemigo (GDD §3.6). */
+    enemyContact: 1,
+    /** Daño al tocar espinas (GDD §4.3). */
+    hazard: 1,
+    /** Daño al caer a un pozo (GDD §3.6). */
+    pit: 1,
+    /** Daño al caer al agua honda (GDD §3.6). */
+    water: 1,
+  },
+
+  pickups: {
+    /** Corazones que cura un guavirá (GDD §4.3). */
+    guaviraHeal: 1,
+  },
+
+  hud: {
+    /** Plumas coleccionables por nivel (GDD §4.4). */
+    featherMax: 3,
+  },
 } as const;
 
 export type GameplayConfig = typeof GAMEPLAY;
