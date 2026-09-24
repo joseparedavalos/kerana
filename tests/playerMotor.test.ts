@@ -241,3 +241,48 @@ describe('PlayerMotor: daño', () => {
     expect(s.motor.attackHitboxActive).toBe(false);
   });
 });
+
+describe('PlayerMotor: tajo cargado (don 1)', () => {
+  const C = GAMEPLAY.chargedSlash;
+
+  it('sin el don, mantener y soltar no carga nada', () => {
+    const sim = new Sim();
+    sim.step({ attackPressed: true, attackHeld: true });
+    sim.wait(C.holdMs + 50, { attackHeld: true });
+    expect(sim.motor.chargeFraction).toBe(0);
+    sim.wait(20);
+    expect(sim.motor.chargedSwing).toBe(false);
+  });
+
+  it('con el don, mantener el tiempo de carga y soltar lanza el tajo cargado', () => {
+    const sim = new Sim();
+    sim.motor.chargeEnabled = true;
+    sim.step({ attackPressed: true, attackHeld: true });
+    sim.wait(C.holdMs + 20, { attackHeld: true });
+    expect(sim.motor.chargeFraction).toBe(1);
+    sim.step();
+    expect(sim.motor.state).toBe('attack');
+    expect(sim.motor.chargedSwing).toBe(true);
+    expect(sim.motor.chargeMs).toBe(0);
+  });
+
+  it('soltar antes de tiempo no lo carga', () => {
+    const sim = new Sim();
+    sim.motor.chargeEnabled = true;
+    sim.step({ attackPressed: true, attackHeld: true });
+    sim.wait(C.holdMs / 2, { attackHeld: true });
+    expect(sim.motor.chargeFraction).toBeLessThan(1);
+    sim.wait(GAMEPLAY.attack.totalMs + 20);
+    expect(sim.motor.chargedSwing).toBe(false);
+  });
+
+  it('recibir daño cancela la carga', () => {
+    const sim = new Sim();
+    sim.motor.chargeEnabled = true;
+    sim.wait(C.holdMs + 20, { attackHeld: true });
+    sim.motor.triggerHurt(GAMEPLAY.hurt.reducedControlMs);
+    expect(sim.motor.chargeMs).toBe(0);
+    sim.step();
+    expect(sim.motor.chargedSwing).toBe(false);
+  });
+});

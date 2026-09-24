@@ -72,6 +72,15 @@ describe('SaveManager', () => {
     expect(save.gifts).toContain('charged_slash');
   });
 
+  it('liberar a Teju Jagua (nivel 1 real) guarda el tajo cargado y sobrevive a recargar', async () => {
+    const { getLevel } = await import('../src/data/levels');
+    SaveManager.startNewGame();
+    SaveManager.completeLevel(getLevel('l1'));
+    const reloaded = SaveManager.load();
+    expect(reloaded.gifts).toContain('charged_slash');
+    expect(reloaded.freed).toContain('teju_jagua');
+  });
+
   it('el don heart_up sube el máximo de corazones sin pasar el tope', () => {
     SaveManager.startNewGame();
     const bosses = ['mboi_tui', 'kurupi', 'ao_ao', 'luison'] as const;

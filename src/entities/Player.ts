@@ -4,7 +4,6 @@ import { PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
 import type { InputManager } from '../systems/InputManager';
 import { Health } from '../systems/Health';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
-import type { EnemyBase } from './enemies/EnemyBase';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
 const FX = GAMEPLAY.playerFx;
@@ -21,19 +20,40 @@ const STATE_ANIM: Record<PlayerStateName, string> = {
 const ANIM_BLINK = `${PLAYER_KEY}_blink`;
 const ANIM_LAND = `${PLAYER_KEY}_land`;
 
+export interface PlayerOptions {
+  /** Modo asistido (GDD §4.7). */
+  assist?: boolean;
+  /** Corazones máximos del guardado (sube con los dones de corazón). */
+  maxHearts?: number;
+  /** Don del tajo cargado (GDD §3.7). */
+  chargedSlash?: boolean;
+  /** `?god=1`: no recibe daño. */
+  god?: boolean;
+}
+
 // Kerana: sprite con física; el movimiento lo decide PlayerMotor (lógica pura).
 export class Player extends Phaser.Physics.Arcade.Sprite {
   readonly motor = new PlayerMotor();
-  // El máximo real (GAMEPLAY.hearts.max = 7) se alcanza con los dones de corazón (S7/S10/S11); acá empieza en 4
-  // (+3 con el modo asistido, GDD §4.7). Guardar el progreso de los dones en Kerana queda para cuando existan (S6+).
+  // Corazones del guardado (4 a 7 con los dones de corazón), +3 con el modo asistido (GDD §4.7).
   readonly health: Health;
   declare body: Phaser.Physics.Arcade.Body;
   private readonly assist: boolean;
+  private readonly god: boolean;
 
   private readonly attackHitbox: Phaser.GameObjects.Zone;
   private readonly attackHitboxBody: Phaser.Physics.Arcade.Body;
-  private readonly hitEnemiesThisSwing = new Set<EnemyBase>();
-  private readonly moveInput: MoveInput = { left: false, right: false, jumpPressed: false, jumpHeld: false, attackPressed: false };
+  /** Lo que ya golpeó este tajo (enemigos, jefe, rocas): un golpe por tajo. */
+  private readonly hitThisSwing = new Set<object>();
+  /** Rectángulo del tajo en el mundo (válido mientras `motor.attackHitboxActive`). */
+  readonly attackRect = new Phaser.Geom.Rectangle();
+  private readonly moveInput: MoveInput = {
+    left: false,
+    right: false,
+    jumpPressed: false,
+    jumpHeld: false,
+    attackPressed: false,
+    attackHeld: false,
+  };
   private readonly motorBody: MotorBody = { onGround: false, vx: 0, vy: 0 };
 
   private glow?: Phaser.Filters.Glow;
@@ -47,12 +67,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private hurtFlashMsLeft = 0;
   private chargeGlow?: Phaser.Filters.Glow;
 
-  constructor(scene: Phaser.Scene, x: number, feetY: number, assist = false) {
+  constructor(scene: Phaser.Scene, x: number, feetY: number, opts: PlayerOptions = {}) {
     const animated = scene.anims.exists(STATE_ANIM.idle);
     super(scene, x, feetY, animated ? PLAYER_KEY : PLAYER_PLACEHOLDER_KEY);
     this.animated = animated;
+    const assist = opts.assist ?? false;
     this.assist = assist;
-    const startHearts = GAMEPLAY.hearts.start + (assist ? GAMEPLAY.hearts.assistBonus : 0);
+    this.god = opts.god ?? false;
+    this.motor.chargeEnabled = opts.chargedSlash ?? false;
+    const baseHearts = Phaser.Math.Clamp(opts.maxHearts ?? GAMEPLAY.hearts.start, GAMEPLAY.hearts.start, GAMEPLAY.hearts.max);
+    const startHearts = baseHearts + (assist ? GAMEPLAY.hearts.assistBonus : 0);
     this.health = new Health(startHearts, startHearts);
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -89,12 +113,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.luzArasyMsLeft / this.luzArasyDurationMs;
   }
 
-  hasHitThisSwing(enemy: EnemyBase): boolean {
-    return this.hitEnemiesThisSwing.has(enemy);
+  hasHitThisSwing(target: object): boolean {
+    return this.hitThisSwing.has(target);
   }
 
-  markHitThisSwing(enemy: EnemyBase): void {
-    this.hitEnemiesThisSwing.add(enemy);
+  markHitThisSwing(target: object): void {
+    this.hitThisSwing.add(target);
   }
 
   tick(deltaMs: number, input: InputManager): void {
@@ -104,6 +128,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     mi.jumpPressed = input.justPressed('jump');
     mi.jumpHeld = input.isDown('jump');
     mi.attackPressed = input.justPressed('attack');
+    mi.attackHeld = input.isDown('attack');
 
     const b = this.motorBody;
     b.onGround = this.body.blocked.down || this.body.touching.down;
@@ -120,12 +145,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateBlink(deltaMs);
     this.updateAnimation(deltaMs);
     this.updateHurtFlash(deltaMs);
+    this.setChargeGlow(this.motor.chargeFraction);
   }
 
-  /** Brillo de carga del tajo cargado (0 = apagado, 1 = carga completa). Listo para S6. */
+  /** Daño del tajo en curso (el cargado pega más, GDD §3.7). */
+  get attackDamage(): number {
+    return this.motor.chargedSwing ? GAMEPLAY.chargedSlash.damage : GAMEPLAY.attack.damage;
+  }
+
+  /** Brillo de carga del tajo cargado (0 = apagado, 1 = carga completa). */
   setChargeGlow(fraction: number): void {
     if (fraction <= 0) {
-      this.chargeGlow?.setActive(false);
+      if (this.chargeGlow?.active) this.chargeGlow.setActive(false);
       return;
     }
     if (!this.chargeGlow) {
@@ -138,7 +169,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Kerana recibe daño; `knockbackFromX` es de dónde vino el golpe. Devuelve si se aplicó. */
   takeDamage(amount: number, knockbackFromX: number = this.x): boolean {
-    if (this.isImmune) return false;
+    if (this.isImmune || this.god) return false;
     const invulnerableMs = this.assist ? GAMEPLAY.hurt.invulnerableAssistMs : GAMEPLAY.hurt.invulnerableMs;
     const applied = this.health.damage(amount, invulnerableMs);
     if (!applied) return false;
@@ -193,16 +224,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateAttackHitbox(): void {
     if (this.motor.attackHitboxActive) {
-      const w = GAMEPLAY.attack.hitboxWidth;
-      const h = GAMEPLAY.attack.hitboxHeight;
+      const charged = this.motor.chargedSwing;
+      const w = charged ? GAMEPLAY.chargedSlash.hitboxWidth : GAMEPLAY.attack.hitboxWidth;
+      const h = charged ? GAMEPLAY.chargedSlash.hitboxHeight : GAMEPLAY.attack.hitboxHeight;
       const cx = this.x + this.motor.facing * (this.body.width / 2 + w / 2);
       const cy = this.y - this.body.height / 2;
       this.attackHitbox.setPosition(cx, cy);
+      this.attackRect.setTo(cx - w / 2, cy - h / 2, w, h);
       this.attackHitboxBody.setSize(w, h);
       this.attackHitboxBody.enable = true;
     } else {
       this.attackHitboxBody.enable = false;
-      this.hitEnemiesThisSwing.clear();
+      this.hitThisSwing.clear();
     }
   }
 
