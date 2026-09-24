@@ -42,6 +42,10 @@ export const ENEMIES: Record<string, EnemyDef> = {
     cooldownMs: 600,
   },
   flyer: { id: 'flyer', archetype: 'flyer', hp: 1, width: 14, height: 14, speed: 30, patrolDistance: 56, amplitude: 14, frequencyHz: 1.2 },
+
+  // Nivel 1 (GDD §5.3)
+  teju_i: { id: 'teju_i', archetype: 'walker', hp: 1, width: 18, height: 10, speed: 38, patrolDistance: 40 },
+  mbopi: { id: 'mbopi', archetype: 'flyer', hp: 1, width: 14, height: 10, speed: 36, patrolDistance: 48, amplitude: 18, frequencyHz: 1.4 },
 };
 
 export function getEnemyDef(kind: string): EnemyDef {

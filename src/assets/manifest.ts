@@ -33,6 +33,7 @@ export const MANIFEST: AssetEntry[] = [
     }),
   ),
   { type: 'tilemap', key: 'map_test', path: 'maps/test.json' },
+  { type: 'tilemap', key: 'map_l1', path: 'maps/l1.json' },
 
   // Sprites del pipeline: PNG en grilla de frames iguales + JSON con las animaciones.
   { type: 'spritesheet', key: PLAYER_KEY, path: 'sprites/kerana.png', frameWidth: PLAYER_FRAME, frameHeight: PLAYER_FRAME, frames: 1 },
