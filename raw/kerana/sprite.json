@@ -1,0 +1,20 @@
+{
+  "frame": [64, 64],
+  "height": 46,
+  "sheets": {
+    "idle": { "ref": 1 },
+    "run": { "ref": 0 },
+    "jump": { "ref": 0 },
+    "attack": { "ref": 0 }
+  },
+  "anims": {
+    "idle": { "frames": [1, 4], "fps": 6, "loop": true },
+    "blink": { "source": "idle", "frames": [5, 7], "fps": 10, "loop": false },
+    "run": { "frames": [1, 9], "fps": 12, "loop": true },
+    "jump": { "frames": [4, 5], "fps": 10, "loop": false },
+    "fall": { "source": "jump", "frames": [6, 7], "fps": 8, "loop": true },
+    "land": { "source": "jump", "frames": [8, 8], "fps": 12, "loop": false },
+    "attack": { "frames": [4, 7], "fps": 14, "loop": false },
+    "hurt": { "source": "jump", "list": [6], "fps": 1, "loop": false }
+  }
+}
