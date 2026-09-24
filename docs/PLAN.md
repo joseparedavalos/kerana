@@ -114,6 +114,18 @@ Build y tests deben pasar. Crea el PR.
 | S15 | QA y cierre | 5 | 88 |
 | Reserva | Arreglos o Extras | 12 | 100 |
 
+**Nuevo reparto tras S4** (quedan US$68, semáforo rojo). Reemplaza las metas de arriba para lo que falta:
+
+| Sesión | Contenido | Meta (US$) |
+|---|---|---|
+| S3 | Pipeline de sprites + Kerana real | 7 |
+| S6 a S12 | Niveles 1 a 7 con sus jefes | 45 (≈ 6,50 cada una) |
+| S13 | Integración de arte **y música** (absorbe el audio de S5) | 6 |
+| Reserva | Correcciones | 10 |
+| **Total** | | **68** |
+
+S5, S14 y S15 dejan de ser sesiones aparte: la música pasa a S13 y la QA la hace Jose jugando (checklist de S15).
+
 ### 6.2 Semáforo
 Compara lo **gastado acumulado** con la **meta acumulada**:
 
@@ -128,7 +140,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S1 | 2026-09-24 | Opus 5.5 | 100 | 95 | 5 | 5 | Verde |
 | S2 | 2026-09-24 | Sonnet 5 | 95 | 78 | 17 | 22 | Rojo |
 | S3 | | | | | | | |
-| S4 | | | | | | | |
+| S4 | 2026-09-24 | Sonnet 5 | 78 | 68 | 10 | 32 | Rojo |
 | S5 | | | | | | | |
 | S6 | | | | | | | |
 | S7 | | | | | | | |
@@ -149,9 +161,9 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 |---|---|---|---|
 | S1 | Hecha (fusionada) | PR #1 (`claude/bold-pascal-n2lmlt`) | Proyecto base, nivel de prueba, Kerana placeholder con coyote/buffer, smoke OK |
 | S2 | Hecha | rama `claude/youthful-allen-ebzwov` | Ataque, vida, fuegos, peligros con daño, Walker/Charger/Flyer, pickups, HUD y ZzFX. Smoke OK |
-| S3 | Pendiente (sin assets de Kerana en `raw/`) | | |
+| S3 | Hecha | rama `claude/blissful-heisenberg-0wtc7o` | `npm run sprites` (pngjs), Kerana animada (idle/parpadeo, run, jump, fall, aterrizaje, attack, hurt por código), hitbox al cuerpo, brillo de carga listo. Build, tests y smoke OK |
 | S4 | Hecha (se saltó S3) | rama `claude/practical-carson-4q13pz` | Título, prólogo/final, mapa del mundo (fondo liso), guardado, i18n, diálogos de liberación, pausa/opciones, nivel completado, créditos, fuente con guaraní. Ver notas abajo. Build, tests y smoke OK |
-| S5 | Pendiente | | |
+| S5 | Eliminada (música → S13; táctil recortado) | | |
 | S6 | Pendiente | | |
 | S7 | Pendiente | | |
 | S8 | Pendiente | | |
@@ -160,8 +172,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S11 | Pendiente | | |
 | S12 | Pendiente | | |
 | S13 | Pendiente | | |
-| S14 | Pendiente | | |
-| S15 | Pendiente | | |
+| S14 | Eliminada (ajustes en la Reserva) | | |
+| S15 | Eliminada (QA: Jose jugando) | | |
 
 ### Notas de juego de Jose
 (Escribe aquí lo que sientes al jugar: "el salto flota demasiado", "el jefe 2 es muy difícil en la fase 3". S14 las aplica.)
@@ -265,7 +277,14 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 
 **Qué prueba Jose:** si una animación se ve mal, ajusta `raw/kerana/sprite.json` o regenera esa hoja en Grok y corre `npm run sprites` en su PC (sin gastar crédito).
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S3 → S6):**
+- **Pipeline:** `tools/sprites.mjs` (CLI) + `tools/lib/sprite-pipeline.mjs` (lógica pura, con tests en `tests/spritePipeline.test.ts`). Solo `pngjs`, ya estaba en devDependencies. Detalles de uso en ASSETS §2.2–2.3. Escala **por hoja** con su frame de pie (`ref`): las 4 hojas de Kerana quedan a 46 px aunque `attack` venía a 877 px y las otras a ≈ 715. Alinea pies abajo y la **cintura** en X (la estela del tajo no corre el cuerpo).
+- **Tamaño aparente de píxel:** se detecta y se informa, pero las hojas de Grok no traen una grilla limpia (sale 1), así que la reducción es por "moda" de color. `snapPixel` queda disponible para arte pixel verdadero.
+- **Animaciones** (`raw/kerana/sprite.json`, índices desde 0): `idle` 2–5 en loop con `blink` 6–8 al azar (`GAMEPLAY.playerFx.blinkMinMs/MaxMs`); `run` 2–10; `jump` 5–6 (sin la preparación agachada); `fall` 7–8; `land` 9 solo al aterrizar quieta; `attack` 5–8 a 14 fps (≈ 280 ms = `GAMEPLAY.attack.totalMs`); `hurt` = frame 7 de `jump` + destello rojo/blanco por tinte FILL + parpadeo de invulnerabilidad + retroceso (lo que ya existía).
+- **Hitbox:** 16 × 42 (antes 40), centrada y apoyada en el borde inferior del frame de 64 × 64 (`Player` usa `setOffset`). Si falta el sprite, vuelve el rectángulo provisional con el mismo código.
+- **Para S6 (tajo cargado):** `Player.setChargeGlow(fracción)` enciende un Glow oro (`GAMEPLAY.playerFx.chargeGlow*`); falta el estado `charge` en `PlayerMotor` y llamar a `setChargeGlow` con el tiempo mantenido / 600 ms. No hay animación `charge` propia: usa `idle` + brillo (GDD §3.5).
+- **Assets faltantes:** hoja de `hurt` (no hace falta), `heart_full`, `heart_empty`, `sign`, `checkpoint` (placeholders). Fondos y retratos no se procesaron (el pipeline ya los soporta: `raw/backgrounds/`, `raw/portraits/`).
+- **Presupuesto:** reparto nuevo en §6.1 (S6–S12 ≈ US$6,50 cada una). Recortados también los puntos 4, 5 y 6 del GDD §12.2 (tercera fase de jefes 3–6, táctil, parallax de 3 capas). El resto de S5 que no es música (mando, textos de ayuda por dispositivo, sacudida/destellos/velocidad del texto en `LevelScene`) no tiene sesión: hacerlo en la Reserva si sobra.
 
 ### S4: Estructura del juego
 **Lee:** GDD §2.4, §2.6, §4.4 a §4.7, §8, §11.9 y §11.10; ASSETS §7 (mapa del mundo) y §8 (fuentes).
@@ -301,7 +320,7 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 - **Idioma:** `en.ts` sigue sin existir (recortado, GDD §12.2 punto 2); la opción de idioma en Opciones guarda `'en'` si se elige, pero `t()` solo tiene tabla en español, así que por ahora no cambia nada visible.
 - **Pendiente para Jose:** nada nuevo de assets obligatorios. Si querés un logo real para el Título o una ilustración para el mapa (GDD §8.4/ASSETS §7), van en S13; mientras tanto el mapa usa fondo liso con nodos (se salteó el contorno de Natural Earth a pedido, para no gastar crédito en eso).
 
-### S5: Controles y audio
+### S5: Controles y audio [ELIMINADA tras S4: la música pasa a S13; el táctil está recortado (GDD §12.2 punto 5)]
 **Lee:** GDD §3.2, §4.9 y §10.
 
 **Requisitos:** S4 fusionada.
@@ -397,20 +416,20 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
 
-**Tareas:** correr el pipeline con todo lo que haya en `raw/` · tilesets reales (autotile o mapeo) · fondos parallax por nivel · retratos en los diálogos · logo, mapa del mundo e iconos · música por nivel · actualizar `CREDITS.md` · marcar en la checklist de ASSETS §10 lo integrado y lo que falta.
+**Tareas:** `AudioManager` con música (fundido, pausa al perder el foco, desbloqueo con el primer toque en móvil; ex tarea 3 de S5) · correr el pipeline con todo lo que haya en `raw/` · tilesets reales (autotile o mapeo) · fondos parallax por nivel · retratos en los diálogos · logo, mapa del mundo e iconos · música por nivel · actualizar `CREDITS.md` · marcar en la checklist de ASSETS §10 lo integrado y lo que falta.
 
 **Criterios:** nada se rompe con assets parciales · build y tests pasan.
 
 **Notas para la próxima sesión:** —
 
-### S14: Pulido de sensación
+### S14: Pulido de sensación [ELIMINADA tras S4: Jose ajusta `gameplay.ts`; arreglos puntuales en la Reserva]
 **Lee:** GDD §4.1, §9.7 y §10.3; "Notas de juego de Jose" (§7).
 
 **Tareas:** aplicar las notas de juego · ajuste fino de hit-stop y sacudidas · partículas (polvo, salpicaduras, chispas) · transiciones entre escenas y tarjetas de título de nivel · balance de jefes según las notas · rendimiento en móvil (pools, partículas).
 
 **Notas para la próxima sesión:** —
 
-### S15: QA y cierre
+### S15: QA y cierre [ELIMINADA tras S4: Jose hace la QA jugando con esta checklist]
 **Tareas:** recorrer la checklist de QA (abajo) con la prueba de humo y revisión de código · corregir bugs · README final con el enlace de juego · verificar el tamaño total y el tiempo de carga · lista de pendientes para la reserva.
 
 **Checklist de QA** (también sirve para que Jose pruebe):

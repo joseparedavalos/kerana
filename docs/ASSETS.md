@@ -40,26 +40,38 @@ Para jefes con partes separadas, usa una subcarpeta por parte: `raw/teju_jagua/h
 
 1. Quita el fondo (transparente o magenta #FF00FF si usaste Chroma key).
 2. Corta la hoja según `<columnas>x<filas>`.
-3. Recorta el espacio vacío y **alinea los pies** de todos los frames a una línea base común.
-4. Escala a la caja final del personaje (GDD §9.2; Kerana: 64 × 64). Si el arte ya viene en estilo pixel, intenta detectar el tamaño aparente del "píxel" para reducir sin borrones.
-5. Empaqueta todo en `public/assets/sprites/<personaje>.png` + `.json` y registra las animaciones `<personaje>_<animación>`.
+3. **Escala por hoja, no por frame:** mide la altura del frame de pie (`ref` en `sprite.json`) y la lleva a `height` (Kerana: 46 px). Así Kerana mide lo mismo aunque Grok haya generado cada hoja a distinta escala.
+4. **Alinea los pies:** el borde inferior de cada frame va a la última fila del frame de salida (sin temblor). En X alinea la **cintura** (promedio de la banda del 35 al 50 % de la altura), así la estela del sable no empuja el cuerpo; `"anchor": "cell"` usa el centro de la celda.
+5. Reduce con "moda" (cada píxel toma el color más frecuente de su bloque): colores nítidos sin borrones. Informa el tamaño aparente del "píxel" del arte; con `"snapPixel": true` usa ese tamaño como escala exacta (solo si todas las hojas lo comparten).
+6. Empaqueta todo en `public/assets/sprites/<personaje>.png` (grilla de frames iguales, se carga como spritesheet) + `.json` con las animaciones `<personaje>_<animación>`, que `PreloadScene` registra solo. Imprime un resumen (frames, escala, tamaño final).
+7. Subcarpetas por parte: `raw/<id>/<parte>/` → `sprites/<id>_<parte>.png`. `raw/backgrounds/*.png` → `backgrounds/` a 360 px de alto; `raw/portraits/*.png` → `portraits/` a 96 × 96 (recorte central).
 
-### 2.3 Ajustes opcionales: `raw/<personaje>/sprite.json`
-Solo si hace falta corregir algo:
+Solo usa `pngjs` (JavaScript puro): funciona igual en la nube y en Windows. Tarda unos segundos con las hojas de Grok.
+
+### 2.3 Ajustes: `raw/<personaje>/sprite.json`
+Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el frame 1 de la hoja es el 0):
 
 ```json
 {
   "frame": [64, 64],
+  "height": 46,
+  "sheets": { "idle": { "ref": 1 }, "run": { "ref": 0 }, "jump": { "ref": 0 }, "attack": { "ref": 0 } },
   "anims": {
-    "idle":   { "fps": 8,  "loop": true },
-    "run":    { "fps": 12, "loop": true },
-    "jump":   { "fps": 12, "loop": false, "frames": [0, 4] },
-    "fall":   { "source": "jump", "frames": [5, 9], "fps": 12, "loop": true },
-    "attack": { "fps": 16, "loop": false }
+    "idle":   { "frames": [1, 4], "fps": 6, "loop": true },
+    "blink":  { "source": "idle", "frames": [5, 7], "fps": 10 },
+    "run":    { "frames": [1, 9], "fps": 12, "loop": true },
+    "jump":   { "frames": [4, 5], "fps": 10 },
+    "fall":   { "source": "jump", "frames": [6, 7], "fps": 8, "loop": true },
+    "land":   { "source": "jump", "frames": [8, 8], "fps": 12 },
+    "attack": { "frames": [4, 7], "fps": 14 },
+    "hurt":   { "source": "jump", "list": [6], "fps": 1 }
   }
 }
 ```
-(`frames: [desde, hasta]` usa solo parte de la hoja; `source` saca una animación de otra hoja.)
+- `sheets.<hoja>.ref`: frame de pie que define la escala de esa hoja; `anchor`: `"waist"` (por defecto) o `"cell"`.
+- `frames: [desde, hasta]` usa solo parte de la hoja; `list: [..]` elige frames sueltos; `source` saca la animación de otra hoja; `skip: true` no la registra.
+- Kerana usa: `idle` (con `blink` ocasional), `run`, `jump` (sin la preparación agachada: salto inmediato), `fall`, `land` (breve, al aterrizar quieta), `attack` (≈ 280 ms) y `hurt`. El destello de daño, el parpadeo de invulnerabilidad y el brillo de carga se hacen por código (`src/entities/Player.ts`, valores en `GAMEPLAY.playerFx`).
+- Si cambiás algo, corré `npm run sprites` y recargá el juego.
 
 ---
 
@@ -81,21 +93,26 @@ Solo si hace falta corregir algo:
 ### 3.2 Kerana (`raw/kerana/`) [MVP]
 **Character:**
 
+Diseño aprobado (GDD §3.1): guaraní del Paraguay, sin plumas ni pintura facial, pelo negro lacio y largo, vincha tejida café y beige, tipoi beige crema con guarda café, collar de semillas blancas y cafés, descalza, sable dorado.
+
 ```
-A young Guaraní princess heroine with long straight black hair, a woven headband
-with two small red feathers, a sleeveless white cotton tipoi dress with red and
-ochre geometric border patterns, a seed necklace, thin red paint lines on her
-cheeks and arms, barefoot, holding a curved saber whose blade glows with warm
-golden light, brave and kind expression, side view facing right, full body,
-2D platformer heroine, clean readable silhouette, limited color palette,
-16-bit pixel art
+A young Guaraní woman from Paraguay, heroine of a 2D platformer, warm light tan
+skin (#D4A07A), round face with dark almond-shaped eyes and typical Indigenous
+South American Guaraní features, long straight silky black hair falling down her
+back (smooth, not braided, not curly), a woven headband with a small brown and
+beige geometric pattern, a simple loose sleeveless tipoi dress in natural undyed
+cream-beige cotton (#E8D8BE) with a thin brown geometric border (#8B5A3C) at the
+hem, reaching the knees, a necklace of small white and brown seeds, a simple
+bracelet, barefoot, holding a curved saber whose blade glows with warm golden
+light, brave and kind expression, side view facing right, full body, clean
+readable silhouette, earthy limited color palette, 16-bit pixel art
 ```
 **Agrega a Notes:**
 
 ```
 Not a North American Native costume: no war bonnet, no buckskin fringe, no totem motifs.
 ```
-**Animaciones:** Idle · Run · Jump · Attack · Hurt.
+**Animaciones:** Idle · Run · Jump · Attack. `hurt` no necesita hoja: se hace por código (destello rojo/blanco, parpadeo y retroceso sobre un frame de `jump`, ver §2.3).
 
 ### 3.3 Mainumby (`raw/mainumby/`) [Núcleo]
 
