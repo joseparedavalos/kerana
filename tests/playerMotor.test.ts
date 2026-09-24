@@ -14,7 +14,7 @@ class Sim {
   x = 0;
 
   step(input: Partial<MoveInput> = {}, ms = DT): void {
-    const full: MoveInput = { left: false, right: false, jumpPressed: false, jumpHeld: false, ...input };
+    const full: MoveInput = { left: false, right: false, jumpPressed: false, jumpHeld: false, attackPressed: false, ...input };
     const out = this.motor.step(ms, full, this.body);
     this.body.vx = out.vx;
     this.body.vy = Math.min(out.vy + GAMEPLAY.gravity * (ms / 1000), P.maxFallSpeed);
@@ -179,5 +179,65 @@ describe('PlayerMotor: buffer de salto', () => {
   it('no salta si se pulsó demasiado antes', () => {
     const s = fallThenPress(P.jumpBufferMs + 30);
     expect(s.motor.state).toBe('idle');
+  });
+});
+
+describe('PlayerMotor: ataque', () => {
+  const A = GAMEPLAY.attack;
+
+  it('entra en attack y activa la hitbox en su ventana (GDD §3.4)', () => {
+    const s = new Sim();
+    s.step({ attackPressed: true });
+    expect(s.motor.state).toBe('attack');
+    expect(s.motor.attackHitboxActive).toBe(false);
+    let sawActive = false;
+    let sawEnd = false;
+    for (let t = 0; t < A.totalMs; t++) {
+      s.step({}, 1);
+      if (s.motor.attackHitboxActive) sawActive = true;
+      if (sawActive && !s.motor.attackHitboxActive) sawEnd = true;
+    }
+    expect(sawActive).toBe(true);
+    expect(sawEnd).toBe(true);
+    expect(s.motor.state).toBe('idle');
+  });
+
+  it('se puede atacar en el aire sin perder el salto', () => {
+    const s = new Sim();
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.step({ attackPressed: true, jumpHeld: true });
+    expect(s.motor.state).toBe('attack');
+    expect(s.body.vy).toBeLessThan(0);
+  });
+
+  it('ignora una segunda pulsación mientras ya está atacando', () => {
+    const s = new Sim();
+    s.step({ attackPressed: true });
+    s.wait(50); // a mitad del ataque, sin pulsar
+    s.step({ attackPressed: true }, 1); // pulsa otra vez: no debería reiniciar el ataque
+    s.wait(A.totalMs); // de sobra para que termine el primer ataque si no se reinició
+    expect(s.motor.state).toBe('idle');
+  });
+});
+
+describe('PlayerMotor: daño', () => {
+  it('entra en hurt e ignora la entrada horizontal mientras dura', () => {
+    const s = new Sim();
+    s.motor.triggerHurt(200);
+    s.body.vx = 160;
+    s.step({ left: true }, 1);
+    expect(s.motor.state).toBe('hurt');
+    expect(s.body.vx).toBeLessThan(160); // frena hacia 0, no acelera hacia la izquierda
+    s.wait(150, { left: true });
+    expect(s.motor.state).toBe('hurt');
+    s.wait(60, {});
+    expect(s.motor.state).not.toBe('hurt');
+  });
+
+  it('cancela un ataque en curso', () => {
+    const s = new Sim();
+    s.step({ attackPressed: true });
+    s.motor.triggerHurt(100);
+    expect(s.motor.attackHitboxActive).toBe(false);
   });
 });

@@ -14,6 +14,7 @@ export const es = {
   'debug.fps': 'FPS: {fps}',
   'debug.velocity': 'Vel: {vx}, {vy}',
   'debug.ground': 'Suelo: {ground}',
+  'debug.hearts': 'Corazones: {current}/{max}',
 } as const;
 
 export type TextKey = keyof typeof es;

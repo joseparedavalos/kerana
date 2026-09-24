@@ -14,3 +14,4 @@ Cada asset de terceros se anota aquí con su autor, URL y licencia.
 
 - [Phaser 4](https://phaser.io): licencia MIT.
 - [Vite](https://vite.dev), [Vitest](https://vitest.dev) y [TypeScript](https://www.typescriptlang.org): licencias MIT y Apache 2.0.
+- [ZzFX](https://github.com/KilledByAPixel/ZzFX) de Frank Force: licencia MIT. Genera los efectos de sonido por código (GDD §10.3).

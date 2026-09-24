@@ -147,8 +147,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 | Sesión | Estado | PR | Notas breves |
 |---|---|---|---|
-| S1 | Hecha (falta fusionar) | rama `claude/bold-pascal-n2lmlt` | Proyecto base, nivel de prueba, Kerana placeholder con coyote/buffer, smoke OK |
-| S2 | Pendiente | | |
+| S1 | Hecha (fusionada) | PR #1 (`claude/bold-pascal-n2lmlt`) | Proyecto base, nivel de prueba, Kerana placeholder con coyote/buffer, smoke OK |
+| S2 | Hecha | rama `claude/youthful-allen-ebzwov` | Ataque, vida, fuegos, peligros con daño, Walker/Charger/Flyer, pickups, HUD y ZzFX. Smoke OK |
 | S3 | Pendiente | | |
 | S4 | Pendiente | | |
 | S5 | Pendiente | | |
@@ -235,7 +235,17 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 
 **Fuera de alcance:** jefes, dones, menús, mando, táctil.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S2 → S3):**
+- **Motor de Kerana:** `PlayerMotor` ahora tiene estados `attack` y `hurt` además de los de S1 (no se sumó `charge`: es el don del nivel 1, S6). `attackHitboxActive` marca la ventana de golpe (GDD §3.4); `triggerHurt(ms)` la aturde con control reducido, el retroceso lo aplica quien llama (`Player.takeDamage`).
+- **Vida:** `src/systems/Health.ts` es lógica pura (corazones, invulnerabilidad). El máximo real hoy es 4 (`GAMEPLAY.hearts.start`); el tope de 7 (`GAMEPLAY.hearts.max`) recién se usa cuando entren los dones de corazón (S7/S10/S11) — si alguna sesión suma un don de corazón, hay que subir `player.health.max` ahí, no acá.
+- **Enemigos:** arquetipos `Walker`, `Charger` (con `ChargerMotor`, lógica pura y testeada aparte) y `Flyer` en `src/entities/enemies/`, con datos en `src/data/enemies.ts`. Los IDs con nombre real (`teju_i`, `mbopi`…) los define cada sesión de nivel; por ahora los `kind` del ASCII son `walker`/`charger`/`flyer` directamente.
+- **`enemies` y `pickups` son arrays, no `Phaser.Physics.Arcade.Group`:** un Group vuelve a aplicar sus valores por defecto (incluido `allowGravity: true`) a cualquier sprite que se le agregue con `.add()`, así que un Flyer o un Pickup con `setAllowGravity(false)` terminaba cayendo igual. `physics.add.overlap`/`collider` aceptan arrays de sprites sin ese problema. Si una sesión futura necesita pooling real, usar `group.createMultiple()` (crear los sprites *desde* el grupo) en vez de crear aparte y hacer `.add()`.
+- **Objetos del ASCII:** `tools/lib/ascii-map.mjs` ya emitía `Enemy` (letras a-z vía `enemy x=kind`) y `Pickup` (`G` guavirá, `L` Luz de Arasy, `F` pluma, máx. 3) desde S1; esta sesión los consume en `LevelScene.buildObjects()`. `B` (`Breakable`) sigue sin actor: lo necesita el tajo cargado (don de Teju Jagua, S6).
+- **Pozos y agua bajo el suelo transitable:** en `tools/levels/test.txt` hay un pozo angosto en cols 31-35 (fila 25) y una pileta de agua en cols 56-66; si agregás objetos ahí, revisá primero la fila de abajo (`#` sólido vs `.`/`~`) para no poner nada sobre un hueco.
+- **AudioManager:** `src/systems/AudioManager.ts` usa la librería `zzfx` (dependencia npm agregada, es la que pide el GDD §11.1/§10.3) vía `import()` dinámico, así el `new AudioContext` de ZzFX no se ejecuta hasta el primer sonido. Presets en `src/systems/sfxPresets.ts`, provisionales: Jose puede afinarlos en https://killedbyapixel.github.io/ZzFX/ y pegar el array nuevo. Falta el desbloqueo de audio en el primer toque (S5) y la música (S5 también).
+- **HUD:** corazones, plumas (`0/3`) y una barra de la Luz de Arasy, todo dibujado por código. `UIScene` lee `registry.get('hearts'|'feathers')` al arrancar por si el evento inicial de `LevelScene` se emitió antes de que `UI` terminara su `create()` (pasa porque `scene.launch('UI')` no es síncrono).
+- **Checkpoints:** ahora quedan "encendidos" visualmente aunque se toque otro después (antes volvían a apagarse); +1 corazón la primera vez que se encienden.
+- **Pendiente para Jose:** nada nuevo de assets (siguen los mismos placeholders faltantes de S1); si tenés las hojas de Kerana en `raw/kerana/`, esta es la sesión de corte para S3.
 
 ### S3: Pipeline de sprites y Kerana real
 **Lee:** ASSETS §2, §3.1 y §3.2; GDD §3.5, §9.2 y §9.4.
