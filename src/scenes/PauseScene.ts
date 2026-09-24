@@ -3,6 +3,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { InputManager } from '../systems/InputManager';
+import { setupView, VIEW } from '../systems/View';
 
 // Pausa (GDD §8.6): Continuar · Reiniciar desde el fuego · Opciones · Salir al mapa.
 export class PauseScene extends Phaser.Scene {
@@ -16,7 +17,8 @@ export class PauseScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e, 0.85).setOrigin(0);
     this.add.text(width / 2, height / 2 - 70, t('pause.title'), { fontFamily: FONT_FAMILY, fontSize: '16px', color: '#F2C14E' }).setOrigin(0.5);

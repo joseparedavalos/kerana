@@ -90,6 +90,7 @@ tests/                    Vitest
 
 ## Assets
 
+- **Vista y detalle:** el mundo es de 640 × 360 unidades y el lienzo de 1280 × 720 (zoom 2 con `setupView`, `src/systems/View.ts`; usa `VIEW`, no `this.scale`). `detail` en `sprite.json` = píxeles de arte por unidad: **Kerana y los jefes, 2**; enemigos chicos y tiles, 1. Hitboxes y efectos, siempre en unidades del mundo (GDD §9.2, §11.3; ASSETS §2).
 - `raw/` son originales (exportaciones de Grok): nunca los edites; procésalos con `npm run sprites`.
 - Si un asset no existe todavía, `PreloadScene` genera un placeholder y avisa en consola con `[ASSET FALTANTE] clave`. El juego nunca se rompe por un asset ausente.
 - Lista los assets faltantes en la descripción del PR.

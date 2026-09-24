@@ -4,6 +4,7 @@ import { PROLOGUE_SLIDES } from '../data/story';
 import { t } from '../i18n';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
+import { setupView, VIEW } from '../systems/View';
 
 // Título (GDD §8.2): cielo con 7 estrellas tenues, logo y menú.
 export class TitleScene extends Phaser.Scene {
@@ -17,8 +18,9 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    setupView(this);
     SaveManager.load();
-    const { width, height } = this.scale;
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x0c0b1a).setOrigin(0);
     for (let i = 0; i < 7; i++) {

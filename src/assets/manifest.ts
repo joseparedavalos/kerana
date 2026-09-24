@@ -16,7 +16,8 @@ export const TILESET_ROWS = 7;
 export const PLAYER_PLACEHOLDER_KEY = 'kerana_placeholder';
 /** Sprite real de Kerana (`npm run sprites`) y sus animaciones (`kerana_idle`, `kerana_run`…). */
 export const PLAYER_KEY = 'kerana';
-export const PLAYER_FRAME = 64;
+/** Lado del frame en píxeles de textura (kerana.json: detail 2 → 64 unidades del mundo). */
+export const PLAYER_FRAME = 128;
 /** Sufijo de la clave del JSON de animaciones que genera el pipeline (`kerana` → `kerana_anims`). */
 export const ANIMS_SUFFIX = '_anims';
 

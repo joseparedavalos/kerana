@@ -74,6 +74,7 @@ describe('sprite pipeline', () => {
     const anims = meta.anims as Record<string, { frames: number[]; frameRate: number; repeat: number }>;
     expect(meta.frames).toBe(7);
     expect(meta.frameWidth).toBe(32);
+    expect(meta.detail).toBe(1); // por defecto
     expect(image.width % 32).toBe(0);
     expect(anims.hero_idle).toEqual({ frames: [1, 2, 3], frameRate: 6, repeat: -1 });
     expect(anims.hero_hurt.frames).toEqual([4]);
@@ -87,6 +88,12 @@ describe('sprite pipeline', () => {
       expect(b.y1 - b.y0 + 1).toBeGreaterThanOrEqual(19);
       expect(b.y1 - b.y0 + 1).toBeLessThanOrEqual(21);
     }
+  });
+
+  it('copia el campo detail de sprite.json al JSON de salida', () => {
+    const sheet = { anim: 'idle', cols: 2, rows: 1, img: syntheticSheet(2, 100) };
+    const { meta } = processCharacter('x', [sheet], { frame: [32, 32], height: 20, detail: 2 });
+    expect(meta.detail).toBe(2);
   });
 
   it('falla con un frame fuera de la hoja', () => {

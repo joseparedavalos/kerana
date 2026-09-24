@@ -12,13 +12,15 @@ import { StoryScene } from './scenes/StoryScene';
 import { TitleScene } from './scenes/TitleScene';
 import { UIScene } from './scenes/UIScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
+import { RENDER_ZOOM, VIEW } from './systems/View';
 
 // Configuración de Phaser (GDD §11.3).
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
-  width: 640,
-  height: 360,
+  // Lienzo al doble de la vista lógica (VIEW); cada escena aplica el zoom con setupView().
+  width: VIEW.width * RENDER_ZOOM,
+  height: VIEW.height * RENDER_ZOOM,
   pixelArt: true,
   roundPixels: true,
   backgroundColor: '#1B1A2E',

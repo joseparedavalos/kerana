@@ -1,8 +1,9 @@
 {
   "key": "kerana",
-  "frameWidth": 64,
-  "frameHeight": 64,
+  "frameWidth": 128,
+  "frameHeight": 128,
   "frames": 38,
+  "detail": 2,
   "anims": {
     "kerana_attack": {
       "frames": [

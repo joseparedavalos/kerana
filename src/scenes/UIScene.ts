@@ -3,6 +3,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { EventBus, GameEvents } from '../systems/EventBus';
+import { setupView, VIEW } from '../systems/View';
 
 const HEART_SPACING = 14;
 const MARGIN = 8;
@@ -28,6 +29,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   create(): void {
+    setupView(this);
     this.hearts = [];
     ensurePlaceholder(this, FEATHER_ICON, 10, 10);
     ensurePlaceholder(this, LUZ_ICON, 10, 10);
@@ -44,7 +46,7 @@ export class UIScene extends Phaser.Scene {
     this.luzBarFill = this.add.rectangle(MARGIN + 15, luzY + 5, BAR_WIDTH - 2, 2, 0xc8c8e6).setOrigin(0, 0.5).setVisible(false);
 
     // Barra del jefe (GDD §6.0): nombre, epíteto y vida, abajo al centro.
-    const { width, height } = this.scale;
+    const { width, height } = VIEW;
     const barY = height - 14;
     this.bossName = this.add
       .text(0, -8, '', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#F2EEE3' })

@@ -5,6 +5,7 @@ import { t } from '../i18n';
 import { SaveManager } from '../systems/SaveManager';
 import { charsToShow } from '../systems/textReveal';
 import { InputManager } from '../systems/InputManager';
+import { setupView, VIEW } from '../systems/View';
 
 const HOLD_TO_SKIP_MS = 500;
 
@@ -33,7 +34,8 @@ export class StoryScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
     this.text = this.add

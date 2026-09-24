@@ -3,6 +3,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import type { Boss } from '../entities/bosses';
 import { AudioManager } from './AudioManager';
+import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.boss;
 const MARK_COLOR = 0x6a2e8f;
@@ -82,9 +83,9 @@ export function playLiberation(o: LiberationOptions): void {
       o.onDone();
       return;
     }
-    const cam = scene.cameras.main;
+    const hud = fixedOffset(scene.cameras.main);
     const text = scene.add
-      .text(cam.width / 2, cam.height / 2, o.giftText, {
+      .text(hud.x + VIEW.width / 2, hud.y + VIEW.height / 2, o.giftText, {
         fontFamily: FONT_FAMILY,
         fontSize: '12px',
         color: '#F2C14E',

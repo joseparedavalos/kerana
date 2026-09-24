@@ -1,6 +1,7 @@
 {
-  "frame": [64, 64],
-  "height": 46,
+  "detail": 2,
+  "frame": [128, 128],
+  "height": 92,
   "sheets": {
     "idle": { "ref": 1 },
     "run": { "ref": 0 },

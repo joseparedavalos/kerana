@@ -846,13 +846,13 @@ Una escena genérica de diapositivas (`StoryScene`) que recibe una lista de diap
 
 ### 9.2 Resolución, escala y tamaños
 
-- **Resolución interna:** 640 × 360, escalada con nitidez (`pixelArt: true`). Se ve perfecta a 1280 × 720 (×2) y a 1920 × 1080 (×3).
+- **Resolución interna:** vista lógica de 640 × 360 unidades del mundo (tiles, física, mapas y `gameplay.ts`), dibujada en un lienzo de 1280 × 720 con zoom 2 y nitidez (`pixelArt: true`). Se ve perfecta a 1280 × 720 y a 1920 × 1080.
 - **Tiles:** 16 × 16.
-- **Escala única:** 1 píxel del arte = 1 píxel del juego. Nada se escala dentro del juego salvo efectos.
+- **Doble detalle (`detail`):** cada sprite declara cuántos píxeles de textura hay por unidad del mundo (`detail` en `sprite.json`) y el juego lo dibuja a escala 1/detail. **Kerana y los jefes usan detail 2** (frame y altura en píxeles de textura al doble: Kerana 128 × 128, 92 px de alto → 64 × 64 y 46 unidades). **Enemigos chicos y tiles usan detail 1** (1 píxel del arte = 1 unidad). Hitboxes, ataques y efectos siempre se miden en unidades del mundo. Los tamaños de la tabla son en unidades del mundo.
 
 | Elemento | Tamaño de frame | Tamaño visible aprox. |
 |---|---|---|
-| Kerana | 64 × 64 | ≈ 44 a 48 px de alto |
+| Kerana | 64 × 64 (textura 128 × 128, detail 2) | ≈ 44 a 48 px de alto |
 | Mainumby | 24 × 24 | ≈ 12 px |
 | Enemigos pequeños (teju'i, mbopi) | 32 × 32 | |
 | Enemigos medianos (mbói, ñakurutu, karakara, kuati, ka'i, crías, póra) | 48 × 48 | |
@@ -1033,8 +1033,8 @@ Verificar cada nombre contra los tipos de Phaser 4 antes de usarlo.
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,                 // WebGL con respaldo Canvas
   parent: 'game',
-  width: 640,
-  height: 360,
+  width: 1280,                       // lienzo = vista lógica 640 × 360 × zoom 2
+  height: 720,
   pixelArt: true,
   roundPixels: true,
   backgroundColor: '#1B1A2E',
@@ -1044,6 +1044,8 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [/* Boot, Preload, Title, Story, WorldMap, Level, UI, Pause, Credits */],
 };
 ```
+
+Cada escena llama a `setupView(this)` (`src/systems/View.ts`) al empezar: zoom 2 en la cámara principal y, en escenas fijas, `centerOn(320, 180)`, así que las coordenadas de las escenas siguen en 640 × 360 (usar `VIEW`, no `this.scale`). Los objetos con `setScrollFactor(0)` en una cámara con zoom se suman `fixedOffset(cam)` a su posición. Regla de `detail`: ver §9.2.
 
 ### 11.4 Escenas
 | Escena | Responsabilidad |

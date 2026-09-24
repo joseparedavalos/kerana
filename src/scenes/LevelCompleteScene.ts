@@ -5,6 +5,7 @@ import type { LevelDef } from '../data/types';
 import { t } from '../i18n';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
+import { setupView, VIEW } from '../systems/View';
 
 // Pantalla de nivel completado (GDD §8.8): hijo liberado, don obtenido y plumas. Luego, al mapa.
 export class LevelCompleteScene extends Phaser.Scene {
@@ -20,7 +21,8 @@ export class LevelCompleteScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
     this.add
