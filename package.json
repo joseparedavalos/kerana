@@ -1,0 +1,27 @@
+{
+  "name": "kerana",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Kerana: Pokõi Mbyja, plataformas 2D inspirado en la mitología guaraní",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "maps": "node tools/build-maps.mjs",
+    "tiles": "node tools/make-placeholder-tiles.mjs",
+    "sprites": "node tools/sprites.mjs",
+    "smoke": "node tools/smoke.mjs"
+  },
+  "dependencies": {
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^25.12.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}
