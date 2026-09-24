@@ -6,7 +6,7 @@ Este documento dice **qué** arte y sonido necesita el juego, **cómo** generarl
 
 ## 1. Reglas generales
 
-- **Escala única:** 1 píxel del arte = 1 píxel del juego (resolución interna 640 × 360; tiles de 16 × 16). Tamaños finales en GDD §9.2.
+- **Escala:** vista lógica de 640 × 360 unidades; tiles de 16 × 16. `detail` = píxeles de arte por unidad del mundo: **Kerana y los jefes, 2**; enemigos chicos y tiles, 1 (ver §2.3 y GDD §9.2).
 - **Formato:** PNG con transparencia. Música en MP3.
 - **Nombres:** minúsculas, sin tildes ni ñ, con guion bajo (`teju_jagua`, `luz_arasy`).
 - **Carpetas:**
@@ -40,7 +40,7 @@ Para jefes con partes separadas, usa una subcarpeta por parte: `raw/teju_jagua/h
 
 1. Quita el fondo (transparente o magenta #FF00FF si usaste Chroma key).
 2. Corta la hoja según `<columnas>x<filas>`.
-3. **Escala por hoja, no por frame:** mide la altura del frame de pie (`ref` en `sprite.json`) y la lleva a `height` (Kerana: 46 px). Así Kerana mide lo mismo aunque Grok haya generado cada hoja a distinta escala.
+3. **Escala por hoja, no por frame:** mide la altura del frame de pie (`ref` en `sprite.json`) y la lleva a `height` (en píxeles de textura; Kerana: 92 px con detail 2 = 46 unidades). Así Kerana mide lo mismo aunque Grok haya generado cada hoja a distinta escala.
 4. **Alinea los pies:** el borde inferior de cada frame va a la última fila del frame de salida (sin temblor). En X alinea la **cintura** (promedio de la banda del 35 al 50 % de la altura), así la estela del sable no empuja el cuerpo; `"anchor": "cell"` usa el centro de la celda.
 5. Reduce con "moda" (cada píxel toma el color más frecuente de su bloque): colores nítidos sin borrones. Informa el tamaño aparente del "píxel" del arte; con `"snapPixel": true` usa ese tamaño como escala exacta (solo si todas las hojas lo comparten).
 6. Empaqueta todo en `public/assets/sprites/<personaje>.png` (grilla de frames iguales, se carga como spritesheet) + `.json` con las animaciones `<personaje>_<animación>`, que `PreloadScene` registra solo. Imprime un resumen (frames, escala, tamaño final).
@@ -53,8 +53,9 @@ Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el fram
 
 ```json
 {
-  "frame": [64, 64],
-  "height": 46,
+  "detail": 2,
+  "frame": [128, 128],
+  "height": 92,
   "sheets": { "idle": { "ref": 1 }, "run": { "ref": 0 }, "jump": { "ref": 0 }, "attack": { "ref": 0 } },
   "anims": {
     "idle":   { "frames": [1, 4], "fps": 6, "loop": true },
@@ -68,6 +69,7 @@ Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el fram
   }
 }
 ```
+- `detail` (1 por defecto): píxeles de textura por unidad del mundo; se copia al `.json` de salida y el juego dibuja el sprite a escala 1/detail. `frame` y `height` van en píxeles de textura. **Regla:** Kerana y los jefes, `detail: 2` (el doble de detalle); enemigos chicos y tiles, `detail: 1`. Hitbox, ataque y efectos no cambian: se miden en unidades del mundo (`gameplay.ts`).
 - `sheets.<hoja>.ref`: frame de pie que define la escala de esa hoja; `anchor`: `"waist"` (por defecto) o `"cell"`.
 - `frames: [desde, hasta]` usa solo parte de la hoja; `list: [..]` elige frames sueltos; `source` saca la animación de otra hoja; `skip: true` no la registra.
 - Kerana usa: `idle` (con `blink` ocasional), `run`, `jump` (sin la preparación agachada: salto inmediato), `fall`, `land` (breve, al aterrizar quieta), `attack` (≈ 280 ms) y `hurt`. El destello de daño, el parpadeo de invulnerabilidad y el brillo de carga se hacen por código (`src/entities/Player.ts`, valores en `GAMEPLAY.playerFx`).

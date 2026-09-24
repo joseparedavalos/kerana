@@ -142,7 +142,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S3 | 2026-09-24 | Opus 5.5 | 68 | 65 | 3 | 35 | Verde |
 | S4 | 2026-09-24 | Sonnet 5 | 78 | 68 | 10 | 32 | Rojo |
 | S5 | | | | | | | |
-| S6 | | | | | | | |
+| S6 | 2026-09-24 | Opus 5.5 | 65 | 60 | 5 | 40 | Verde |
+| S6b | 2026-09-24 | Opus 5.5 | 60 | | | | |
 | S7 | | | | | | | |
 | S8 | | | | | | | |
 | S9 | | | | | | | |
@@ -152,6 +153,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
+
+**Semáforo de S6:** con el reparto tras S4, la meta acumulada es 32 (gastado hasta S4) + 7 (S3) + 6,50 (S6) = 45,50; lo gastado es 40 → **Verde**. (S6b no estaba en el reparto: sale de la Reserva.)
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -167,6 +170,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S4 | Hecha (se saltó S3) | rama `claude/practical-carson-4q13pz` | Título, prólogo/final, mapa del mundo (fondo liso), guardado, i18n, diálogos de liberación, pausa/opciones, nivel completado, créditos, fuente con guaraní. Ver notas abajo. Build, tests y smoke OK |
 | S5 | Eliminada (música → S13; táctil recortado) | | |
 | S6 | Hecha | rama `claude/eloquent-fermi-bek28y` | Nivel 1 Paraguarí (ASCII), `teju_i` y `mbopi`, estalactitas, `Breakable` (liana y roca agrietada), base de jefes (`BossBrain`, `Boss`, `BossArena`, `LiberationSequence`, barra), Teju Jagua completo, tajo cargado. Build, tests y smoke OK |
+| S6b | Hecha | rama `claude/practical-curie-03v7dy` | Kerana con doble detalle: lienzo 1280 × 720 con zoom 2 (`setupView`), `detail` en el pipeline, Kerana a 128 × 128 con detail 2. Jugabilidad sin cambios. Build, tests y smoke OK |
 | S7 | Pendiente | | |
 | S8 | Pendiente | | |
 | S9 | Pendiente | | |
@@ -369,6 +373,16 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 - **Sin probar a mano (Jose):** la dificultad de los saltos del mapa (pluma 1, escalón alto), la legibilidad de los avisos y si el fuego de un tercio se esquiva cómodo. Todo se ajusta en `gameplay.ts`, `bosses.ts` y `l1.txt` (+ `npm run maps`).
 - **No hecho (anotado):** mbopi no "sale de las grietas" (vuela en onda desde su lugar); sin Luz de Arasy extra en la arena para el modo asistido (GDD §4.7); la música que se oscurece en la caverna va con S13.
 - **Assets faltantes:** `raw/teju_jagua/head/` (cabeza), `raw/backgrounds/l1_boss_body.png` (silueta), sprites de `teju_i` y `mbopi`, estalactita, liana y roca agrietada (placeholders por código).
+
+### S6b: Kerana con doble detalle (fuera del plan original; sale de la Reserva)
+Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigue en 640 × 360 unidades (tiles, física, mapas y `gameplay.ts` iguales).
+
+**Notas para la próxima sesión (S6b → S7):**
+- **Vista:** el lienzo es de 1280 × 720 (`src/main.ts`). Cada escena llama a `setupView(this)` al principio de `create()` (Preload, en `preload()`; Level, `setupView(this, false)` porque la cámara sigue a Kerana). Para medidas de pantalla usá `VIEW` (640 × 360), **no** `this.scale` (ahora da 1280 × 720). Toda escena nueva debe llamar a `setupView`.
+- **Objetos fijos a la cámara:** con zoom, un objeto con `setScrollFactor(0)` debe sumar `fixedOffset(cam)` a su posición (lo hacen el texto de depuración de `LevelScene`, `DialogueBox` y el cartel de `LiberationSequence`). El HUD vive en `UIScene` con su propia cámara, sin cambios.
+- **`detail`:** campo de `sprite.json` (1 por defecto) que el pipeline copia al `.json` de salida. `Player` lo lee de `kerana_anims` y se dibuja a escala 1/detail; el cuerpo de Arcade se pasa en píxeles de textura (× detail) y el Glow (Luz de Arasy y carga) usa `scale = detail`, así hitbox, tajo y brillos miden lo mismo que antes. El placeholder sigue con detail 1. `PLAYER_FRAME` = 128 en `manifest.ts`.
+- **Jefes (S7 en adelante):** usar `detail: 2` en su `sprite.json` y dibujar a escala 1/detail como Kerana (hoy Teju Jagua es placeholder por código, no cambia). Enemigos chicos y tiles: `detail: 1`.
+- **Sin probar a mano (Jose):** que Kerana se vea nítida en pantallas chicas (el zoom FIT puede reducir el lienzo por debajo de 1280 × 720).
 
 ### S7: Nivel 2 Ñeembucú + Mbói Tu'i
 **Lee:** GDD §6.2, §4.8 (agua baja) y §5.3 (jakare, nakurutu, mboi).
