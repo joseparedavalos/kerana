@@ -125,7 +125,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 | Sesión | Fecha | Modelo | Crédito antes | Crédito después | Costo | Acumulado | Semáforo |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-09-24 | | 100 | 95 | 5 | 5 | Verde |
+| S1 | 2026-09-24 | Opus 5.5 | 100 | 95 | 5 | 5 | Verde |
 | S2 | | | 95 | | | | |
 | S3 | | | | | | | |
 | S4 | | | | | | | |
