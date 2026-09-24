@@ -24,6 +24,7 @@ import { playLiberation } from '../systems/LiberationSequence';
 import { SaveManager } from '../systems/SaveManager';
 import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
+import { fixedOffset, setupView, VIEW } from '../systems/View';
 
 type RespawnReason = 'pit' | 'water' | 'hazard';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
@@ -137,6 +138,8 @@ export class LevelScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Zoom antes de crear la caja de diálogo y el texto de depuración (usan fixedOffset).
+    setupView(this, false);
     if (!this.cache.tilemap.exists(this.def.mapKey)) {
       console.warn(`[ASSET FALTANTE] ${this.def.mapKey}: corré "npm run maps".`);
       this.scene.start(this.def.order > 0 ? 'Map' : 'Title');
@@ -207,8 +210,9 @@ export class LevelScene extends Phaser.Scene {
     EventBus.emit(GameEvents.luzArasyChanged, false, 0);
 
     if (DEBUG.debug) {
+      const hud = fixedOffset(this.cameras.main);
       this.debugText = this.add
-        .text(4, this.scale.height - 4, '', { fontFamily: FONT_FAMILY, fontSize: '8px', color: '#F2C14E' })
+        .text(hud.x + 4, hud.y + VIEW.height - 4, '', { fontFamily: FONT_FAMILY, fontSize: '8px', color: '#F2C14E' })
         .setOrigin(0, 1)
         .setScrollFactor(0)
         .setDepth(100);

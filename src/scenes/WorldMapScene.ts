@@ -6,6 +6,7 @@ import { t } from '../i18n';
 import { GAMEPLAY } from '../config/gameplay';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
+import { setupView, VIEW } from '../systems/View';
 
 // Mapa del mundo (GDD §8.4). Fondo liso con nodos hasta que el autor tenga la ilustración (§4).
 type NodeState = 'blocked' | 'available' | 'completed';
@@ -39,7 +40,8 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x14132a).setOrigin(0);
     this.add.text(width / 2, 16, t('map.title'), { fontFamily: FONT_FAMILY, fontSize: '16px', color: '#F2C14E' }).setOrigin(0.5);
@@ -68,7 +70,7 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private buildSky(): void {
-    const { width } = this.scale;
+    const { width } = VIEW;
     const freedCount = SaveManager.current.freed.length;
     for (let i = 0; i < 7; i++) {
       const lit = i < freedCount;
@@ -86,7 +88,7 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private projectNode(level: LevelDef): { x: number; y: number } {
-    const { width, height } = this.scale;
+    const { width, height } = VIEW;
     const lon = level.mapNode.x;
     const lat = level.mapNode.y;
     const fx = (lon - LON_RANGE[0]) / (LON_RANGE[1] - LON_RANGE[0]);

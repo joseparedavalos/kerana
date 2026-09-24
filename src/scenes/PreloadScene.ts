@@ -6,6 +6,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import { t } from '../i18n';
 import { makePlaceholderTexture } from '../utils/placeholder';
+import { setupView, VIEW } from '../systems/View';
 
 const ASSET_BASE = 'assets/';
 
@@ -23,7 +24,8 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     const bar = this.add.rectangle(width / 2 - 100, height / 2, 0, 6, 0xf2c14e).setOrigin(0, 0.5);
     this.add.rectangle(width / 2, height / 2, 200, 6).setStrokeStyle(1, 0xf2eee3);
     this.add.text(width / 2, height / 2 - 16, t('loading'), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' }).setOrigin(0.5);

@@ -3,6 +3,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager, type SaveSettings } from '../systems/SaveManager';
+import { setupView, VIEW } from '../systems/View';
 
 // Opciones (GDD §8.6): volumen, idioma, modo asistido, sacudida, destellos, velocidad del texto y borrar partida.
 type Row = { labelKey: string; valueText: () => string; onChange: (dir: 1 | -1) => void };
@@ -29,7 +30,8 @@ export class OptionsScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
     this.add.text(width / 2, 24, t('options.title'), { fontFamily: FONT_FAMILY, fontSize: '16px', color: '#F2C14E' }).setOrigin(0.5);

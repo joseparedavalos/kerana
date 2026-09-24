@@ -6,6 +6,7 @@ import { t } from '../i18n';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { SaveManager } from './SaveManager';
 import { charsToShow } from './textReveal';
+import { fixedOffset, VIEW } from './View';
 
 // Caja de diálogo (GDD §8.7): retrato, nombre y texto letra por letra. La usan los diálogos de
 // liberación de cada jefe (GDD §6); quien la crea decide si pausa el resto de la escena.
@@ -26,7 +27,8 @@ export class DialogueBox {
   private onComplete: (() => void) | null = null;
 
   constructor(scene: Phaser.Scene) {
-    const { width, height } = scene.scale;
+    const { width, height } = VIEW;
+    const hud = fixedOffset(scene.cameras.main);
     const bg = scene.add.rectangle(0, 0, width, BOX_HEIGHT, 0x1b1a2e, 0.92).setOrigin(0, 1).setStrokeStyle(1, 0xf2eee3);
     this.portrait = scene.add.image(8, -BOX_HEIGHT + 8, '').setOrigin(0, 0).setDisplaySize(PORTRAIT_SIZE, PORTRAIT_SIZE);
     this.nameText = scene.add
@@ -39,7 +41,7 @@ export class DialogueBox {
     });
     this.marker = scene.add.text(width - 10, -8, '', { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#CFE3F2' }).setOrigin(1, 1);
     this.container = scene.add
-      .container(0, height, [bg, this.portrait, this.nameText, this.bodyText, this.marker])
+      .container(hud.x, hud.y + height, [bg, this.portrait, this.nameText, this.bodyText, this.marker])
       .setScrollFactor(0)
       .setDepth(200)
       .setVisible(false);

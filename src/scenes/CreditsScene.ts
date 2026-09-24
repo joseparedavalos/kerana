@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { InputManager } from '../systems/InputManager';
+import { setupView, VIEW } from '../systems/View';
 
 // Créditos (GDD §8.9): idea y dirección, desarrollo, arte y sonido, agradecimientos.
 export class CreditsScene extends Phaser.Scene {
@@ -12,7 +13,8 @@ export class CreditsScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    setupView(this);
+    const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
     this.add.text(width / 2, 30, t('credits.title'), { fontFamily: FONT_FAMILY, fontSize: '18px', color: '#F2C14E' }).setOrigin(0.5);
