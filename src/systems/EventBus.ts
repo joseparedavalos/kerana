@@ -8,4 +8,6 @@ export const GameEvents = {
   playerRespawned: 'player:respawned', // (reason: 'pit' | 'water' | 'hazard')
   checkpointActivated: 'checkpoint:activated', // (id: number)
   levelReady: 'level:ready', // (levelId: string)
+  feathersChanged: 'feathers:changed', // (current: number, max: number)
+  luzArasyChanged: 'luz_arasy:changed', // (active: boolean, fraction: number) fraction 1→0
 } as const;

@@ -4,8 +4,13 @@ import { DEBUG } from '../config/debug';
 import { GAMEPLAY } from '../config/gameplay';
 import { getLevel } from '../data/levels';
 import type { LevelDef, LevelId } from '../data/types';
+import { createEnemy } from '../entities/enemies';
+import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { Player } from '../entities/Player';
+import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
+import type { PlayerStateName } from '../entities/PlayerMotor';
 import { t } from '../i18n';
+import { AudioManager } from '../systems/AudioManager';
 import { CameraController } from '../systems/CameraController';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { InputManager } from '../systems/InputManager';
@@ -19,6 +24,8 @@ interface Checkpoint {
   sprite: Phaser.GameObjects.Sprite;
   zone: Phaser.Geom.Rectangle;
   active: boolean;
+  /** Ya se encendió alguna vez (da +1 corazón la primera vez, GDD §4.2). */
+  lit: boolean;
 }
 
 interface Sign {
@@ -47,7 +54,7 @@ function objectProp(obj: Phaser.Types.Tilemaps.TiledObject, name: string): unkno
   return props?.find((p) => p.name === name)?.value;
 }
 
-// Nivel genérico: mapa, colisiones por capa, reaparición en suelo firme, checkpoints y carteles.
+// Nivel genérico: mapa, colisiones por capa, combate, vida, objetos y reaparición.
 export class LevelScene extends Phaser.Scene {
   private def!: LevelDef;
   private map!: Phaser.Tilemaps.Tilemap;
@@ -55,8 +62,13 @@ export class LevelScene extends Phaser.Scene {
   private player!: Player;
   private inputs!: InputManager;
   private cameraCtl!: CameraController;
+  private enemies: EnemyBase[] = [];
+  private pickups: Pickup[] = [];
   private checkpoints: Checkpoint[] = [];
   private signs: Sign[] = [];
+  private feathers = 0;
+  private lastPlayerState: PlayerStateName = 'idle';
+  private wasImmune = false;
   private readonly safeGround = new Phaser.Math.Vector2();
   private readonly checkpointPos = new Phaser.Math.Vector2();
   private readonly playerRect = new Phaser.Geom.Rectangle();
@@ -71,6 +83,10 @@ export class LevelScene extends Phaser.Scene {
     this.layers = {};
     this.checkpoints = [];
     this.signs = [];
+    this.enemies = [];
+    this.pickups = [];
+    this.feathers = 0;
+    this.lastPlayerState = 'idle';
   }
 
   create(): void {
@@ -80,6 +96,8 @@ export class LevelScene extends Phaser.Scene {
       return;
     }
     this.inputs = new InputManager(this);
+    this.enemies = [];
+    this.pickups = [];
     this.buildMap();
     const spawn = this.buildObjects();
 
@@ -87,19 +105,32 @@ export class LevelScene extends Phaser.Scene {
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
     const { Ground, Platforms, Foreground } = this.layers;
-    if (Ground) this.physics.add.collider(this.player, Ground);
-    if (Platforms) this.physics.add.collider(this.player, Platforms);
+    if (Ground) {
+      this.physics.add.collider(this.player, Ground);
+      this.physics.add.collider(this.enemies, Ground, undefined, (enemy) => isGroundedEnemy(enemy), this);
+    }
+    if (Platforms) {
+      this.physics.add.collider(this.player, Platforms);
+      this.physics.add.collider(this.enemies, Platforms, undefined, (enemy) => isGroundedEnemy(enemy), this);
+    }
     Foreground?.setDepth(10);
+
+    this.physics.add.overlap(this.player.getAttackHitbox(), this.enemies, this.onAttackHit, undefined, this);
+    this.physics.add.overlap(this.player, this.enemies, this.onPlayerTouchEnemy, undefined, this);
+    this.physics.add.overlap(this.player, this.pickups, this.onPickupOverlap, undefined, this);
 
     this.cameraCtl = new CameraController(this.cameras.main, this.player, {
       width: this.map.widthInPixels,
       height: this.map.heightInPixels,
     });
 
-    const hearts = { current: GAMEPLAY.hearts.start, max: GAMEPLAY.hearts.start };
-    this.registry.set('hearts', hearts);
+    // El registro es el estado inicial: UI puede arrancar después de que estos eventos ya se emitieron.
+    this.registry.set('hearts', { current: this.player.health.current, max: this.player.health.max });
+    this.registry.set('feathers', { current: this.feathers, max: GAMEPLAY.hud.featherMax });
     this.scene.launch('UI');
-    EventBus.emit(GameEvents.heartsChanged, hearts.current, hearts.max);
+    EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+    EventBus.emit(GameEvents.feathersChanged, this.feathers, GAMEPLAY.hud.featherMax);
+    EventBus.emit(GameEvents.luzArasyChanged, false, 0);
 
     if (DEBUG.debug) {
       this.debugText = this.add
@@ -118,7 +149,9 @@ export class LevelScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     this.inputs.update();
     this.player.tick(delta, this.inputs);
+    this.reportPlayerStateSfx();
     this.cameraCtl.update(this.player.motor.facing);
+    this.updateEnemies(delta);
 
     const body = this.player.body;
     this.playerRect.setTo(body.x, body.y, body.width, body.height);
@@ -130,7 +163,15 @@ export class LevelScene extends Phaser.Scene {
 
     this.updateCheckpoints();
     this.updateSigns();
+    this.updateLuzArasyHud();
     if (this.debugText) this.updateDebugText();
+  }
+
+  private updateLuzArasyHud(): void {
+    const active = this.player.isImmune;
+    if (active) EventBus.emit(GameEvents.luzArasyChanged, true, this.player.luzArasyFraction);
+    else if (this.wasImmune) EventBus.emit(GameEvents.luzArasyChanged, false, 0);
+    this.wasImmune = active;
   }
 
   private buildMap(): void {
@@ -157,7 +198,7 @@ export class LevelScene extends Phaser.Scene {
     this.physics.world.setBoundsCollision(true, true, false, false);
   }
 
-  /** Crea checkpoints y carteles; devuelve el punto de inicio (pies). */
+  /** Crea checkpoints, carteles, enemigos y objetos; devuelve el punto de inicio (pies). */
   private buildObjects(): Phaser.Math.Vector2 {
     const spawn = new Phaser.Math.Vector2(32, 32);
     const objects = this.map.getObjectLayer('Objects')?.objects ?? [];
@@ -172,7 +213,7 @@ export class LevelScene extends Phaser.Scene {
           const sprite = this.add.sprite(x, y, 'checkpoint', 0).setOrigin(0.5, 1);
           const id = Number(objectProp(obj, 'id') ?? this.checkpoints.length);
           const zone = new Phaser.Geom.Rectangle(x - 8, y - 24, 16, 24);
-          this.checkpoints.push({ id, sprite, zone, active: false });
+          this.checkpoints.push({ id, sprite, zone, active: false, lit: false });
           break;
         }
         case 'Sign': {
@@ -186,8 +227,19 @@ export class LevelScene extends Phaser.Scene {
           this.signs.push({ zone, text });
           break;
         }
+        case 'Enemy': {
+          const kind = String(objectProp(obj, 'kind') ?? 'walker');
+          const facing: 1 | -1 = objectProp(obj, 'facing') === 'right' ? 1 : -1;
+          this.enemies.push(createEnemy(this, kind, x, y, facing));
+          break;
+        }
+        case 'Pickup': {
+          const kind = String(objectProp(obj, 'kind') ?? 'guavira') as PickupKind;
+          this.pickups.push(new Pickup(this, x, y, kind));
+          break;
+        }
         default:
-          // Enemigos, objetos y zonas llegan en sesiones posteriores.
+          // Jefes y zonas especiales llegan en sesiones posteriores.
           break;
       }
     }
@@ -234,9 +286,74 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private respawn(reason: RespawnReason): void {
-    // Sin daño todavía (S2): solo vuelve al último suelo firme.
-    this.player.respawnAt(this.safeGround.x, this.safeGround.y);
+    const applied = this.player.takeDamage(GAMEPLAY.damage[reason], this.player.x);
+    if (applied) {
+      AudioManager.play('hurt');
+      this.hitStop(GAMEPLAY.hitStop.onHurtMs);
+    }
+    if (this.player.health.isDead) this.koRespawn();
+    else this.player.respawnAt(this.safeGround.x, this.safeGround.y);
+    EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
     EventBus.emit(GameEvents.playerRespawned, reason);
+  }
+
+  /** 0 corazones (GDD §3.6): "Kerana cae" y reaparece en el último fuego con vida completa. */
+  private koRespawn(): void {
+    this.cameras.main.flash(300, 0, 0, 0);
+    this.player.koRespawn(this.checkpointPos.x, this.checkpointPos.y);
+  }
+
+  private updateEnemies(deltaMs: number): void {
+    for (const enemy of this.enemies) {
+      if (enemy.purified) continue;
+      enemy.updateBehavior(deltaMs, this.player.x - enemy.x, this.player.y - enemy.y);
+    }
+  }
+
+  private onAttackHit(_hitbox: unknown, enemyObj: unknown): void {
+    const enemy = enemyObj as EnemyBase;
+    if (enemy.purified || this.player.hasHitThisSwing(enemy)) return;
+    this.player.markHitThisSwing(enemy);
+    enemy.hit(GAMEPLAY.attack.damage, this.player.motor.facing);
+    this.hitStop(GAMEPLAY.hitStop.onHitMs);
+    AudioManager.play(enemy.purified ? 'purify' : 'hit');
+  }
+
+  private onPlayerTouchEnemy(_playerObj: unknown, enemyObj: unknown): void {
+    const enemy = enemyObj as EnemyBase;
+    if (enemy.purified) return;
+    if (this.player.isImmune) {
+      enemy.purify();
+      AudioManager.play('purify');
+      return;
+    }
+    const applied = this.player.takeDamage(GAMEPLAY.damage.enemyContact, enemy.x);
+    if (!applied) return;
+    AudioManager.play('hurt');
+    this.hitStop(GAMEPLAY.hitStop.onHurtMs);
+    this.cameras.main.shake(80, 0.006);
+    EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+    if (this.player.health.isDead) this.koRespawn();
+  }
+
+  private onPickupOverlap(_playerObj: unknown, pickupObj: unknown): void {
+    const pickup = pickupObj as Pickup;
+    switch (pickup.kind) {
+      case 'guavira':
+        if (this.player.heal(GAMEPLAY.pickups.guaviraHeal) > 0) AudioManager.play('heal');
+        EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+        break;
+      case 'luz_arasy':
+        this.player.activateLuzArasy();
+        AudioManager.play('luzArasy');
+        break;
+      case 'pluma':
+        this.feathers = Math.min(GAMEPLAY.hud.featherMax, this.feathers + 1);
+        EventBus.emit(GameEvents.feathersChanged, this.feathers, GAMEPLAY.hud.featherMax);
+        AudioManager.play('feather');
+        break;
+    }
+    pickup.collect();
   }
 
   private updateCheckpoints(): void {
@@ -244,17 +361,37 @@ export class LevelScene extends Phaser.Scene {
       if (cp.active || !Phaser.Geom.Rectangle.Overlaps(cp.zone, this.playerRect)) continue;
       for (const other of this.checkpoints) {
         other.active = false;
-        other.sprite.setFrame(0);
+        other.sprite.setFrame(other.lit ? 4 : 0);
       }
       cp.active = true;
       cp.sprite.setFrame(4);
       this.checkpointPos.set(cp.zone.centerX, cp.zone.bottom);
+      if (!cp.lit) {
+        cp.lit = true;
+        if (this.player.heal(1) > 0) EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+      }
+      AudioManager.play('fire');
       EventBus.emit(GameEvents.checkpointActivated, cp.id);
     }
   }
 
   private updateSigns(): void {
     for (const sign of this.signs) sign.text.setVisible(Phaser.Geom.Rectangle.Overlaps(sign.zone, this.playerRect));
+  }
+
+  /** Congela la acción un instante para dar peso al golpe (GDD §4.1). */
+  private hitStop(ms: number): void {
+    this.physics.world.pause();
+    this.time.delayedCall(ms, () => this.physics.world.resume());
+  }
+
+  private reportPlayerStateSfx(): void {
+    const state = this.player.motor.state;
+    if (state === this.lastPlayerState) return;
+    if (state === 'jump') AudioManager.play('jump');
+    else if ((state === 'idle' || state === 'run') && this.lastPlayerState === 'fall') AudioManager.play('land');
+    else if (state === 'attack') AudioManager.play('slash');
+    this.lastPlayerState = state;
   }
 
   private updateDebugText(): void {
@@ -264,6 +401,11 @@ export class LevelScene extends Phaser.Scene {
       t('debug.state', { state: this.player.motor.state }),
       t('debug.velocity', { vx: Math.round(body.velocity.x), vy: Math.round(body.velocity.y) }),
       t('debug.ground', { ground: `${Math.round(this.safeGround.x)}, ${Math.round(this.safeGround.y)}` }),
+      t('debug.hearts', { current: this.player.health.current, max: this.player.health.max }),
     ]);
   }
+}
+
+function isGroundedEnemy(obj: unknown): boolean {
+  return (obj as EnemyBase).def?.archetype !== 'flyer';
 }
