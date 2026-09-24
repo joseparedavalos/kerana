@@ -19,5 +19,12 @@ export interface LevelDef {
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;
   gift: GiftId | null;
+  /** Coordenadas aproximadas del nodo en el mapa (GDD §8.4): x = longitud, y = latitud. */
   mapNode: { x: number; y: number };
+}
+
+export interface DialogueLine {
+  /** 'kerana' o el id del jefe que habla (GDD §6). */
+  speaker: 'kerana' | BossId;
+  textKey: string;
 }

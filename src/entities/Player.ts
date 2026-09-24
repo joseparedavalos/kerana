@@ -11,9 +11,11 @@ const LUZ_ARASY_COLOR = 0xdcdce6;
 // Kerana: sprite con física; el movimiento lo decide PlayerMotor (lógica pura).
 export class Player extends Phaser.Physics.Arcade.Sprite {
   readonly motor = new PlayerMotor();
-  // El máximo real (GAMEPLAY.hearts.max = 7) se alcanza con los dones de corazón (S7/S10/S11); acá empieza en 4.
-  readonly health = new Health(GAMEPLAY.hearts.start, GAMEPLAY.hearts.start);
+  // El máximo real (GAMEPLAY.hearts.max = 7) se alcanza con los dones de corazón (S7/S10/S11); acá empieza en 4
+  // (+3 con el modo asistido, GDD §4.7). Guardar el progreso de los dones en Kerana queda para cuando existan (S6+).
+  readonly health: Health;
   declare body: Phaser.Physics.Arcade.Body;
+  private readonly assist: boolean;
 
   private readonly attackHitbox: Phaser.GameObjects.Zone;
   private readonly attackHitboxBody: Phaser.Physics.Arcade.Body;
@@ -26,8 +28,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private luzArasyDurationMs = 1;
   private blinkMs = 0;
 
-  constructor(scene: Phaser.Scene, x: number, feetY: number) {
+  constructor(scene: Phaser.Scene, x: number, feetY: number, assist = false) {
     super(scene, x, feetY, PLAYER_PLACEHOLDER_KEY);
+    this.assist = assist;
+    const startHearts = GAMEPLAY.hearts.start + (assist ? GAMEPLAY.hearts.assistBonus : 0);
+    this.health = new Health(startHearts, startHearts);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     // Origen en los pies: x, y = centro inferior.
@@ -93,7 +98,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Kerana recibe daño; `knockbackFromX` es de dónde vino el golpe. Devuelve si se aplicó. */
   takeDamage(amount: number, knockbackFromX: number = this.x): boolean {
     if (this.isImmune) return false;
-    const applied = this.health.damage(amount, GAMEPLAY.hurt.invulnerableMs);
+    const invulnerableMs = this.assist ? GAMEPLAY.hurt.invulnerableAssistMs : GAMEPLAY.hurt.invulnerableMs;
+    const applied = this.health.damage(amount, invulnerableMs);
     if (!applied) return false;
     const dir = this.x < knockbackFromX ? -1 : 1;
     this.body.setVelocity(dir * GAMEPLAY.hurt.knockbackX, GAMEPLAY.hurt.knockbackY);
@@ -106,8 +112,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.health.heal(amount);
   }
 
-  /** Luz de Arasy: inmunidad con brillo plateado (filtro Glow de Phaser 4, GDD §4.3). */
-  activateLuzArasy(ms: number = GAMEPLAY.luzArasy.durationMs): void {
+  /** Luz de Arasy: inmunidad con brillo plateado (filtro Glow de Phaser 4, GDD §4.3). Más larga con el modo asistido. */
+  activateLuzArasy(ms: number = this.assist ? GAMEPLAY.luzArasy.durationAssistMs : GAMEPLAY.luzArasy.durationMs): void {
     this.luzArasyMsLeft = ms;
     this.luzArasyDurationMs = ms;
     if (!this.glow) {

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { FONT_FAMILY } from '../config/fonts';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { EventBus, GameEvents } from '../systems/EventBus';
 
@@ -28,7 +29,7 @@ export class UIScene extends Phaser.Scene {
     const featherY = MARGIN + HEART_SPACING;
     this.add.image(MARGIN, featherY, FEATHER_ICON).setOrigin(0, 0);
     this.featherText = this.add
-      .text(MARGIN + 14, featherY, '0/0', { fontFamily: 'monospace', fontSize: '9px', color: '#F2EEE3' })
+      .text(MARGIN + 14, featherY, '0/0', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#F2EEE3' })
       .setOrigin(0, 0);
 
     const luzY = featherY + 14;

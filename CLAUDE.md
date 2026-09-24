@@ -27,6 +27,10 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 - Si una herramienta no se instala o algo bloquea después de 2 intentos, documéntalo y verifica de otra forma.
 - Si un problema se resuelve cambiando datos (`config/`, `data/`), prefiere eso a cambiar lógica.
 - No escribas JSON de Tiled a mano: los niveles se escriben en ASCII (`tools/levels/*.txt`) y se generan con `npm run maps` (GDD §11.7).
+- Verifica solo con `npm run build`, `npm test` y `npm run smoke`. Nada de pruebas manuales con navegador ni capturas de pantalla, salvo que el smoke falle (ahí sí, para diagnosticar).
+- No leas ni explores archivos que no vas a modificar.
+- Omití lo opcional salvo que la sesión lo pida explícitamente: por ejemplo, el mapa del mundo lleva fondo liso (sin Natural Earth) hasta que haya una ilustración real (GDD §8.4/ASSETS §7).
+- Si algo no crítico falla o queda incompleto, anótalo en "Notas para la próxima sesión" en vez de perseguirlo.
 
 ## Comandos
 
