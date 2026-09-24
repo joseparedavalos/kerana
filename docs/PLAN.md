@@ -147,7 +147,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 | Sesión | Estado | PR | Notas breves |
 |---|---|---|---|
-| S1 | Pendiente | | |
+| S1 | Hecha (falta fusionar) | rama `claude/bold-pascal-n2lmlt` | Proyecto base, nivel de prueba, Kerana placeholder con coyote/buffer, smoke OK |
 | S2 | Pendiente | | |
 | S3 | Pendiente | | |
 | S4 | Pendiente | | |
@@ -201,7 +201,17 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 
 **Qué prueba Jose:** publicar en Pages (§4), jugar el nivel de prueba, ajustar `gameplay.ts` en Cursor y escribir sus sensaciones en "Notas de juego".
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S1 → S2):**
+- **Versiones:** Phaser 4.2.1, Vite 8, Vitest 5, TypeScript 5.9 (no la 7). `pngjs` para imágenes y `puppeteer-core` para la prueba de humo (sin descarga de navegador: busca Chrome/Chromium o `CHROME_PATH`).
+- **Lógica de Kerana separada:** `src/entities/PlayerMotor.ts` es lógica pura (estado, coyote, buffer, salto variable, caída limitada) y `Player.ts` la conecta con Arcade. S2 debería sumar `attack`, `charge` y `hurt` al motor y probarlos igual en `tests/playerMotor.test.ts`.
+- **Caídas sin daño todavía:** pozo, agua y espinas llaman a `LevelScene.respawn(reason)` y emiten `player:respawned`; S2 debe restar el corazón ahí. `checkpointPos` ya se guarda al tocar un fuego (para el KO de S2).
+- **Suelo firme:** solo se guarda si ambos pies pisan suelo o plataforma y no hay espinas a un tile de distancia.
+- **Assets sin 404:** un plugin de Vite (`virtual:kerana-assets`) lista `public/assets`; `PreloadScene` no pide lo que no existe y crea el placeholder directamente (`[ASSET FALTANTE]`). Si agregás arte con `npm run dev` abierto, recargá la página.
+- **Tileset placeholder:** 4 columnas × 7 filas; índices en `tools/lib/tileset-layout.mjs` (0–15 autotile, 16–18 plataforma, 19 espinas, 20–21 agua, 22 agrietada, 23–25 decoración). Un tileset real debe respetar ese orden o traer su traducción (S3/S13).
+- **Mapas:** los puntos (`P`, `C`, carteles, `point`…) se ubican en el centro horizontal y el borde inferior del tile (los pies). Los enemigos salen con `facing: 'left'` y `patrol: 64` por defecto (configurables en `buildTiledMap`). El mapa de prueba incluye `rect LevelExit` (lo usará S4).
+- **`__KERANA_READY__`** se define cuando `LevelScene` está lista. En modo `debug=1` se expone `window.__KERANA_DEBUG__` (escena, jugadora, suelo firme) para la prueba de humo.
+- **Parámetros `boss`, `gifts` y `god`** ya se leen (`src/config/debug.ts`) pero todavía no tienen efecto.
+- **Pendiente para Jose:** copiar `docs/setup/deploy.yml` a `.github/workflows/` (§4). Assets faltantes: `heart_full`, `heart_empty`, `sign`, `checkpoint` (placeholders por código).
 
 ### S2: Combate, vida y objetos
 **Lee:** GDD §3.6, §4.1 a §4.3, §5.1, §5.2, §9.7 y §10.3.
