@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
-import { PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
+import { ANIMS_SUFFIX, PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
 import type { InputManager } from '../systems/InputManager';
 import { Health } from '../systems/Health';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
@@ -66,11 +66,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private nextEyeBlinkMs = 0;
   private hurtFlashMsLeft = 0;
   private chargeGlow?: Phaser.Filters.Glow;
+  /** Píxeles de textura por unidad del mundo (`detail` del sprite.json; 1 en el placeholder). */
+  private readonly detail: number;
 
   constructor(scene: Phaser.Scene, x: number, feetY: number, opts: PlayerOptions = {}) {
     const animated = scene.anims.exists(STATE_ANIM.idle);
     super(scene, x, feetY, animated ? PLAYER_KEY : PLAYER_PLACEHOLDER_KEY);
     this.animated = animated;
+    const meta = scene.cache.json.get(PLAYER_KEY + ANIMS_SUFFIX) as { detail?: number } | undefined;
+    this.detail = animated ? (meta?.detail ?? 1) : 1;
     const assist = opts.assist ?? false;
     this.assist = assist;
     this.god = opts.god ?? false;
@@ -82,9 +86,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     // Origen en los pies: x, y = centro inferior.
     this.setOrigin(0.5, 1);
+    // Se dibuja a escala 1/detail: el frame tiene más píxeles, pero ocupa lo mismo en el mundo.
+    this.setScale(1 / this.detail);
     // Hitbox del cuerpo, centrada en X y apoyada en el borde inferior del frame (donde están los pies).
-    const bw = GAMEPLAY.player.bodyWidth;
-    const bh = GAMEPLAY.player.bodyHeight;
+    // Tamaño y offset del cuerpo van en píxeles de textura (Arcade los multiplica por la escala).
+    const bw = GAMEPLAY.player.bodyWidth * this.detail;
+    const bh = GAMEPLAY.player.bodyHeight * this.detail;
     this.body.setSize(bw, bh, false);
     this.body.setOffset((this.width - bw) / 2, this.height - bh);
     this.body.setMaxVelocityY(GAMEPLAY.player.maxFallSpeed);
@@ -161,7 +168,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (!this.chargeGlow) {
       this.enableFilters();
-      this.chargeGlow = this.filters!.internal.addGlow(FX.chargeGlowColor, 0, 0, 1);
+      this.chargeGlow = this.filters!.internal.addGlow(FX.chargeGlowColor, 0, 0, this.detail);
     }
     this.chargeGlow.setActive(true);
     this.chargeGlow.outerStrength = FX.chargeGlowStrength * Math.min(1, fraction);
@@ -191,7 +198,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.luzArasyDurationMs = ms;
     if (!this.glow) {
       this.enableFilters();
-      this.glow = this.filters!.internal.addGlow(0xc8c8e6, 3, 0, 1);
+      this.glow = this.filters!.internal.addGlow(0xc8c8e6, 3, 0, this.detail);
     } else {
       this.glow.setActive(true);
     }
