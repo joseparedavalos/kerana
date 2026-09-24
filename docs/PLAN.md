@@ -126,7 +126,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | Sesión | Fecha | Modelo | Crédito antes | Crédito después | Costo | Acumulado | Semáforo |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-09-24 | Opus 5.5 | 100 | 95 | 5 | 5 | Verde |
-| S2 | | | 95 | | | | |
+| S2 | 2026-09-24 | Sonnet 5 | 95 | 78 | 17 | 22 | Rojo |
 | S3 | | | | | | | |
 | S4 | | | | | | | |
 | S5 | | | | | | | |
@@ -149,8 +149,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 |---|---|---|---|
 | S1 | Hecha (fusionada) | PR #1 (`claude/bold-pascal-n2lmlt`) | Proyecto base, nivel de prueba, Kerana placeholder con coyote/buffer, smoke OK |
 | S2 | Hecha | rama `claude/youthful-allen-ebzwov` | Ataque, vida, fuegos, peligros con daño, Walker/Charger/Flyer, pickups, HUD y ZzFX. Smoke OK |
-| S3 | Pendiente | | |
-| S4 | Pendiente | | |
+| S3 | Pendiente (sin assets de Kerana en `raw/`) | | |
+| S4 | Hecha (se saltó S3) | rama `claude/practical-carson-4q13pz` | Título, prólogo/final, mapa del mundo (fondo liso), guardado, i18n, diálogos de liberación, pausa/opciones, nivel completado, créditos, fuente con guaraní. Ver notas abajo. Build, tests y smoke OK |
 | S5 | Pendiente | | |
 | S6 | Pendiente | | |
 | S7 | Pendiente | | |
@@ -288,7 +288,18 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 
 **Criterios:** flujo completo Título → Prólogo → Mapa → nivel de prueba → Nivel completado → Mapa · el guardado sobrevive a recargar la página · los textos con ẽ y ỹ se ven bien.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S4 → S5):**
+- **Semáforo rojo desde S2** (§6.3): se recortaron los puntos 1 a 3 del GDD §12.2 (jefe secreto Tau, traducción al inglés, persecución del Ao Ao — queda solo la arena) y se marcaron `[RECORTADO]` ahí mismo. El resto de la lista (puntos 4 a 9) sigue disponible si hace falta seguir recortando.
+- **S3 se saltó** (no había hojas en `raw/kerana/`): Kerana sigue con el placeholder de S1. Cuando lleguen los assets, corré S3 antes o después de S5/S6, no importa el orden.
+- **Nodo 1 = mapa de prueba:** `src/data/levels.ts` define `l1`..`l7` con sus datos reales (GDD §6, §8.4), pero como `l1.txt` todavía no existe, `l1.mapKey` apunta a `map_test` (el mismo nivel de prueba de S1/S2). Cuando S6 genere `tools/levels/l1.txt` y corra `npm run maps`, cambiá `l1.mapKey` a `'map_l1'` y listo; `l2`..`l7` ya apuntan a sus `map_lN` futuros (todavía no cargan: `WorldMapScene` los muestra bloqueados hasta que `unlockedLevel` los alcance).
+- **Diálogo de liberación conectado de una vez:** el `rect LevelExit` del mapa de prueba dispara `LevelScene.completeLevel()`, que si `def.boss` existe muestra el diálogo de `src/data/dialogues.ts` (`DialogueBox`) y recién después guarda (`SaveManager.completeLevel`) y pasa a `LevelComplete`. Como `l1` ya tiene jefe (`teju_jagua`) aunque el mapa sea el de prueba, el diálogo de Teju Jagua se ve completo desde ya (podés probarlo con Mapa → nodo 1 → llegar a `x=114..118,y=22..26` en tiles). Los niveles 2 a 7 heredan el mismo mecanismo sin cambios cuando tengan mapa propio.
+- **Plumas: conteo simple, no por índice.** `SaveManager.setFeatherCount(levelId, n)` guarda "n plumas de 3", no cuáles. Alcanza para que el panel del mapa muestre progreso, pero no es fiel si el jugador junta plumas distintas en visitas distintas. Cuando los niveles reales (S6+) marquen cada pluma con un `id` en el ASCII, cambiar a `SaveManager.collectFeather(levelId, index)` (ya existe, con su test).
+- **Modo asistido (§4.7):** conectado el efecto en `Player` (constructor recibe `assist`): +3 corazones al entrar, invulnerabilidad de 2 s y Luz de Arasy de 12 s. **No** conectado todavía: dones desde el inicio, avisos de jefe 30 % más largos (no hay jefes aún) ni la Luz de Arasy extra en cada arena. La sacudida de cámara y los destellos (Opciones) están guardados en `SaveManager` pero **`LevelScene` todavía no los respeta** (sigue llamando `cameras.main.shake/flash` siempre) — es la tarea 5 de S5, tal cual dice el GDD.
+- **Dones y corazones guardados, pero no aplicados a Kerana:** `SaveManager.current.maxHearts` y `.gifts` se actualizan al completar un nivel, pero `LevelScene` todavía arranca a Kerana con `GAMEPLAY.hearts.start` (+ bono de asistido) sin mirar el guardado, y no hay salto doble/dash/tajo cargado en `PlayerMotor` todavía. Aplicar el guardado a `Player` (máximo de corazones real) es sencillo y se puede hacer en cualquier sesión desde ahora; los dones de habilidad en sí llegan con S6 (tajo cargado), S8 (salto doble) y S9 (dash).
+- **Tipografía:** se usó **Noto Sans Mono** (Google Fonts, licencia OFL) para todo el texto en vez de una fuente pixel dedicada + una legible (ASSETS §8 sugiere las dos). Se verificó con `fonttools` (`getBestCmap`) que cubre la frase de prueba completa, incluidas ẽ y ỹ; se ve en Créditos. Si el autor consigue una fuente pixel con esa misma cobertura, cambiar `FONT_FAMILY` en `src/config/fonts.ts` y los archivos en `public/assets/fonts/`.
+- **`window.__KERANA_GAME__`** ahora expone la instancia de Phaser.Game (además de `__KERANA_READY__` y `__KERANA_DEBUG__`), para que `tools/smoke.mjs` pueda comprobar qué escena está activa (`scene.isActive('Map')`, etc.) sin depender de capturas.
+- **Idioma:** `en.ts` sigue sin existir (recortado, GDD §12.2 punto 2); la opción de idioma en Opciones guarda `'en'` si se elige, pero `t()` solo tiene tabla en español, así que por ahora no cambia nada visible.
+- **Pendiente para Jose:** nada nuevo de assets obligatorios. Si querés un logo real para el Título o una ilustración para el mapa (GDD §8.4/ASSETS §7), van en S13; mientras tanto el mapa usa fondo liso con nodos (se salteó el contorno de Natural Earth a pedido, para no gastar crédito en eso).
 
 ### S5: Controles y audio
 **Lee:** GDD §3.2, §4.9 y §10.
@@ -368,7 +379,7 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 ### S11: Nivel 6 Guairá + Ao Ao
 **Lee:** GDD §6.6 y §5.3 (taitetu, ao_ao_cria).
 
-**Tareas:** `l6.txt` · `taitetu` (Charger en manada) y `ao_ao_cria` (Jumper) · `ChaseZone`: la cámara avanza sola y `Pindo` detiene el avance mientras Kerana está arriba [Núcleo; si la sesión se alarga, implementa la alternativa sin persecución y anótalo] · Ao Ao con 3 fases; el pindó de la arena es zona segura · don: +1 corazón · tests del refugio en el pindó.
+**Tareas:** `l6.txt` · `taitetu` (Charger en manada) y `ao_ao_cria` (Jumper) · **[RECORTADO desde S4, GDD §12.2 punto 3: semáforo rojo, ver §6.3]** `ChaseZone` (la cámara avanza sola y `Pindo` detiene el avance mientras Kerana está arriba): no la implementes, usá directo la alternativa del GDD §6.6 (un tramo normal con la manada patrullando) · Ao Ao con 3 fases; el pindó de la arena es zona segura · don: +1 corazón · tests del refugio en el pindó.
 
 **Criterios:** como en S6, para el nivel 6.
 
@@ -418,3 +429,5 @@ Cada sesión: lee lo indicado, cumple las tareas, verifica los criterios, actual
 
 ### Reserva
 Arreglos pendientes y, si queda crédito, Extras en este orden: jefe secreto Tau (GDD §7) → inglés → mejores tiempos → pogo.
+
+**Jefe secreto Tau e inglés están `[RECORTADOS]` desde S4** (semáforo rojo, GDD §12.2 puntos 1 y 2, ver §6.3): no se hacen salvo que sobre crédito en la Reserva y Jose lo pida explícitamente.

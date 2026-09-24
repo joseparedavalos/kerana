@@ -1251,9 +1251,9 @@ Además, el juego define `window.__KERANA_READY__ = true` cuando la primera esce
 ### 12.2 Lista de recortes (en orden)
 Si el gasto supera la meta (ver el semáforo en `docs/PLAN.md`), se recorta en este orden:
 
-1. Jefe secreto Tau.
-2. Traducción al inglés.
-3. Persecución del Ao Ao (queda solo la arena).
+1. Jefe secreto Tau. **[RECORTADO desde S4: semáforo rojo tras S2, ver docs/PLAN.md §6.3]**
+2. Traducción al inglés. **[RECORTADO desde S4: idem]**
+3. Persecución del Ao Ao (queda solo la arena). **[RECORTADO desde S4: idem]**
 4. Tercera fase de los jefes 3 a 6.
 5. Controles táctiles.
 6. Parallax de 3 capas (queda 1).
