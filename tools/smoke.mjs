@@ -83,28 +83,45 @@ async function main() {
     check(true, 'Prólogo → Mapa');
     await sleep(300);
     await title.screenshot({ path: join(SHOTS, 'map.png') });
-    await title.keyboard.press('Enter'); // entra al nodo 1 (usa el mapa de prueba hasta que exista l1)
+    await title.keyboard.press('Enter'); // entra al nodo 1 (Paraguarí)
     await title.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
-    check(true, 'Mapa → nivel listo');
+    check(true, 'Mapa → nivel 1 listo');
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
 
-    // LevelExit del nivel 1 (teju_jagua): dispara el diálogo de liberación (GDD §6.1) y "nivel completado".
+    // Liberación de Teju Jagua (atajo de depuración): cámara lenta, marca, diálogo, ascenso, don → Nivel completado.
     const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
-    await title.evaluate((tx, ty) => window.__KERANA_DEBUG__.player.body.reset(tx, ty), 116 * TILE, 24 * TILE);
-    await sleep(300);
-    // El diálogo pide 2 pulsaciones por línea (revelar y avanzar); alcanza con varias de sobra.
-    for (let i = 0; i < 12 && !(await isActive('LevelComplete')); i++) {
+    await title.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    // El diálogo pide 2 pulsaciones por línea (revelar y avanzar); el resto de la secuencia corre sola.
+    for (let i = 0; i < 40 && !(await isActive('LevelComplete')); i++) {
       await title.keyboard.press('Space');
-      await sleep(250);
+      await sleep(300);
     }
-    check(await isActive('LevelComplete'), 'LevelExit → diálogo de liberación → Nivel completado');
+    check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
     await sleep(300);
     await title.screenshot({ path: join(SHOTS, 'level-complete.png') });
     await title.keyboard.press('Enter');
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
     check(true, 'Nivel completado → Mapa');
+    const freed = await title.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(freed.freed?.includes('teju_jagua') && freed.gifts?.includes('charged_slash'), 'guardado: Teju Jagua liberado y tajo cargado');
     await title.close();
+
+    // 1b) ?level=1&boss=1: empieza en la antesala; al entrar a la arena empieza la pelea.
+    const bossPage = await open('/?debug=1&level=1&boss=1&god=1');
+    await bossPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const bx = await bossPage.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(bx > 176 * TILE && bx < 200 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
+    await bossPage.keyboard.down('ArrowRight');
+    await sleep(2500);
+    await bossPage.keyboard.up('ArrowRight');
+    check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
+    await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
+    await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
+    const bstate = await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(bstate !== 'waiting', `Teju Jagua ataca (estado ${bstate})`);
+    await bossPage.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');
