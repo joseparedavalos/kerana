@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import existingAssets from 'virtual:kerana-assets';
 import { MANIFEST, PLAYER_PLACEHOLDER_KEY, type AssetEntry } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
+import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import { t } from '../i18n';
 import { makePlaceholderTexture } from '../utils/placeholder';
@@ -20,7 +21,7 @@ export class PreloadScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const bar = this.add.rectangle(width / 2 - 100, height / 2, 0, 6, 0xf2c14e).setOrigin(0, 0.5);
     this.add.rectangle(width / 2, height / 2, 200, 6).setStrokeStyle(1, 0xf2eee3);
-    this.add.text(width / 2, height / 2 - 16, t('loading'), { fontFamily: 'monospace', fontSize: '10px', color: '#F2EEE3' }).setOrigin(0.5);
+    this.add.text(width / 2, height / 2 - 16, t('loading'), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' }).setOrigin(0.5);
     this.load.on(Phaser.Loader.Events.PROGRESS, (p: number) => (bar.width = 200 * p));
 
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {

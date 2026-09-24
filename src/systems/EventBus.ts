@@ -10,4 +10,5 @@ export const GameEvents = {
   levelReady: 'level:ready', // (levelId: string)
   feathersChanged: 'feathers:changed', // (current: number, max: number)
   luzArasyChanged: 'luz_arasy:changed', // (active: boolean, fraction: number) fraction 1→0
+  restartFromCheckpoint: 'level:restart_from_checkpoint', // sin datos: Pause pide reaparecer en el último fuego
 } as const;

@@ -9,4 +9,5 @@ declare module 'virtual:kerana-assets' {
 interface Window {
   __KERANA_READY__?: boolean;
   __KERANA_DEBUG__?: unknown;
+  __KERANA_GAME__?: import('phaser').Game;
 }

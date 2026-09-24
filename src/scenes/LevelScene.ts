@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
+import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
+import { liberationDialogue } from '../data/dialogues';
 import { getLevel } from '../data/levels';
 import type { LevelDef, LevelId } from '../data/types';
 import { createEnemy } from '../entities/enemies';
@@ -12,8 +14,11 @@ import type { PlayerStateName } from '../entities/PlayerMotor';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { CameraController } from '../systems/CameraController';
+import { DialogueBox } from '../systems/DialogueBox';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { InputManager } from '../systems/InputManager';
+import { SaveManager } from '../systems/SaveManager';
+import { ensurePlaceholder } from '../utils/placeholder';
 
 type RespawnReason = 'pit' | 'water' | 'hazard';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
@@ -35,7 +40,7 @@ interface Sign {
 
 const SIGN_RANGE = 20;
 const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: 'monospace',
+  fontFamily: FONT_FAMILY,
   fontSize: '10px',
   color: '#F2EEE3',
   backgroundColor: '#1B1A2ECC',
@@ -73,6 +78,10 @@ export class LevelScene extends Phaser.Scene {
   private readonly checkpointPos = new Phaser.Math.Vector2();
   private readonly playerRect = new Phaser.Geom.Rectangle();
   private debugText?: Phaser.GameObjects.Text;
+  private levelExitZone?: Phaser.Geom.Rectangle;
+  private dialogueBox!: DialogueBox;
+  private mainumby?: Phaser.GameObjects.Image;
+  private completing = false;
 
   constructor() {
     super('Level');
@@ -87,23 +96,28 @@ export class LevelScene extends Phaser.Scene {
     this.pickups = [];
     this.feathers = 0;
     this.lastPlayerState = 'idle';
+    this.levelExitZone = undefined;
+    this.completing = false;
   }
 
   create(): void {
     if (!this.cache.tilemap.exists(this.def.mapKey)) {
       console.warn(`[ASSET FALTANTE] ${this.def.mapKey}: corré "npm run maps".`);
-      this.scene.start('Title');
+      this.scene.start(this.def.order > 0 ? 'Map' : 'Title');
       return;
     }
     this.inputs = new InputManager(this);
     this.enemies = [];
     this.pickups = [];
+    this.dialogueBox = new DialogueBox(this);
     this.buildMap();
     const spawn = this.buildObjects();
 
-    this.player = new Player(this, spawn.x, spawn.y);
+    this.player = new Player(this, spawn.x, spawn.y, SaveManager.current.settings.assist);
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
+    ensurePlaceholder(this, 'mainumby_placeholder', 8, 8);
+    this.mainumby = this.add.image(spawn.x, spawn.y - 40, 'mainumby_placeholder').setDepth(15);
     const { Ground, Platforms, Foreground } = this.layers;
     if (Ground) {
       this.physics.add.collider(this.player, Ground);
@@ -134,13 +148,17 @@ export class LevelScene extends Phaser.Scene {
 
     if (DEBUG.debug) {
       this.debugText = this.add
-        .text(4, this.scale.height - 4, '', { fontFamily: 'monospace', fontSize: '8px', color: '#F2C14E' })
+        .text(4, this.scale.height - 4, '', { fontFamily: FONT_FAMILY, fontSize: '8px', color: '#F2C14E' })
         .setOrigin(0, 1)
         .setScrollFactor(0)
         .setDepth(100);
       window.__KERANA_DEBUG__ = { scene: this, player: this.player, safeGround: this.safeGround };
     }
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop('UI'));
+    EventBus.on(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.stop('UI');
+      EventBus.off(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
+    });
 
     EventBus.emit(GameEvents.levelReady, this.def.id);
     window.__KERANA_READY__ = true;
@@ -148,10 +166,21 @@ export class LevelScene extends Phaser.Scene {
 
   override update(_time: number, delta: number): void {
     this.inputs.update();
+
+    if (this.dialogueBox.active) {
+      this.dialogueBox.update(delta, this.inputs.justPressed('jump') || this.inputs.justPressed('attack'));
+      return;
+    }
+    if (this.inputs.justPressed('pause')) {
+      this.openPause();
+      return;
+    }
+
     this.player.tick(delta, this.inputs);
     this.reportPlayerStateSfx();
     this.cameraCtl.update(this.player.motor.facing);
     this.updateEnemies(delta);
+    this.updateMainumby();
 
     const body = this.player.body;
     this.playerRect.setTo(body.x, body.y, body.width, body.height);
@@ -164,7 +193,45 @@ export class LevelScene extends Phaser.Scene {
     this.updateCheckpoints();
     this.updateSigns();
     this.updateLuzArasyHud();
+    this.updateLevelExit();
     if (this.debugText) this.updateDebugText();
+  }
+
+  private openPause(): void {
+    this.scene.pause();
+    this.scene.launch('Pause', { levelId: this.def.id });
+  }
+
+  private restartFromCheckpoint(): void {
+    this.player.respawnAt(this.checkpointPos.x, this.checkpointPos.y);
+  }
+
+  /** Mainumby sigue a Kerana con un retraso suave, flotando sobre su hombro (GDD §4.5). */
+  private updateMainumby(): void {
+    if (!this.mainumby) return;
+    const targetX = this.player.x - this.player.motor.facing * 14;
+    const targetY = this.player.y - 44;
+    this.mainumby.x += (targetX - this.mainumby.x) * 0.08;
+    this.mainumby.y += (targetY - this.mainumby.y) * 0.08;
+  }
+
+  private updateLevelExit(): void {
+    if (this.levelExitZone && Phaser.Geom.Rectangle.Overlaps(this.levelExitZone, this.playerRect)) this.completeLevel();
+  }
+
+  /** Fin de nivel (GDD §8.8): diálogo de liberación si hay jefe, guardado y pantalla de nivel completado. */
+  private completeLevel(): void {
+    if (this.completing) return;
+    this.completing = true;
+    this.physics.world.pause();
+    SaveManager.setFeatherCount(this.def.id, this.feathers);
+    const finish = (): void => {
+      if (this.def.order > 0) SaveManager.completeLevel(this.def);
+      this.scene.start('LevelComplete', { level: this.def });
+    };
+    const lines = liberationDialogue(this.def.id);
+    if (lines.length > 0) this.dialogueBox.show(lines, finish);
+    else finish();
   }
 
   private updateLuzArasyHud(): void {
@@ -236,6 +303,12 @@ export class LevelScene extends Phaser.Scene {
         case 'Pickup': {
           const kind = String(objectProp(obj, 'kind') ?? 'guavira') as PickupKind;
           this.pickups.push(new Pickup(this, x, y, kind));
+          break;
+        }
+        case 'LevelExit': {
+          const w = Number(obj.width ?? 0);
+          const h = Number(obj.height ?? 0);
+          this.levelExitZone = new Phaser.Geom.Rectangle(x, y, w, h);
           break;
         }
         default:

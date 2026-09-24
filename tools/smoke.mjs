@@ -68,15 +68,42 @@ async function main() {
   };
 
   try {
-    // 1) Título → Enter → nivel de prueba.
-    const title = await open('/');
+    // 1) Título → Nueva partida → Prólogo (salteado) → Mapa → nivel 1 → LevelExit → Nivel completado → Mapa.
+    // (?debug=1, sin `level`, para poder teletransportar a Kerana sin cambiar el flujo Título → Mapa.)
+    const title = await open('/?debug=1');
     await sleep(1500);
     await title.screenshot({ path: join(SHOTS, 'title.png') });
-    await title.keyboard.press('Enter');
+    await title.keyboard.press('Enter'); // "Nueva partida" (primer ítem del menú)
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
+    check(true, 'Título → Nueva partida → Prólogo');
+    await title.keyboard.down('Escape'); // mantener Pausa salta el prólogo entero
+    await sleep(700);
+    await title.keyboard.up('Escape');
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
+    check(true, 'Prólogo → Mapa');
+    await sleep(300);
+    await title.screenshot({ path: join(SHOTS, 'map.png') });
+    await title.keyboard.press('Enter'); // entra al nodo 1 (usa el mapa de prueba hasta que exista l1)
     await title.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
-    check(true, 'Título → Enter → nivel listo');
+    check(true, 'Mapa → nivel listo');
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
+
+    // LevelExit del nivel 1 (teju_jagua): dispara el diálogo de liberación (GDD §6.1) y "nivel completado".
+    const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
+    await title.evaluate((tx, ty) => window.__KERANA_DEBUG__.player.body.reset(tx, ty), 116 * TILE, 24 * TILE);
+    await sleep(300);
+    // El diálogo pide 2 pulsaciones por línea (revelar y avanzar); alcanza con varias de sobra.
+    for (let i = 0; i < 12 && !(await isActive('LevelComplete')); i++) {
+      await title.keyboard.press('Space');
+      await sleep(250);
+    }
+    check(await isActive('LevelComplete'), 'LevelExit → diálogo de liberación → Nivel completado');
+    await sleep(300);
+    await title.screenshot({ path: join(SHOTS, 'level-complete.png') });
+    await title.keyboard.press('Enter');
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
+    check(true, 'Nivel completado → Mapa');
     await title.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
