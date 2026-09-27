@@ -144,7 +144,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S5 | | | | | | | |
 | S6 | 2026-09-24 | Opus 5.5 | 65 | 60 | 5 | 40 | Verde |
 | S6b | 2026-09-24 | Opus 5.5 | 60 | 58 | 2 | 42 | Verde |
-| S7 | 2026-09-27 | Opus 5.5 | 58 | | | | |
+| S7 | 2026-09-27 | Opus 5.5 | 58 | 53 | 5 | 47 | Verde |
 | S8 | | | | | | | |
 | S9 | | | | | | | |
 | S10 | | | | | | | |
@@ -157,6 +157,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S6:** con el reparto tras S4, la meta acumulada es 32 (gastado hasta S4) + 7 (S3) + 6,50 (S6) = 45,50; lo gastado es 40 → **Verde**. (S6b no estaba en el reparto: sale de la Reserva.)
 
 **Semáforo de S6b:** costó 2 (de la Reserva, que queda en 8). Acumulado 42 contra una meta de 45,50 → **Verde**.
+
+**Semáforo de S7:** meta acumulada 32 + 7 (S3) + 6,50 (S6) + 6,50 (S7) = 52; gastado 47 → **Verde**.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -174,7 +176,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S6 | Hecha | rama `claude/eloquent-fermi-bek28y` | Nivel 1 Paraguarí (ASCII), `teju_i` y `mbopi`, estalactitas, `Breakable` (liana y roca agrietada), base de jefes (`BossBrain`, `Boss`, `BossArena`, `LiberationSequence`, barra), Teju Jagua completo, tajo cargado. Build, tests y smoke OK |
 | S6b | Hecha | rama `claude/practical-curie-03v7dy` | Kerana con doble detalle: lienzo 1280 × 720 con zoom 2 (`setupView`), `detail` en el pipeline, Kerana a 128 × 128 con detail 2. Jugabilidad sin cambios. Build, tests y smoke OK |
 | S7 | Hecha | rama `claude/laughing-newton-nqj2z9` | Nivel 2 Ñeembucú (ASCII), camalotes (`Sinking`), agua baja (`ShallowWater`), `jakare` (Lurker), `nakurutu` (Diver), `mboi` (Walker), Mbói Tu'i con 3 fases, don +1 corazón. Build, tests y smoke OK |
-| S8 | Pendiente | | |
+| S8 | Hecha | rama `claude/awesome-carson-qhwqjn` | Nivel 3 Misiones (ASCII), `WindZone` con aviso, `nandu` (Charger), `karakara` (Diver), hipnosis (`StatusEffects`), Moñái con 3 fases (descenso, pulso, robo del corazón), salto doble. Arreglos previos: postes de l2 a 3 tiles y arena que no se recierra tras caer. Build, tests y smoke OK |
 | S9 | Pendiente | | |
 | S10 | Pendiente | | |
 | S11 | Pendiente | | |
@@ -414,7 +416,19 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 
 **Criterios:** como en S6, para el nivel 3.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S8 → S9):**
+- **Arreglos antes de S8:** en `l2.txt` los postes de x 146 y 172 bajaron a 3 tiles (ñakurutu encima); regla nueva en CLAUDE.md (nada que se salte mide más de 3 tiles, salvo otro camino). La arena ya no se vuelve a cerrar en el frame del reinicio: `src/systems/ArenaGate.ts` (lógica pura, test `arenaGate.test.ts`) solo cierra de nuevo después de que Kerana estuvo afuera.
+- **Mapa:** `tools/levels/l3.txt` (300 × 24) → `map_l3`. Suelo en la fila 17. A: pastizal (x 0–69) con tacurúes de 1–2 tiles y ñandúes; pluma 1 en una copa a 6 tiles (x 35–39, **pide salto doble**: volver después). B: ráfagas (x 70–149), Luz de Arasy en x 100, karaguatá, pluma 2 dentro del tacurú agrietado (x 124–130, pared de 3 `B`; tajo cargado). Checkpoint 1 en x 150. C: islas de monte (x 150–229) con pozos de 3 tiles y copas; pluma 3 al final de 4 copas con viento en contra (x 196–217, `speed=70`). Antesala x 230–259. Arena x 260–299: copas `=` a 3 tiles del suelo, centradas en los tiles 8,5 / 20,5 / 32,5 de la arena (`GAMEPLAY.monai.treeTiles`: si se cambia la arena, ajustarlos).
+- **Viento:** `rect WindZone x y w h dir=±1 [speed] [offsetMs]` en el ASCII. `WindCycle` (lógica pura, con test) = calma → aviso 1 s (pasto que se inclina y partículas) → ráfaga. Empuja con `PlayerMotor.windVx` (se suma a la velocidad deseada; lo fija `LevelScene` en cada frame). Tiempos en `GAMEPLAY.wind`. Sirve para N6.
+- **Hipnosis:** `src/systems/StatusEffects.ts` (lógica pura, con tests): invierte izquierda/derecha 3 s (`GAMEPLAY.hypnosis`); `Player.status` la aplica al leer las acciones y se limpia al reaparecer. Espiral que gira sobre Kerana con tinte iridiscente y sonido `hypnosis`. No se tiñe a Kerana (chocaba con el destello de daño y la Luz de Arasy).
+- **Moñái** (`bosses/Monai.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.monai`, lógica en `monaiLogic.ts` con tests): 12 de vida (3 fases de 4). Descenso (vuela a la copa más cercana a Kerana, sombra que la sigue el 70 % del aviso, picada; aturdido 1,5 s: se le pega en la cabeza o el cuerpo). Pulso (baja junto a un tronco, cuernos iridiscentes 1 s, anillo de 200 px que hipnotiza; lo tapa un tronco si Kerana está detrás y por debajo de la copa; ventana 1 s). Robo (se enrosca y tiembla 0,7 s, embestida en diagonal; si acierta quita 1 corazón que brilla en la cola, uno a la vez; la cola queda expuesta 1,2 s y golpearla lo devuelve). Al vencerlo devuelve el corazón. Troncos y follaje dibujados por el jefe.
+- **`BossContext`** suma `hypnotizePlayer`, `damagePlayer` (true si se aplicó y Kerana sigue en pie) y `healPlayer`. `hurtPlayer` de `LevelScene` ahora devuelve si se aplicó.
+- **Salto doble:** `PlayerMotor.doubleJumpEnabled` (don guardado o `?gifts=all`); una vez por vuelo, `GAMEPLAY.player.doubleJumpVelocity`. Con tests.
+- **Enemigos:** `nandu` (Charger, 2 de vida) y `karakara` (Diver en el aire), solo datos en `enemies.ts`.
+- **Smoke:** suma `?level=3&boss=1&god=1`: antesala, cierre, ataques, fase 3 forzada y liberación con salto doble guardado.
+- **Sin probar a mano (Jose):** saltos con viento en contra (copas de la pluma 3 con huecos de 2), si el pulso se esquiva cómodo detrás de los troncos, el tamaño de la cola al golpearla, y que la copa de la pluma 1 sea inalcanzable sin salto doble (6 tiles; el tacurú más cercano está a 7). Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l3.txt` (+ `npm run maps`).
+- **No hecho (anotado):** Kerana no se tiñe al estar hipnotizada (solo icono y sonido); las copas de los niveles no tienen tronco dibujado (solo en la arena); el jefe es placeholder por código.
+- **Assets faltantes:** cabeza y cuerpo de Moñái, sprites de `nandu` y `karakara`, tacurú, pasto, tileset real de `campo` (hoy placeholder de color).
 
 ### S9: Nivel 4 Capiatá + Jasy Jatere
 **Lee:** GDD §6.4, §4.8 (sueño de siesta) y §5.3 (jagua, abejas).

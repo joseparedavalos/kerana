@@ -3,6 +3,7 @@ import { GAMEPLAY } from '../config/gameplay';
 import { ANIMS_SUFFIX, PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
 import type { InputManager } from '../systems/InputManager';
 import { Health } from '../systems/Health';
+import { StatusEffects } from '../systems/StatusEffects';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
@@ -27,6 +28,8 @@ export interface PlayerOptions {
   maxHearts?: number;
   /** Don del tajo cargado (GDD §3.7). */
   chargedSlash?: boolean;
+  /** Don del salto doble (GDD §3.7). */
+  doubleJump?: boolean;
   /** `?god=1`: no recibe daño. */
   god?: boolean;
 }
@@ -34,6 +37,8 @@ export interface PlayerOptions {
 // Kerana: sprite con física; el movimiento lo decide PlayerMotor (lógica pura).
 export class Player extends Phaser.Physics.Arcade.Sprite {
   readonly motor = new PlayerMotor();
+  /** Estados alterados (hipnosis de Moñái, GDD §4.8). */
+  readonly status = new StatusEffects();
   // Corazones del guardado (4 a 7 con los dones de corazón), +3 con el modo asistido (GDD §4.7).
   readonly health: Health;
   declare body: Phaser.Physics.Arcade.Body;
@@ -79,6 +84,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.assist = assist;
     this.god = opts.god ?? false;
     this.motor.chargeEnabled = opts.chargedSlash ?? false;
+    this.motor.doubleJumpEnabled = opts.doubleJump ?? false;
     const baseHearts = Phaser.Math.Clamp(opts.maxHearts ?? GAMEPLAY.hearts.start, GAMEPLAY.hearts.start, GAMEPLAY.hearts.max);
     const startHearts = baseHearts + (assist ? GAMEPLAY.hearts.assistBonus : 0);
     this.health = new Health(startHearts, startHearts);
@@ -136,6 +142,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     mi.jumpHeld = input.isDown('jump');
     mi.attackPressed = input.justPressed('attack');
     mi.attackHeld = input.isDown('attack');
+    this.status.step(deltaMs);
+    this.status.applyTo(mi);
 
     const b = this.motorBody;
     b.onGround = this.body.blocked.down || this.body.touching.down;
@@ -210,6 +218,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.reset(x, feetY);
     this.body.setVelocity(0, 0);
     this.motor.reset();
+    this.status.clear();
     this.scene.tweens.add({
       targets: this,
       alpha: 0.2,

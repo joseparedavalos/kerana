@@ -77,11 +77,17 @@ export class PlayerMotor {
   chargeMs = 0;
   /** Multiplica la velocidad de carrera (agua baja, GDD §4.8). Lo fija el nivel en cada frame. */
   speedMultiplier = 1;
+  /** Salto doble desbloqueado (don 3, GDD §3.7). */
+  doubleJumpEnabled = false;
+  /** Viento (GDD §4.8): suma a la velocidad horizontal deseada (px/s). Lo fija el nivel en cada frame. */
+  windVx = 0;
 
   private coyoteLeftMs = 0;
   private bufferLeftMs = 0;
   /** Salto en curso que todavía se puede cortar al soltar. */
   private jumpCuttable = false;
+  /** Ya usó el salto doble en este vuelo. */
+  private airJumpUsed = false;
   private attackMsLeft = 0;
   private hurtMsLeft = 0;
   /** Empuje externo (graznido de Mbói Tu'i): fija la velocidad horizontal mientras dura. */
@@ -119,7 +125,7 @@ export class PlayerMotor {
     const dir = hurt ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
     if (dir !== 0) this.facing = dir as 1 | -1;
     const control = grounded ? 1 : cfg.airControl;
-    const target = dir * cfg.runSpeed * this.speedMultiplier;
+    const target = dir * cfg.runSpeed * this.speedMultiplier + this.windVx;
     const braking = dir === 0 || (vx !== 0 && Math.sign(vx) !== dir);
     const rate = (braking ? cfg.groundDecel : cfg.groundAccel) * control;
     vx = approach(vx, target, rate * dtS);
@@ -132,6 +138,7 @@ export class PlayerMotor {
     if (grounded) {
       this.coyoteLeftMs = cfg.coyoteMs;
       this.jumpCuttable = false;
+      this.airJumpUsed = false;
     } else {
       this.coyoteLeftMs = Math.max(0, this.coyoteLeftMs - dt);
     }
@@ -143,6 +150,13 @@ export class PlayerMotor {
       vy = cfg.jumpVelocity;
       this.bufferLeftMs = 0;
       this.coyoteLeftMs = 0;
+      this.jumpCuttable = true;
+      justJumped = true;
+    } else if (input.jumpPressed && this.doubleJumpEnabled && !hurt && !this.airJumpUsed) {
+      // Salto doble: en el aire, sin coyote, una vez por vuelo.
+      vy = cfg.doubleJumpVelocity;
+      this.bufferLeftMs = 0;
+      this.airJumpUsed = true;
       this.jumpCuttable = true;
       justJumped = true;
     } else {
@@ -216,6 +230,8 @@ export class PlayerMotor {
     this.coyoteLeftMs = 0;
     this.bufferLeftMs = 0;
     this.jumpCuttable = false;
+    this.airJumpUsed = false;
+    this.windVx = 0;
     this.attackMsLeft = 0;
     this.hurtMsLeft = 0;
     this.attackHitboxActive = false;

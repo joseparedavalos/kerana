@@ -83,6 +83,33 @@ export const ENEMIES: Record<string, EnemyDef> = {
     cooldownMs: 900,
   },
   mboi: { id: 'mboi', archetype: 'walker', hp: 2, width: 22, height: 8, speed: 30, patrolDistance: 44 },
+
+  // Nivel 3 (GDD §5.3): el ñandu corre en línea recta (se lo salta); el karakara pica como el ñakurutu.
+  nandu: {
+    id: 'nandu',
+    archetype: 'charger',
+    hp: 2,
+    width: 16,
+    height: 26,
+    detectRadius: 130,
+    telegraphMs: 450,
+    chargeSpeed: 200,
+    chargeMaxMs: 1800,
+    cooldownMs: 900,
+  },
+  karakara: {
+    id: 'karakara',
+    archetype: 'diver',
+    hp: 1,
+    width: 14,
+    height: 12,
+    detectRadius: 110,
+    telegraphMs: 450,
+    diveSpeed: 250,
+    returnSpeed: 80,
+    chargeMaxMs: 1200,
+    cooldownMs: 1000,
+  },
 };
 
 export function getEnemyDef(kind: string): EnemyDef {
