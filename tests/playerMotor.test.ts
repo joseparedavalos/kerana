@@ -286,3 +286,24 @@ describe('PlayerMotor: tajo cargado (don 1)', () => {
     expect(sim.motor.chargedSwing).toBe(false);
   });
 });
+
+describe('PlayerMotor: agua baja y empuje (S7)', () => {
+  const ground = { onGround: true, vx: 0, vy: 0 };
+  const right = { left: false, right: true, jumpPressed: false, jumpHeld: false, attackPressed: false };
+
+  it('el agua baja limita la carrera con speedMultiplier', () => {
+    const m = new PlayerMotor();
+    m.speedMultiplier = 0.6;
+    let vx = 0;
+    for (let i = 0; i < 60; i++) vx = m.step(16, right, { ...ground, vx }).vx;
+    expect(vx).toBeCloseTo(GAMEPLAY.player.runSpeed * 0.6);
+  });
+
+  it('el empuje fija la velocidad horizontal mientras dura', () => {
+    const m = new PlayerMotor();
+    m.push(-200, 100);
+    expect(m.step(16, right, ground).vx).toBe(-200);
+    for (let i = 0; i < 6; i++) m.step(16, right, ground);
+    expect(m.step(16, right, { ...ground, vx: 0 }).vx).toBeGreaterThan(0);
+  });
+});

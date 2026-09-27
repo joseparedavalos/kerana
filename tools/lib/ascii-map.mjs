@@ -158,6 +158,15 @@ export function buildTiledMap(parsed, options = {}) {
         case '~':
           data.Water[i] = gid(y > 0 && grid[y - 1][x] === '~' ? TILES.waterDeep : TILES.waterSurface);
           break;
+        case 'S': {
+          // Camalote sobre el agua: los "S" seguidos de una fila forman un solo objeto.
+          data.Water[i] = gid(TILES.waterSurface);
+          if (grid[y][x - 1] === 'S') break;
+          let len = 1;
+          while (grid[y][x + len] === 'S') len++;
+          addObject('Sinking', x * TILE, y * TILE, len * TILE, TILE);
+          break;
+        }
         case 'B':
           data.Ground[i] = gid(TILES.cracked);
           addObject('Breakable', x * TILE, y * TILE, TILE, TILE);

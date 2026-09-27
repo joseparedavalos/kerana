@@ -105,6 +105,15 @@ describe('buildTiledMap', () => {
     expect(new Set(objs.map((o: Obj & { id?: number }) => o.id)).size).toBe(objs.length);
   });
 
+  it('agrupa los camalotes "S" seguidos en un solo objeto Sinking sobre agua', () => {
+    const map = buildTiledMap(parseAscii('size 6x2\n---\nP.SSS.\n######\n')) as { layers: { name: string; data?: number[]; objects?: Obj[] }[] };
+    const objs = map.layers.find((l) => l.name === 'Objects')!.objects!.filter((o) => o.type === 'Sinking');
+    expect(objs).toHaveLength(1);
+    expect([objs[0].x, objs[0].width]).toEqual([32, 48]);
+    const water = map.layers.find((l) => l.name === 'Water')!.data!;
+    expect(water.slice(2, 5)).toEqual([TILES.waterSurface + 1, TILES.waterSurface + 1, TILES.waterSurface + 1]);
+  });
+
   it('valida el mapa', () => {
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\n##\n'))).toThrow(/P/);
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\nPx\n'))).toThrow(/enemy/);
