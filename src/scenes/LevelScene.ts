@@ -10,6 +10,7 @@ import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { FallingHazard } from '../entities/hazards/FallingHazard';
+import { Sinking } from '../entities/hazards/Sinking';
 import { Player } from '../entities/Player';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
 import type { PlayerStateName } from '../entities/PlayerMotor';
@@ -55,6 +56,7 @@ interface Breakable {
 }
 
 const FX_PARTICLE = 'fx_particle';
+const SHALLOW_COLOR = 0x5aa6b8;
 const LIANA_COLOR = 0x3f7a3a;
 const SIGN_RANGE = 20;
 const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -103,6 +105,11 @@ export class LevelScene extends Phaser.Scene {
   private breakables: Breakable[] = [];
   private fallingHazards: FallingHazard[] = [];
   private dust!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private splashes!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private splashMs = 0;
+  private sinkers: Sinking[] = [];
+  /** Zonas de agua baja (GDD §4.8): frenan la carrera. */
+  private shallowZones: Phaser.Geom.Rectangle[] = [];
   private arenaRect?: Phaser.Geom.Rectangle;
   private arenaBossId?: BossId;
   private arena?: BossArena;
@@ -129,6 +136,8 @@ export class LevelScene extends Phaser.Scene {
     this.completing = false;
     this.breakables = [];
     this.fallingHazards = [];
+    this.sinkers = [];
+    this.shallowZones = [];
     this.arenaRect = undefined;
     this.arenaBossId = undefined;
     this.arena = undefined;
@@ -160,6 +169,17 @@ export class LevelScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(6);
+    this.splashes = this.add
+      .particles(0, 0, FX_PARTICLE, {
+        speedY: { min: -70, max: -30 },
+        speedX: { min: -30, max: 30 },
+        gravityY: 300,
+        lifespan: 350,
+        alpha: { start: 0.9, end: 0 },
+        tint: 0xd8f0f0,
+        emitting: false,
+      })
+      .setDepth(12);
     this.buildMap();
     const spawn = this.buildObjects();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
@@ -189,6 +209,7 @@ export class LevelScene extends Phaser.Scene {
     this.physics.add.overlap(this.player.getAttackHitbox(), this.enemies, this.onAttackHit, undefined, this);
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerTouchEnemy, undefined, this);
     this.physics.add.overlap(this.player, this.pickups, this.onPickupOverlap, undefined, this);
+    for (const sinker of this.sinkers) this.physics.add.collider(this.player, sinker.raft);
     for (const b of this.breakables) {
       if (!b.block) continue;
       this.physics.add.collider(this.player, b.block);
@@ -261,6 +282,7 @@ export class LevelScene extends Phaser.Scene {
     else if (this.touchesHazard(body)) this.respawn('hazard');
     else this.trackSafeGround(body);
 
+    this.updateWater(delta, body);
     this.updateFallingHazards(delta);
     this.updateBreakables();
     this.updateBoss(delta);
@@ -306,6 +328,9 @@ export class LevelScene extends Phaser.Scene {
       spawnFalling: (x) => {
         if (this.fighting) this.spawnFalling(x, rect.top, true);
       },
+      pushPlayer: (vx, ms) => this.player.motor.push(vx, ms),
+      setArenaPlatformsCycling: (on) => this.setArenaPlatformsCycling(on),
+      spawnHealFlower: (x) => this.spawnHealFlower(x, rect.top),
       sfx: (key: SfxKey) => AudioManager.play(key),
       shake: (ms, intensity) => this.shake(ms, intensity),
       assist: SaveManager.current.settings.assist,
@@ -356,6 +381,7 @@ export class LevelScene extends Phaser.Scene {
     this.boss?.resetFight();
     this.arena?.unlock(this.cameras.main, this.map.widthInPixels, this.map.heightInPixels);
     this.clearOneShotHazards();
+    this.clearFlowers();
   }
 
   private startLiberation(): void {
@@ -363,6 +389,7 @@ export class LevelScene extends Phaser.Scene {
     this.cutscene = true;
     this.fighting = false;
     this.clearOneShotHazards();
+    this.clearFlowers();
     EventBus.emit(GameEvents.bossBarHide);
     const gift = this.def.gift;
     const giftText = gift ? `${t('liberation.gift', { gift: t(`gift.${gift}`) })}\n${t(`gift_hint.${gift}`)}` : null;
@@ -427,6 +454,56 @@ export class LevelScene extends Phaser.Scene {
   private clearOneShotHazards(): void {
     for (const hazard of this.fallingHazards) if (hazard.state !== 'gone' && this.arenaRect?.contains(hazard.sprite.x, hazard.sprite.y + 1)) hazard.destroy();
     this.fallingHazards = this.fallingHazards.filter((h) => h.state !== 'gone');
+  }
+
+  // ── Agua y camalotes (GDD §4.8, §6.2) ─────────────────────────────────────
+
+  /** Camalotes que se hunden al pisarlos; agua baja que frena y salpica. */
+  private updateWater(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
+    for (const sinker of this.sinkers) sinker.update(deltaMs, sinker.isStoodOn(body));
+    const grounded = body.blocked.down || body.touching.down;
+    const feetY = body.bottom - 1;
+    const inShallow = this.shallowZones.some((z) => z.contains(body.center.x, feetY));
+    this.player.motor.speedMultiplier = inShallow && grounded ? GAMEPLAY.water.shallowSpeedFactor : 1;
+    if (!inShallow || !grounded || Math.abs(body.velocity.x) < GAMEPLAY.player.idleSpeedThreshold) return;
+    this.splashMs -= deltaMs;
+    if (this.splashMs > 0) return;
+    this.splashMs = GAMEPLAY.water.splashEveryMs;
+    this.splashes.emitParticleAt(body.center.x, body.bottom - 2, 3);
+    AudioManager.play('splash');
+  }
+
+  /** Fase 3 de Mbói Tu'i: los camalotes de la arena se hunden y reaparecen solos, desfasados. */
+  private setArenaPlatformsCycling(on: boolean): void {
+    const rect = this.arenaRect;
+    if (!rect) return;
+    let i = 0;
+    for (const sinker of this.sinkers) {
+      if (!rect.contains(sinker.zone.centerX, sinker.zone.centerY)) continue;
+      if (on) sinker.motor.setAutoCycle(true, i++ * GAMEPLAY.mboiTui.platformCycleOffsetMs);
+      else sinker.reset();
+    }
+  }
+
+  /** Flor (yvoty) que cae despacio y cura (fase 3 de Mbói Tu'i). */
+  private spawnHealFlower(x: number, topY: number): void {
+    const alive = this.pickups.filter((p) => p.kind === 'yvoty' && p.active && p.body.enable).length;
+    if (alive >= GAMEPLAY.mboiTui.flowerMax) return;
+    const groundY = this.surfaceBelow(x, topY) ?? this.map.heightInPixels;
+    const flower = new Pickup(this, x, topY + this.map.tileHeight, 'yvoty');
+    this.tweens.killTweensOf(flower);
+    this.tweens.add({ targets: flower, y: groundY, duration: GAMEPLAY.mboiTui.flowerFallMs, ease: 'Sine.easeOut' });
+    this.pickups.push(flower);
+  }
+
+  private clearFlowers(): void {
+    // En el lugar: el overlap de los objetos guarda la referencia a este arreglo.
+    for (let i = this.pickups.length - 1; i >= 0; i--) {
+      const p = this.pickups[i];
+      if (p.kind !== 'yvoty' && p.active) continue;
+      if (p.active) p.destroy();
+      this.pickups.splice(i, 1);
+    }
   }
 
   /** El tajo rompe lianas; las rocas agrietadas solo con el tajo cargado (GDD §3.7). */
@@ -606,6 +683,18 @@ export class LevelScene extends Phaser.Scene {
           this.arenaBossId = (typeof boss === 'string' ? boss : this.def.boss ?? undefined) as BossId | undefined;
           break;
         }
+        case 'Sinking': {
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          this.sinkers.push(new Sinking(this, zone, (state) => state === 'sunk' && AudioManager.play('sink')));
+          break;
+        }
+        case 'ShallowWater': {
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          const depth = GAMEPLAY.water.shallowDepthPx;
+          this.add.rectangle(zone.x, zone.bottom - depth, zone.width, depth, SHALLOW_COLOR, 0.55).setOrigin(0, 0).setDepth(11);
+          this.shallowZones.push(zone);
+          break;
+        }
         case 'LevelExit': {
           const w = Number(obj.width ?? 0);
           const h = Number(obj.height ?? 0);
@@ -712,6 +801,10 @@ export class LevelScene extends Phaser.Scene {
         if (this.player.heal(GAMEPLAY.pickups.guaviraHeal) > 0) AudioManager.play('heal');
         EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
         break;
+      case 'yvoty':
+        if (this.player.heal(GAMEPLAY.mboiTui.flowerHeal) > 0) AudioManager.play('heal');
+        EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+        break;
       case 'luz_arasy':
         this.player.activateLuzArasy();
         AudioManager.play('luzArasy');
@@ -776,5 +869,5 @@ export class LevelScene extends Phaser.Scene {
 }
 
 function isGroundedEnemy(obj: unknown): boolean {
-  return (obj as EnemyBase).def?.archetype !== 'flyer';
+  return (obj as EnemyBase).collidesWithGround ?? true;
 }

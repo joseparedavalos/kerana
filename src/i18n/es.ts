@@ -34,6 +34,11 @@ export const es = {
   'hint.l1.cracked': 'Esas rocas están agrietadas. Algún día vas a poder romperlas.',
   'hint.l1.stalactites': 'Cuidado: si cae polvo del techo, algo se viene abajo.',
   'hint.l1.antesala': 'Algo grande respira ahí abajo…',
+  'hint.l2.camalote': 'Los camalotes se hunden al rato de pisarlos. ¡No te quedes quieta!',
+  'hint.l2.shallow': 'El agua baja te frena. Si caés al agua honda, volvés a la orilla.',
+  'hint.l2.jakare': '¿Ves burbujas? Es un jakare. Pegale cuando asome la cabeza.',
+  'hint.l2.nakurutu': 'Los ñakurutu miran desde los postes. Cuando se lanzan, ¡corré!',
+  'hint.l2.antesala': 'Las ranas croan… y de golpe se callan.',
   'hint.test.water': 'El agua honda y los pozos te devuelven al último suelo firme.',
 
   'debug.state': 'Estado: {state}',
@@ -97,6 +102,8 @@ export const es = {
   // Dones (GDD §3.7).
   'boss.teju_jagua.name': 'Teju Jagua',
   'boss.teju_jagua.epithet': 'Guardián de las cavernas y los frutos',
+  'boss.mboi_tui.name': "Mbói Tu'i",
+  'boss.mboi_tui.epithet': 'Señor de los esteros',
   'liberation.gift': 'Don obtenido: {gift}',
   'gift_hint.charged_slash': 'Mainumby: «¡Mantené el ataque y soltalo! Así se rompen las rocas agrietadas.»',
   'gift_hint.double_jump': 'Mainumby: «¡El aire es de Moñái! Saltá otra vez en el aire.»',
