@@ -75,6 +75,8 @@ export class PlayerMotor {
   chargeEnabled = false;
   /** Tiempo manteniendo atacar (ms). */
   chargeMs = 0;
+  /** Multiplica la velocidad de carrera (agua baja, GDD §4.8). Lo fija el nivel en cada frame. */
+  speedMultiplier = 1;
 
   private coyoteLeftMs = 0;
   private bufferLeftMs = 0;
@@ -82,6 +84,9 @@ export class PlayerMotor {
   private jumpCuttable = false;
   private attackMsLeft = 0;
   private hurtMsLeft = 0;
+  /** Empuje externo (graznido de Mbói Tu'i): fija la velocidad horizontal mientras dura. */
+  private pushMsLeft = 0;
+  private pushVx = 0;
   private readonly out: MotorOutput = { vx: 0, vy: 0 };
 
   constructor(
@@ -114,10 +119,14 @@ export class PlayerMotor {
     const dir = hurt ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
     if (dir !== 0) this.facing = dir as 1 | -1;
     const control = grounded ? 1 : cfg.airControl;
-    const target = dir * cfg.runSpeed;
+    const target = dir * cfg.runSpeed * this.speedMultiplier;
     const braking = dir === 0 || (vx !== 0 && Math.sign(vx) !== dir);
     const rate = (braking ? cfg.groundDecel : cfg.groundAccel) * control;
     vx = approach(vx, target, rate * dtS);
+    if (this.pushMsLeft > 0) {
+      this.pushMsLeft = Math.max(0, this.pushMsLeft - dt);
+      vx = this.pushVx;
+    }
 
     // Coyote y buffer
     if (grounded) {
@@ -195,8 +204,15 @@ export class PlayerMotor {
     this.chargeMs = 0;
   }
 
+  /** Empuje externo: la velocidad horizontal queda en `vx` durante `ms` (ignora la entrada). */
+  push(vx: number, ms: number): void {
+    this.pushVx = vx;
+    this.pushMsLeft = ms;
+  }
+
   /** Reinicia tiempos y estado (al reaparecer). */
   reset(): void {
+    this.pushMsLeft = 0;
     this.coyoteLeftMs = 0;
     this.bufferLeftMs = 0;
     this.jumpCuttable = false;

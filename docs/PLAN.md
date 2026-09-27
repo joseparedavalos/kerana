@@ -143,8 +143,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S4 | 2026-09-24 | Sonnet 5 | 78 | 68 | 10 | 32 | Rojo |
 | S5 | | | | | | | |
 | S6 | 2026-09-24 | Opus 5.5 | 65 | 60 | 5 | 40 | Verde |
-| S6b | 2026-09-24 | Opus 5.5 | 60 | | | | |
-| S7 | | | | | | | |
+| S6b | 2026-09-24 | Opus 5.5 | 60 | 58 | 2 | 42 | Verde |
+| S7 | 2026-09-27 | Opus 5.5 | 58 | | | | |
 | S8 | | | | | | | |
 | S9 | | | | | | | |
 | S10 | | | | | | | |
@@ -155,6 +155,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S15 | | | | | | | |
 
 **Semáforo de S6:** con el reparto tras S4, la meta acumulada es 32 (gastado hasta S4) + 7 (S3) + 6,50 (S6) = 45,50; lo gastado es 40 → **Verde**. (S6b no estaba en el reparto: sale de la Reserva.)
+
+**Semáforo de S6b:** costó 2 (de la Reserva, que queda en 8). Acumulado 42 contra una meta de 45,50 → **Verde**.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -171,7 +173,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S5 | Eliminada (música → S13; táctil recortado) | | |
 | S6 | Hecha | rama `claude/eloquent-fermi-bek28y` | Nivel 1 Paraguarí (ASCII), `teju_i` y `mbopi`, estalactitas, `Breakable` (liana y roca agrietada), base de jefes (`BossBrain`, `Boss`, `BossArena`, `LiberationSequence`, barra), Teju Jagua completo, tajo cargado. Build, tests y smoke OK |
 | S6b | Hecha | rama `claude/practical-curie-03v7dy` | Kerana con doble detalle: lienzo 1280 × 720 con zoom 2 (`setupView`), `detail` en el pipeline, Kerana a 128 × 128 con detail 2. Jugabilidad sin cambios. Build, tests y smoke OK |
-| S7 | Pendiente | | |
+| S7 | Hecha | rama `claude/laughing-newton-nqj2z9` | Nivel 2 Ñeembucú (ASCII), camalotes (`Sinking`), agua baja (`ShallowWater`), `jakare` (Lurker), `nakurutu` (Diver), `mboi` (Walker), Mbói Tu'i con 3 fases, don +1 corazón. Build, tests y smoke OK |
 | S8 | Pendiente | | |
 | S9 | Pendiente | | |
 | S10 | Pendiente | | |
@@ -391,7 +393,19 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 
 **Criterios:** como en S6, para el nivel 2.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S7 → S8):**
+- **Mapa:** `tools/levels/l2.txt` (280 × 24) → `map_l2`. Superficie en la fila 17; `~` = agua profunda (devuelve al último suelo firme con 1 de daño, como antes). A: orilla (x 0–59) con dos cadenas de camalotes; pluma 1 sobre el último camalote de la segunda cadena. B: juncales (x 60–139) con juncos `=`; pluma 2 en un junco bajo junto a un jakare. Checkpoint 1 en x 120. C: noche (x 140–219), ñakurutu en postes, Luz de Arasy antes de la cadena más larga (x 176–199); pluma 3 en una repisa a 8 tiles de un escalón alto (x 216, pide el paso de la siesta: **inalcanzable hasta S9**, a propósito). Antesala x 220–239. Arena x 240–279: islotes A (240–247), B (253–260) y C (266–273), camalotes entre ellos y laguna a la derecha.
+- **Nuevo en el ASCII:** `S` = camalote (los `S` seguidos forman un objeto `Sinking` y llevan agua debajo). Agua baja: `rect ShallowWater` (una fila sobre el suelo). El parser tiene test.
+- **Camalotes:** `SinkingMotor` (lógica pura, con tests) + `entities/hazards/Sinking.ts` (cuerpo estático de un solo sentido; el dibujo tiembla y baja, el cuerpo no). Tiempos en `GAMEPLAY.water` (1,2 s y 3 s según el GDD).
+- **Agua baja:** `PlayerMotor.speedMultiplier` (lo fija `LevelScene` en cada frame; × 0,6) y salpicaduras. **Empuje:** `PlayerMotor.push(vx, ms)` (lo usa el graznido); sirve para el viento de S8 (`WindZone`).
+- **Enemigos:** `Lurker` (`LurkerMotor` con tests: oculto → burbujas → afuera → cooldown; solo se lo golpea afuera) y `Diver` (poste → aviso → picada hacia donde estaba Kerana → vuelve; en S8 sirve tal cual para `karakara`). `EnemyBase.collidesWithGround` reemplaza el chequeo por arquetipo.
+- **Mbói Tu'i** (`bosses/MboiTui.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.mboiTui`): 12 de vida (3 fases de 4). Picotazo (burbujas 1 s en uno de 3 puntos → arco hacia Kerana → pico clavado 1,5 s), graznido (erizado 0,8 s → 2 anillos que **empujan sin dañar** → cae agotado hacia Kerana 1 s), escupitajo (cuello hinchado 0,6 s → 3 bolas en arco, sin ventana). Fase 3: se enrosca en el islote central, picotazo largo desde ahí, graznido doble, camalotes de la arena en ciclo automático desfasado y flores (`yvoty`) que curan 1 (máx. 2 a la vez). Los puntos de emergencia están en tiles desde el borde de la arena (`emergeTiles`, `coilTile`): si se cambia la arena en `l2.txt`, ajustarlos.
+- **`BossContext`** suma `pushPlayer`, `setArenaPlatformsCycling` y `spawnHealFlower` (Teju Jagua no los usa).
+- **Don:** +1 corazón ya lo aplicaba `SaveManager.completeLevel`; el smoke comprueba que queda en 5.
+- **Smoke:** suma `?level=2&boss=1&god=1`: antesala, cierre de la arena, ataques, fase 3 forzada (ciclo de camalotes y flores) y liberación con guardado.
+- **Sin probar a mano (Jose):** si las cadenas de camalotes se cruzan cómodas (huecos de 2 tiles), el alcance del tajo al jakare desde la orilla, si los anillos se saltan bien y si el picotazo largo de la fase 3 es justo. Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l2.txt` (+ `npm run maps`).
+- **No hecho (anotado):** el jefe es placeholder por código (cabeza de loro, cuello y anillos); el cielo del atardecer que se vuelve noche y las ranas que se callan van con S13 (fondos y música). `mboi` es Walker simple (el colgante es de N5).
+- **Assets faltantes:** cabeza y cuerpo de Mbói Tu'i, sprites de `jakare`, `nakurutu` y `mboi`, camalote, flor `yvoty`, tileset real de `estero`.
 
 ### S8: Nivel 3 Misiones + Moñái
 **Lee:** GDD §6.3, §4.8 (hipnosis, viento) y §5.3 (nandu, karakara).

@@ -123,6 +123,41 @@ async function main() {
     check(bstate !== 'waiting', `Teju Jagua ataca (estado ${bstate})`);
     await bossPage.close();
 
+    // 1c) Nivel 2: el mapa carga, ?boss=1 lleva a la antesala y Mbói Tu'i ataca.
+    const l2Page = await open('/?debug=1&level=2&boss=1&god=1');
+    await l2Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l2x = await l2Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(l2x > 220 * TILE && l2x < 240 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
+    await l2Page.keyboard.down('ArrowRight');
+    await sleep(1900); // hasta el islote A, sin llegar al agua
+    await l2Page.keyboard.up('ArrowRight');
+    check(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), "nivel 2: la arena de Mbói Tu'i se cierra");
+    await sleep(6000);
+    await l2Page.screenshot({ path: join(SHOTS, 'boss-l2.png') });
+    const l2state = await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(l2state !== 'waiting', `Mbói Tu'i ataca (estado ${l2state})`);
+    // Fase 3 forzada: enroscado, camalotes que van y vienen y flores que curan (sin errores en consola).
+    const phase3 = await l2Page.evaluate(async () => {
+      const boss = window.__KERANA_DEBUG__.scene.boss;
+      boss.brain.damage(8);
+      boss.onPhaseChanged(boss.brain.phase);
+      await new Promise((r) => setTimeout(r, 5000));
+      const scene = window.__KERANA_DEBUG__.scene;
+      return { phase: boss.brain.phase, flowers: scene.pickups.filter((p) => p.kind === 'yvoty').length, cycling: scene.sinkers.some((s) => s.motor.autoCycle) };
+    });
+    check(phase3.phase === 2 && phase3.cycling && phase3.flowers > 0, `Mbói Tu'i fase 3: camalotes en ciclo y flores (${JSON.stringify(phase3)})`);
+    await l2Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l2Done = () => l2Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false);
+    for (let i = 0; i < 40 && !(await l2Done()); i++) {
+      await l2Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l2Done(), "Mbói Tu'i vencido → liberación → Nivel completado");
+    const l2save = await l2Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(l2save.freed?.includes('mboi_tui') && l2save.maxHearts === 5, "guardado: Mbói Tu'i liberado y +1 corazón (5)");
+    await l2Page.close();
+
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');
     await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });

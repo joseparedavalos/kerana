@@ -9,6 +9,7 @@ export class Flyer extends EnemyBase {
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, def, facing);
     this.body.setAllowGravity(false);
+    this.collidesWithGround = false;
   }
 
   updateBehavior(deltaMs: number): void {

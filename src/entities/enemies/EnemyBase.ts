@@ -50,6 +50,8 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
   facing: 1 | -1;
   /** Parpadeando en blanco tras un golpe: los arquetipos no deben tocar el tinte mientras dure. */
   flashing = false;
+  /** Choca con el suelo y las plataformas (los voladores y los que viven en el agua, no). */
+  collidesWithGround = true;
   readonly spawnX: number;
   readonly spawnY: number;
 

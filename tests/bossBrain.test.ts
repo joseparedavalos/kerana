@@ -133,3 +133,25 @@ describe('BossBrain: ciclo aviso → activo → recuperación', () => {
     }
   });
 });
+
+describe("Mbói Tu'i (datos, GDD §6.2)", () => {
+  const MBOI = BOSSES.mboi_tui as BossDef;
+
+  it('12 golpes en 3 fases de 4', () => {
+    expect(MBOI.hp).toBe(12);
+    expect(phaseIndexFor(12, MBOI.hp, MBOI.phases)).toBe(0);
+    expect(phaseIndexFor(9, MBOI.hp, MBOI.phases)).toBe(0);
+    expect(phaseIndexFor(8, MBOI.hp, MBOI.phases)).toBe(1);
+    expect(phaseIndexFor(5, MBOI.hp, MBOI.phases)).toBe(1);
+    expect(phaseIndexFor(4, MBOI.hp, MBOI.phases)).toBe(2);
+    expect(phaseIndexFor(1, MBOI.hp, MBOI.phases)).toBe(2);
+  });
+
+  it('el graznido y el escupitajo llegan en la fase 2; el escupitajo no tiene ventana', () => {
+    const ids = (i: number) => MBOI.phases[i].attacks.map((a) => a.id);
+    expect(ids(0)).toEqual(['peck']);
+    expect(ids(1)).toEqual(expect.arrayContaining(['peck', 'squawk', 'spit']));
+    expect(MBOI.phases[1].attacks.find((a) => a.id === 'spit')?.punishable).toBe(false);
+    expect(ids(2)).toEqual(expect.arrayContaining(['peck', 'squawk_double']));
+  });
+});

@@ -18,6 +18,12 @@ export interface BossContext {
   playerY(): number;
   /** Deja caer una estalactita de un solo uso en x (con su aviso). */
   spawnFalling(x: number): void;
+  /** Empuja a Kerana horizontalmente (px/s) durante `ms` (graznido de Mbói Tu'i). */
+  pushPlayer(vx: number, ms: number): void;
+  /** Los camalotes de la arena se hunden y reaparecen solos (fase 3 de Mbói Tu'i). */
+  setArenaPlatformsCycling(on: boolean): void;
+  /** Deja caer una flor que cura en x (fase 3 de Mbói Tu'i). */
+  spawnHealFlower(x: number): void;
   sfx(key: SfxKey): void;
   shake(ms: number, intensity: number): void;
   /** Modo asistido: avisos más largos (GDD §4.7). */
