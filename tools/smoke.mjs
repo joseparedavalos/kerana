@@ -129,8 +129,9 @@ async function main() {
     await sleep(500);
     const l2x = await l2Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
     check(l2x > 220 * TILE && l2x < 240 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
+    // Camina hasta que se cierre la arena (islote A), sin llegar al agua: con tiempo fijo fallaba en máquinas lentas.
     await l2Page.keyboard.down('ArrowRight');
-    await sleep(1900); // hasta el islote A, sin llegar al agua
+    for (let i = 0; i < 30 && !(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)); i++) await sleep(100);
     await l2Page.keyboard.up('ArrowRight');
     check(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), "nivel 2: la arena de Mbói Tu'i se cierra");
     await sleep(6000);
@@ -148,7 +149,8 @@ async function main() {
     });
     check(phase3.phase === 2 && phase3.cycling && phase3.flowers > 0, `Mbói Tu'i fase 3: camalotes en ciclo y flores (${JSON.stringify(phase3)})`);
     await l2Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
-    const l2Done = () => l2Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false);
+    // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
+    const l2Done = () => l2Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < 40 && !(await l2Done()); i++) {
       await l2Page.keyboard.press('Space');
       await sleep(300);
@@ -180,8 +182,9 @@ async function main() {
     });
     check(l3phase === 2, `Moñái fase 3 sin errores (fase ${l3phase})`);
     await l3Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
-    const l3Done = () => l3Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false);
-    for (let i = 0; i < 40 && !(await l3Done()); i++) {
+    // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
+    const l3Done = () => l3Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < 60 && !(await l3Done()); i++) {
       await l3Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -189,6 +192,50 @@ async function main() {
     const l3save = await l3Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(l3save.freed?.includes('monai') && l3save.gifts?.includes('double_jump'), 'guardado: Moñái liberado y salto doble');
     await l3Page.close();
+
+    // 1e) Nivel 4: antesala, cierre de la arena de Jasy Jatere, fase invisible, carrera por el bastón y dash guardado.
+    const l4Page = await open('/?debug=1&level=4&boss=1&god=1');
+    await l4Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l4x = await l4Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(l4x > 210 * TILE && l4x < 230 * TILE, `nivel 4 con boss=1 empieza en la antesala (x ${Math.round(l4x / TILE)} tiles)`);
+    await l4Page.keyboard.down('ArrowRight');
+    await sleep(2600);
+    await l4Page.keyboard.up('ArrowRight');
+    check(await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 4: la arena de Jasy Jatere se cierra');
+    await sleep(5000);
+    await l4Page.screenshot({ path: join(SHOTS, 'boss-l4.png') });
+    const l4state = await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(l4state !== 'waiting', `Jasy Jatere ataca (estado ${l4state})`);
+    const l4phase = await l4Page.evaluate(async () => {
+      const boss = window.__KERANA_DEBUG__.scene.boss;
+      boss.brain.damage(4);
+      await new Promise((r) => setTimeout(r, 6000));
+      return { phase: boss.brain.phase, alpha: boss.body.alpha };
+    });
+    check(l4phase.phase === 1 && l4phase.alpha < 0.5, `Jasy Jatere invisible en la fase 2 (fase ${l4phase.phase}, alpha ${l4phase.alpha})`);
+    // Carrera: el golpe final suelta el bastón; Kerana lo toca y gana.
+    const l4race = await l4Page.evaluate(async () => {
+      const boss = window.__KERANA_DEBUG__.scene.boss;
+      boss.brain.damage(boss.brain.hp - 1);
+      boss.startRace();
+      const started = boss.race.active;
+      await new Promise((r) => setTimeout(r, 1200));
+      window.__KERANA_DEBUG__.player.body.reset(boss.staff.x, boss.staff.y + 20);
+      await new Promise((r) => setTimeout(r, 300));
+      return { started, defeated: boss.brain.state === 'defeated' };
+    });
+    check(l4race.started && l4race.defeated, `carrera por el bastón: Kerana lo toca y gana (${JSON.stringify(l4race)})`);
+    // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
+    const l4Done = () => l4Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < 60 && !(await l4Done()); i++) {
+      await l4Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l4Done(), 'Jasy Jatere vencido → liberación → Nivel completado');
+    const l4save = await l4Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(l4save.freed?.includes('jasy_jatere') && l4save.gifts?.includes('dash'), 'guardado: Jasy Jatere liberado y Paso de la siesta');
+    await l4Page.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');

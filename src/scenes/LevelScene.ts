@@ -7,9 +7,10 @@ import { liberationDialogue } from '../data/dialogues';
 import { getLevel } from '../data/levels';
 import type { BossId, LevelDef, LevelId } from '../data/types';
 import { createBoss, type Boss, type BossContext } from '../entities/bosses';
+import { panFor } from '../entities/bosses/jasyLogic';
 import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
-import { FallingHazard } from '../entities/hazards/FallingHazard';
+import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
 import { Player } from '../entities/Player';
@@ -58,6 +59,7 @@ interface Breakable {
 
 const FX_PARTICLE = 'fx_particle';
 const SHALLOW_COLOR = 0x5aa6b8;
+const FOG_COLOR = 0xc8b8e6;
 const LIANA_COLOR = 0x3f7a3a;
 const SIGN_RANGE = 20;
 const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -115,6 +117,12 @@ export class LevelScene extends Phaser.Scene {
   private windZones: WindZone[] = [];
   /** Espiral sobre Kerana mientras está hipnotizada (GDD §4.8). */
   private hypnosisIcon?: Phaser.GameObjects.Image;
+  /** Niebla del sueño (GDD §4.8, §6.4). */
+  private fogZones: Phaser.Geom.Rectangle[] = [];
+  /** "Zzz" sobre Kerana: bostezo (tenue) y dormida. */
+  private sleepIcon?: Phaser.GameObjects.Text;
+  /** Enjambres que llamó el jefe (se limpian al reiniciar la pelea). */
+  private bossSwarms: EnemyBase[] = [];
   private arenaRect?: Phaser.Geom.Rectangle;
   private arenaBossId?: BossId;
   private arena?: BossArena;
@@ -145,6 +153,9 @@ export class LevelScene extends Phaser.Scene {
     this.shallowZones = [];
     this.windZones = [];
     this.hypnosisIcon = undefined;
+    this.fogZones = [];
+    this.sleepIcon = undefined;
+    this.bossSwarms = [];
     this.arenaRect = undefined;
     this.arenaBossId = undefined;
     this.arena = undefined;
@@ -197,6 +208,7 @@ export class LevelScene extends Phaser.Scene {
       maxHearts: save.maxHearts,
       chargedSlash: DEBUG.giftsAll || save.gifts.includes('charged_slash'),
       doubleJump: DEBUG.giftsAll || save.gifts.includes('double_jump'),
+      dash: DEBUG.giftsAll || save.gifts.includes('dash'),
       god: DEBUG.god,
     });
     this.safeGround.copy(spawn);
@@ -204,6 +216,11 @@ export class LevelScene extends Phaser.Scene {
     ensurePlaceholder(this, 'mainumby_placeholder', 8, 8);
     this.mainumby = this.add.image(spawn.x, spawn.y - 40, 'mainumby_placeholder').setDepth(15);
     this.hypnosisIcon = this.add.image(spawn.x, spawn.y, this.makeSpiralTexture()).setDepth(16).setVisible(false);
+    this.sleepIcon = this.add
+      .text(spawn.x, spawn.y, t('status.zzz'), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' })
+      .setOrigin(0.5, 1)
+      .setDepth(16)
+      .setVisible(false);
     const { Ground, Platforms, Foreground } = this.layers;
     if (Ground) {
       this.physics.add.collider(this.player, Ground);
@@ -288,12 +305,13 @@ export class LevelScene extends Phaser.Scene {
 
     if (body.top > this.map.heightInPixels + GAMEPLAY.respawn.pitMargin) this.respawn('pit');
     else if (this.tileAt('Water', body.center.x, body.center.y)) this.respawn('water');
-    else if (this.touchesHazard(body)) this.respawn('hazard');
+    else if (!this.player.isIntangible && this.touchesHazard(body)) this.respawn('hazard');
     else this.trackSafeGround(body);
 
     this.updateWater(delta, body);
     this.updateWind(delta, body);
     this.updateHypnosisIcon(delta);
+    this.updateSleep(body);
     this.updateFallingHazards(delta);
     this.updateBreakables();
     this.updateBoss(delta);
@@ -347,7 +365,12 @@ export class LevelScene extends Phaser.Scene {
       },
       setArenaPlatformsCycling: (on) => this.setArenaPlatformsCycling(on),
       spawnHealFlower: (x) => this.spawnHealFlower(x, rect.top),
+      spawnSwarm: (x, y) => this.spawnBossSwarm(x, y),
       sfx: (key: SfxKey) => AudioManager.play(key),
+      sfxAt: (key: SfxKey, x: number) => {
+        const view = this.cameras.main.worldView;
+        AudioManager.play(key, panFor(x, view.centerX, view.width / 2));
+      },
       shake: (ms, intensity) => this.shake(ms, intensity),
       assist: SaveManager.current.settings.assist,
     };
@@ -378,6 +401,8 @@ export class LevelScene extends Phaser.Scene {
       }
     }
     if (boss.hurtsPlayer(this.playerRect)) this.hurtPlayer(boss.markPosition(this.tmpVec).x);
+    // Vencido sin golpe final (Kerana ganó la carrera por el bastón de Jasy Jatere).
+    if (this.fighting && boss.brain.state === 'defeated') this.startLiberation();
   }
 
   private readonly tmpVec = new Phaser.Math.Vector2();
@@ -398,6 +423,7 @@ export class LevelScene extends Phaser.Scene {
     this.arena?.unlock(this.cameras.main, this.map.widthInPixels, this.map.heightInPixels);
     this.clearOneShotHazards();
     this.clearFlowers();
+    this.clearBossSwarms();
   }
 
   private startLiberation(): void {
@@ -406,6 +432,7 @@ export class LevelScene extends Phaser.Scene {
     this.fighting = false;
     this.clearOneShotHazards();
     this.clearFlowers();
+    this.clearBossSwarms();
     EventBus.emit(GameEvents.bossBarHide);
     const gift = this.def.gift;
     const giftText = gift ? `${t('liberation.gift', { gift: t(`gift.${gift}`) })}\n${t(`gift_hint.${gift}`)}` : null;
@@ -451,10 +478,11 @@ export class LevelScene extends Phaser.Scene {
 
   // ── Estalactitas y rocas ──────────────────────────────────────────────────
 
-  private spawnFalling(x: number, ceilingY: number, oneShot: boolean, warnMs?: number): void {
+  private spawnFalling(x: number, ceilingY: number, oneShot: boolean, warnMs?: number, kind: FallingKind = 'stalactite'): void {
     const groundY = this.surfaceBelow(x, ceilingY) ?? this.map.heightInPixels;
+    const onWarn = kind === 'teja' ? () => AudioManager.play('creak') : undefined;
     this.fallingHazards.push(
-      new FallingHazard(this, x, ceilingY, groundY, this.dust, { oneShot, warnMs, onShatter: () => AudioManager.play('rockBreak') }),
+      new FallingHazard(this, x, ceilingY, groundY, this.dust, { oneShot, warnMs, kind, onWarn, onShatter: () => AudioManager.play('rockBreak') }),
     );
   }
 
@@ -541,6 +569,65 @@ export class LevelScene extends Phaser.Scene {
     g.generateTexture(key, 20, 20);
     g.destroy();
     return key;
+  }
+
+  // ── Sueño de siesta y abejas (GDD §4.8, §6.4) ─────────────────────────────
+
+  /** Niebla del sueño: quieta adentro, Kerana bosteza y se duerme. */
+  private updateSleep(body: Phaser.Physics.Arcade.Body): void {
+    this.player.inSleepFog = this.fogZones.some((z) => z.contains(body.center.x, body.center.y));
+    const event = this.player.sleepEvent;
+    if (event === 'yawn') AudioManager.play('yawn');
+    const icon = this.sleepIcon;
+    if (!icon) return;
+    const status = this.player.status;
+    const on = status.asleep || status.drowsy;
+    icon.setVisible(on);
+    if (!on) return;
+    const bob = Math.sin(this.time.now / 250) * 2;
+    icon.setPosition(this.player.x + 6, this.player.y - GAMEPLAY.sleep.iconOffsetY + bob).setAlpha(status.asleep ? 1 : 0.45);
+  }
+
+  /** Nubes lilas que van y vienen dentro de la zona (placeholder de la niebla). */
+  private addFog(zone: Phaser.Geom.Rectangle): void {
+    this.fogZones.push(zone);
+    const tile = this.map.tileWidth;
+    for (let x = zone.left; x < zone.right; x += tile * 2) {
+      for (let y = zone.top + tile / 2; y < zone.bottom; y += tile * 1.5) {
+        const puff = this.add.ellipse(x + tile, y, tile * 3, tile * 1.6, FOG_COLOR, GAMEPLAY.sleep.fogAlpha).setDepth(11);
+        this.tweens.add({
+          targets: puff,
+          x: x + tile + Phaser.Math.Between(-6, 6),
+          alpha: GAMEPLAY.sleep.fogAlpha * 0.5,
+          duration: GAMEPLAY.sleep.fogDriftMs + Phaser.Math.Between(0, 800),
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      }
+    }
+  }
+
+  /** Enjambre que llama Jasy Jatere: persigue enseguida y se va al dispersarse. */
+  private spawnBossSwarm(x: number, y: number): void {
+    if (!this.fighting) return;
+    this.pruneEnemies();
+    this.bossSwarms = this.bossSwarms.filter((e) => e.active && !e.purified);
+    if (this.bossSwarms.length >= GAMEPLAY.jasyJatere.maxSwarms) return;
+    const swarm = createEnemy(this, 'abejas', x, y, -1, true);
+    // En el lugar: el overlap guarda la referencia a este arreglo.
+    this.enemies.push(swarm);
+    this.bossSwarms.push(swarm);
+  }
+
+  private clearBossSwarms(): void {
+    for (const swarm of this.bossSwarms) if (swarm.active && !swarm.purified) swarm.purify();
+    this.bossSwarms = [];
+  }
+
+  /** Quita del arreglo los enemigos ya destruidos (en el lugar: los overlaps guardan la referencia). */
+  private pruneEnemies(): void {
+    for (let i = this.enemies.length - 1; i >= 0; i--) if (!this.enemies[i].active) this.enemies.splice(i, 1);
   }
 
   /** Fase 3 de Mbói Tu'i: los camalotes de la arena se hunden y reaparecen solos, desfasados. */
@@ -745,7 +832,8 @@ export class LevelScene extends Phaser.Scene {
           // El punto marca el tile que cuelga del techo: la estalactita empieza en su borde superior.
           const tile = this.map.tileHeight;
           const warnMs = Number(objectProp(obj, 'delayMs') ?? GAMEPLAY.fallingHazard.warnMs);
-          this.spawnFalling(x, y - tile, false, warnMs);
+          const kind: FallingKind = objectProp(obj, 'kind') === 'teja' ? 'teja' : 'stalactite';
+          this.spawnFalling(x, y - tile, false, warnMs, kind);
           break;
         }
         case 'BossArena': {
@@ -774,6 +862,9 @@ export class LevelScene extends Phaser.Scene {
           this.windZones.push(new WindZone(this, zone, dir, speed, offsetMs, (phase, z) => phase === 'gust' && this.onWindPhase(z)));
           break;
         }
+        case 'SleepFog':
+          this.addFog(new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)));
+          break;
         case 'LevelExit': {
           const w = Number(obj.width ?? 0);
           const h = Number(obj.height ?? 0);
@@ -828,7 +919,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private respawn(reason: RespawnReason): void {
-    const applied = this.player.takeDamage(GAMEPLAY.damage[reason], this.player.x);
+    const applied = this.player.takeDamage(GAMEPLAY.damage[reason], this.player.x, reason !== 'hazard');
     if (applied) {
       AudioManager.play('hurt');
       this.hitStop(GAMEPLAY.hitStop.onHurtMs);
@@ -848,7 +939,7 @@ export class LevelScene extends Phaser.Scene {
 
   private updateEnemies(deltaMs: number): void {
     for (const enemy of this.enemies) {
-      if (enemy.purified) continue;
+      if (enemy.purified || !enemy.active) continue;
       enemy.updateBehavior(deltaMs, this.player.x - enemy.x, this.player.y - enemy.y);
     }
   }
@@ -870,7 +961,7 @@ export class LevelScene extends Phaser.Scene {
       AudioManager.play('purify');
       return;
     }
-    this.hurtPlayer(enemy.x);
+    if (enemy.touchHurts) this.hurtPlayer(enemy.x);
   }
 
   private onPickupOverlap(_playerObj: unknown, pickupObj: unknown): void {
@@ -930,6 +1021,7 @@ export class LevelScene extends Phaser.Scene {
     const state = this.player.motor.state;
     if (state === this.lastPlayerState) return;
     if (state === 'jump') AudioManager.play('jump');
+    else if (state === 'dash') AudioManager.play('dash');
     else if ((state === 'idle' || state === 'run') && this.lastPlayerState === 'fall') AudioManager.play('land');
     else if (state === 'attack') AudioManager.play(this.player.motor.chargedSwing ? 'chargedSlash' : 'slash');
     this.lastPlayerState = state;
