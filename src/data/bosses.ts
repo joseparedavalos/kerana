@@ -40,6 +40,9 @@ const MBOI_HP = 12;
 /** Moñái: 12 golpes, 3 fases de 4 (GDD §6.3). */
 const MONAI_HP = 12;
 
+/** Jasy Jatere: 9 golpes, 3 fases de 3 (GDD §6.4). El noveno no lo vence: suelta el bastón y hay carrera. */
+const JASY_HP = 9;
+
 export const BOSSES: Partial<Record<BossId, BossDef>> = {
   teju_jagua: {
     id: 'teju_jagua',
@@ -139,6 +142,39 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
           { id: 'descent', weight: 1, telegraphMs: 750, activeMs: 320, recoverMs: 1300 },
           { id: 'pulse', weight: 1, telegraphMs: 1000, activeMs: 700, recoverMs: 1000 },
           { id: 'steal', weight: 2, telegraphMs: 700, activeMs: 550, recoverMs: 1200 },
+        ],
+      },
+    ],
+  },
+  jasy_jatere: {
+    id: 'jasy_jatere',
+    nameKey: 'boss.jasy_jatere.name',
+    epithetKey: 'boss.jasy_jatere.epithet',
+    hp: JASY_HP,
+    phases: [
+      // Fase 1 (visible): salta entre techos y suelo; levanta el bastón 0,6 s y lanza 3 chispas; se burla 1,2 s.
+      {
+        untilHpRatio: 6 / JASY_HP,
+        idleMs: 900,
+        attacks: [{ id: 'sparks', weight: 1, telegraphMs: 600, activeMs: 400, recoverMs: 1200 }],
+      },
+      // Fase 2 (invisible): emboscada tras el destello del bastón (0,4 s) y enjambres con zumbido.
+      {
+        untilHpRatio: 3 / JASY_HP,
+        idleMs: 1000,
+        attacks: [
+          { id: 'ambush', weight: 2, telegraphMs: 400, activeMs: 450, recoverMs: 1300 },
+          { id: 'swarm', weight: 1, telegraphMs: 700, activeMs: 200, recoverMs: 500, punishable: false },
+        ],
+      },
+      // Fase 3 (invisible, más rápido): + chispas. El golpe final suelta el bastón (carrera).
+      {
+        untilHpRatio: 0,
+        idleMs: 800,
+        attacks: [
+          { id: 'ambush', weight: 2, telegraphMs: 400, activeMs: 400, recoverMs: 1200 },
+          { id: 'swarm', weight: 1, telegraphMs: 700, activeMs: 200, recoverMs: 500, punishable: false },
+          { id: 'sparks', weight: 1, telegraphMs: 500, activeMs: 400, recoverMs: 1000 },
         ],
       },
     ],

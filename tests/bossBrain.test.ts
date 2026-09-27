@@ -127,9 +127,10 @@ describe('BossBrain: ciclo aviso → activo → recuperación', () => {
     expect(brain.msLeft).toBeCloseTo(t!.attack!.telegraphMs * 1.3);
   });
 
-  it('todos los ataques tienen aviso de al menos 0,5 s (se pueden evitar)', () => {
+  it('todos los ataques tienen aviso de al menos 0,4 s (se pueden evitar)', () => {
+    // El más corto es el destello del bastón de Jasy Jatere (0,4 s, GDD §6.4); el resto, 0,5 s o más.
     for (const def of Object.values(BOSSES)) {
-      for (const phase of def!.phases) for (const a of phase.attacks) expect(a.telegraphMs).toBeGreaterThanOrEqual(500);
+      for (const phase of def!.phases) for (const a of phase.attacks) expect(a.telegraphMs).toBeGreaterThanOrEqual(400);
     }
   });
 });
