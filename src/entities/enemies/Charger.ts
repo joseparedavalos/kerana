@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { EnemyDef } from '../../data/enemies';
+import { AudioManager } from '../../systems/AudioManager';
 import { ChargerMotor } from './ChargerMotor';
 import { EnemyBase } from './EnemyBase';
 
@@ -25,7 +26,9 @@ export class Charger extends EnemyBase {
     const sameFloor = Math.abs(dy) < this.def.height * 1.5;
     const distance = sameFloor ? Math.abs(dx) : Infinity;
     const dir: 1 | -1 = dx >= 0 ? 1 : -1;
+    const before = this.motor.state;
     const out = this.motor.step(deltaMs, distance, dir);
+    if (out.state === 'telegraph' && before !== 'telegraph' && this.def.warnSfx) AudioManager.play(this.def.warnSfx);
     if (out.vx !== 0) this.facing = out.vx > 0 ? 1 : -1;
     this.body.setVelocityX(out.vx);
     if (!this.flashing) {

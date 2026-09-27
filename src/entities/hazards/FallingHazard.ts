@@ -3,6 +3,9 @@ import { GAMEPLAY } from '../../config/gameplay';
 
 const CFG = GAMEPLAY.fallingHazard;
 const TEXTURE = 'hazard_stalactite';
+const TEJA_TEXTURE = 'hazard_teja';
+
+export type FallingKind = 'stalactite' | 'teja';
 
 export type FallingState = 'hanging' | 'warning' | 'falling' | 'broken' | 'gone';
 
@@ -13,10 +16,23 @@ export interface FallingHazardOptions {
   oneShot?: boolean;
   /** Al romperse contra el suelo (sonido). */
   onShatter?: () => void;
+  /** Al empezar el aviso (el crujido de la teja). */
+  onWarn?: () => void;
+  /** Estalactita (N1) o teja (N4). */
+  kind?: FallingKind;
 }
 
-/** Textura provisional: triángulo de piedra apuntando hacia abajo. */
+/** Texturas provisionales: triángulo de piedra apuntando hacia abajo y teja colonial (media caña roja). */
 function ensureTexture(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(TEJA_TEXTURE)) {
+    const tw = CFG.tejaWidth;
+    const th = CFG.tejaHeight;
+    const t = scene.make.graphics({ x: 0, y: 0 }, false);
+    t.fillStyle(0xa5503a).fillRoundedRect(0, 0, tw, th, 3);
+    t.fillStyle(0xc9704f).fillRect(2, 1, tw - 4, 2);
+    t.generateTexture(TEJA_TEXTURE, tw, th);
+    t.destroy();
+  }
   if (scene.textures.exists(TEXTURE)) return;
   const w = CFG.width;
   const h = CFG.height;
@@ -27,8 +43,8 @@ function ensureTexture(scene: Phaser.Scene): void {
   g.destroy();
 }
 
-// Estalactita (GDD §6.1): cuelga del techo; cuando Kerana pasa debajo tiembla y suelta polvo
-// (aviso) y después cae. Se rompe contra el suelo y vuelve a crecer al rato.
+// Estalactita (GDD §6.1) o teja (§6.4): cuelga del techo o del alero; cuando Kerana pasa debajo tiembla y
+// suelta polvo (aviso) y después cae. Se rompe contra el suelo y vuelve a aparecer al rato.
 export class FallingHazard {
   state: FallingState = 'hanging';
   readonly sprite: Phaser.GameObjects.Image;
@@ -36,6 +52,9 @@ export class FallingHazard {
   private readonly warnMs: number;
   private readonly oneShot: boolean;
   private readonly onShatter?: () => void;
+  private readonly onWarn?: () => void;
+  private readonly w: number;
+  private readonly h: number;
   private msLeft = 0;
   private vy = 0;
   private dustMs = 0;
@@ -53,8 +72,12 @@ export class FallingHazard {
     this.warnMs = opts.warnMs ?? CFG.warnMs;
     this.oneShot = opts.oneShot ?? false;
     this.onShatter = opts.onShatter;
-    this.sprite = scene.add.image(x, topY, TEXTURE).setOrigin(0.5, 0).setDepth(5);
-    this.shadow = scene.add.ellipse(x, groundY, CFG.width * 1.6, 4, 0x000000, 0.35).setDepth(4).setVisible(false);
+    this.onWarn = opts.onWarn;
+    const teja = opts.kind === 'teja';
+    this.w = teja ? CFG.tejaWidth : CFG.width;
+    this.h = teja ? CFG.tejaHeight : CFG.height;
+    this.sprite = scene.add.image(x, topY, teja ? TEJA_TEXTURE : TEXTURE).setOrigin(0.5, 0).setDepth(5);
+    this.shadow = scene.add.ellipse(x, groundY, this.w * 1.6, 4, 0x000000, 0.35).setDepth(4).setVisible(false);
     if (this.oneShot) this.startWarning();
   }
 
@@ -82,11 +105,11 @@ export class FallingHazard {
         const dt = deltaMs / 1000;
         this.vy = Math.min(CFG.maxFallSpeed, this.vy + CFG.gravity * dt);
         this.sprite.y += this.vy * dt;
-        if (this.sprite.y + CFG.height >= this.groundY) {
+        if (this.sprite.y + this.h >= this.groundY) {
           this.shatter();
           return false;
         }
-        this.rect.setTo(this.sprite.x - CFG.width / 2, this.sprite.y, CFG.width, CFG.height);
+        this.rect.setTo(this.sprite.x - this.w / 2, this.sprite.y, this.w, this.h);
         return Phaser.Geom.Rectangle.Overlaps(this.rect, playerRect);
       }
       case 'broken':
@@ -110,6 +133,7 @@ export class FallingHazard {
     this.msLeft = this.warnMs;
     this.dustMs = 0;
     this.shadow.setVisible(true);
+    this.onWarn?.();
   }
 
   private shatter(): void {
