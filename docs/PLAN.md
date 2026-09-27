@@ -144,7 +144,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S5 | | | | | | | |
 | S6 | 2026-09-24 | Opus 5.5 | 65 | 60 | 5 | 40 | Verde |
 | S6b | 2026-09-24 | Opus 5.5 | 60 | 58 | 2 | 42 | Verde |
-| S7 | 2026-09-27 | Opus 5.5 | 58 | | | | |
+| S7 | 2026-09-27 | Opus 5.5 | 58 | 53 | 5 | 47 | Verde |
 | S8 | | | | | | | |
 | S9 | | | | | | | |
 | S10 | | | | | | | |
@@ -157,6 +157,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S6:** con el reparto tras S4, la meta acumulada es 32 (gastado hasta S4) + 7 (S3) + 6,50 (S6) = 45,50; lo gastado es 40 → **Verde**. (S6b no estaba en el reparto: sale de la Reserva.)
 
 **Semáforo de S6b:** costó 2 (de la Reserva, que queda en 8). Acumulado 42 contra una meta de 45,50 → **Verde**.
+
+**Semáforo de S7:** meta acumulada 32 + 7 (S3) + 6,50 (S6) + 6,50 (S7) = 52; gastado 47 → **Verde**.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 

@@ -86,6 +86,7 @@ tests/                    Vitest
 - Tiled: tiles de 16 px, capas en CSV, **tilesets incrustados**, rutas de imagen relativas.
 - Capas: `Background`, `Ground`, `Platforms` (un solo sentido), `Hazards`, `Water`, `Foreground` y el grupo de objetos `Objects`.
 - La clase de un objeto puede venir en `type` o en `class`: lee ambos.
+- Nada que haya que saltar (postes, muros, escalones) puede medir más de 3 tiles, salvo que el nivel ofrezca otro camino: el salto llega a unos 4.
 - Si `levels.ts` dice `mapSource: 'tiled'`, el autor editó ese mapa en Tiled: **no lo regeneres desde el ASCII**.
 
 ## Assets
