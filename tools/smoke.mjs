@@ -158,6 +158,38 @@ async function main() {
     check(l2save.freed?.includes('mboi_tui') && l2save.maxHearts === 5, "guardado: Mbói Tu'i liberado y +1 corazón (5)");
     await l2Page.close();
 
+    // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.
+    const l3Page = await open('/?debug=1&level=3&boss=1&god=1');
+    await l3Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l3x = await l3Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(l3x > 230 * TILE && l3x < 260 * TILE, `nivel 3 con boss=1 empieza en la antesala (x ${Math.round(l3x / TILE)} tiles)`);
+    await l3Page.keyboard.down('ArrowRight');
+    await sleep(3400);
+    await l3Page.keyboard.up('ArrowRight');
+    check(await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 3: la arena de Moñái se cierra');
+    await sleep(6000);
+    await l3Page.screenshot({ path: join(SHOTS, 'boss-l3.png') });
+    const l3state = await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(l3state !== 'waiting', `Moñái ataca (estado ${l3state})`);
+    const l3phase = await l3Page.evaluate(async () => {
+      const boss = window.__KERANA_DEBUG__.scene.boss;
+      boss.brain.damage(8);
+      await new Promise((r) => setTimeout(r, 6000));
+      return boss.brain.phase;
+    });
+    check(l3phase === 2, `Moñái fase 3 sin errores (fase ${l3phase})`);
+    await l3Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l3Done = () => l3Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false);
+    for (let i = 0; i < 40 && !(await l3Done()); i++) {
+      await l3Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l3Done(), 'Moñái vencido → liberación → Nivel completado');
+    const l3save = await l3Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(l3save.freed?.includes('monai') && l3save.gifts?.includes('double_jump'), 'guardado: Moñái liberado y salto doble');
+    await l3Page.close();
+
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');
     await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });

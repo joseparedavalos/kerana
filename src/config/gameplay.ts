@@ -166,6 +166,60 @@ export const GAMEPLAY = {
   },
 
   /** Camalotes y agua (GDD §4.8, §6.2). */
+  monai: {
+    /** Árboles de la arena: centro del tronco en tiles desde el borde izquierdo (ver tools/levels/l3.txt). */
+    treeTiles: [8.5, 20.5, 32.5],
+    /** Altura de las copas sobre el suelo (tiles) y medio ancho del tronco (px). */
+    canopyTiles: 3,
+    trunkHalfWidth: 6,
+    headWidth: 26,
+    headHeight: 18,
+    /** Cuerpo de serpiente: segmentos, separación (px) y radio del primero. */
+    segments: 14,
+    segmentGap: 7,
+    segmentRadius: 7,
+    /** Escondido en la copa: cuánto asoma sobre ella (px). */
+    perchRise: 14,
+    /** La sombra sigue a Kerana hasta esta fracción del aviso y después queda fija. */
+    shadowTrackFraction: 0.7,
+    shadowWidth: 40,
+    /** Pulso de hipnosis: alcance (px, GDD §6.3), grosor del anillo que la toca (px) y separación del tronco. */
+    pulseRadius: 200,
+    pulseBand: 18,
+    pulseTrunkOffsetTiles: 1.5,
+    /** Robo: la embestida sigue de largo después de Kerana (px). */
+    stealOvershoot: 40,
+    /** Cola (hitbox en la ventana del robo). */
+    tailWidth: 22,
+    tailHeight: 16,
+    /** Vuelo entre copas (ms). */
+    flyMs: 500,
+  },
+  wind: {
+    /** Ciclo de cada zona (ms): calma, aviso (pasto inclinado y partículas, GDD §4.8) y ráfaga. */
+    calmMs: 2200,
+    warnMs: 1000,
+    gustMs: 2000,
+    /** Empuje por defecto (px/s) que se suma a la carrera (runSpeed es 150). */
+    speed: 90,
+    /** Pasto: separación y alto de las matas (px); inclinación en el aviso y en la ráfaga (grados). */
+    grassSpacing: 12,
+    grassHeight: 7,
+    warnLeanDeg: 15,
+    gustLeanDeg: 40,
+    /** Partículas de viento: velocidad (px/s), vida (ms) y probabilidad por frame. */
+    streakSpeed: 220,
+    streakLifeMs: 500,
+    streakChanceWarn: 0.15,
+    streakChanceGust: 0.5,
+  },
+  hypnosis: {
+    /** Controles invertidos (ms), GDD §4.8. */
+    durationMs: 3000,
+    /** Icono de espiral sobre Kerana: altura (px) y giro (grados por segundo). */
+    iconOffsetY: 52,
+    iconSpinDegPerS: 360,
+  },
   water: {
     /** Velocidad de carrera en agua baja (× runSpeed). */
     shallowSpeedFactor: 0.6,

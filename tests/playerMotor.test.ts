@@ -307,3 +307,45 @@ describe('PlayerMotor: agua baja y empuje (S7)', () => {
     expect(m.step(16, right, { ...ground, vx: 0 }).vx).toBeGreaterThan(0);
   });
 });
+
+describe('PlayerMotor: salto doble y viento (S8)', () => {
+  it('sin el don no hay salto en el aire', () => {
+    const s = new Sim();
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.wait(200, { jumpHeld: true });
+    const vyBefore = s.body.vy;
+    s.step({ jumpPressed: true, jumpHeld: true });
+    expect(s.body.vy).toBeGreaterThanOrEqual(vyBefore);
+  });
+
+  it('con el don salta una sola vez más en el aire y se recarga al aterrizar', () => {
+    const s = new Sim();
+    s.motor.doubleJumpEnabled = true;
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.wait(300, { jumpHeld: true });
+    s.step({ jumpPressed: true, jumpHeld: true });
+    expect(s.body.vy).toBeLessThan(P.doubleJumpVelocity + 30);
+    s.wait(100, { jumpHeld: true });
+    const vy = s.body.vy;
+    s.step({ jumpPressed: true, jumpHeld: true });
+    expect(s.body.vy).toBeGreaterThan(vy);
+    s.wait(2000);
+    expect(s.body.onGround).toBe(true);
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.wait(300, { jumpHeld: true });
+    s.step({ jumpPressed: true, jumpHeld: true });
+    expect(s.body.vy).toBeLessThan(P.doubleJumpVelocity + 30);
+  });
+
+  it('el viento empuja quieta y frena la carrera en contra', () => {
+    const m = new PlayerMotor();
+    const ground = { onGround: true, vx: 0, vy: 0 };
+    const none: MoveInput = { left: false, right: false, jumpPressed: false, jumpHeld: false, attackPressed: false };
+    m.windVx = -90;
+    let vx = 0;
+    for (let i = 0; i < 60; i++) vx = m.step(16, none, { ...ground, vx }).vx;
+    expect(vx).toBeCloseTo(-90);
+    for (let i = 0; i < 60; i++) vx = m.step(16, { ...none, right: true }, { ...ground, vx }).vx;
+    expect(vx).toBeCloseTo(P.runSpeed - 90);
+  });
+});

@@ -11,6 +11,7 @@ import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { FallingHazard } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
+import { WindZone } from '../entities/hazards/WindZone';
 import { Player } from '../entities/Player';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
 import type { PlayerStateName } from '../entities/PlayerMotor';
@@ -110,6 +111,10 @@ export class LevelScene extends Phaser.Scene {
   private sinkers: Sinking[] = [];
   /** Zonas de agua baja (GDD §4.8): frenan la carrera. */
   private shallowZones: Phaser.Geom.Rectangle[] = [];
+  /** Zonas de viento (GDD §4.8, §6.3). */
+  private windZones: WindZone[] = [];
+  /** Espiral sobre Kerana mientras está hipnotizada (GDD §4.8). */
+  private hypnosisIcon?: Phaser.GameObjects.Image;
   private arenaRect?: Phaser.Geom.Rectangle;
   private arenaBossId?: BossId;
   private arena?: BossArena;
@@ -138,6 +143,8 @@ export class LevelScene extends Phaser.Scene {
     this.fallingHazards = [];
     this.sinkers = [];
     this.shallowZones = [];
+    this.windZones = [];
+    this.hypnosisIcon = undefined;
     this.arenaRect = undefined;
     this.arenaBossId = undefined;
     this.arena = undefined;
@@ -189,12 +196,14 @@ export class LevelScene extends Phaser.Scene {
       assist: save.settings.assist,
       maxHearts: save.maxHearts,
       chargedSlash: DEBUG.giftsAll || save.gifts.includes('charged_slash'),
+      doubleJump: DEBUG.giftsAll || save.gifts.includes('double_jump'),
       god: DEBUG.god,
     });
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
     ensurePlaceholder(this, 'mainumby_placeholder', 8, 8);
     this.mainumby = this.add.image(spawn.x, spawn.y - 40, 'mainumby_placeholder').setDepth(15);
+    this.hypnosisIcon = this.add.image(spawn.x, spawn.y, this.makeSpiralTexture()).setDepth(16).setVisible(false);
     const { Ground, Platforms, Foreground } = this.layers;
     if (Ground) {
       this.physics.add.collider(this.player, Ground);
@@ -283,6 +292,8 @@ export class LevelScene extends Phaser.Scene {
     else this.trackSafeGround(body);
 
     this.updateWater(delta, body);
+    this.updateWind(delta, body);
+    this.updateHypnosisIcon(delta);
     this.updateFallingHazards(delta);
     this.updateBreakables();
     this.updateBoss(delta);
@@ -329,6 +340,11 @@ export class LevelScene extends Phaser.Scene {
         if (this.fighting) this.spawnFalling(x, rect.top, true);
       },
       pushPlayer: (vx, ms) => this.player.motor.push(vx, ms),
+      hypnotizePlayer: () => this.hypnotizePlayer(),
+      damagePlayer: (fromX) => this.hurtPlayer(fromX) && !this.player.health.isDead,
+      healPlayer: (amount) => {
+        if (this.player.heal(amount) > 0) EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+      },
       setArenaPlatformsCycling: (on) => this.setArenaPlatformsCycling(on),
       spawnHealFlower: (x) => this.spawnHealFlower(x, rect.top),
       sfx: (key: SfxKey) => AudioManager.play(key),
@@ -473,6 +489,60 @@ export class LevelScene extends Phaser.Scene {
     AudioManager.play('splash');
   }
 
+  // ── Viento e hipnosis (GDD §4.8, §6.3) ────────────────────────────────────
+
+  /** Las ráfagas suman velocidad horizontal mientras Kerana está dentro de la zona. */
+  private updateWind(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
+    let vx = 0;
+    for (const zone of this.windZones) {
+      zone.update(deltaMs);
+      vx += zone.pushFor(body.center.x, body.center.y);
+    }
+    this.player.motor.windVx = vx;
+  }
+
+  private onWindPhase(zone: WindZone): void {
+    const view = this.cameras.main.worldView;
+    if (Phaser.Geom.Rectangle.Overlaps(view, zone.zone)) AudioManager.play('wind');
+  }
+
+  private hypnotizePlayer(): void {
+    if (DEBUG.god) return;
+    if (this.player.status.applyHypnosis(GAMEPLAY.hypnosis.durationMs)) AudioManager.play('hypnosis');
+  }
+
+  private updateHypnosisIcon(deltaMs: number): void {
+    const icon = this.hypnosisIcon;
+    if (!icon) return;
+    const on = this.player.status.hypnotized;
+    icon.setVisible(on);
+    if (!on) return;
+    icon.setPosition(this.player.x, this.player.y - GAMEPLAY.hypnosis.iconOffsetY);
+    icon.angle += (GAMEPLAY.hypnosis.iconSpinDegPerS * deltaMs) / 1000;
+    // Tinte iridiscente que va cambiando (el aviso no depende solo del color: la espiral gira).
+    icon.setTint(Phaser.Display.Color.HSVToRGB((this.time.now / 1500) % 1, 0.6, 1).color);
+  }
+
+  /** Espiral blanca por código (placeholder del icono de hipnosis). */
+  private makeSpiralTexture(): string {
+    const key = 'fx_spiral';
+    if (this.textures.exists(key)) return key;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.lineStyle(2, 0xffffff);
+    g.beginPath();
+    for (let a = 0; a < Math.PI * 5; a += 0.2) {
+      const r = 1 + a * 1.1;
+      const x = 10 + Math.cos(a) * r;
+      const y = 10 + Math.sin(a) * r;
+      if (a === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.strokePath();
+    g.generateTexture(key, 20, 20);
+    g.destroy();
+    return key;
+  }
+
   /** Fase 3 de Mbói Tu'i: los camalotes de la arena se hunden y reaparecen solos, desfasados. */
   private setArenaPlatformsCycling(on: boolean): void {
     const rect = this.arenaRect;
@@ -542,15 +612,16 @@ export class LevelScene extends Phaser.Scene {
     this.shake(80, 0.004);
   }
 
-  /** Daño por contacto de un peligro o ataque de jefe (1 corazón). */
-  private hurtPlayer(fromX: number): void {
+  /** Daño por contacto de un peligro o ataque de jefe (1 corazón). Devuelve si se aplicó. */
+  private hurtPlayer(fromX: number): boolean {
     const applied = this.player.takeDamage(GAMEPLAY.damage.enemyContact, fromX);
-    if (!applied) return;
+    if (!applied) return false;
     AudioManager.play('hurt');
     this.hitStop(GAMEPLAY.hitStop.onHurtMs);
     this.shake(80, 0.006);
     EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
     if (this.player.health.isDead) this.koRespawn();
+    return true;
   }
 
   /** Sacudida de cámara si las opciones lo permiten (GDD §4.9). */
@@ -693,6 +764,14 @@ export class LevelScene extends Phaser.Scene {
           const depth = GAMEPLAY.water.shallowDepthPx;
           this.add.rectangle(zone.x, zone.bottom - depth, zone.width, depth, SHALLOW_COLOR, 0.55).setOrigin(0, 0).setDepth(11);
           this.shallowZones.push(zone);
+          break;
+        }
+        case 'WindZone': {
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          const dir: 1 | -1 = Number(objectProp(obj, 'dir') ?? 1) < 0 ? -1 : 1;
+          const speed = Number(objectProp(obj, 'speed') ?? GAMEPLAY.wind.speed);
+          const offsetMs = Number(objectProp(obj, 'offsetMs') ?? 0);
+          this.windZones.push(new WindZone(this, zone, dir, speed, offsetMs, (phase, z) => phase === 'gust' && this.onWindPhase(z)));
           break;
         }
         case 'LevelExit': {

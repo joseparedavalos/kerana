@@ -37,6 +37,9 @@ const TEJU_HP = TEJU_JAGUA_HEADS * TEJU_JAGUA_HITS_PER_HEAD;
 /** Mbói Tu'i: 12 golpes, 3 fases de 4 (GDD §6.2). */
 const MBOI_HP = 12;
 
+/** Moñái: 12 golpes, 3 fases de 4 (GDD §6.3). */
+const MONAI_HP = 12;
+
 export const BOSSES: Partial<Record<BossId, BossDef>> = {
   teju_jagua: {
     id: 'teju_jagua',
@@ -103,6 +106,39 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         attacks: [
           { id: 'peck', weight: 2, telegraphMs: 600, activeMs: 350, recoverMs: 1000 },
           { id: 'squawk_double', weight: 1, telegraphMs: 600, activeMs: 2400, recoverMs: 1000 },
+        ],
+      },
+    ],
+  },
+  monai: {
+    id: 'monai',
+    nameKey: 'boss.monai.name',
+    epithetKey: 'boss.monai.epithet',
+    hp: MONAI_HP,
+    phases: [
+      // Fase 1: se esconde en una copa y cae en picada (sombra 1 s); aturdido 1,5 s.
+      {
+        untilHpRatio: 8 / MONAI_HP,
+        idleMs: 800,
+        attacks: [{ id: 'descent', weight: 1, telegraphMs: 1000, activeMs: 450, recoverMs: 1500 }],
+      },
+      // Fase 2: + pulso de hipnosis desde el suelo (los troncos lo tapan).
+      {
+        untilHpRatio: 4 / MONAI_HP,
+        idleMs: 700,
+        attacks: [
+          { id: 'descent', weight: 2, telegraphMs: 1000, activeMs: 450, recoverMs: 1500 },
+          { id: 'pulse', weight: 1, telegraphMs: 1000, activeMs: 700, recoverMs: 1000 },
+        ],
+      },
+      // Fase 3: + robo del corazón (embestida en diagonal; la cola queda expuesta 1,2 s); descensos más rápidos.
+      {
+        untilHpRatio: 0,
+        idleMs: 550,
+        attacks: [
+          { id: 'descent', weight: 1, telegraphMs: 750, activeMs: 320, recoverMs: 1300 },
+          { id: 'pulse', weight: 1, telegraphMs: 1000, activeMs: 700, recoverMs: 1000 },
+          { id: 'steal', weight: 2, telegraphMs: 700, activeMs: 550, recoverMs: 1200 },
         ],
       },
     ],
