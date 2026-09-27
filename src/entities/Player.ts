@@ -3,7 +3,7 @@ import { GAMEPLAY } from '../config/gameplay';
 import { ANIMS_SUFFIX, PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
 import type { InputManager } from '../systems/InputManager';
 import { Health } from '../systems/Health';
-import { StatusEffects } from '../systems/StatusEffects';
+import { StatusEffects, type SleepEvent } from '../systems/StatusEffects';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
@@ -17,6 +17,8 @@ const STATE_ANIM: Record<PlayerStateName, string> = {
   fall: `${PLAYER_KEY}_fall`,
   attack: `${PLAYER_KEY}_attack`,
   hurt: `${PLAYER_KEY}_hurt`,
+  // Sin animación propia todavía: el dash usa la de correr.
+  dash: `${PLAYER_KEY}_run`,
 };
 const ANIM_BLINK = `${PLAYER_KEY}_blink`;
 const ANIM_LAND = `${PLAYER_KEY}_land`;
@@ -30,6 +32,8 @@ export interface PlayerOptions {
   chargedSlash?: boolean;
   /** Don del salto doble (GDD §3.7). */
   doubleJump?: boolean;
+  /** Don del Paso de la siesta (dash, GDD §3.7). */
+  dash?: boolean;
   /** `?god=1`: no recibe daño. */
   god?: boolean;
 }
@@ -37,8 +41,12 @@ export interface PlayerOptions {
 // Kerana: sprite con física; el movimiento lo decide PlayerMotor (lógica pura).
 export class Player extends Phaser.Physics.Arcade.Sprite {
   readonly motor = new PlayerMotor();
-  /** Estados alterados (hipnosis de Moñái, GDD §4.8). */
+  /** Estados alterados (hipnosis de Moñái y sueño de siesta, GDD §4.8). */
   readonly status = new StatusEffects();
+  /** Kerana está dentro de la niebla del sueño (lo fija el nivel en cada frame). */
+  inSleepFog = false;
+  /** Qué pasó con el sueño en el último tick (bostezo, dormida, despierta). */
+  sleepEvent: SleepEvent = null;
   // Corazones del guardado (4 a 7 con los dones de corazón), +3 con el modo asistido (GDD §4.7).
   readonly health: Health;
   declare body: Phaser.Physics.Arcade.Body;
@@ -58,6 +66,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     jumpHeld: false,
     attackPressed: false,
     attackHeld: false,
+    dashPressed: false,
   };
   private readonly motorBody: MotorBody = { onGround: false, vx: 0, vy: 0 };
 
@@ -85,6 +94,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.god = opts.god ?? false;
     this.motor.chargeEnabled = opts.chargedSlash ?? false;
     this.motor.doubleJumpEnabled = opts.doubleJump ?? false;
+    this.motor.dashEnabled = opts.dash ?? false;
     const baseHearts = Phaser.Math.Clamp(opts.maxHearts ?? GAMEPLAY.hearts.start, GAMEPLAY.hearts.start, GAMEPLAY.hearts.max);
     const startHearts = baseHearts + (assist ? GAMEPLAY.hearts.assistBonus : 0);
     this.health = new Health(startHearts, startHearts);
@@ -121,6 +131,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.luzArasyMsLeft > 0;
   }
 
+  /** Intangible durante el Paso de la siesta: nada la daña (GDD §3.3). */
+  get isIntangible(): boolean {
+    return this.motor.dashing;
+  }
+
   /** Fracción de la Luz de Arasy que queda (1 → 0), para la barra del HUD. */
   get luzArasyFraction(): number {
     return this.luzArasyMsLeft / this.luzArasyDurationMs;
@@ -142,6 +157,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     mi.jumpHeld = input.isDown('jump');
     mi.attackPressed = input.justPressed('attack');
     mi.attackHeld = input.isDown('attack');
+    mi.dashPressed = input.justPressed('dash');
+    // Sueño de siesta: quieta = sin ningún botón mantenido; dormida, cada pulsación acorta el sueño.
+    const still = !mi.left && !mi.right && !mi.jumpHeld && !mi.attackHeld && !input.isDown('dash');
+    const pressed = mi.jumpPressed || mi.attackPressed || mi.dashPressed || input.justPressed('left') || input.justPressed('right');
+    this.sleepEvent = this.god ? null : this.status.stepSleep(deltaMs, this.inSleepFog, still, pressed);
     this.status.step(deltaMs);
     this.status.applyTo(mi);
 
@@ -182,9 +202,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.chargeGlow.outerStrength = FX.chargeGlowStrength * Math.min(1, fraction);
   }
 
-  /** Kerana recibe daño; `knockbackFromX` es de dónde vino el golpe. Devuelve si se aplicó. */
-  takeDamage(amount: number, knockbackFromX: number = this.x): boolean {
-    if (this.isImmune || this.god) return false;
+  /**
+   * Kerana recibe daño; `knockbackFromX` es de dónde vino el golpe. Devuelve si se aplicó.
+   * `unavoidable`: pozos y agua honda dañan aunque esté en pleno dash.
+   */
+  takeDamage(amount: number, knockbackFromX: number = this.x, unavoidable = false): boolean {
+    if (this.isImmune || this.god || (this.isIntangible && !unavoidable)) return false;
     const invulnerableMs = this.assist ? GAMEPLAY.hurt.invulnerableAssistMs : GAMEPLAY.hurt.invulnerableMs;
     const applied = this.health.damage(amount, invulnerableMs);
     if (!applied) return false;
@@ -192,6 +215,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setVelocity(dir * GAMEPLAY.hurt.knockbackX, GAMEPLAY.hurt.knockbackY);
     this.motor.triggerHurt(GAMEPLAY.hurt.reducedControlMs);
     this.hurtFlashMsLeft = FX.hurtFlashMs;
+    this.status.wake();
     return true;
   }
 
@@ -305,6 +329,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateBlink(deltaMs: number): void {
     this.blinkMs += deltaMs;
+    if (this.motor.dashing) {
+      this.setAlpha(GAMEPLAY.dash.alpha);
+      return;
+    }
     const luzBlinking = this.isImmune && this.luzArasyMsLeft <= GAMEPLAY.luzArasy.blinkLastMs;
     if (!this.health.isInvulnerable && !luzBlinking) {
       this.setAlpha(1);

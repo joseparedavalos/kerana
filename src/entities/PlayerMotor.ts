@@ -2,7 +2,7 @@ import { GAMEPLAY, type PlayerConfig } from '../config/gameplay';
 
 // Lógica pura del movimiento de Kerana (sin Phaser) para poder probarla con tiempos simulados.
 
-export type PlayerStateName = 'idle' | 'run' | 'jump' | 'fall' | 'attack' | 'hurt';
+export type PlayerStateName = 'idle' | 'run' | 'jump' | 'fall' | 'attack' | 'hurt' | 'dash';
 
 export interface MoveInput {
   left: boolean;
@@ -15,6 +15,8 @@ export interface MoveInput {
   attackPressed: boolean;
   /** Atacar está mantenido (tajo cargado, don 1). */
   attackHeld?: boolean;
+  /** Dash se pulsó en este frame (Paso de la siesta, don 4). */
+  dashPressed?: boolean;
 }
 
 export interface MotorBody {
@@ -37,6 +39,12 @@ export interface AttackConfig {
 export interface ChargeConfig {
   holdMs: number;
   glowFromMs: number;
+}
+
+export interface DashConfig {
+  speed: number;
+  durationMs: number;
+  cooldownMs: number;
 }
 
 /** Duración de un frame a 60 fps (GDD §3.4 da los tiempos de ataque en frames). */
@@ -81,6 +89,8 @@ export class PlayerMotor {
   doubleJumpEnabled = false;
   /** Viento (GDD §4.8): suma a la velocidad horizontal deseada (px/s). Lo fija el nivel en cada frame. */
   windVx = 0;
+  /** Paso de la siesta desbloqueado (don 4, GDD §3.7). */
+  dashEnabled = false;
 
   private coyoteLeftMs = 0;
   private bufferLeftMs = 0;
@@ -90,6 +100,11 @@ export class PlayerMotor {
   private airJumpUsed = false;
   private attackMsLeft = 0;
   private hurtMsLeft = 0;
+  private dashMsLeft = 0;
+  private dashCooldownMs = 0;
+  private dashDir: 1 | -1 = 1;
+  /** Ya usó el dash en este vuelo. */
+  private airDashUsed = false;
   /** Empuje externo (graznido de Mbói Tu'i): fija la velocidad horizontal mientras dura. */
   private pushMsLeft = 0;
   private pushVx = 0;
@@ -99,7 +114,13 @@ export class PlayerMotor {
     private readonly cfg: PlayerConfig = GAMEPLAY.player,
     private readonly attackCfg: AttackConfig = GAMEPLAY.attack,
     private readonly chargeCfg: ChargeConfig = GAMEPLAY.chargedSlash,
+    private readonly dashCfg: DashConfig = GAMEPLAY.dash,
   ) {}
+
+  /** Dash en curso: Kerana es intangible (nada la daña). */
+  get dashing(): boolean {
+    return this.dashMsLeft > 0;
+  }
 
   /** Carga del tajo para el brillo (0 = nada, 1 = lista para soltar). */
   get chargeFraction(): number {
@@ -171,6 +192,32 @@ export class PlayerMotor {
     // Caída limitada
     if (vy > cfg.maxFallSpeed) vy = cfg.maxFallSpeed;
 
+    // Paso de la siesta: impulso horizontal intangible; uno por vuelo, con enfriamiento.
+    if (grounded) this.airDashUsed = false;
+    this.dashCooldownMs = Math.max(0, this.dashCooldownMs - dt);
+    if (
+      input.dashPressed &&
+      this.dashEnabled &&
+      !hurt &&
+      this.dashMsLeft <= 0 &&
+      this.dashCooldownMs <= 0 &&
+      (grounded || !this.airDashUsed)
+    ) {
+      this.dashMsLeft = this.dashCfg.durationMs;
+      this.dashCooldownMs = this.dashCfg.durationMs + this.dashCfg.cooldownMs;
+      this.dashDir = dir !== 0 ? (dir as 1 | -1) : this.facing;
+      this.facing = this.dashDir;
+      if (!grounded) this.airDashUsed = true;
+      this.jumpCuttable = false;
+    }
+    const dashing = this.dashMsLeft > 0;
+    if (dashing) {
+      this.dashMsLeft = Math.max(0, this.dashMsLeft - dt);
+      vx = this.dashDir * this.dashCfg.speed;
+      vy = 0;
+      if (this.dashMsLeft <= 0) vx = this.dashDir * cfg.runSpeed;
+    }
+
     // Tajo cargado: mantener atacar y soltar (el primer tajo normal sale igual al pulsar).
     if (this.chargeEnabled && !hurt && input.attackHeld) {
       this.chargeMs += dt;
@@ -199,6 +246,7 @@ export class PlayerMotor {
     }
 
     if (hurt) this.setState('hurt');
+    else if (dashing) this.setState('dash');
     else if (this.attackMsLeft > 0) this.setState('attack');
     else if (justJumped) this.setState('jump');
     else this.setState(nextMoveState(grounded, vx, vy, dir !== 0, cfg.idleSpeedThreshold));
@@ -212,6 +260,7 @@ export class PlayerMotor {
   /** Kerana recibe daño: control reducido durante `ms` (el retroceso lo aplica quien la llama). */
   triggerHurt(ms: number): void {
     this.hurtMsLeft = ms;
+    this.dashMsLeft = 0;
     this.attackMsLeft = 0;
     this.attackHitboxActive = false;
     this.chargedSwing = false;
@@ -231,6 +280,9 @@ export class PlayerMotor {
     this.bufferLeftMs = 0;
     this.jumpCuttable = false;
     this.airJumpUsed = false;
+    this.airDashUsed = false;
+    this.dashMsLeft = 0;
+    this.dashCooldownMs = 0;
     this.windVx = 0;
     this.attackMsLeft = 0;
     this.hurtMsLeft = 0;
