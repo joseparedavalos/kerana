@@ -123,6 +123,65 @@ export const GAMEPLAY = {
     fireRecoverHeadHeight: 26,
   },
 
+  /** Mbói Tu'i (GDD §6.2). Los tiempos de cada ataque están en src/data/bosses.ts. */
+  mboiTui: {
+    /** Puntos donde emerge (tiles desde el borde izquierdo de la arena; ver tools/levels/l2.txt). */
+    emergeTiles: [10.5, 23.5, 36.5],
+    /** Islote central donde se enrosca en la fase 3 (tile desde el borde izquierdo de la arena). */
+    coilTile: 17,
+    headWidth: 28,
+    headHeight: 20,
+    neckWidth: 9,
+    /** Altura de la cabeza sobre el agua al emerger (px). */
+    riseHeight: 40,
+    /** Alcance del picotazo desde el punto donde emerge (px). */
+    peckReach: 96,
+    /** En la fase 3 pica desde el islote central: el cuello se estira más (px). */
+    coiledPeckReach: 210,
+    /** Altura del arco del picotazo (px). */
+    peckArc: 36,
+    /** Tras el graznido, la cabeza cae agotada hacia Kerana (px). */
+    slumpReach: 40,
+    /** Anillos del graznido: tamaño, velocidad (px/s), separación (ms) y empuje. */
+    ringWidth: 14,
+    ringHeight: 26,
+    ringSpeed: 150,
+    ringGapMs: 450,
+    ringsPerSquawk: 2,
+    pushSpeed: 260,
+    pushMs: 220,
+    /** Escupitajo: bolas por ataque, velocidad vertical inicial, gravedad y separación horizontal. */
+    spitBalls: 3,
+    spitVy: -260,
+    spitGravity: 600,
+    spitSpreadVx: 40,
+    spitRadius: 5,
+    /** Fase 3: una flor que cura cada tanto (ms), cuántas a la vez y cuánto tarda en caer. */
+    flowerEveryMs: 4000,
+    flowerMax: 2,
+    flowerFallMs: 2600,
+    flowerHeal: 1,
+    /** Desfase del ciclo automático entre camalotes de la arena (ms). */
+    platformCycleOffsetMs: 900,
+  },
+
+  /** Camalotes y agua (GDD §4.8, §6.2). */
+  water: {
+    /** Velocidad de carrera en agua baja (× runSpeed). */
+    shallowSpeedFactor: 0.6,
+    /** Alto del agua baja que se dibuja sobre los pies (px). */
+    shallowDepthPx: 6,
+    /** Salpicaduras al correr en agua baja (ms entre una y otra). */
+    splashEveryMs: 120,
+    /** Camalote: se hunde tras pisarlo, reaparece y ciclo automático (fase 3 del jefe). */
+    sinkDelayMs: 1200,
+    respawnMs: 3000,
+    cycleFloatMs: 2400,
+    /** Grosor del camalote (px) y cuánto baja al hundirse. */
+    raftHeight: 6,
+    sinkDepthPx: 10,
+  },
+
   hurt: {
     invulnerableMs: 1000,
     invulnerableAssistMs: 2000,

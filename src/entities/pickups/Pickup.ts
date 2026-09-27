@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { ensurePlaceholder } from '../../utils/placeholder';
 
-export type PickupKind = 'guavira' | 'luz_arasy' | 'pluma';
+export type PickupKind = 'guavira' | 'luz_arasy' | 'pluma' | 'yvoty';
 
 const SIZE = 12;
 
