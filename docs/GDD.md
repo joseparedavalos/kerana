@@ -24,7 +24,7 @@
 4. Sistemas de juego
 5. Enemigos
 6. Niveles y jefes
-7. Jefe secreto: Tau [Extra]
+7. Jefe final: Tau [MVP desde S12c]
 8. Pantallas e interfaz
 9. Arte
 10. Audio
@@ -80,7 +80,7 @@ Siete años después, Kerana despierta en los cerros de Paraguarí con un sable 
 ### 1.5 Estructura del juego
 Título → Prólogo → Mapa → Nivel 1 … Nivel 7 (cada nivel termina con su jefe) → Final → Créditos.
 
-Rejugabilidad: 3 plumas de mainumby por nivel, mejores tiempos [Extra] y jefe secreto [Extra].
+Rejugabilidad: 3 plumas de mainumby por nivel, mejores tiempos [Extra] y una diapositiva extra en el final (§2.6).
 
 ---
 
@@ -122,7 +122,7 @@ Rejugabilidad: 3 plumas de mainumby por nivel, mejores tiempos [Extra] y jefe se
 
 **Marangatu.** Padre de Kerana. Solo aparece en el prólogo.
 
-**Tume Arandu.** El sabio. Solo aparece en el jefe secreto [Extra].
+**Tume Arandu.** El sabio. Solo se lo nombra en el final: Kerana sella a Tau como él lo hizo (§7).
 
 **Los siete hijos**
 
@@ -160,11 +160,17 @@ Una ilustración por diapositiva (o fondo oscuro con partículas mientras no hay
 
 ### 2.6 Final [MVP]
 
+**Al liberar a Luisón** (antes de Yvága):
 1. "Siete estrellas subieron al cielo, una por cada hijo."
-2. "Los guaraníes las llaman Eichu. Cuando aparecen antes del amanecer, a comienzos de junio, empieza el año nuevo: el tiempo de volver a empezar."
-3. "Kerana se sentó junto a un manantial que nunca dejaría de correr y miró a sus hijos brillar." (Guiño al manantial de Kerana en el mito.)
-4. Si faltan plumas: "Pero lejos, en la oscuridad, Tau todavía escuchaba…" → Créditos.
-   Con las 21 plumas [Extra]: Mainumby: "Kerana… Tau está en Yvága. Esta vez no se escapa." → Jefe secreto (§7).
+2. "Las siete estrellas se juntaron y formaron Eichu. Pero entre ellas se movió una sombra con ojos rojos: Tau."
+3. Mainumby: "Kerana… Tau está en Yvága. Esta vez no se escapa." → Yvága, jefe final (§7).
+
+**Al sellar a Tau** (final verdadero, para todos):
+1. "Como hizo una vez el sabio Tume Arandu, Kerana lo dejó hechizado. Tau quedó sellado y ya no volvió a escuchar."
+2. "La tierra guaraní sanó. Los cerros, los esteros, los campos y las selvas recuperaron sus colores." (El mapa del mundo recupera sus colores.)
+3. "Los guaraníes las llaman Eichu. Cuando aparecen antes del amanecer, a comienzos de junio, empieza el año nuevo: el tiempo de volver a empezar."
+4. "Al amanecer de Ary Pyahu, el año nuevo, Kerana descansó junto a un manantial que nunca dejaría de correr y miró a sus hijos brillar en Eichu." (Guiño al manantial de Kerana en el mito.)
+5. Con las 21 plumas, una diapositiva extra: Mainumby se posa en su hombro: "Descansá, Kerana. Esta vez, dormir es un regalo." → Créditos.
 
 ### 2.7 Tono de escritura
 
@@ -329,7 +335,7 @@ La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) m�
 
 - 3 plumas por nivel, 21 en total. Algunas requieren dones posteriores, así que conviene volver a niveles anteriores.
 - El mapa muestra las plumas de cada nivel (0/3, 1/3…).
-- Con las 21 plumas se abre el jefe secreto [Extra].
+- Con las 21 plumas, el final suma una diapositiva de Kerana y Mainumby (§2.6).
 - Mejor tiempo por nivel [Extra].
 
 ### 4.5 Mainumby, el compañero [Núcleo]
@@ -751,18 +757,19 @@ Todo enemigo común quita 1 corazón al contacto.
 Después, la risa de Tau se aleja y empieza el final (§2.6).
 
 ### 6.8 Final
-Las siete estrellas se reúnen en el cielo y forman Eichu. Se muestran las diapositivas de §2.6. Si hay arte, se ve a Kerana sentada junto a un manantial bajo las Pléyades. Luego, créditos.
+Al liberar a Luisón, las siete estrellas se reúnen en el cielo y forman Eichu, y aparece Tau (§2.6). Sigue Yvága, la pelea final (§7). Al sellar a Tau se muestran las diapositivas del final verdadero (§2.6) sobre la ilustración de Kerana sentada junto a un manantial bajo las Pléyades, al amanecer (placeholder por código si falta). Luego, créditos.
 
 ---
 
-## 7. Jefe secreto: Tau [Extra]
+## 7. Jefe final: Tau [MVP desde S12c]
 
-- **Requisito:** las 21 plumas.
-- **Arena:** Yvága, el cielo. Las plataformas son las siete estrellas.
-- **Fase 1, el joven de la flauta:** Tau con su disfraz del mito. Sus notas hipnotizan (reutiliza la hipnosis de Moñái) y lanzan proyectiles.
-- **Fase 2, los ecos:** Tau invoca sombras de los siete hijos, que repiten un ataque cada una (**reutiliza código de los jefes**).
-- **Fase 3, las siete estrellas:** Tau muestra su forma real, una sombra de humo con ojos rojos. Cada estrella-hijo ilumina una plataforma y ayuda a Kerana.
-- **Cierre:** como en el mito, cuando el sabio Tume Arandu lo dejó hechizado, Tau queda sellado. Final verdadero: Kerana y Mainumby ven amanecer con Eichu en el cielo, *Ary Pyahu*, el año nuevo.
+Tau dejó de ser jefe secreto (antes pedía las 21 plumas y estaba recortado, §12.2): es el jefe final para todos, después de liberar a Luisón.
+
+- **Arena:** Yvága, el cielo. Solo la arena, sin nivel previo: suelo de nubes y las siete estrellas como plataformas de un solo sentido (3 tiles, ninguna a más de 3 tiles de la anterior). Se abre con `?debug=1&level=yvaga` (o `level=8`).
+- **Fase 1, el joven de la flauta:** Tau con su disfraz del mito, en las nubes; cambia de lado en un parpadeo de humo. Notas que vuelan hacia Kerana y una melodía en anillo que hipnotiza (la hipnosis de Moñái: controles invertidos). Ventana después de cada ataque.
+- **Fase 2, los ecos:** Tau sube al cielo y llama sombras de tres hijos, que repiten un ataque cada una (**reutiliza lo de los jefes**): Teju Jagua, rocas que caen con aviso; Mbói Tu'i, graznido que empuja y barrida por las nubes; Jasy Jatere, un enjambre. Después del eco baja cansado a las nubes (ventana).
+- **Fase 3, las siete estrellas:** su forma real, humo violeta con ojos rojos, flotando en lo alto. El humo cubre las nubes (aviso: subir a una estrella); la estrella más cercana a Kerana se enciende y, al terminar el humo, lo baja con su rayo junto a ella (ventana). Rayos rojos hacia Kerana, sin ventana.
+- **Cierre:** como en el mito, cuando el sabio Tume Arandu lo dejó hechizado, Tau queda sellado (la marca estalla en luz y el humo se encoge). Final verdadero (§2.6): la tierra guaraní sana, Kerana descansa junto al manantial mirando a sus hijos en Eichu al amanecer de *Ary Pyahu*, el año nuevo.
 
 ---
 
@@ -776,7 +783,7 @@ Boot → Preload → Título ─┬─ Nueva partida → Prólogo → Mapa
                          ├─ Opciones
                          └─ Créditos
 Mapa → Nivel N → (jefe) → Liberación → Nivel completado → Mapa
-Nivel 7 completado → Final → Créditos → Título
+Nivel 7 completado → Eichu y Tau → Yvága (Tau) → Final verdadero → Créditos → Título
 ```
 
 ### 8.2 Título [MVP]
@@ -1243,7 +1250,7 @@ Además, el juego define `window.__KERANA_READY__ = true` cuando la primera esce
 | Área | MVP | Núcleo | Extra |
 |---|---|---|---|
 | Niveles | 7 niveles jugables con su jefe | Secciones A, B y C completas con las ideas nuevas | Rutas secretas extra |
-| Jefes | 2 fases por jefe como mínimo | 3 fases | Jefe secreto Tau |
+| Jefes | 2 fases por jefe como mínimo; Tau como jefe final (§7) | 3 fases | — |
 | Kerana | Correr, salto variable, sable, daño y reaparición | Dones (tajo cargado, salto doble, dash, corazones) | Pogo |
 | Objetos | Guavirá y Luz de Arasy | Plumas | Mejores tiempos |
 | Historia | Prólogo, liberaciones y final en texto | Retratos y Mainumby compañero | Ilustraciones de las diapositivas |
@@ -1257,7 +1264,7 @@ Además, el juego define `window.__KERANA_READY__ = true` cuando la primera esce
 ### 12.2 Lista de recortes (en orden)
 Si el gasto supera la meta (ver el semáforo en `docs/PLAN.md`), se recorta en este orden:
 
-1. Jefe secreto Tau. **[RECORTADO desde S4: semáforo rojo tras S2, ver docs/PLAN.md §6.3]**
+1. ~~Jefe secreto Tau.~~ **[Recortado en S4; vuelve en S12c como jefe final para todos, §7]**
 2. Traducción al inglés. **[RECORTADO desde S4: idem]**
 3. Persecución del Ao Ao (queda solo la arena). **[RECORTADO desde S4: idem]**
 4. Tercera fase de los jefes 3 a 6. **[RECORTADO desde S3: semáforo rojo tras S4, ver docs/PLAN.md §6.3]**

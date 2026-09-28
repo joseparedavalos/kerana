@@ -150,7 +150,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S10 | 2026-09-27 | Opus 5.5 (esfuerzo High, por error) | 44 | 37 | 7 | 63 | Verde |
 | S11 | 2026-09-28 | Opus 5.5 | 37 | 33 | 4 | 67 | Verde |
 | S12 | 2026-09-28 | Opus 5.5 | 33 | 27 | 6 | 73 | Verde |
-| S12b | | | | | | | |
+| S12b | 2026-09-28 | Opus 5.5 | 27 | 24 | 3 | 76 | Verde |
+| S12c | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -170,6 +171,10 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S11:** meta acumulada 71,50 + 6,50 (S11) = 78; gastado 67 → **Verde**.
 
 **Semáforo de S12:** meta acumulada 78 + 6,50 (S12) = 84,50; gastado 73 → **Verde**. (S12b no estaba en el reparto: sale de la Reserva.)
+
+**Semáforo de S12b:** costó 3 (de la Reserva, que queda en 5 tras S6b y S12b). Acumulado 76 contra una meta de 84,50 → **Verde**.
+
+**S12c** (Tau como jefe final) tampoco estaba en el reparto: sale de la Reserva. Jose anota el costo al cerrar.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -193,6 +198,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S11 | Hecha | rama `claude/wizardly-keller-hk38hc` | Nivel 6 Guairá (ASCII, 290 × 26), `taitetu` (Charger en manada), `ao_ao_cria` (Jumper), pindó como refugio (`Pindo`), rocas que caen con sombra (`FallingHazard kind=roca`), Ao Ao con 3 fases, +1 corazón (7). Extras: vacas de Capiatá en N4 y onda de luz del tajo cargado. Build, tests y smoke OK |
 | S12 | Hecha | rama `claude/tender-rubin-4kwtdf` | Nivel 7 Asunción (ASCII, 280 × 30), oscuridad con la iluminación de Phaser 4 (`Darkness`: halo de Kerana, `DarkZone`, faroles `Lantern`, checkpoints que alumbran), `pora` (Flyer, vulnerable solo iluminado) y `jagua_hu` (Charger con ojos), Luisón con 3 fases (terrones, aullido, apagón, embestida con ojos, sombra de Tau), velas al liberarlo, final según las plumas → créditos. Antes: la onda de luz choca con el terreno. Build, tests y smoke OK |
 | S12b | Hecha | rama `claude/eager-shannon-b9wnnb` | Pulido de niveles (fuera del plan, sale de la Reserva): práctica segura del don recién ganado al inicio de l2, l4 y l5, camalotes sobre agua baja e islote de descanso en l2, isla de monte en l3, tramos sin karaguatá y hongos bajo el dosel en l5, un secreto con luciérnagas por nivel, carteles de una línea. Build, tests y smoke OK |
+| S12c | Hecha | rama `claude/loving-allen-tln9s3` | Tau como jefe final para todos (fuera del plan, sale de la Reserva): Luisón → Eichu y Tau → Yvága (solo arena, `?level=yvaga`) → Tau en 3 fases (flauta e hipnosis, ecos de Teju Jagua, Mbói Tu'i y Jasy Jatere, humo con las siete estrellas) → sellado → final verdadero (+ diapositiva con las 21 plumas) → créditos; el mapa recupera sus colores. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -543,6 +549,23 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Revisión de tandas y regla de 3 tiles:** revisado en los tramos tocados (ninguna estructura nueva que haya que saltar pasa de 3 tiles; los cuartos secretos flotan o están fuera del camino). No se hizo una auditoría completa tile por tile de los 7 niveles: si Jose encuentra una tanda de más de ~20 tiles sin lugar seguro, anotarla en "Notas de juego".
 - **Sin probar a mano (Jose):** si los secretos se ven venir por las luciérnagas, si el salto a los cuartos flotantes de l6 y l7 (desde el escalón/balcón) se siente bien, si el hongo de x 74 en l5 alcanza la rama (rebote ≈ 7,5 tiles, justo), si los hongos del dosel devuelven a las copas.
 
+### S12c: Tau como jefe final y cierre de la historia (fuera del plan original; sale de la Reserva)
+**Cambio de diseño:** Tau deja de ser jefe secreto (GDD §7, recortado en §12.2) y pasa a ser el jefe final para todos, después de liberar a Luisón. GDD §2.6, §6.8, §7, §8.1 y §12.2 actualizados.
+
+**Criterios:** al liberar a Luisón aparece Tau y se pasa a Yvága · Tau con 3 fases que reutilizan lo existente · final verdadero con el mapa sanado y la diapositiva extra con 21 plumas · tests de las fases y smoke de la pelea y el final.
+
+**Notas para la próxima sesión (S12c → S13):**
+- **Flujo:** `LevelComplete` de l7 → `Story` con `TAU_ARRIVAL_SLIDES` (Eichu, aparece Tau, línea de Mainumby) → `Level` con `levelId: 'yvaga'` (`StoryScene` acepta `nextData`). Al sellar a Tau, `LevelScene.finishLevel` (niveles con `finale: true`) guarda `tau` en `freed`, arma `endingSlides(plumas, 21)` y va a `Story` → `Credits`, sin pantalla de nivel completado.
+- **Yvága:** `tools/levels/yvaga.txt` (44 × 26; antesala x 0–3 con fuego, arena x 4–43, nubes en la fila 23) → `map_yvaga`. Bioma nuevo `cielo` (tileset placeholder, `make-placeholder-tiles.mjs`). Las siete estrellas son plataformas `=` de 3 tiles; `GAMEPLAY.tau.starTiles` (relativo a la arena) **tiene que coincidir** con el ASCII: si se mueve una, cambiar los dos. `LevelDef.finale` la saca de `WORLD_LEVELS` (el mapa sigue con 7 nodos). Depuración: `?debug=1&level=yvaga` (o `level=8`), con `god=1` para probar sin morir.
+- **Tau** (`bosses/Tau.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.tau`, lógica en `tauLogic.ts` con tests en `tests/tau.test.ts`): 21 de vida (3 fases de 7). Fase 1 (disfraz): parpadea al lado lejano de Kerana; `notes` (4 notas hacia Kerana, ventana 1,3 s) y `melody` (anillo que hipnotiza con `ctx.hypnotizePlayer`, ventana 1,5 s). Fase 2 (ecos, flota a 11 tiles): `echo_teju` (4 rocas `spawnFalling(x, 'roca')` alrededor de Kerana), `echo_mboi` (graznido `pushPlayer` y la sombra barre las nubes: hay que estar en una estrella), `echo_jasy` (un enjambre `spawnSwarm` desde la estrella más lejana); después baja cansado (ventana 1,4–1,6 s). Fase 3 (humo con ojos rojos): `smoke` (el humo cubre 2 tiles sobre las nubes; se enciende la estrella más cercana a Kerana y al terminar su rayo baja a Tau junto a ella: ventana 1,4 s; distancia en `pullOffsetPx`) y `bolts` (3 rayos rojos, sin ventana). Al sellarlo, las siete estrellas quedan encendidas y el humo se encoge.
+- **Final:** `story.ts` tiene `TAU_ARRIVAL_SLIDES`, `ENDING_SLIDES` (sellado como Tume Arandu, la tierra sana, Eichu, Kerana junto al manantial en Ary Pyahu) y `FEATHERS_SLIDE` (Kerana y Mainumby, solo con 21 plumas). Se quitaron `story.ending.3` y `story.ending.4_*`. Diálogo de sellado en `dialogues.ts` (`yvaga`: Tau, Kerana, Mainumby; `speaker` acepta `mainumby`).
+- **Mapa sanado:** `WorldMapScene` pinta un degradé de colores y el camino dorado si `freed` incluye `tau`.
+- **Fondos:** `bg_yvaga_far` y `bg_final` están en el manifest con `codePlaceholder: true` (Preload avisa `[ASSET FALTANTE]` pero no genera el rectángulo genérico); `systems/Backdrops.ts` usa la imagen si existe o dibuja el cielo / el amanecer por código. `StoryScene` muestra `imageKey` con una franja detrás del texto.
+- **Smoke:** el recorrido de l7 ahora termina entrando a Yvága; nuevo `?debug=1&level=yvaga&god=1` (arena, 3 fases con ecos y humo, sellado, final, guardado y créditos).
+- **Sin probar a mano (Jose):** si las notas y los rayos se esquivan (`noteSpeed`, `boltSpeed`), si el anillo de la melodía se lee, si con el graznido se cae de la estrella, si la ventana de la fase 3 (Tau junto a la estrella encendida) se alcanza con el sable (`pullOffsetPx`), si las estrellas se alcanzan saltando (3 tiles). Todo en `gameplay.ts`, `bosses.ts` y `yvaga.txt` (+ `npm run maps`).
+- **No hecho (anotado):** música del final y de Tau (S13); ilustraciones reales (`raw/tau/disguise`, `raw/tau/true`, `backgrounds/yvaga_far.png`, `backgrounds/final.png`); retrato de Tau y de Mainumby (placeholder de `DialogueBox`). La secuencia de liberación es la común (la marca estalla y sube una luz): no tiene una animación propia de "sellado".
+- **Assets faltantes:** los cuatro de arriba y el tileset real de `cielo`.
+
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
 
@@ -577,6 +600,6 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - [ ] `CREDITS.md` completo.
 
 ### Reserva
-Arreglos pendientes y, si queda crédito, Extras en este orden: jefe secreto Tau (GDD §7) → inglés → mejores tiempos → pogo.
+Arreglos pendientes y, si queda crédito, Extras en este orden: inglés → mejores tiempos → pogo.
 
-**Jefe secreto Tau e inglés están `[RECORTADOS]` desde S4** (semáforo rojo, GDD §12.2 puntos 1 y 2, ver §6.3): no se hacen salvo que sobre crédito en la Reserva y Jose lo pida explícitamente.
+**El inglés está `[RECORTADO]` desde S4** (semáforo rojo, GDD §12.2 punto 2, ver §6.3): no se hace salvo que sobre crédito en la Reserva y Jose lo pida explícitamente. Tau volvió en S12c como jefe final para todos.

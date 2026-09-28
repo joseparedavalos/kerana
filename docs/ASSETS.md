@@ -137,7 +137,7 @@ Todos **miran a la izquierda**. Agrega a Notes: `Spooky but not gory: no blood.`
 | Kurupi | `raw/kurupi/` | `A short stocky forest creature with dark skin, wiry wild hair and beard, a big mouth with a mischievous grin, glowing yellow eyes, feet turned backwards, wearing a simple leaf loincloth, side view facing left, 2D boss sprite, 16-bit pixel art` | Idle · Run · Attack (pisotón o silbido) · Hurt | Si eliges la versión 100 % Colmán, quita `feet turned backwards` |
 | Ao Ao | `raw/ao_ao/` | `A ferocious beast with a thick shaggy sheep-like woolly body, a fierce bear-like head, huge fangs and claws, glowing red eyes, charging on four legs, side view facing left, large 2D boss sprite, 16-bit pixel art` | Run (4 patas) · Idle · Attack (erguido en dos patas, zarpazo) · Hurt | |
 | Luisón | `raw/luison/` | `A gaunt dog-headed night creature with a long row of sharp teeth, small ears, a dry emaciated body, limbs half human and half claws, pale glowing eyes, hunched posture, side view facing left, 2D final boss sprite, 16-bit pixel art` | Idle · Run · Attack (lanzar) · Hurt | Pose extra "aullando sobre una lápida" |
-| Tau [Extra] | `raw/tau/` | Disfraz: `A handsome young man with long dark hair holding a wooden flute, elegant but sinister smile, side view facing left, 2D boss sprite, 16-bit pixel art` · Forma real: `A shadowy evil spirit made of dark violet smoke with glowing red eyes and long smoky claws, side view facing left, large 2D boss, 16-bit pixel art` | Idle · Attack · Hurt | Dos carpetas: `disguise/` y `true/` |
+| Tau (jefe final) | `raw/tau/disguise/` y `raw/tau/true/` | Disfraz: `A handsome young man with long dark hair holding a wooden flute, elegant but sinister smile, side view facing left, 2D boss sprite, 16-bit pixel art` · Forma real: `A shadowy evil spirit made of dark violet smoke with glowing red eyes and long smoky claws, side view facing left, large 2D boss, 16-bit pixel art` | Idle · Attack (flauta / garras de humo) · Hurt | Dos carpetas: `raw/tau/disguise/` (el joven de la flauta, fases 1 y 2, detail 2) y `raw/tau/true/` (humo violeta con ojos rojos, fase 3, detail 2). Hasta que existan, placeholder por código en `Tau.ts` |
 
 ### 3.5 Enemigos
 Agrega al final de cada prompt:
@@ -200,13 +200,17 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | 6 | `stormy dusk over the Ybytyruzú mountains of Guairá, Paraguay, rocky ridges, highland grass, pindó palm trees, lightning` |
 | 7 | `midnight in an old historic cemetery in Asunción, Paraguay, marble mausoleums and stone angels, full moon behind clouds, fog` |
 
+| Yvága (arena de Tau) | `night sky above the clouds just before dawn, deep indigo fading to violet, soft cloud floor, the seven stars of the Pleiades shining, faint golden light on the horizon` → `backgrounds/yvaga_far.png` (640 × 360) |
+
+**Final (GDD §6.8, §7):** `backgrounds/final.png` (640 × 360): `dawn of the new year in Paraguay, a young Guarani woman with long dark hair sitting peacefully beside a small spring among green hills, a hummingbird near her shoulder, the seven stars of the Pleiades fading in the pink sky, 16-bit pixel art, no text`. Se muestra detrás de las dos últimas diapositivas del final. Si falta, `systems/Backdrops.ts` dibuja un amanecer por código (igual con `yvaga_far`).
+
 **Arena de Teju Jagua:** además, `raw/backgrounds/l1_boss_body.png`, con la silueta del cuerpo enorme en la penumbra: `a colossal lizard body in a dark cave full of gold and crystals, seen from the side, heads hidden in shadow, 16-bit pixel art`.
 
 ---
 
 ## 6. Tilesets [Núcleo; mientras tanto, placeholders por código]
 
-- Tiles de 16 × 16. Un PNG por bioma en `public/assets/tiles/<bioma>.png`: `cerro`, `estero`, `campo`, `pueblo`, `selva`, `montana`, `ciudad`.
+- Tiles de 16 × 16. Un PNG por bioma en `public/assets/tiles/<bioma>.png`: `cerro`, `estero`, `campo`, `pueblo`, `selva`, `montana`, `ciudad`, `cielo` (Yvága: nubes y estrellas).
 - **Contenido mínimo:** suelo (relleno y bordes) · plataforma de un solo sentido (izquierda, centro, derecha) · peligro (espinas o karaguatá) · agua (superficie y fondo, donde haga falta) · variante agrietada · decoración (pasto, flores, piedras).
 - **Orden para autotile (opcional pero recomendado):** las 16 variantes del suelo en una grilla de 4 × 4 al inicio del tileset. Para cada tile, se suman los vecinos que también son suelo: arriba = 1, derecha = 2, abajo = 4, izquierda = 8. La suma es la posición en la grilla (fila = suma ÷ 4, columna = resto). Ejemplo: superficie con suelo a los lados y debajo = 2 + 4 + 8 = 14. Si tu tileset viene en otro orden, un pequeño `raw/tiles/<bioma>.json` puede traducir posiciones y el pipeline lo reordena.
 - **De dónde sacarlos:**
@@ -280,6 +284,6 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Logo y mapa del mundo | Núcleo | S13 | ☐ |
 | Iconos y props de interfaz | Núcleo | S13 | ☐ |
 | Música de niveles (7), liberación y final | Núcleo | S13 | ☐ |
-| Tau (disfraz y forma real) | Extra | Reserva | ☐ |
+| Tau (disfraz y forma real) + `yvaga_far.png` y `final.png` | MVP | S12c | ☐ |
 
 Si un asset no está listo cuando llega su sesión, **no pasa nada**: Claude usa un placeholder y lo anota. Se integra después (S13).
