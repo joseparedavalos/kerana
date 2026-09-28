@@ -68,6 +68,11 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(def.width, def.height);
   }
 
+  /** Tocarlo daña a Kerana (el enjambre, solo mientras persigue). */
+  get touchHurts(): boolean {
+    return true;
+  }
+
   /** Golpe del sable de Kerana: `dir` es hacia dónde sale despedido. */
   hit(damage: number, dir: 1 | -1): void {
     if (this.purified) return;

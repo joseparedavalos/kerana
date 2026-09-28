@@ -5,11 +5,15 @@ import { Diver } from './Diver';
 import type { EnemyBase } from './EnemyBase';
 import { Flyer } from './Flyer';
 import { Lurker } from './Lurker';
+import { Swarm } from './Swarm';
 import { Walker } from './Walker';
 
-export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: number, facing: 1 | -1): EnemyBase {
+/** `oneShot`: enjambre llamado por un jefe (persigue enseguida y desaparece al dispersarse). */
+export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: number, facing: 1 | -1, oneShot = false): EnemyBase {
   const def = getEnemyDef(kind);
   switch (def.archetype) {
+    case 'swarm':
+      return new Swarm(scene, x, y, def, facing, oneShot);
     case 'charger':
       return new Charger(scene, x, y, def, facing);
     case 'flyer':

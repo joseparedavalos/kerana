@@ -349,3 +349,61 @@ describe('PlayerMotor: salto doble y viento (S8)', () => {
     expect(vx).toBeCloseTo(P.runSpeed - 90);
   });
 });
+
+describe('PlayerMotor: Paso de la siesta (dash, S9)', () => {
+  const D = GAMEPLAY.dash;
+
+  it('sin el don no hay dash', () => {
+    const s = new Sim();
+    s.step({ dashPressed: true });
+    expect(s.motor.dashing).toBe(false);
+    expect(s.motor.state).not.toBe('dash');
+  });
+
+  it('impulso horizontal hacia donde mira, intangible y de duración fija', () => {
+    const s = new Sim();
+    s.motor.dashEnabled = true;
+    s.step({ left: true });
+    s.step({ dashPressed: true });
+    expect(s.motor.dashing).toBe(true);
+    expect(s.motor.state).toBe('dash');
+    expect(s.body.vx).toBe(-D.speed);
+    s.wait(D.durationMs);
+    expect(s.motor.dashing).toBe(false);
+    // Recorre ≈ velocidad × duración (≈ 3 tiles).
+    expect(s.x).toBeLessThan(-D.speed * (D.durationMs / 1000) * 0.9);
+  });
+
+  it('en el aire no cae mientras dura y hay uno solo por vuelo', () => {
+    const s = new Sim();
+    s.motor.dashEnabled = true;
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.wait(250, { jumpHeld: true });
+    // Sin suelo debajo: sigue en el aire todo lo que haga falta.
+    s.groundUntilX = -Infinity;
+    const y0 = s.y;
+    s.step({ dashPressed: true });
+    s.wait(D.durationMs - 20);
+    expect(Math.abs(s.y - y0)).toBeLessThan(2);
+    s.wait(D.cooldownMs + 50);
+    s.step({ dashPressed: true });
+    expect(s.motor.dashing).toBe(false);
+    s.groundUntilX = Infinity;
+    s.wait(3000);
+    expect(s.body.onGround).toBe(true);
+    s.step({ dashPressed: true });
+    expect(s.motor.dashing).toBe(true);
+  });
+
+  it('respeta el enfriamiento entre dashes en el suelo', () => {
+    const s = new Sim();
+    s.motor.dashEnabled = true;
+    s.step({ dashPressed: true });
+    s.wait(D.durationMs + 10);
+    s.step({ dashPressed: true });
+    expect(s.motor.dashing).toBe(false);
+    s.wait(D.cooldownMs);
+    s.step({ dashPressed: true });
+    expect(s.motor.dashing).toBe(true);
+  });
+});

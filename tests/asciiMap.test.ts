@@ -114,6 +114,13 @@ describe('buildTiledMap', () => {
     expect(water.slice(2, 5)).toEqual([TILES.waterSurface + 1, TILES.waterSurface + 1, TILES.waterSurface + 1]);
   });
 
+  it('"H" va a la capa Foreground (sin colisión)', () => {
+    const map = buildTiledMap(parseAscii('size 3x2\n---\nPH.\n###\n'));
+    const layer = (name: string) => map.layers.find((l: { name: string }) => l.name === name) as { data: number[] };
+    expect(layer('Foreground').data[1]).toBe(TILES.groundBase + 15 + 1);
+    expect(layer('Ground').data[1]).toBe(0);
+  });
+
   it('valida el mapa', () => {
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\n##\n'))).toThrow(/P/);
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\nPx\n'))).toThrow(/enemy/);

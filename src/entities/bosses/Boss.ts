@@ -30,7 +30,11 @@ export interface BossContext {
   damagePlayer(fromX: number): boolean;
   /** Cura a Kerana (corazón recuperado de la cola de Moñái). */
   healPlayer(amount: number): void;
+  /** Suelta un enjambre de abejas que persigue a Kerana (Jasy Jatere). */
+  spawnSwarm(x: number, y: number): void;
   sfx(key: SfxKey): void;
+  /** Sonido con paneo estéreo según dónde está `x` en la pantalla (silbido de Jasy Jatere). */
+  sfxAt(key: SfxKey, x: number): void;
   shake(ms: number, intensity: number): void;
   /** Modo asistido: avisos más largos (GDD §4.7). */
   assist: boolean;
@@ -88,6 +92,14 @@ export abstract class Boss {
     this.result.defeated = defeated;
     if (defeated) this.onDefeated();
     return this.result;
+  }
+
+  /** Vence al jefe sin un golpe (Kerana ganó la carrera por el bastón de Jasy Jatere). */
+  protected defeatNow(): void {
+    if (this.brain.state === 'defeated') return;
+    this.brain.damage(this.brain.hp);
+    EventBus.emit(GameEvents.bossHpChanged, this.brain.hpFraction);
+    this.onDefeated();
   }
 
   /** Reinicia la pelea (Kerana cayó dentro de la arena). */

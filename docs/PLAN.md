@@ -145,7 +145,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S6 | 2026-09-24 | Opus 5.5 | 65 | 60 | 5 | 40 | Verde |
 | S6b | 2026-09-24 | Opus 5.5 | 60 | 58 | 2 | 42 | Verde |
 | S7 | 2026-09-27 | Opus 5.5 | 58 | 53 | 5 | 47 | Verde |
-| S8 | | | | | | | |
+| S8 | 2026-09-27 | Opus 5.5 | 53 | 50 | 3 | 50 | Verde |
 | S9 | | | | | | | |
 | S10 | | | | | | | |
 | S11 | | | | | | | |
@@ -159,6 +159,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S6b:** costó 2 (de la Reserva, que queda en 8). Acumulado 42 contra una meta de 45,50 → **Verde**.
 
 **Semáforo de S7:** meta acumulada 32 + 7 (S3) + 6,50 (S6) + 6,50 (S7) = 52; gastado 47 → **Verde**.
+
+**Semáforo de S8:** meta acumulada 52 + 6,50 (S8) = 58,50; gastado 50 → **Verde**.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -177,7 +179,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S6b | Hecha | rama `claude/practical-curie-03v7dy` | Kerana con doble detalle: lienzo 1280 × 720 con zoom 2 (`setupView`), `detail` en el pipeline, Kerana a 128 × 128 con detail 2. Jugabilidad sin cambios. Build, tests y smoke OK |
 | S7 | Hecha | rama `claude/laughing-newton-nqj2z9` | Nivel 2 Ñeembucú (ASCII), camalotes (`Sinking`), agua baja (`ShallowWater`), `jakare` (Lurker), `nakurutu` (Diver), `mboi` (Walker), Mbói Tu'i con 3 fases, don +1 corazón. Build, tests y smoke OK |
 | S8 | Hecha | rama `claude/awesome-carson-qhwqjn` | Nivel 3 Misiones (ASCII), `WindZone` con aviso, `nandu` (Charger), `karakara` (Diver), hipnosis (`StatusEffects`), Moñái con 3 fases (descenso, pulso, robo del corazón), salto doble. Arreglos previos: postes de l2 a 3 tiles y arena que no se recierra tras caer. Build, tests y smoke OK |
-| S9 | Pendiente | | |
+| S9 | Hecha | rama `claude/elegant-hypatia-1ryhow` | Nivel 4 Capiatá (ASCII), `SleepFog` (sueño de siesta), tejas (`FallingHazard kind=teja`), `jagua` (Charger que ladra), `abejas` (Swarm con partículas), Jasy Jatere (chispas, fase invisible con pistas, enjambres, carrera por el bastón), dash intangible. Build, tests y smoke OK |
 | S10 | Pendiente | | |
 | S11 | Pendiente | | |
 | S12 | Pendiente | | |
@@ -437,7 +439,18 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 
 **Criterios:** como en S6, para el nivel 4 · se puede ganar solo guiándose por las pistas.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S9 → S10):**
+- **Mapa:** `tools/levels/l4.txt` (270 × 24) → `map_l4`. Suelo en la fila 17. A: calle (x 0–69) con corredores `=` en la fila 14 y techos en la 11; pluma 1 en el campanario (x 53–55, fila 6: **pide salto doble**). B: patios (x 70–139) con niebla, panales y Luz de Arasy; pluma 2 en un túnel bajo la calle (pozo x 118–119 con escalón, espinas x 121–122, pluma x 125): el túnel mide 3 tiles, no se puede saltar las espinas, **pide dash** (volver después). Checkpoint 1 en x 140. C: techos (x 140–209) con 4 tejas; pluma 3 en el patio escondido detrás de `H` (x 194–201). Antesala x 210–229. Arena x 230–269: techos a los lados (fila 14), bancos (fila 16), ramas del lapacho (filas 14 y 11) y niebla en dos partes. La columna central (x 250) queda libre a propósito: `setupBoss` mide el suelo ahí. Los lugares del jefe están en `GAMEPLAY.jasyJatere.spots` (tiles desde el borde de la arena): si se cambia la arena, ajustarlos.
+- **Nuevo en el ASCII:** `H` = tile en la capa `Foreground` (se dibuja delante y no choca); `rect SleepFog`; `point FallingHazard ... kind=teja`. El parser tiene test.
+- **Sueño de siesta:** `StatusEffects.stepSleep` (lógica pura, `tests/sleep.test.ts`): quieta (ningún botón mantenido) 2 s en la niebla → bostezo a los 1,2 s (sonido y "Zzz" tenue) → dormida 1,5 s sin controles; cada botón pulsado resta 250 ms; el daño la despierta. Todo en `GAMEPLAY.sleep`. Con `?god=1` no se duerme.
+- **Dash (Paso de la siesta):** `PlayerMotor.dashEnabled` (don guardado o `?gifts=all`), acción `dash` (C, L o Shift). 320 px/s × 160 ms, sin gravedad mientras dura, uno por vuelo, enfriamiento de 500 ms después de terminar. Intangible: no recibe daño de enemigos, jefes ni espinas; pozos y agua honda sí dañan. Kerana se ve translúcida (`GAMEPLAY.dash.alpha`); usa la animación de correr (falta la propia). Tests en `playerMotor.test.ts`.
+- **Enemigos:** `jagua` (Charger con `warnSfx: 'bark'`: ladra al empezar el aviso) y `abejas` (arquetipo nuevo `swarm`: `SwarmMotor` con tests + `Swarm.ts`; cuerpo invisible que siguen las partículas; panal junto al punto del mapa; solo pica mientras persigue, `EnemyBase.touchHurts`).
+- **Jasy Jatere** (`bosses/JasyJatere.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.jasyJatere`, lógica en `jasyLogic.ts` con tests): 9 de vida (3 fases de 3). Fase 1: salta entre techos, rama y suelo; bastón en alto 0,6 s → 3 chispas en abanico; se burla 1,2 s (ventana). Fase 2: invisible (alpha 0,1 con tinte dorado); pistas: silbido con paneo estéreo cada 1,4 s (`AudioManager.play(key, pan)` + `BossContext.sfxAt`), notas musicales, huellas de polvo en el suelo, la risa en cada ventana; emboscada (destello del bastón 0,4 s, visible aunque él no → corre hasta pasar a Kerana → ventana 1,3 s) y enjambres (zumbido, máx. 2, `BossContext.spawnSwarm`). Cada golpe lo deja visible 2 s. Fase 3: más rápido y suma chispas. El golpe que lo dejaría en 0 lo deja en 1 y suelta el bastón (`lethalClamp`): vuela al lugar más lejos de Kerana; si ella lo toca antes de 3 s, gana (`Boss.defeatNow`, que `LevelScene` detecta tras `update`); si no, él lo recupera y vuelve a esconderse con 1 golpe más.
+- **Test de avisos:** `bossBrain.test.ts` ahora pide ≥ 0,4 s (antes 0,5) porque el GDD fija 0,4 s para el destello del bastón.
+- **Smoke:** suma `?level=4&boss=1&god=1` (antesala, cierre, fase invisible, carrera ganada, liberación con dash guardado). Arreglos del smoke que fallaban por tiempo en máquinas lentas (ya fallaban en `main`): la caminata al islote de Mbói Tu'i espera a que se cierre la arena, y el final de la liberación acepta "Nivel completado" o el mapa (el `Space` del bucle podía saltarlo).
+- **Sin probar a mano (Jose):** si el túnel del dash se cruza cómodo (espinas de 2 tiles, dash de ≈ 3), si la niebla duerme demasiado seguido, si el silbido se oye bien a la izquierda/derecha con auriculares, si la fase invisible es justa sin mirar el brillo tenue, el alcance de las chispas y la distancia de la carrera. Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l4.txt` (+ `npm run maps`).
+- **No hecho (anotado):** la abuela dormida de la antesala [Extra]; el calor que ondula el aire y el sol vertical (van con S13, fondos); el jefe y los perros son placeholder por código; el dash no tiene estela ni animación propia.
+- **Assets faltantes:** sprites de Jasy Jatere y su bastón, `jagua`, panal, teja, niebla, "Zzz", tileset real de `pueblo` (hoy placeholder de color), animación de dash de Kerana.
 
 ### S10: Nivel 5 Canindeyú + Kurupi
 **Lee:** GDD §6.5 y §5.3 (kuati, kai, mboi colgante).

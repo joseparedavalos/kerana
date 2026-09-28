@@ -167,6 +167,10 @@ export function buildTiledMap(parsed, options = {}) {
           addObject('Sinking', x * TILE, y * TILE, len * TILE, TILE);
           break;
         }
+        case 'H':
+          // Capa Foreground: se dibuja delante de Kerana y no choca (patios escondidos, GDD §6.4).
+          data.Foreground[i] = gid(TILES.groundBase + 15);
+          break;
         case 'B':
           data.Ground[i] = gid(TILES.cracked);
           addObject('Breakable', x * TILE, y * TILE, TILE, TILE);

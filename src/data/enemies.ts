@@ -1,7 +1,9 @@
+import type { SfxKey } from '../systems/sfxPresets';
+
 // Enemigos comunes (GDD §5.2). Los IDs con nombre real llegan con cada nivel (§5.3);
 // por ahora hay uno por arquetipo para el nivel de prueba, con color placeholder.
 
-export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver';
+export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm';
 
 export interface EnemyDef {
   id: string;
@@ -21,6 +23,8 @@ export interface EnemyDef {
   chargeSpeed?: number;
   chargeMaxMs?: number;
   cooldownMs?: number;
+  /** Sonido al empezar el aviso (el ladrido del jagua). */
+  warnSfx?: SfxKey;
 
   // Flyer: onda vertical.
   amplitude?: number;
@@ -34,6 +38,10 @@ export interface EnemyDef {
   // Diver: velocidad de picada y de regreso a su poste (px/s).
   diveSpeed?: number;
   returnSpeed?: number;
+
+  // Swarm: tiempo persiguiendo y dispersándose (ms); `speed` es la velocidad de persecución.
+  chaseMs?: number;
+  disperseMs?: number;
 }
 
 export const ENEMIES: Record<string, EnemyDef> = {
@@ -109,6 +117,33 @@ export const ENEMIES: Record<string, EnemyDef> = {
     returnSpeed: 80,
     chargeMaxMs: 1200,
     cooldownMs: 1000,
+  },
+
+  // Nivel 4 (GDD §5.3): el jagua ladra antes de cargar; las abejas son un enjambre de partículas.
+  jagua: {
+    id: 'jagua',
+    archetype: 'charger',
+    hp: 2,
+    width: 22,
+    height: 14,
+    detectRadius: 110,
+    telegraphMs: 500,
+    chargeSpeed: 210,
+    chargeMaxMs: 1600,
+    cooldownMs: 900,
+    warnSfx: 'bark',
+  },
+  abejas: {
+    id: 'abejas',
+    archetype: 'swarm',
+    hp: 1,
+    width: 14,
+    height: 12,
+    speed: 70,
+    detectRadius: 80,
+    chaseMs: 2800,
+    disperseMs: 900,
+    cooldownMs: 2500,
   },
 };
 

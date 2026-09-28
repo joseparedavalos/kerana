@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { BossId } from '../../data/types';
 import type { Boss, BossContext } from './Boss';
+import { JasyJatere } from './JasyJatere';
 import { MboiTui } from './MboiTui';
 import { Monai } from './Monai';
 import { TejuJagua } from './TejuJagua';
@@ -14,6 +15,8 @@ export function createBoss(scene: Phaser.Scene, id: BossId, ctx: BossContext): B
       return new MboiTui(scene, ctx);
     case 'monai':
       return new Monai(scene, ctx);
+    case 'jasy_jatere':
+      return new JasyJatere(scene, ctx);
     default:
       console.warn(`[JEFE] "${id}" todavía no está implementado.`);
       return null;

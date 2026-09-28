@@ -35,10 +35,14 @@ export const GAMEPLAY = {
     bodyHeight: 42,
   },
 
+  /** Paso de la siesta (don 4, GDD §3.3): impulso horizontal intangible, uno por vuelo. */
   dash: {
     speed: 320,
     durationMs: 160,
+    /** Espera desde que termina un dash hasta poder hacer otro (ms). */
     cooldownMs: 500,
+    /** Transparencia de Kerana mientras es intangible. */
+    alpha: 0.45,
   },
 
   attack: {
@@ -74,6 +78,9 @@ export const GAMEPLAY = {
     respawnMs: 3000,
     width: 10,
     height: 16,
+    /** Tejas del nivel 4 (GDD §6.4): más anchas y bajas que una estalactita. */
+    tejaWidth: 14,
+    tejaHeight: 7,
     /** Temblor durante el aviso (px). */
     shakePx: 1,
   },
@@ -219,6 +226,72 @@ export const GAMEPLAY = {
     /** Icono de espiral sobre Kerana: altura (px) y giro (grados por segundo). */
     iconOffsetY: 52,
     iconSpinDegPerS: 360,
+  },
+  /** Sueño de siesta (GDD §4.8): quieta dentro de la niebla → bostezo → se duerme. */
+  sleep: {
+    /** Quieta este tiempo dentro de la niebla y se duerme (ms). */
+    stillToSleepMs: 2000,
+    /** Bostezo de aviso (ms de quietud). */
+    yawnAtMs: 1200,
+    /** Dormida (ms). */
+    sleepMs: 1500,
+    /** Cada botón pulsado dormida acorta el sueño en esto (ms). */
+    pressCutMs: 250,
+    /** "Zzz" sobre Kerana (px) y niebla: opacidad y deriva (ms por vaivén). */
+    iconOffsetY: 50,
+    fogAlpha: 0.28,
+    fogDriftMs: 2600,
+  },
+  /** Jasy Jatere (GDD §6.4). Los tiempos de cada ataque están en src/data/bosses.ts. */
+  jasyJatere: {
+    /** Lugares a los que salta: tiles desde el borde izquierdo de la arena y altura sobre el suelo (tiles). Ver l4.txt. */
+    spots: [
+      { tx: 4, ty: 3 },
+      { tx: 9, ty: 0 },
+      { tx: 18, ty: 6 },
+      { tx: 30, ty: 0 },
+      { tx: 37, ty: 3 },
+    ],
+    width: 14,
+    height: 34,
+    /** Salto entre lugares (ms) y altura del arco (px). */
+    hopMs: 520,
+    hopArc: 40,
+    /** Chispas doradas: cuántas, apertura del abanico (grados), velocidad (px/s), vida (ms) y radio (px). */
+    sparks: 3,
+    sparkSpreadDeg: 22,
+    sparkSpeed: 170,
+    sparkLifeMs: 1600,
+    sparkRadius: 4,
+    /** Invisible: opacidad del brillo tenue y tiempo visible tras cada golpe (ms). */
+    invisibleAlpha: 0.1,
+    revealMs: 2000,
+    /** Pistas: silbido (ms entre uno y otro), notas musicales (ms) y huellas de polvo (px entre huellas, cuántas). */
+    whistleEveryMs: 1400,
+    noteEveryMs: 380,
+    footprintGapPx: 14,
+    footprintMax: 10,
+    footprintFadeMs: 1400,
+    /** Emboscada: corre hasta pasar a Kerana por esto (px) y se acerca a esta distancia antes del aviso (px). */
+    ambushOvershoot: 36,
+    ambushApproach: 90,
+    /** Enjambres que puede tener a la vez. */
+    maxSwarms: 2,
+    /** Carrera por el bastón: vuelo (ms), lo que tarda él en recuperarlo (ms) y tamaño del bastón (px). */
+    staffFlyMs: 900,
+    raceMs: 3000,
+    staffWidth: 6,
+    staffHeight: 24,
+  },
+  /** Enjambre de abejas (GDD §5.2 Swarm): se dibuja con partículas. */
+  swarm: {
+    /** Partículas: cada cuánto sale una (ms), vida (ms) y dispersión (px). */
+    particleEveryMs: 35,
+    particleLifeMs: 420,
+    spreadPx: 9,
+    /** Oscilación del enjambre mientras persigue (px y Hz). */
+    wobblePx: 10,
+    wobbleHz: 2.2,
   },
   water: {
     /** Velocidad de carrera en agua baja (× runSpeed). */
