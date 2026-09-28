@@ -9,12 +9,13 @@ export interface DebugFlags {
   god: boolean;
 }
 
-const LEVEL_IDS: readonly LevelId[] = ['test', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'];
+const LEVEL_IDS: readonly LevelId[] = ['test', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'yvaga'];
 
 export function parseLevelParam(value: string | null): LevelId | null {
   if (!value) return null;
   const v = value.trim().toLowerCase();
   if (/^[1-7]$/.test(v)) return `l${v}` as LevelId;
+  if (v === '8') return 'yvaga';
   return (LEVEL_IDS as readonly string[]).includes(v) ? (v as LevelId) : null;
 }
 

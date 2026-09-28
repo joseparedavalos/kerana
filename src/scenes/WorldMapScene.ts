@@ -34,6 +34,7 @@ export class WorldMapScene extends Phaser.Scene {
   private panelSubtitle!: Phaser.GameObjects.Text;
   private panelFeathers!: Phaser.GameObjects.Text;
   private skyStars: Phaser.GameObjects.Arc[] = [];
+  private healed = false;
 
   constructor() {
     super('Map');
@@ -43,7 +44,10 @@ export class WorldMapScene extends Phaser.Scene {
     setupView(this);
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
-    this.add.rectangle(0, 0, width, height, 0x14132a).setOrigin(0);
+    // Con Tau sellado, la tierra guaraní sana y el mapa recupera sus colores (GDD §7).
+    this.healed = SaveManager.current.freed.includes('tau');
+    if (this.healed) this.add.graphics().fillGradientStyle(0x2a3a6a, 0x2a3a6a, 0x3f6b3a, 0x3f6b3a, 1).fillRect(0, 0, width, height);
+    else this.add.rectangle(0, 0, width, height, 0x14132a).setOrigin(0);
     this.add.text(width / 2, 16, t('map.title'), { fontFamily: FONT_FAMILY, fontSize: '16px', color: '#F2C14E' }).setOrigin(0.5);
 
     this.buildSky();
@@ -80,7 +84,7 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private buildPath(): void {
-    const graphics = this.add.graphics({ lineStyle: { width: 1, color: 0x4a4870, alpha: 0.8 } });
+    const graphics = this.add.graphics({ lineStyle: { width: 1, color: this.healed ? 0xf2c14e : 0x4a4870, alpha: 0.8 } });
     const points = WORLD_LEVELS.map((level) => this.projectNode(level));
     for (let i = 0; i < points.length - 1; i++) {
       graphics.lineBetween(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);

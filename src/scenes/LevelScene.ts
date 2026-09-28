@@ -4,7 +4,8 @@ import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import { liberationDialogue } from '../data/dialogues';
-import { getLevel } from '../data/levels';
+import { getLevel, WORLD_LEVELS } from '../data/levels';
+import { endingSlides } from '../data/story';
 import type { BossId, LevelDef, LevelId } from '../data/types';
 import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { onRefuge, type Refuge } from '../entities/bosses/aoAoLogic';
@@ -35,6 +36,7 @@ import { SaveManager } from '../systems/SaveManager';
 import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
+import { addYvagaSky } from '../systems/Backdrops';
 
 type RespawnReason = 'pit' | 'water' | 'hazard';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
@@ -240,6 +242,7 @@ export class LevelScene extends Phaser.Scene {
     // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
     if (this.def.dark) this.darkness = new Darkness(this);
     this.buildMap();
+    if (this.def.finale) for (const bg of this.def.backgrounds) addYvagaSky(this, bg.key, this.map.widthInPixels, this.map.heightInPixels, bg.factor);
     const spawn = this.buildObjects();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
 
@@ -980,6 +983,14 @@ export class LevelScene extends Phaser.Scene {
   /** Guarda (plumas, jefe liberado, don) y pasa a la pantalla de nivel completado. */
   private finishLevel(): void {
     this.completing = true;
+    if (this.def.finale) {
+      // Tau sellado (GDD §7): el mapa recupera sus colores y sigue el final verdadero.
+      SaveManager.completeLevel(this.def);
+      const feathers = WORLD_LEVELS.reduce((n, l) => n + SaveManager.getFeathers(l.id).filter(Boolean).length, 0);
+      const slides = endingSlides(feathers, WORLD_LEVELS.length * GAMEPLAY.hud.featherMax);
+      this.scene.start('Story', { slides, nextScene: 'Credits' });
+      return;
+    }
     SaveManager.setFeatherCount(this.def.id, this.feathers);
     if (this.def.order > 0) SaveManager.completeLevel(this.def);
     this.scene.start('LevelComplete', { level: this.def });

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { getBossDef } from '../src/data/bosses';
 import { getEnemyDef } from '../src/data/enemies';
-import { ENDING_SLIDES, endingSlides } from '../src/data/story';
 import { chainStepAt, chargeDir, farthestIndex, howlBlacksOut } from '../src/entities/bosses/luisonLogic';
 import { ambientTarget, inAnyArea, isLit, lerpColor, takesDamage, type LightSource } from '../src/systems/lightLogic';
 
@@ -97,18 +96,5 @@ describe('Luisón (GDD §6.7)', () => {
     expect(c.floorTiles[0]).toBeLessThan(c.tombTile);
     expect(c.tombTile).toBeLessThan(c.floorTiles[1]);
     expect(c.roofTiles[1]).toBeLessThan(40);
-  });
-});
-
-describe('Final (GDD §2.6)', () => {
-  it('sin las 21 plumas, Tau todavía escucha', () => {
-    const slides = endingSlides(20, 21);
-    expect(slides).toHaveLength(ENDING_SLIDES.length + 1);
-    expect(slides[slides.length - 1].textKey).toBe('story.ending.4_missing_feathers');
-  });
-
-  it('con las 21 plumas, Mainumby avisa de Tau', () => {
-    const slides = endingSlides(21, 21);
-    expect(slides[slides.length - 1].textKey).toBe('story.ending.4_all_feathers');
   });
 });

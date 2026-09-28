@@ -7,6 +7,7 @@ import { Kurupi } from './Kurupi';
 import { Luison } from './Luison';
 import { MboiTui } from './MboiTui';
 import { Monai } from './Monai';
+import { Tau } from './Tau';
 import { TejuJagua } from './TejuJagua';
 
 /** Crea el jefe de la arena; los que todavía no existen devuelven null (el nivel sigue sin jefe). */
@@ -26,6 +27,8 @@ export function createBoss(scene: Phaser.Scene, id: BossId, ctx: BossContext): B
       return new AoAo(scene, ctx);
     case 'luison':
       return new Luison(scene, ctx);
+    case 'tau':
+      return new Tau(scene, ctx);
     default:
       console.warn(`[JEFE] "${id}" todavía no está implementado.`);
       return null;

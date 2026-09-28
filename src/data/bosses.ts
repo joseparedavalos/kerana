@@ -52,6 +52,9 @@ const AO_AO_HP = 15;
 /** Luisón: 18 golpes, 3 fases de 6 (GDD §6.7). */
 const LUISON_HP = 18;
 
+/** Tau: 21 golpes, 3 fases de 7 (GDD §7, jefe final desde S12c). */
+export const TAU_HP = 21;
+
 export const BOSSES: Partial<Record<BossId, BossDef>> = {
   teju_jagua: {
     id: 'teju_jagua',
@@ -296,6 +299,46 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         attacks: [
           { id: 'chain', weight: 2, telegraphMs: 600, activeMs: 2400, recoverMs: 1000 },
           { id: 'charge', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 1000 },
+        ],
+      },
+    ],
+  },
+  tau: {
+    id: 'tau',
+    nameKey: 'boss.tau.name',
+    epithetKey: 'boss.tau.epithet',
+    hp: TAU_HP,
+    phases: [
+      // Fase 1, el joven de la flauta: notas que vuelan hacia Kerana (ventana 1,3 s) y una melodía que
+      // hipnotiza en un anillo (la hipnosis de Moñái; ventana 1,5 s). Anda por las nubes.
+      {
+        untilHpRatio: 14 / TAU_HP,
+        idleMs: 800,
+        attacks: [
+          { id: 'notes', weight: 2, telegraphMs: 700, activeMs: 1200, recoverMs: 1300 },
+          { id: 'melody', weight: 1, telegraphMs: 900, activeMs: 900, recoverMs: 1500 },
+        ],
+      },
+      // Fase 2, los ecos: sube al cielo y una sombra de un hijo repite su ataque (Teju Jagua: rocas;
+      // Mbói Tu'i: graznido y barrida por las nubes; Jasy Jatere: enjambre). Después baja cansado (ventana).
+      {
+        untilHpRatio: 7 / TAU_HP,
+        idleMs: 700,
+        attacks: [
+          { id: 'echo_teju', weight: 1, telegraphMs: 900, activeMs: 1400, recoverMs: 1400 },
+          { id: 'echo_mboi', weight: 1, telegraphMs: 900, activeMs: 1000, recoverMs: 1400 },
+          { id: 'echo_jasy', weight: 1, telegraphMs: 900, activeMs: 600, recoverMs: 1600 },
+        ],
+      },
+      // Fase 3, las siete estrellas: humo violeta con ojos rojos, en lo alto. El humo cubre las nubes
+      // (aviso 1,2 s: subí a una estrella); la estrella encendida lo baja con su rayo (ventana 1,4 s).
+      // Rayos rojos hacia Kerana, sin ventana.
+      {
+        untilHpRatio: 0,
+        idleMs: 600,
+        attacks: [
+          { id: 'smoke', weight: 2, telegraphMs: 1200, activeMs: 1600, recoverMs: 1400 },
+          { id: 'bolts', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 400, punishable: false },
         ],
       },
     ],
