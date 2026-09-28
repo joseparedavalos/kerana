@@ -149,7 +149,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S9 | 2026-09-27 | Opus 5.5 | 50 | 44 | 6 | 56 | Verde |
 | S10 | 2026-09-27 | Opus 5.5 (esfuerzo High, por error) | 44 | 37 | 7 | 63 | Verde |
 | S11 | 2026-09-28 | Opus 5.5 | 37 | 33 | 4 | 67 | Verde |
-| S12 | | | | | | | |
+| S12 | 2026-09-28 | Opus 5.5 | 33 | 27 | 6 | 73 | Verde |
+| S12b | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -167,6 +168,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S10:** meta acumulada 65 + 6,50 (S10) = 71,50; gastado 63 → **Verde**. Costó más que las anteriores porque corrió con esfuerzo High por error.
 
 **Semáforo de S11:** meta acumulada 71,50 + 6,50 (S11) = 78; gastado 67 → **Verde**.
+
+**Semáforo de S12:** meta acumulada 78 + 6,50 (S12) = 84,50; gastado 73 → **Verde**. (S12b no estaba en el reparto: sale de la Reserva.)
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -189,6 +192,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S10 | Hecha | rama `claude/pensive-hopper-ogtwls` | Nivel 5 Canindeyú (ASCII, 280 × 45, vertical), hongos que rebotan (`Bouncer`, `M`), ramas que se quiebran (`Crumble`, `R`), `kuati` (Jumper), `kai` (Thrower con frutas), `mboi_colgante` (Lurker colgante), Kurupi con pies al revés (llamado, huellas invertidas y pisotón, engaño en tres), +1 corazón. Build, tests y smoke OK |
 | S11 | Hecha | rama `claude/wizardly-keller-hk38hc` | Nivel 6 Guairá (ASCII, 290 × 26), `taitetu` (Charger en manada), `ao_ao_cria` (Jumper), pindó como refugio (`Pindo`), rocas que caen con sombra (`FallingHazard kind=roca`), Ao Ao con 3 fases, +1 corazón (7). Extras: vacas de Capiatá en N4 y onda de luz del tajo cargado. Build, tests y smoke OK |
 | S12 | Hecha | rama `claude/tender-rubin-4kwtdf` | Nivel 7 Asunción (ASCII, 280 × 30), oscuridad con la iluminación de Phaser 4 (`Darkness`: halo de Kerana, `DarkZone`, faroles `Lantern`, checkpoints que alumbran), `pora` (Flyer, vulnerable solo iluminado) y `jagua_hu` (Charger con ojos), Luisón con 3 fases (terrones, aullido, apagón, embestida con ojos, sombra de Tau), velas al liberarlo, final según las plumas → créditos. Antes: la onda de luz choca con el terreno. Build, tests y smoke OK |
+| S12b | Hecha | rama `claude/eager-shannon-b9wnnb` | Pulido de niveles (fuera del plan, sale de la Reserva): práctica segura del don recién ganado al inicio de l2, l4 y l5, camalotes sobre agua baja e islote de descanso en l2, isla de monte en l3, tramos sin karaguatá y hongos bajo el dosel en l5, un secreto con luciérnagas por nivel, carteles de una línea. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -524,6 +528,20 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Sin probar a mano (Jose):** si la oscuridad se ve bien (ambiente `ambientNight`/`ambientDark`, radio del halo y de los faroles), si el laberinto se puede recorrer a oscuras, si los póra se leen (alfa 0,35), si los terrones se esquivan, si la embestida en la oscuridad se anticipa con los ojos, si entrar a la arena subiendo al mausoleo se entiende. Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l7.txt` (+ `npm run maps`).
 - **No hecho (anotado):** luna, nubes y niebla (S13, fondos y efectos); campanas y música (S13); ilustración de Kerana junto al manantial en el final (GDD §6.8, si hay arte); Luisón, póra, jagua hũ, faroles, lápida, velas y sombra de Tau son placeholder por código.
 - **Assets faltantes:** sprites de Luisón (normal y crecido), `pora`, `jagua_hu`, farol, lápida, vela, sombra de Tau; tileset real de `ciudad` (hoy placeholder de color); ilustración del final.
+
+### S12b: Pulido de niveles (fuera del plan original; sale de la Reserva)
+**Principios:** cada mecánica aparece primero donde fallar no cuesta y después con riesgo · cada nivel empieza con un rincón seguro para practicar el don recién ganado · descansos entre tandas · segundas oportunidades en vez de castigo.
+
+**Notas para la próxima sesión (S12b → S13):**
+- **Luciérnagas:** `rect Fireflies` en el ASCII (nuevo objeto, solo decorativo: sin colisión ni contador; en l7 brillan con luz propia). Valores en `GAMEPLAY.fireflies`.
+- **Secretos (uno por nivel, guavirá tras una liana (`rect Breakable kind=liana`) o rocas agrietadas `B`, luciérnagas encima):** l1 nicho en la pared de la bajada (x 142–145, fila 23, liana) · l2 cuarto flotante sobre el poste de x 98 (x 101–105, fila 9, roca) · l3 arriba de la isla de monte (x 50–54, fila 6, liana) · l4 sobre la cornisa del salto doble (x 1–5, fila 10, roca) · l5 sobre el primer hongo (x 14–18, fila 34, liana) · l6 sobre el primer escalón (x 10–14, fila 16, roca) · l7 junto al balcón de x 18 (x 10–14, fila 21, liana). Cada uno está anotado en el encabezado de su `.txt`.
+- **l2:** los camalotes de x 27–32 flotan sobre agua baja (hoyo de 1 tile con `rect ShallowWater`; los camalotes son `rect Sinking` porque la `S` pinta agua honda); islote firme en x 188–190 dentro de la cadena larga; rincón de práctica al inicio (x 1–3, tapado por 3 rocas `B`, guavirá adentro) con cartel nuevo `hint.l2.cracked`. Kerana empieza en x 8.
+- **l3:** isla de monte (x 50–59): ramas `=` en las filas 13, 10 y 7 (3 tiles entre cada una), secreto arriba.
+- **l4:** cornisa `===` en x 7–9, fila 12 (5 tiles sobre el suelo: pide salto doble), guavirá encima.
+- **l5:** espinas de práctica del Paso de la siesta en x 7–9 (cartel nuevo `hint.l5.dash`, tecla `{dash}` disponible en carteles); primera rama que se quiebra baja (x 46–49, fila 38) con el cartel de ramas al lado; subida sin karaguatá en x 72–77 (hongo para volver a la rama de x 74) y x 86–91 (rama firme en x 86–89, fila 35); hongos en la fila 21 bajo los 5 huecos del dosel (devuelven arriba; el pozo sigue si se los esquiva). El smoke del primer hongo ahora arranca pasadas las espinas.
+- **Carteles:** todos los `hint.l*` quedaron en una línea (casi solo la tecla).
+- **Revisión de tandas y regla de 3 tiles:** revisado en los tramos tocados (ninguna estructura nueva que haya que saltar pasa de 3 tiles; los cuartos secretos flotan o están fuera del camino). No se hizo una auditoría completa tile por tile de los 7 niveles: si Jose encuentra una tanda de más de ~20 tiles sin lugar seguro, anotarla en "Notas de juego".
+- **Sin probar a mano (Jose):** si los secretos se ven venir por las luciérnagas, si el salto a los cuartos flotantes de l6 y l7 (desde el escalón/balcón) se siente bien, si el hongo de x 74 en l5 alcanza la rama (rebote ≈ 7,5 tiles, justo), si los hongos del dosel devuelven a las copas.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
