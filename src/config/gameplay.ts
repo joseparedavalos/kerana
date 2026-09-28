@@ -79,6 +79,8 @@ export const GAMEPLAY = {
     fadeFrom: 0.6,
     /** Daño a un jefe, solo en su ventana vulnerable (el tajo cargado de cerca hace `chargedSlash.damage`). */
     bossDamage: 1,
+    /** Al chocar con el terreno (Ground) se apaga en este tiempo (ms). */
+    wallFadeMs: 120,
     color: 0xf2c14e,
   },
 

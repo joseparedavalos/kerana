@@ -140,6 +140,8 @@ export class LevelScene extends Phaser.Scene {
   private cowGroup?: Phaser.Physics.Arcade.Group;
   /** Onda de luz del tajo cargado (una sola en pantalla). */
   private readonly lightWave = new LightWaveMotor(GAMEPLAY.lightWave);
+  /** La onda choca solo con la capa Ground (las plataformas de un sentido no la frenan). */
+  private readonly waveProbe = (x: number, y: number): boolean => this.tileAt('Ground', x, y);
   private lightWaveSprite?: Phaser.GameObjects.Rectangle;
   private readonly waveRect = new Phaser.Geom.Rectangle();
   private readonly enemyRect = new Phaser.Geom.Rectangle();
@@ -566,11 +568,13 @@ export class LevelScene extends Phaser.Scene {
     const wave = this.lightWave;
     const sprite = this.lightWaveSprite;
     if (!sprite) return;
-    wave.step(deltaMs);
+    wave.step(deltaMs, this.waveProbe);
     sprite.setVisible(wave.active);
     if (!wave.active) return;
     const lw = GAMEPLAY.lightWave;
     sprite.setPosition(wave.x, wave.y).setAlpha(wave.alpha * 0.85);
+    // Chocó con una pared: solo se apaga, no toca nada del otro lado.
+    if (!wave.canHit) return;
     const rect = this.waveRect.setTo(wave.x - lw.width / 2, wave.y - lw.height / 2, lw.width, lw.height);
     for (const enemy of this.enemies) {
       if (!enemy.active || enemy.purified) continue;
