@@ -27,6 +27,10 @@ export interface EnemyDef {
   warnSfx?: SfxKey;
   /** Al purificarse queda en el nivel como otra cosa (la vaca embrujada queda como vaca tranquila). */
   purifiesInto?: 'vaca';
+  /** Ojos que brillan en la oscuridad y se encienden en el aviso (jagua hũ, N7). */
+  glowEyes?: boolean;
+  /** Solo recibe daño iluminado (póra, N7; GDD §5.3). */
+  needsLight?: boolean;
 
   // Flyer: onda vertical.
   amplitude?: number;
@@ -244,6 +248,24 @@ export const ENEMIES: Record<string, EnemyDef> = {
     telegraphMs: 300,
     jumpVelocity: -280,
     speed: 100,
+  },
+
+  // Nivel 7 (GDD §5.3): el póra flota a través de las paredes y solo se puede golpear iluminado;
+  // el jagua hũ embiste y sus ojos brillan en la oscuridad como aviso.
+  pora: { id: 'pora', archetype: 'flyer', hp: 2, width: 14, height: 18, speed: 22, patrolDistance: 64, amplitude: 10, frequencyHz: 0.6, needsLight: true },
+  jagua_hu: {
+    id: 'jagua_hu',
+    archetype: 'charger',
+    hp: 2,
+    width: 22,
+    height: 14,
+    detectRadius: 120,
+    telegraphMs: 700,
+    chargeSpeed: 200,
+    chargeMaxMs: 1600,
+    cooldownMs: 1000,
+    warnSfx: 'growl',
+    glowEyes: true,
   },
 };
 

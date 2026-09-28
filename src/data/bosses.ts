@@ -49,6 +49,9 @@ const KURUPI_HP = 12;
 /** Ao Ao: 15 golpes, 3 fases de 5 (GDD §6.6). */
 const AO_AO_HP = 15;
 
+/** Luisón: 18 golpes, 3 fases de 6 (GDD §6.7). */
+const LUISON_HP = 18;
+
 export const BOSSES: Partial<Record<BossId, BossDef>> = {
   teju_jagua: {
     id: 'teju_jagua',
@@ -254,6 +257,45 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
           { id: 'double_charge', weight: 2, telegraphMs: 800, activeMs: 1400, recoverMs: 1500 },
           { id: 'rockfall', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 300, punishable: false },
           { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 400, punishable: false },
+        ],
+      },
+    ],
+  },
+  luison: {
+    id: 'luison',
+    nameKey: 'boss.luison.name',
+    epithetKey: 'boss.luison.epithet',
+    hp: LUISON_HP,
+    phases: [
+      // Fase 1 (entre las tumbas): desde un techo gira el brazo (0,6 s) y tira terrones en arco (sin ventana);
+      // trepa a la lápida (1 s), aúlla y llama 2 póra: la ventana es mientras aúlla (1,5 s).
+      {
+        untilHpRatio: 12 / LUISON_HP,
+        idleMs: 800,
+        attacks: [
+          { id: 'clods', weight: 2, telegraphMs: 600, activeMs: 900, recoverMs: 400, punishable: false },
+          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 1500 },
+        ],
+      },
+      // Fase 2 (luna llena): crece y acelera. El aullido apaga las luces; embiste desde la oscuridad
+      // (dos ojos y un gruñido, 1 s; ventana 1,2 s tras la embestida).
+      {
+        untilHpRatio: 6 / LUISON_HP,
+        idleMs: 700,
+        attacks: [
+          { id: 'charge', weight: 2, telegraphMs: 1000, activeMs: 900, recoverMs: 1200 },
+          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 500, punishable: false },
+          { id: 'clods', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 300, punishable: false },
+        ],
+      },
+      // Fase 3 (la marca de Tau): la sombra de Tau lo mueve como a un títere. Aviso 0,6 s, ventana 1 s.
+      // La cadena es embestida → terrones → póra.
+      {
+        untilHpRatio: 0,
+        idleMs: 600,
+        attacks: [
+          { id: 'chain', weight: 2, telegraphMs: 600, activeMs: 2400, recoverMs: 1000 },
+          { id: 'charge', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 1000 },
         ],
       },
     ],

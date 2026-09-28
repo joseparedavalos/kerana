@@ -79,6 +79,8 @@ export const GAMEPLAY = {
     fadeFrom: 0.6,
     /** Daño a un jefe, solo en su ventana vulnerable (el tajo cargado de cerca hace `chargedSlash.damage`). */
     bossDamage: 1,
+    /** Al chocar con el terreno (Ground) se apaga en este tiempo (ms). */
+    wallFadeMs: 120,
     color: 0xf2c14e,
   },
 
@@ -389,6 +391,86 @@ export const GAMEPLAY = {
     mooMaxMs: 9000,
     /** Pausa al llegar a cada punta de la patrulla (ms). */
     turnPauseMs: 1200,
+  },
+
+  /** Oscuridad (GDD §4.8, §6.7): iluminación de Phaser 4. Colores de ambiente en 0xRRGGBB. */
+  darkness: {
+    /** Noche con luna entre nubes (el nivel entero). */
+    ambientNight: 0x4a4e6e,
+    /** Dentro de una DarkZone o durante el apagón de Luisón. */
+    ambientDark: 0x0c0c18,
+    /** Después de liberar a Luisón (las velas encendidas). */
+    ambientCandles: 0x7a6a5a,
+    /** Cuánto tarda el ambiente en pasar de un valor a otro (ms). */
+    fadeMs: 600,
+    /** Halo de Kerana: radio (px), color e intensidad. */
+    haloRadius: 72,
+    haloColor: 0xf2e2b8,
+    haloIntensity: 1.6,
+    /** Altura (z) de las luces sobre el plano. */
+    lightZ: 40,
+    /** El póra sin luz se ve así de transparente (y el sable lo atraviesa). */
+    unlitPoraAlpha: 0.35,
+  },
+
+  /** Faroles (GDD §6.7): se encienden al tocarlos; dan luz. Los checkpoints de los niveles oscuros también alumbran. */
+  lantern: {
+    radius: 88,
+    color: 0xf2c14e,
+    intensity: 1.8,
+    /** Zona para encenderlo (px, centrada en el poste). */
+    touchWidth: 20,
+    touchHeight: 40,
+    postHeight: 34,
+  },
+
+  /** Velas que se encienden al liberar a Luisón (GDD §6.7). */
+  candles: {
+    count: 10,
+    /** Cuántas llevan luz propia (Phaser limita las luces a la vez). */
+    lights: 4,
+    radius: 70,
+    color: 0xf2a84e,
+    intensity: 1.4,
+    /** Tiempo entre una vela y la siguiente (ms). */
+    gapMs: 120,
+  },
+
+  /** Luisón (GDD §6.7): 18 golpes, 3 fases de 6. Lugares en tiles desde el borde izquierdo de la arena (ver l7.txt). */
+  luison: {
+    width: 24,
+    height: 34,
+    /** Fase 2 (luna llena): crece y gana velocidad. */
+    grownScale: 1.3,
+    grownSpeedScale: 1.35,
+    /** Techos de los mausoleos (centro, en tiles) y su altura sobre el suelo (tiles). */
+    roofTiles: [4.5, 36.5],
+    roofHeightTiles: 3,
+    /** Suelo libre entre los mausoleos (bordes, en tiles): la embestida va de uno a otro. */
+    floorTiles: [8, 33],
+    /** Lápida del centro (tile) y su alto (px). */
+    tombTile: 20,
+    tombHeight: 18,
+    startTile: 28,
+    /** Terrones: cuántos por ataque, espera entre uno y otro (ms), gravedad (px/s²), vuelo (ms) y radio (px). */
+    clodsPerThrow: 3,
+    clodGapMs: 260,
+    clodGravity: 520,
+    clodFlightMs: 850,
+    clodRadius: 4,
+    /** Póra que llama el aullido y máximo a la vez. */
+    poraPerHowl: 2,
+    maxPora: 3,
+    /** Embestida: margen a los mausoleos (px) y caminata entre ataques (px/s). */
+    edgeMarginPx: 6,
+    walkSpeed: 45,
+    /** Salto a los techos (ms). */
+    leapMs: 450,
+    /** Ojos brillantes en la oscuridad (aviso de la embestida). */
+    eyeColor: 0xf2e24e,
+    /** Sombra de Tau detrás (fase 3): alfa y cuánto sobresale (px). */
+    tauShadowAlpha: 0.55,
+    tauShadowPadPx: 14,
   },
 
   /** Enjambre de abejas (GDD §5.2 Swarm): se dibuja con partículas. */

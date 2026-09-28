@@ -19,6 +19,8 @@ export interface LevelDef {
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;
   gift: GiftId | null;
+  /** Nivel de noche con iluminación (GDD §4.8): halo de Kerana, faroles y zonas oscuras. */
+  dark?: boolean;
   /** Coordenadas aproximadas del nodo en el mapa (GDD §8.4): x = longitud, y = latitud. */
   mapNode: { x: number; y: number };
 }

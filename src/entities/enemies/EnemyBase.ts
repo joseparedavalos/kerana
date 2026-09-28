@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
+import { takesDamage } from '../../systems/lightLogic';
 import { colorForKey } from '../../utils/placeholder';
 
 const FLASH_MS = 60;
@@ -56,6 +57,10 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
   readonly spawnY: number;
   /** Aviso al purificarse (la vaca embrujada deja una vaca tranquila en su lugar). */
   onPurified?: (enemy: EnemyBase) => void;
+  /** Está iluminado (lo actualiza el nivel oscuro cada frame; fuera de N7 siempre es true). */
+  lit = true;
+  /** Partes que brillan con luz propia en la oscuridad (ojos del jagua hũ). */
+  readonly glowParts: Phaser.GameObjects.GameObject[] = [];
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, ensureEnemyTexture(scene, def));
@@ -80,9 +85,14 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  /** Golpe del sable de Kerana: `dir` es hacia dónde sale despedido. */
+  /** El póra solo recibe daño iluminado (GDD §5.3); los demás, siempre. */
+  get vulnerable(): boolean {
+    return takesDamage(this.def.needsLight === true, this.lit);
+  }
+
+  /** Golpe del sable de Kerana: `dir` es hacia dónde sale despedido. En la oscuridad el sable atraviesa al póra. */
   hit(damage: number, dir: 1 | -1): void {
-    if (this.purified) return;
+    if (this.purified || !this.vulnerable) return;
     this.hp -= damage;
     this.flashing = true;
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
@@ -118,5 +128,7 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     super.preUpdate(time, delta);
     if (this.purified) return;
     this.setFlipX(this.facing < 0);
+    // El póra se ve apenas en la oscuridad y se vuelve sólido con la luz.
+    if (this.def.needsLight) this.setAlpha(this.lit ? 1 : GAMEPLAY.darkness.unlitPoraAlpha);
   }
 }

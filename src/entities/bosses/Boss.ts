@@ -37,6 +37,10 @@ export interface BossContext {
   spawnMinion(kind: string, x: number, y: number, max?: number): void;
   /** Kerana está parada en lo alto de un pindó (refugio de Ao Ao, GDD §6.6). */
   playerOnRefuge(): boolean;
+  /** Apagón de Luisón (GDD §6.7): los faroles de la arena se apagan y la arena queda a oscuras. */
+  setBlackout(on: boolean): void;
+  /** Brilla con luz propia en un nivel oscuro (ojos, terrones); sin oscuridad no hace nada. */
+  glow<T extends Phaser.GameObjects.GameObject>(obj: T): T;
   sfx(key: SfxKey): void;
   /** Sonido con paneo estéreo según dónde está `x` en la pantalla (silbido de Jasy Jatere). */
   sfxAt(key: SfxKey, x: number): void;

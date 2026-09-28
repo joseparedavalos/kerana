@@ -4,6 +4,7 @@ import { AoAo } from './AoAo';
 import type { Boss, BossContext } from './Boss';
 import { JasyJatere } from './JasyJatere';
 import { Kurupi } from './Kurupi';
+import { Luison } from './Luison';
 import { MboiTui } from './MboiTui';
 import { Monai } from './Monai';
 import { TejuJagua } from './TejuJagua';
@@ -23,6 +24,8 @@ export function createBoss(scene: Phaser.Scene, id: BossId, ctx: BossContext): B
       return new Kurupi(scene, ctx);
     case 'ao_ao':
       return new AoAo(scene, ctx);
+    case 'luison':
+      return new Luison(scene, ctx);
     default:
       console.warn(`[JEFE] "${id}" todavía no está implementado.`);
       return null;
