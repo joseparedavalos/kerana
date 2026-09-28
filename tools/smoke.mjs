@@ -67,6 +67,13 @@ async function main() {
     else console.log(`✓ ${msg}`);
   };
 
+  // Camina a la derecha hasta que se cierre la arena (o hasta `maxMs`): con tiempo fijo fallaba en máquinas lentas.
+  async function walkIntoArena(page, maxMs = 15000) {
+    await page.keyboard.down('ArrowRight');
+    for (let t = 0; t < maxMs && !(await page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)); t += 100) await sleep(100);
+    await page.keyboard.up('ArrowRight');
+  }
+
   try {
     // 1) Título → Nueva partida → Prólogo (salteado) → Mapa → nivel 1 → LevelExit → Nivel completado → Mapa.
     // (?debug=1, sin `level`, para poder teletransportar a Kerana sin cambiar el flujo Título → Mapa.)
@@ -76,8 +83,9 @@ async function main() {
     await title.keyboard.press('Enter'); // "Nueva partida" (primer ítem del menú)
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
     check(true, 'Título → Nueva partida → Prólogo');
-    await title.keyboard.down('Escape'); // mantener Pausa salta el prólogo entero
-    await sleep(700);
+    // Mantener Pausa salta el prólogo entero: se mantiene hasta que aparece el mapa (con 700 ms fijos fallaba en máquinas lentas).
+    await title.keyboard.down('Escape');
+    for (let t = 0; t < 5000 && !(await title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false)); t += 100) await sleep(100);
     await title.keyboard.up('Escape');
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
     check(true, 'Prólogo → Mapa');
@@ -113,9 +121,7 @@ async function main() {
     await sleep(500);
     const bx = await bossPage.evaluate(() => window.__KERANA_DEBUG__.player.x);
     check(bx > 176 * TILE && bx < 200 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
-    await bossPage.keyboard.down('ArrowRight');
-    await sleep(2500);
-    await bossPage.keyboard.up('ArrowRight');
+    await walkIntoArena(bossPage);
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
     await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
@@ -166,9 +172,7 @@ async function main() {
     await sleep(500);
     const l3x = await l3Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
     check(l3x > 230 * TILE && l3x < 260 * TILE, `nivel 3 con boss=1 empieza en la antesala (x ${Math.round(l3x / TILE)} tiles)`);
-    await l3Page.keyboard.down('ArrowRight');
-    await sleep(3400);
-    await l3Page.keyboard.up('ArrowRight');
+    await walkIntoArena(l3Page);
     check(await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 3: la arena de Moñái se cierra');
     await sleep(6000);
     await l3Page.screenshot({ path: join(SHOTS, 'boss-l3.png') });
@@ -199,9 +203,7 @@ async function main() {
     await sleep(500);
     const l4x = await l4Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
     check(l4x > 210 * TILE && l4x < 230 * TILE, `nivel 4 con boss=1 empieza en la antesala (x ${Math.round(l4x / TILE)} tiles)`);
-    await l4Page.keyboard.down('ArrowRight');
-    await sleep(2600);
-    await l4Page.keyboard.up('ArrowRight');
+    await walkIntoArena(l4Page);
     check(await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 4: la arena de Jasy Jatere se cierra');
     await sleep(5000);
     await l4Page.screenshot({ path: join(SHOTS, 'boss-l4.png') });
@@ -236,6 +238,58 @@ async function main() {
     const l4save = await l4Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(l4save.freed?.includes('jasy_jatere') && l4save.gifts?.includes('dash'), 'guardado: Jasy Jatere liberado y Paso de la siesta');
     await l4Page.close();
+
+    // 1f) Nivel 5: antesala, cierre de la arena de Kurupi, llamado de animales, engaño (fase 3) y +1 corazón.
+    const l5Page = await open('/?debug=1&level=5&boss=1&god=1');
+    await l5Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l5x = await l5Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(l5x > 210 * TILE && l5x < 240 * TILE, `nivel 5 con boss=1 empieza en la antesala (x ${Math.round(l5x / TILE)} tiles)`);
+    await walkIntoArena(l5Page);
+    check(await l5Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 5: la arena de Kurupi se cierra');
+    await sleep(5000);
+    await l5Page.screenshot({ path: join(SHOTS, 'boss-l5.png') });
+    const l5state = await l5Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(l5state !== 'waiting', `Kurupi ataca (estado ${l5state})`);
+    // Fase 3 forzada: espera a que arme el engaño (copias vivas) sin errores.
+    const l5phase = await l5Page.evaluate(async () => {
+      const boss = window.__KERANA_DEBUG__.scene.boss;
+      boss.brain.damage(8);
+      let copies = 0;
+      for (let i = 0; i < 80 && copies === 0; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        copies = boss.copies.filter((c) => c.alive).length;
+      }
+      return { phase: boss.brain.phase, copies };
+    });
+    check(l5phase.phase === 2 && l5phase.copies === 2, `Kurupi fase 3: se divide en tres (${JSON.stringify(l5phase)})`);
+    await l5Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
+    const l5Done = () => l5Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < 60 && !(await l5Done()); i++) {
+      await l5Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l5Done(), 'Kurupi vencido → liberación → Nivel completado');
+    const l5save = await l5Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(l5save.freed?.includes('kurupi') && l5save.maxHearts === 6, `guardado: Kurupi liberado y +1 corazón (${l5save.maxHearts})`);
+    await l5Page.close();
+
+    // 1g) Nivel 5 desde el principio: caminando a la derecha, el primer hongo hace rebotar a Kerana más alto que un salto.
+    const l5aPage = await open('/?debug=1&level=5&god=1');
+    await l5aPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l5y0 = await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y);
+    let l5top = l5y0;
+    await l5aPage.keyboard.down('ArrowRight');
+    for (let i = 0; i < 60; i++) {
+      await sleep(50);
+      l5top = Math.min(l5top, await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y));
+    }
+    await l5aPage.keyboard.up('ArrowRight');
+    const l5bounce = Math.round(l5y0 - l5top);
+    check(l5bounce > 90, `nivel 5: el hongo hace rebotar a Kerana (${l5bounce} px)`);
+    await l5aPage.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');
