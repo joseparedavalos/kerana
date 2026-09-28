@@ -40,6 +40,7 @@ export const MANIFEST: AssetEntry[] = [
   { type: 'tilemap', key: 'map_l4', path: 'maps/l4.json' },
   { type: 'tilemap', key: 'map_l5', path: 'maps/l5.json' },
   { type: 'tilemap', key: 'map_l6', path: 'maps/l6.json' },
+  { type: 'tilemap', key: 'map_l7', path: 'maps/l7.json' },
 
   // Sprites del pipeline: PNG en grilla de frames iguales + JSON con las animaciones.
   { type: 'spritesheet', key: PLAYER_KEY, path: 'sprites/kerana.png', frameWidth: PLAYER_FRAME, frameHeight: PLAYER_FRAME, frames: 1 },

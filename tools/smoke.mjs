@@ -68,9 +68,18 @@ async function main() {
   };
 
   // Camina a la derecha hasta que se cierre la arena (o hasta `maxMs`): con tiempo fijo fallaba en máquinas lentas.
-  async function walkIntoArena(page, maxMs = 15000) {
+  // `jump`: salta cada tanto (en N7 hay que subir al techo del mausoleo de la entrada).
+  async function walkIntoArena(page, maxMs = 15000, jump = false) {
     await page.keyboard.down('ArrowRight');
-    for (let t = 0; t < maxMs && !(await page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)); t += 100) await sleep(100);
+    for (let t = 0, i = 0; t < maxMs && !(await page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)); t += 100, i++) {
+      if (jump && i % 6 === 0) {
+        await page.keyboard.down('Space');
+        await sleep(300);
+        await page.keyboard.up('Space');
+        t += 300;
+      }
+      await sleep(100);
+    }
     await page.keyboard.up('ArrowRight');
   }
 
@@ -355,6 +364,84 @@ async function main() {
     await sleep(200);
     await cowPage.screenshot({ path: join(SHOTS, 'light-wave.png') });
     await cowPage.close();
+
+    // 1j) Nivel 7: oscuridad, faroles y póra que solo se ven (y se pueden golpear) con luz.
+    const l7aPage = await open('/?debug=1&level=7&god=1');
+    await l7aPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l7info = await l7aPage.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const pora = s.enemies.filter((e) => e.def.id === 'pora');
+      return { webgl: s.sys.renderer.type === 2, lanterns: s.lanterns.length, pora: pora.length, poraLit: pora.some((e) => e.lit) };
+    });
+    check(l7info.lanterns >= 10 && l7info.pora >= 3 && !l7info.poraLit, `nivel 7: faroles y póra a oscuras (${JSON.stringify(l7info)})`);
+    // Kerana camina hasta el primer farol y lo enciende.
+    await l7aPage.keyboard.down('ArrowRight');
+    for (let t = 0; t < 4000 && !(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit)); t += 100) await sleep(100);
+    await l7aPage.keyboard.up('ArrowRight');
+    check(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit), 'nivel 7: tocar un farol lo enciende');
+    await l7aPage.screenshot({ path: join(SHOTS, 'l7-street.png') });
+    // Junto a un póra, el halo lo ilumina y se vuelve vulnerable.
+    const poraLit = await l7aPage.evaluate(async () => {
+      const d = window.__KERANA_DEBUG__;
+      const p = d.scene.enemies.find((e) => e.def.id === 'pora' && e.active);
+      d.player.body.reset(p.x, p.y + 10);
+      await new Promise((res) => setTimeout(res, 300));
+      return p.lit && p.vulnerable;
+    });
+    check(poraLit, 'nivel 7: con el halo de Kerana el póra queda iluminado y vulnerable');
+    await l7aPage.close();
+
+    // 1k) Nivel 7 con boss=1: arena de Luisón, apagón (fase 2), sombra de Tau (fase 3), velas, final y créditos.
+    const l7Page = await open('/?debug=1&level=7&boss=1&god=1');
+    await l7Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l7x = await l7Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(l7x > 220 * TILE && l7x < 240 * TILE, `nivel 7 con boss=1 empieza en la antesala (x ${Math.round(l7x / TILE)} tiles)`);
+    await walkIntoArena(l7Page, 15000, true);
+    check(await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 7: la arena de Luisón se cierra');
+    await sleep(4000);
+    const l7state = await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(l7state !== 'waiting', `Luisón ataca (estado ${l7state})`);
+    const l7blackout = await l7Page.evaluate(async () => {
+      const d = window.__KERANA_DEBUG__;
+      d.scene.boss.brain.damage(6);
+      await new Promise((res) => setTimeout(res, 3000));
+      const arena = d.scene.arena.rect;
+      const arenaLanterns = d.scene.lanterns.filter((l) => arena.contains(l.zone.centerX, l.zone.bottom - 1));
+      return { phase: d.scene.boss.brain.phase, blackout: d.scene.darkness.blackout, lit: arenaLanterns.filter((l) => l.lit).length };
+    });
+    check(l7blackout.phase === 1 && l7blackout.blackout && l7blackout.lit === 0, `Luisón fase 2: apagón (${JSON.stringify(l7blackout)})`);
+    await l7Page.screenshot({ path: join(SHOTS, 'boss-l7.png') });
+    const l7p3 = await l7Page.evaluate(async () => {
+      const d = window.__KERANA_DEBUG__;
+      d.scene.boss.brain.damage(6);
+      await new Promise((res) => setTimeout(res, 4000));
+      return { phase: d.scene.boss.brain.phase, tau: d.scene.boss.tauShadow.visible };
+    });
+    check(l7p3.phase === 2 && l7p3.tau, `Luisón fase 3: la sombra de Tau (${JSON.stringify(l7p3)})`);
+    await l7Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l7Active = (key) => l7Page.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
+    await sleep(1500);
+    check(await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.darkness.candles), 'Luisón liberado: las velas se encienden');
+    await l7Page.screenshot({ path: join(SHOTS, 'l7-candles.png') });
+    for (let i = 0; i < 60 && !(await l7Active('LevelComplete')); i++) {
+      await l7Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l7Active('LevelComplete'), 'Luisón vencido → liberación → Nivel completado');
+    const l7save = await l7Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(l7save.freed?.includes('luison'), 'guardado: Luisón liberado');
+    await l7Page.keyboard.press('Enter');
+    await l7Page.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
+    check(true, 'último nivel → final (diapositivas)');
+    await sleep(500);
+    await l7Page.screenshot({ path: join(SHOTS, 'ending.png') });
+    await l7Page.keyboard.down('Escape');
+    for (let t = 0; t < 5000 && !(await l7Active('Credits')); t += 100) await sleep(100);
+    await l7Page.keyboard.up('Escape');
+    check(await l7Active('Credits'), 'final → créditos');
+    await l7Page.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');

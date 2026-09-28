@@ -25,3 +25,8 @@ export const ENDING_SLIDES: StorySlide[] = [
 export function endingLastSlide(allFeathers: boolean): StorySlide {
   return { textKey: allFeathers ? 'story.ending.4_all_feathers' : 'story.ending.4_missing_feathers' };
 }
+
+/** El final completo (GDD §2.6, §6.8) según las plumas juntadas en todo el juego. */
+export function endingSlides(feathers: number, featherTotal: number): StorySlide[] {
+  return [...ENDING_SLIDES, endingLastSlide(feathers >= featherTotal)];
+}

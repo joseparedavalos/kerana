@@ -60,7 +60,9 @@ export type SfxKey =
   | 'claw'
   | 'grunt'
   | 'moo'
-  | 'lightWave';
+  | 'lightWave'
+  // Nivel 7: farol que se enciende.
+  | 'lantern';
 
 // [volumen, aleatoriedad, frecuencia, ataque, sostenido, caída, forma, curva, slide, deltaSlide,
 //  saltoDeTono, tiempoSaltoDeTono, repetición, ruido, modulación, bitCrush, delay, sostenidoVol, decay, tremolo]
@@ -117,5 +119,6 @@ export const SFX_PRESETS: Record<SfxKey, number[]> = {
   grunt: [0.7, 0.2, 110, 0, 0.05, 0.08, 2, 1.6, 0, 0, 0, 0, 0.05, 0.8, 0, 0, 0, 0.5, 0.02],
   moo: [0.6, 0.05, 130, 0.08, 0.4, 0.25, 1, 1, 0, 0, -20, 0.3, 0, 0, 4, 0, 0, 0.6, 0.12],
   lightWave: [0.6, 0.02, 800, 0.01, 0.1, 0.25, 0, 1, 12, 0, 200, 0.05, 0, 0, 0, 0, 0, 0.5, 0.08],
+  lantern: [0.5, 0.02, 520, 0.01, 0.06, 0.2, 0, 1, 0, 0, 300, 0.04, 0, 0, 0, 0, 0, 0.6, 0.05],
   sink: [0.6, 0.1, 160, 0.03, 0.12, 0.2, 0, 1, -6, 0, 0, 0, 0, 0.4, 0, 0, 0, 0.5, 0.06],
 };

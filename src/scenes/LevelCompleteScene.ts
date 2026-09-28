@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
+import { WORLD_LEVELS } from '../data/levels';
+import { endingSlides } from '../data/story';
 import type { LevelDef } from '../data/types';
 import { t } from '../i18n';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
 
-// Pantalla de nivel completado (GDD §8.8): hijo liberado, don obtenido y plumas. Luego, al mapa.
+// Pantalla de nivel completado (GDD §8.8): hijo liberado, don obtenido y plumas. Luego, al mapa (o al final).
 export class LevelCompleteScene extends Phaser.Scene {
   private inputs!: InputManager;
   private def!: LevelDef;
@@ -71,6 +73,18 @@ export class LevelCompleteScene extends Phaser.Scene {
 
   override update(): void {
     this.inputs.update();
-    if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) this.scene.start('Map');
+    if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) this.continueOn();
+  }
+
+  /** Después del último nivel viene el final (GDD §6.8) y los créditos; si no, el mapa. */
+  private continueOn(): void {
+    const last = WORLD_LEVELS[WORLD_LEVELS.length - 1];
+    if (this.def.id !== last.id) {
+      this.scene.start('Map');
+      return;
+    }
+    const feathers = WORLD_LEVELS.reduce((n, l) => n + SaveManager.getFeathers(l.id).filter(Boolean).length, 0);
+    const slides = endingSlides(feathers, WORLD_LEVELS.length * GAMEPLAY.hud.featherMax);
+    this.scene.start('Story', { slides, nextScene: 'Credits' });
   }
 }

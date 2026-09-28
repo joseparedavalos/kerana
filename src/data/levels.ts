@@ -115,6 +115,7 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     musicKey: '',
     boss: 'luison',
     gift: null,
+    dark: true,
     mapNode: { x: -57.63, y: -25.28 },
   },
 };

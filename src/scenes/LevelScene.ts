@@ -17,6 +17,7 @@ import { Crumble } from '../entities/hazards/Crumble';
 import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
+import { Lantern } from '../entities/Lantern';
 import { LightWaveMotor } from '../entities/LightWaveMotor';
 import { Player } from '../entities/Player';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
@@ -25,6 +26,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
 import { CameraController } from '../systems/CameraController';
+import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { InputManager } from '../systems/InputManager';
@@ -45,6 +47,8 @@ interface Checkpoint {
   active: boolean;
   /** Ya se encendió alguna vez (da +1 corazón la primera vez, GDD §4.2). */
   lit: boolean;
+  /** En los niveles oscuros el fuego también alumbra (GDD §6.7). */
+  light?: LevelLight;
 }
 
 interface Sign {
@@ -138,6 +142,10 @@ export class LevelScene extends Phaser.Scene {
   /** Vacas sueltas de Capiatá: plataformas que caminan. */
   private cows: Cow[] = [];
   private cowGroup?: Phaser.Physics.Arcade.Group;
+  /** Oscuridad del nivel 7 (GDD §4.8): solo en los niveles con `dark`. */
+  private darkness?: Darkness;
+  /** Faroles que se encienden al tocarlos (GDD §6.7). */
+  private lanterns: Lantern[] = [];
   /** Onda de luz del tajo cargado (una sola en pantalla). */
   private readonly lightWave = new LightWaveMotor(GAMEPLAY.lightWave);
   /** La onda choca solo con la capa Ground (las plataformas de un sentido no la frenan). */
@@ -183,6 +191,8 @@ export class LevelScene extends Phaser.Scene {
     this.refuges = [];
     this.cows = [];
     this.cowGroup = undefined;
+    this.darkness = undefined;
+    this.lanterns = [];
     this.lightWave.stop();
     this.lightWaveSprite = undefined;
     this.arenaRect = undefined;
@@ -227,6 +237,8 @@ export class LevelScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(12);
+    // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
+    if (this.def.dark) this.darkness = new Darkness(this);
     this.buildMap();
     const spawn = this.buildObjects();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
@@ -277,6 +289,7 @@ export class LevelScene extends Phaser.Scene {
     }
     const lw = GAMEPLAY.lightWave;
     this.lightWaveSprite = this.add.rectangle(0, 0, lw.width, lw.height, lw.color, 0.85).setDepth(12).setVisible(false);
+    this.darkness?.glow(this.lightWaveSprite);
     for (const b of this.breakables) {
       if (!b.block) continue;
       this.physics.add.collider(this.player, b.block);
@@ -359,6 +372,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateFallingHazards(delta);
     this.updateBreakables();
     this.updateLightWave(delta);
+    this.updateDarkness(delta);
     this.updateBoss(delta);
     this.updateCheckpoints();
     this.updateSigns();
@@ -413,6 +427,8 @@ export class LevelScene extends Phaser.Scene {
       spawnSwarm: (x, y) => this.spawnBossMinion('abejas', x, y, GAMEPLAY.jasyJatere.maxSwarms),
       spawnMinion: (kind, x, y, max) => this.spawnBossMinion(kind, x, y, max ?? GAMEPLAY.kurupi.maxMinions),
       playerOnRefuge: () => this.playerOnRefuge(),
+      setBlackout: (on) => this.setBlackout(on, rect),
+      glow: (obj) => this.darkness?.glow(obj) ?? obj,
       sfx: (key: SfxKey) => AudioManager.play(key),
       sfxAt: (key: SfxKey, x: number) => {
         const view = this.cameras.main.worldView;
@@ -483,6 +499,7 @@ export class LevelScene extends Phaser.Scene {
     this.clearFlowers();
     this.clearBossMinions();
     EventBus.emit(GameEvents.bossBarHide);
+    this.lightCandles();
     const gift = this.def.gift;
     const giftText = gift ? `${t('liberation.gift', { gift: t(`gift.${gift}`) })}\n${t(`gift_hint.${gift}`)}` : null;
     playLiberation({
@@ -508,6 +525,62 @@ export class LevelScene extends Phaser.Scene {
     }
     boss.brain.damage(boss.brain.hp);
     this.startLiberation();
+  }
+
+  // ── Oscuridad, faroles y velas (GDD §4.8, §6.7) ──────────────────────────
+
+  /** Halo de Kerana, faroles que se encienden al tocarlos y póra que solo se pueden golpear iluminados. */
+  private updateDarkness(deltaMs: number): void {
+    const darkness = this.darkness;
+    if (!darkness) return;
+    darkness.update(this.player.x, this.player.y - this.player.body.height / 2, deltaMs);
+    for (const lantern of this.lanterns) {
+      if (lantern.lit || !Phaser.Geom.Rectangle.Overlaps(lantern.zone, this.playerRect)) continue;
+      lantern.setLit(true);
+      AudioManager.play('lantern');
+    }
+    for (const enemy of this.enemies) {
+      if (!enemy.def.needsLight || enemy.purified || !enemy.active) continue;
+      enemy.lit = darkness.isLit(enemy.x, enemy.y - enemy.def.height / 2);
+    }
+  }
+
+  /** Apagón de Luisón: la arena queda a oscuras y sus faroles se apagan (Kerana los vuelve a encender). */
+  private setBlackout(on: boolean, arena: Phaser.Geom.Rectangle): void {
+    const darkness = this.darkness;
+    if (!darkness) return;
+    darkness.blackout = on;
+    if (!on) return;
+    for (const lantern of this.lanterns) if (lantern.lit && arena.contains(lantern.zone.centerX, lantern.zone.bottom - 1)) lantern.setLit(false);
+  }
+
+  /** Al liberar a Luisón, las velas del cementerio se encienden solas, una tras otra. */
+  private lightCandles(): void {
+    const darkness = this.darkness;
+    const rect = this.arenaRect;
+    if (!darkness || !rect) return;
+    darkness.blackout = false;
+    darkness.candles = true;
+    const cfg = GAMEPLAY.candles;
+    const tile = this.map.tileWidth;
+    const lightEvery = Math.max(1, Math.round(cfg.count / cfg.lights));
+    for (let i = 0; i < cfg.count; i++) {
+      const x = rect.left + tile * 2 + ((rect.width - tile * 4) * i) / Math.max(1, cfg.count - 1);
+      const y = this.surfaceBelow(x, rect.top) ?? rect.bottom;
+      this.time.delayedCall(i * cfg.gapMs, () => {
+        darkness.glow(this.add.rectangle(x, y, 3, 6, 0xf2eee3).setOrigin(0.5, 1).setDepth(3));
+        const flame = darkness.glow(this.add.ellipse(x, y - 7, 3, 5, cfg.color).setDepth(3));
+        this.tweens.add({ targets: flame, scaleY: 1.3, duration: 180, yoyo: true, repeat: -1, delay: i * 37 });
+        if (i % lightEvery === 0) darkness.addLight(x, y - 10, cfg.radius, cfg.color, cfg.intensity);
+        if (i % 3 === 0) AudioManager.play('lantern');
+      });
+    }
+  }
+
+  /** Lo que brilla solo en la oscuridad (ojos del jagua hũ). */
+  private glowEnemyParts(enemy: EnemyBase): void {
+    if (!this.darkness) return;
+    for (const part of enemy.glowParts) this.darkness.glow(part);
   }
 
   // ── Pindó, vacas y onda de luz ────────────────────────────────────────────
@@ -759,6 +832,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.bossMinions.length >= max) return;
     const facing: 1 | -1 = this.player.x >= x ? 1 : -1;
     const minion = createEnemy(this, kind, x, y, facing, true);
+    this.glowEnemyParts(minion);
     // En el lugar: el overlap guarda la referencia a este arreglo.
     this.enemies.push(minion);
     this.bossMinions.push(minion);
@@ -957,9 +1031,17 @@ export class LevelScene extends Phaser.Scene {
           const sprite = this.add.sprite(x, y, 'checkpoint', 0).setOrigin(0.5, 1);
           const id = Number(objectProp(obj, 'id') ?? this.checkpoints.length);
           const zone = new Phaser.Geom.Rectangle(x - 8, y - 24, 16, 24);
-          this.checkpoints.push({ id, sprite, zone, active: false, lit: false });
+          const lc = GAMEPLAY.lantern;
+          const light = this.darkness?.addLight(x, y - 12, lc.radius, lc.color, lc.intensity, false);
+          this.checkpoints.push({ id, sprite, zone, active: false, lit: false, light });
           break;
         }
+        case 'Lantern':
+          if (this.darkness) this.lanterns.push(new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true));
+          break;
+        case 'DarkZone':
+          this.darkness?.addZone({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
+          break;
         case 'Sign': {
           this.add.image(x, y, 'sign').setOrigin(0.5, 1);
           const text = this.add
@@ -979,6 +1061,7 @@ export class LevelScene extends Phaser.Scene {
             break;
           }
           const enemy = createEnemy(this, kind, x, y, facing);
+          this.glowEnemyParts(enemy);
           if (enemy.def.purifiesInto === 'vaca') enemy.onPurified = (e) => this.cowFromEnemy(e);
           this.enemies.push(enemy);
           break;
@@ -1009,7 +1092,8 @@ export class LevelScene extends Phaser.Scene {
           // El punto marca el tile que cuelga del techo: la estalactita empieza en su borde superior.
           const tile = this.map.tileHeight;
           const warnMs = Number(objectProp(obj, 'delayMs') ?? GAMEPLAY.fallingHazard.warnMs);
-          const kind: FallingKind = objectProp(obj, 'kind') === 'teja' ? 'teja' : 'stalactite';
+          const rawKind = objectProp(obj, 'kind');
+          const kind: FallingKind = rawKind === 'teja' || rawKind === 'roca' ? rawKind : 'stalactite';
           this.spawnFalling(x, y - tile, false, warnMs, kind);
           break;
         }
@@ -1133,6 +1217,8 @@ export class LevelScene extends Phaser.Scene {
     const enemy = enemyObj as EnemyBase;
     if (enemy.purified || this.player.hasHitThisSwing(enemy)) return;
     this.player.markHitThisSwing(enemy);
+    // En la oscuridad el sable atraviesa al póra.
+    if (!enemy.vulnerable) return;
     enemy.hit(this.player.attackDamage, this.player.motor.facing);
     this.hitStop(GAMEPLAY.hitStop.onHitMs);
     AudioManager.play(enemy.purified ? 'purify' : 'hit');
@@ -1182,6 +1268,10 @@ export class LevelScene extends Phaser.Scene {
       }
       cp.active = true;
       cp.sprite.setFrame(4);
+      if (cp.light && this.darkness) {
+        this.darkness.setOn(cp.light, true);
+        this.darkness.glow(cp.sprite);
+      }
       this.checkpointPos.set(cp.zone.centerX, cp.zone.bottom);
       if (!cp.lit) {
         cp.lit = true;
