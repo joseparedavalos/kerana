@@ -4,8 +4,9 @@ import { GAMEPLAY } from '../../config/gameplay';
 const CFG = GAMEPLAY.fallingHazard;
 const TEXTURE = 'hazard_stalactite';
 const TEJA_TEXTURE = 'hazard_teja';
+const ROCA_TEXTURE = 'hazard_roca';
 
-export type FallingKind = 'stalactite' | 'teja';
+export type FallingKind = 'stalactite' | 'teja' | 'roca';
 
 export type FallingState = 'hanging' | 'warning' | 'falling' | 'broken' | 'gone';
 
@@ -18,12 +19,20 @@ export interface FallingHazardOptions {
   onShatter?: () => void;
   /** Al empezar el aviso (el crujido de la teja). */
   onWarn?: () => void;
-  /** Estalactita (N1) o teja (N4). */
+  /** Estalactita (N1), teja (N4) o roca del cerro (N6). */
   kind?: FallingKind;
 }
 
 /** Texturas provisionales: triángulo de piedra apuntando hacia abajo y teja colonial (media caña roja). */
 function ensureTexture(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(ROCA_TEXTURE)) {
+    const r = CFG.rocaSize;
+    const t = scene.make.graphics({ x: 0, y: 0 }, false);
+    t.fillStyle(0x6a5a4a).fillCircle(r / 2, r / 2, r / 2);
+    t.fillStyle(0x8a7a6a).fillCircle(r / 2 - 2, r / 2 - 2, r / 4);
+    t.generateTexture(ROCA_TEXTURE, r, r);
+    t.destroy();
+  }
   if (!scene.textures.exists(TEJA_TEXTURE)) {
     const tw = CFG.tejaWidth;
     const th = CFG.tejaHeight;
@@ -74,9 +83,10 @@ export class FallingHazard {
     this.onShatter = opts.onShatter;
     this.onWarn = opts.onWarn;
     const teja = opts.kind === 'teja';
-    this.w = teja ? CFG.tejaWidth : CFG.width;
-    this.h = teja ? CFG.tejaHeight : CFG.height;
-    this.sprite = scene.add.image(x, topY, teja ? TEJA_TEXTURE : TEXTURE).setOrigin(0.5, 0).setDepth(5);
+    const roca = opts.kind === 'roca';
+    this.w = teja ? CFG.tejaWidth : roca ? CFG.rocaSize : CFG.width;
+    this.h = teja ? CFG.tejaHeight : roca ? CFG.rocaSize : CFG.height;
+    this.sprite = scene.add.image(x, topY, teja ? TEJA_TEXTURE : roca ? ROCA_TEXTURE : TEXTURE).setOrigin(0.5, 0).setDepth(5);
     this.shadow = scene.add.ellipse(x, groundY, this.w * 1.6, 4, 0x000000, 0.35).setDepth(4).setVisible(false);
     if (this.oneShot) this.startWarning();
   }

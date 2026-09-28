@@ -291,6 +291,71 @@ async function main() {
     check(l5bounce > 90, `nivel 5: el hongo hace rebotar a Kerana (${l5bounce} px)`);
     await l5aPage.close();
 
+    // 1h) Nivel 6: antesala, cierre de la arena de Ao Ao, refugio en el pindó, furia (fase 3) y +1 corazón (7).
+    const l6Page = await open('/?debug=1&level=6&boss=1&god=1');
+    await l6Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l6x = await l6Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
+    check(l6x > 230 * TILE && l6x < 250 * TILE, `nivel 6 con boss=1 empieza en la antesala (x ${Math.round(l6x / TILE)} tiles)`);
+    await walkIntoArena(l6Page);
+    check(await l6Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 6: la arena de Ao Ao se cierra');
+    await sleep(4000);
+    await l6Page.screenshot({ path: join(SHOTS, 'boss-l6.png') });
+    const l6state = await l6Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
+    check(l6state !== 'waiting', `Ao Ao ataca (estado ${l6state})`);
+    // Kerana en la copa del pindó derecho: Ao Ao deja de atacar y da vueltas al pie.
+    const l6refuge = await l6Page.evaluate(async () => {
+      const d = window.__KERANA_DEBUG__;
+      const r = d.scene.refuges[d.scene.refuges.length - 1];
+      d.player.body.reset((r.left + r.right) / 2, r.top - 2);
+      let circling = false;
+      for (let i = 0; i < 60 && !circling; i++) {
+        await new Promise((res) => setTimeout(res, 100));
+        circling = d.scene.boss.circling;
+      }
+      return { onRefuge: d.scene.playerOnRefuge(), circling };
+    });
+    check(l6refuge.onRefuge && l6refuge.circling, `en el pindó Kerana está a salvo y Ao Ao da vueltas (${JSON.stringify(l6refuge)})`);
+    // Baja a pelear y fuerza la furia: la pelea sigue sin errores.
+    const l6phase = await l6Page.evaluate(async () => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(d.scene.arena.rect.centerX, d.scene.boss.ctx.floorY - 20);
+      d.scene.boss.brain.damage(10);
+      await new Promise((res) => setTimeout(res, 5000));
+      return { phase: d.scene.boss.brain.phase, circling: d.scene.boss.circling };
+    });
+    check(l6phase.phase === 2 && !l6phase.circling, `Ao Ao fase 3 (${JSON.stringify(l6phase)})`);
+    await l6Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l6Done = () => l6Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < 60 && !(await l6Done()); i++) {
+      await l6Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l6Done(), 'Ao Ao vencido → liberación → Nivel completado');
+    const l6save = await l6Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(l6save.freed?.includes('ao_ao') && l6save.maxHearts === 7, `guardado: Ao Ao liberado y +1 corazón (${l6save.maxHearts})`);
+    await l6Page.close();
+
+    // 1i) Nivel 4 (extra): vacas sueltas y onda de luz del tajo cargado.
+    const cowPage = await open('/?debug=1&level=4&gifts=all&god=1');
+    await cowPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const cows = await cowPage.evaluate(() => window.__KERANA_DEBUG__.scene.cows.length);
+    check(cows === 3, `nivel 4: vacas sueltas (${cows})`);
+    // Mantener hasta que el tajo esté cargado (en máquinas lentas el tiempo de juego va más lento que el real).
+    await cowPage.keyboard.down('KeyX');
+    await sleep(1500);
+    await cowPage.keyboard.up('KeyX');
+    let wave = false;
+    for (let t = 0; t < 600 && !wave; t += 30) {
+      wave = await cowPage.evaluate(() => window.__KERANA_DEBUG__.scene.lightWave.active);
+      if (!wave) await sleep(30);
+    }
+    check(wave, 'tajo cargado: sale la onda de luz');
+    await sleep(200);
+    await cowPage.screenshot({ path: join(SHOTS, 'light-wave.png') });
+    await cowPage.close();
+
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');
     await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });

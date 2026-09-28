@@ -54,6 +54,8 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
   collidesWithGround = true;
   readonly spawnX: number;
   readonly spawnY: number;
+  /** Aviso al purificarse (la vaca embrujada deja una vaca tranquila en su lugar). */
+  onPurified?: (enemy: EnemyBase) => void;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, ensureEnemyTexture(scene, def));
@@ -97,6 +99,7 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     if (this.purified) return;
     this.purified = true;
     this.body.enable = false;
+    this.onPurified?.(this);
     this.scene.tweens.add({
       targets: this,
       alpha: 0,

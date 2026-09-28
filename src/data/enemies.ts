@@ -25,6 +25,8 @@ export interface EnemyDef {
   cooldownMs?: number;
   /** Sonido al empezar el aviso (el ladrido del jagua). */
   warnSfx?: SfxKey;
+  /** Al purificarse queda en el nivel como otra cosa (la vaca embrujada queda como vaca tranquila). */
+  purifiesInto?: 'vaca';
 
   // Flyer: onda vertical.
   amplitude?: number;
@@ -199,6 +201,49 @@ export const ENEMIES: Record<string, EnemyDef> = {
     warnMs: 700,
     exposedMs: 1600,
     cooldownMs: 1400,
+  },
+
+  // Nivel 4, extra: la vaca embrujada embiste como un Charger; purificada queda como vaca tranquila.
+  vaca_embrujada: {
+    id: 'vaca_embrujada',
+    archetype: 'charger',
+    hp: 3,
+    width: 30,
+    height: 18,
+    detectRadius: 120,
+    telegraphMs: 700,
+    chargeSpeed: 170,
+    chargeMaxMs: 1600,
+    cooldownMs: 1200,
+    warnSfx: 'moo',
+    purifiesInto: 'vaca',
+  },
+
+  // Nivel 6 (GDD §5.3): los taitetu van en manada (de a 2 o 3 en el mapa); la cría de Ao Ao salta.
+  taitetu: {
+    id: 'taitetu',
+    archetype: 'charger',
+    hp: 2,
+    width: 20,
+    height: 12,
+    detectRadius: 120,
+    telegraphMs: 450,
+    chargeSpeed: 190,
+    chargeMaxMs: 1500,
+    cooldownMs: 1000,
+    warnSfx: 'grunt',
+  },
+  ao_ao_cria: {
+    id: 'ao_ao_cria',
+    archetype: 'jumper',
+    hp: 1,
+    width: 14,
+    height: 12,
+    detectRadius: 130,
+    waitMs: 900,
+    telegraphMs: 300,
+    jumpVelocity: -280,
+    speed: 100,
   },
 };
 
