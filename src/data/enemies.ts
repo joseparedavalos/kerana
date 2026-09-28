@@ -3,7 +3,7 @@ import type { SfxKey } from '../systems/sfxPresets';
 // Enemigos comunes (GDD §5.2). Los IDs con nombre real llegan con cada nivel (§5.3);
 // por ahora hay uno por arquetipo para el nivel de prueba, con color placeholder.
 
-export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm';
+export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm' | 'jumper' | 'thrower';
 
 export interface EnemyDef {
   id: string;
@@ -34,6 +34,8 @@ export interface EnemyDef {
   warnMs?: number;
   exposedMs?: number;
   emergeHeight?: number;
+  /** Lurker colgante (mbói en N5): cuelga de la rama que tiene encima en vez de salir del agua. */
+  hangs?: boolean;
 
   // Diver: velocidad de picada y de regreso a su poste (px/s).
   diveSpeed?: number;
@@ -42,6 +44,18 @@ export interface EnemyDef {
   // Swarm: tiempo persiguiendo y dispersándose (ms); `speed` es la velocidad de persecución.
   chaseMs?: number;
   disperseMs?: number;
+
+  // Jumper: espera entre saltos (ms) y velocidad vertical del salto (px/s); `speed` es la horizontal
+  // y `telegraphMs`, el agachado previo.
+  waitMs?: number;
+  jumpVelocity?: number;
+
+  // Thrower: `telegraphMs` es el aviso y `cooldownMs` la cadencia. Proyectil: gravedad (px/s²),
+  // tiempo de vuelo por px de distancia, radio (px) y cuántos puede tener en el aire.
+  projectileGravity?: number;
+  flightMsPerPx?: number;
+  projectileRadius?: number;
+  projectilePool?: number;
 }
 
 export const ENEMIES: Record<string, EnemyDef> = {
@@ -144,6 +158,47 @@ export const ENEMIES: Record<string, EnemyDef> = {
     chaseMs: 2800,
     disperseMs: 900,
     cooldownMs: 2500,
+  },
+
+  // Nivel 5 (GDD §5.3): el kuati salta hacia Kerana; el ka'i lanza frutas desde las copas;
+  // el mbói cuelga de las ramas y baja cuando Kerana pasa cerca.
+  kuati: {
+    id: 'kuati',
+    archetype: 'jumper',
+    hp: 2,
+    width: 18,
+    height: 12,
+    detectRadius: 120,
+    waitMs: 1100,
+    telegraphMs: 350,
+    jumpVelocity: -320,
+    speed: 95,
+  },
+  kai: {
+    id: 'kai',
+    archetype: 'thrower',
+    hp: 2,
+    width: 14,
+    height: 18,
+    detectRadius: 170,
+    telegraphMs: 550,
+    cooldownMs: 1900,
+    projectileGravity: 600,
+    flightMsPerPx: 5,
+    projectileRadius: 4,
+    projectilePool: 3,
+  },
+  mboi_colgante: {
+    id: 'mboi_colgante',
+    archetype: 'lurker',
+    hangs: true,
+    hp: 2,
+    width: 8,
+    height: 26,
+    detectRadius: 56,
+    warnMs: 700,
+    exposedMs: 1600,
+    cooldownMs: 1400,
   },
 };
 

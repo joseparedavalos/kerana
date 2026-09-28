@@ -4,8 +4,10 @@ import { Charger } from './Charger';
 import { Diver } from './Diver';
 import type { EnemyBase } from './EnemyBase';
 import { Flyer } from './Flyer';
+import { Jumper } from './Jumper';
 import { Lurker } from './Lurker';
 import { Swarm } from './Swarm';
+import { Thrower } from './Thrower';
 import { Walker } from './Walker';
 
 /** `oneShot`: enjambre llamado por un jefe (persigue enseguida y desaparece al dispersarse). */
@@ -20,6 +22,10 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
       return new Flyer(scene, x, y, def, facing);
     case 'lurker':
       return new Lurker(scene, x, y, def, facing);
+    case 'jumper':
+      return new Jumper(scene, x, y, def, facing);
+    case 'thrower':
+      return new Thrower(scene, x, y, def, facing);
     case 'diver':
       return new Diver(scene, x, y, def, facing);
     default:

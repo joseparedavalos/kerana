@@ -110,7 +110,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const bh = GAMEPLAY.player.bodyHeight * this.detail;
     this.body.setSize(bw, bh, false);
     this.body.setOffset((this.width - bw) / 2, this.height - bh);
-    this.body.setMaxVelocityY(GAMEPLAY.player.maxFallSpeed);
+    // Arcade limita en los dos sentidos: deja subir al rebote del hongo (la caída la limita el motor en cada paso).
+    this.body.setMaxVelocityY(Math.max(GAMEPLAY.player.maxFallSpeed, -GAMEPLAY.jungle.bounceVelocity));
     this.setCollideWorldBounds(true);
     this.body.reset(x, feetY);
 

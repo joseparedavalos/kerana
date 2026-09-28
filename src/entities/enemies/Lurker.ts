@@ -4,9 +4,12 @@ import { EnemyBase } from './EnemyBase';
 import { LurkerMotor } from './LurkerMotor';
 
 const BUBBLE_EVERY_MS = 140;
+const TILE = 16;
 
 // Lurker (GDD §5.2): oculto bajo el agua; burbujas como aviso, emerge cuando Kerana se acerca
 // y solo es vulnerable afuera. El punto del mapa es la superficie del agua.
+// Colgante (`hangs`, mbói en N5): el punto es el tile bajo una rama; se esconde en ella, las hojas
+// caen como aviso y baja colgado.
 export class Lurker extends EnemyBase {
   private readonly motor: LurkerMotor;
   private readonly bubbles: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -24,11 +27,11 @@ export class Lurker extends EnemyBase {
     this.collidesWithGround = false;
     this.bubbles = scene.add
       .particles(0, 0, 'fx_particle', {
-        speedY: { min: -30, max: -12 },
+        speedY: def.hangs ? { min: 15, max: 35 } : { min: -30, max: -12 },
         speedX: { min: -6, max: 6 },
-        lifespan: 450,
+        lifespan: def.hangs ? 600 : 450,
         alpha: { start: 0.9, end: 0 },
-        tint: 0xd8f0f0,
+        tint: def.hangs ? 0x5cc85c : 0xd8f0f0,
         emitting: false,
       })
       .setDepth(6);
@@ -39,13 +42,16 @@ export class Lurker extends EnemyBase {
     const before = this.motor.state;
     // No se desliza con el retroceso del golpe: está anclado en el agua.
     this.body.setVelocity(0, 0);
-    const near = Math.abs(dy) < 64 ? Math.abs(dx) : Infinity;
+    // Colgante: Kerana tiene que pasar por debajo (o a la altura) de la rama.
+    const inRange = this.def.hangs ? dy > -TILE && dy < 96 : Math.abs(dy) < 64;
+    const near = inRange ? Math.abs(dx) : Infinity;
     const state = this.motor.step(deltaMs, near);
     if (state === 'warn') {
       this.bubbleMs -= deltaMs;
       if (this.bubbleMs <= 0) {
         this.bubbleMs = BUBBLE_EVERY_MS;
-        this.bubbles.emitParticleAt(this.x + Phaser.Math.Between(-8, 8), this.spawnY, 1);
+        const y = this.def.hangs ? this.anchorTop : this.spawnY;
+        this.bubbles.emitParticleAt(this.x + Phaser.Math.Between(-8, 8), y, 1);
       }
     }
     if (state === before) return;
@@ -62,13 +68,19 @@ export class Lurker extends EnemyBase {
     this.body.enable = true;
     this.setVisible(true);
     this.scene.tweens.killTweensOf(this);
-    this.scene.tweens.add({ targets: this, y: this.spawnY + this.def.height - (this.def.emergeHeight ?? 8), duration: 160, ease: 'Back.easeOut' });
+    const y = this.def.hangs ? this.anchorTop + this.def.height : this.spawnY + this.def.height - (this.def.emergeHeight ?? 8);
+    this.scene.tweens.add({ targets: this, y, duration: 160, ease: 'Back.easeOut' });
   }
 
-  /** Bajo el agua no toca ni se puede golpear. */
+  /** Borde inferior de la rama de la que cuelga (colgante). */
+  private get anchorTop(): number {
+    return this.spawnY - TILE;
+  }
+
+  /** Bajo el agua (o en la rama) no toca ni se puede golpear. */
   private submerge(instant: boolean): void {
     this.body.enable = false;
-    const hiddenY = this.spawnY + this.def.height + 2;
+    const hiddenY = this.def.hangs ? this.anchorTop + 2 : this.spawnY + this.def.height + 2;
     this.scene.tweens.killTweensOf(this);
     if (instant) {
       this.setY(hiddenY).setVisible(false);

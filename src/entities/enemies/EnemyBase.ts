@@ -73,6 +73,11 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
+  /** Proyectiles propios que tocan a Kerana (frutas del Thrower); consume el que pega. */
+  projectileHits(_rect: Phaser.Geom.Rectangle): boolean {
+    return false;
+  }
+
   /** Golpe del sable de Kerana: `dir` es hacia dónde sale despedido. */
   hit(damage: number, dir: 1 | -1): void {
     if (this.purified) return;

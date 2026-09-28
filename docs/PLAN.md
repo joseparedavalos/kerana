@@ -146,7 +146,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S6b | 2026-09-24 | Opus 5.5 | 60 | 58 | 2 | 42 | Verde |
 | S7 | 2026-09-27 | Opus 5.5 | 58 | 53 | 5 | 47 | Verde |
 | S8 | 2026-09-27 | Opus 5.5 | 53 | 50 | 3 | 50 | Verde |
-| S9 | | | | | | | |
+| S9 | 2026-09-27 | Opus 5.5 | 50 | 44 | 6 | 56 | Verde |
 | S10 | | | | | | | |
 | S11 | | | | | | | |
 | S12 | | | | | | | |
@@ -161,6 +161,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S7:** meta acumulada 32 + 7 (S3) + 6,50 (S6) + 6,50 (S7) = 52; gastado 47 → **Verde**.
 
 **Semáforo de S8:** meta acumulada 52 + 6,50 (S8) = 58,50; gastado 50 → **Verde**.
+
+**Semáforo de S9:** meta acumulada 58,50 + 6,50 (S9) = 65; gastado 56 → **Verde**.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -180,7 +182,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S7 | Hecha | rama `claude/laughing-newton-nqj2z9` | Nivel 2 Ñeembucú (ASCII), camalotes (`Sinking`), agua baja (`ShallowWater`), `jakare` (Lurker), `nakurutu` (Diver), `mboi` (Walker), Mbói Tu'i con 3 fases, don +1 corazón. Build, tests y smoke OK |
 | S8 | Hecha | rama `claude/awesome-carson-qhwqjn` | Nivel 3 Misiones (ASCII), `WindZone` con aviso, `nandu` (Charger), `karakara` (Diver), hipnosis (`StatusEffects`), Moñái con 3 fases (descenso, pulso, robo del corazón), salto doble. Arreglos previos: postes de l2 a 3 tiles y arena que no se recierra tras caer. Build, tests y smoke OK |
 | S9 | Hecha | rama `claude/elegant-hypatia-1ryhow` | Nivel 4 Capiatá (ASCII), `SleepFog` (sueño de siesta), tejas (`FallingHazard kind=teja`), `jagua` (Charger que ladra), `abejas` (Swarm con partículas), Jasy Jatere (chispas, fase invisible con pistas, enjambres, carrera por el bastón), dash intangible. Build, tests y smoke OK |
-| S10 | Pendiente | | |
+| S10 | Hecha | rama `claude/pensive-hopper-ogtwls` | Nivel 5 Canindeyú (ASCII, 280 × 45, vertical), hongos que rebotan (`Bouncer`, `M`), ramas que se quiebran (`Crumble`, `R`), `kuati` (Jumper), `kai` (Thrower con frutas), `mboi_colgante` (Lurker colgante), Kurupi con pies al revés (llamado, huellas invertidas y pisotón, engaño en tres), +1 corazón. Build, tests y smoke OK |
 | S11 | Pendiente | | |
 | S12 | Pendiente | | |
 | S13 | Pendiente | | |
@@ -461,7 +463,20 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 
 **Criterios:** como en S6, para el nivel 5.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S10 → S11):**
+- **Versión elegida:** pies al revés (ni las Notas de juego ni el prompt pedían la versión 100 % Colmán). La estampida y las lianas no están hechas.
+- **Mapa:** `tools/levels/l5.txt` (280 × 45, el más vertical) → `map_l5`. A: sotobosque (x 0–59, suelo en la fila 41) con hongos y kuati; tronco de 3 tiles en x 23–24; pluma 1 sobre la cadena de 3 hongos (x 36–48, fila 20). B: la subida (x 60–139) por 8 escalones de 3 tiles (ramas `=` fijas y `R` que se quiebran), karaguatá abajo (x 66–119: caer devuelve al último suelo firme con 1 de daño), mbói colgantes bajo las ramas de x 88 y 114, ka'i en x 99 y 128, Luz de Arasy en x 76. Pluma 2 en el hueco del tronco (x 94–104: túnel de 3 tiles con espinas de 2, **pide dash**); al tronco se sube con el hongo de x 89. Checkpoint 1 en x 138 (fila 14). C: el dosel (x 142–209), copas con huecos de 4, 6, 8, 6 y 5 tiles (salto doble y dash) y pozo abajo; mbói colgante en x 166, ka'i en x 180, kuati en x 188. Pluma 3 en la rama escondida detrás de la cortina `H` (x 199–208, filas 7–11). Antesala x 210–239 (suelo en la fila 20, checkpoint 2 en x 224). Arena x 240–279: ramas bajas `=` en la fila 17 (x 243–248, 253–257, 263–267, 272–277) y altas en la 14 (x 248–252, 268–272); la columna central (x 258–262) queda libre para medir el suelo. Lugares del jefe en `GAMEPLAY.kurupi.floorSpots` y `kaiSpots` (tiles desde el borde de la arena): si se cambia la arena, ajustarlos.
+- **Nuevo en el ASCII:** `M` = hongo que rebota (objeto `Bouncer`), `R` = rama que se quiebra (objeto `Crumble`); los seguidos de una fila forman un solo objeto. El parser tiene test.
+- **Hongos:** `entities/hazards/Bouncer.ts` (sombrero de un solo sentido). Rebota al caer encima **o al llegar caminando por el suelo**. `PlayerMotor.bounce(vy)` (se aplica en el paso siguiente, recupera el salto doble y el dash). `GAMEPLAY.jungle.bounceVelocity` = −540 (≈ 8 tiles). **Arreglo:** `Player` fijaba `setMaxVelocityY(maxFallSpeed)`, que en Arcade también limita la subida; ahora es el máximo entre la caída y el rebote (la caída la sigue limitando el motor en cada paso).
+- **Ramas:** `CrumbleMotor` (lógica pura, `tests/crumble.test.ts`) + `Crumble.ts`: cruje 0,6 s (tiembla, se aclara, sonido `creak`), cae y reaparece a los 3 s. Todo en `GAMEPLAY.jungle`. Los kuati también se paran en ellas.
+- **Enemigos:** arquetipos nuevos `jumper` (`JumperMotor` con tests + `Jumper.ts`: espera, se agacha y salta hacia Kerana) y `thrower` (`ThrowerMotor` con tests + `Thrower.ts`: aviso, fruta en arco con pool de 3; `arcVelocity` calcula el tiro para caer donde está Kerana). `EnemyBase.projectileHits(rect)` lo revisa `LevelScene.updateProjectiles`. `Lurker` con `hangs: true` (id `mboi_colgante`): el punto va en el tile bajo una rama; hojas verdes como aviso y baja colgado. Sirven para N6 (`ao_ao_cria` es Jumper).
+- **Kurupi** (`bosses/Kurupi.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.kurupi`, lógica en `kurupiLogic.ts` con tests): 12 de vida (3 fases de 4). Fase 1: llamado (pose de silbido 0,8 s → 2 kuati por los bordes o 1 ka'i en una rama alta; ventana 1,2 s) y embestida corta (raspa 0,6 s, sin ventana). Fase 2: carrera al revés (mira hacia el otro lado de Kerana y corre hacia ella hasta el borde, huellas con los dedos al revés; sin ventana) y pisotón (se agacha 0,7 s → 2 ondas de hojas por el suelo; ventana 1 s); el llamado sigue. Fase 3: engaño (se divide en los 3 lugares del suelo, las copias parpadean 0,9 s, los tres corren al revés, **solo el verdadero deja huellas**; ventana 1 s tras la embestida). Golpear una copia la deshace en hojas y aparece un ka'i en la rama alta de ese lado. En las ramas bajas Kerana está a salvo de las carreras y las ondas. Máximo de enemigos llamados a la vez: `GAMEPLAY.kurupi.maxMinions` (3).
+- **`BossContext`** suma `spawnMinion(kind, x, y)`. En `LevelScene`, `bossSwarms` pasó a `bossMinions` (enjambres de Jasy Jatere y animales de Kurupi; se purifican al reiniciar o ganar).
+- **Don:** +1 corazón (6 en total) con `SaveManager.completeLevel`; el smoke lo comprueba.
+- **Smoke:** suma `?level=5&boss=1&god=1` (antesala, cierre, ataques, engaño con 2 copias, liberación con 6 corazones) y `?level=5` (el primer hongo hace rebotar a Kerana). Arreglos por tiempo en máquinas lentas: caminar hasta que la arena se cierre (niveles 1, 3, 4 y 5, como ya hacía el 2) y mantener Pausa hasta que aparezca el mapa al saltar el prólogo. **Ojo:** el smoke sirve `dist/`: correr `npm run build` antes.
+- **Sin probar a mano (Jose):** la altura del rebote (llegar a la pluma 1 y a la copa del tronco), si los escalones de la subida se sienten justos con las ramas que se quiebran, los huecos del dosel (sobre todo el de 8 tiles, x 164–171), si las frutas de los ka'i se esquivan, el alcance de la bajada de los mbói, si la carrera al revés se lee a tiempo y si las huellas alcanzan para encontrar al verdadero en la fase 3. Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l5.txt` (+ `npm run maps`).
+- **No hecho (anotado):** lluvia, niebla y luz verde filtrada (van con S13, fondos y efectos); raíces grandes en la arena (solo ramas); el jefe, los animales, los hongos y las ramas son placeholder por código; las copias no tienen sonido propio al correr.
+- **Assets faltantes:** sprites de Kurupi, `kuati`, `kai`, `mboi` colgante, fruta, hongo, rama, cortina de lianas y tileset real de `selva` (hoy placeholder de color).
 
 ### S11: Nivel 6 Guairá + Ao Ao
 **Lee:** GDD §6.6 y §5.3 (taitetu, ao_ao_cria).

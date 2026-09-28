@@ -43,6 +43,9 @@ const MONAI_HP = 12;
 /** Jasy Jatere: 9 golpes, 3 fases de 3 (GDD §6.4). El noveno no lo vence: suelta el bastón y hay carrera. */
 const JASY_HP = 9;
 
+/** Kurupi: 12 golpes, 3 fases de 4 (GDD §6.5, versión con los pies al revés). */
+const KURUPI_HP = 12;
+
 export const BOSSES: Partial<Record<BossId, BossDef>> = {
   teju_jagua: {
     id: 'teju_jagua',
@@ -175,6 +178,43 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
           { id: 'ambush', weight: 2, telegraphMs: 400, activeMs: 400, recoverMs: 1200 },
           { id: 'swarm', weight: 1, telegraphMs: 700, activeMs: 200, recoverMs: 500, punishable: false },
           { id: 'sparks', weight: 1, telegraphMs: 500, activeMs: 400, recoverMs: 1000 },
+        ],
+      },
+    ],
+  },
+  kurupi: {
+    id: 'kurupi',
+    nameKey: 'boss.kurupi.name',
+    epithetKey: 'boss.kurupi.epithet',
+    hp: KURUPI_HP,
+    phases: [
+      // Fase 1: llamado de la selva (pose de silbido 0,8 s; ventana 1,2 s) y embestida corta (raspa el suelo 0,6 s).
+      {
+        untilHpRatio: 8 / KURUPI_HP,
+        idleMs: 800,
+        attacks: [
+          { id: 'call', weight: 2, telegraphMs: 800, activeMs: 300, recoverMs: 1200 },
+          { id: 'charge', weight: 1, telegraphMs: 600, activeMs: 500, recoverMs: 400, punishable: false },
+        ],
+      },
+      // Fase 2: huellas al revés (mira a un lado y corre al otro) y pisotón con ondas de hojas (se agacha 0,7 s; ventana 1 s).
+      {
+        untilHpRatio: 4 / KURUPI_HP,
+        idleMs: 700,
+        attacks: [
+          { id: 'reverse_run', weight: 2, telegraphMs: 700, activeMs: 900, recoverMs: 300, punishable: false },
+          { id: 'stomp', weight: 2, telegraphMs: 700, activeMs: 400, recoverMs: 1000 },
+          { id: 'call', weight: 1, telegraphMs: 800, activeMs: 300, recoverMs: 1200 },
+        ],
+      },
+      // Fase 3: engaño. Se divide en tres (las copias parpadean al aparecer); solo el verdadero deja huellas
+      // invertidas. Tras cada embestida, 1 s de ventana.
+      {
+        untilHpRatio: 0,
+        idleMs: 700,
+        attacks: [
+          { id: 'decoy', weight: 2, telegraphMs: 900, activeMs: 900, recoverMs: 1000 },
+          { id: 'stomp', weight: 1, telegraphMs: 600, activeMs: 400, recoverMs: 1000 },
         ],
       },
     ],

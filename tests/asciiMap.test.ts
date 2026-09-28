@@ -114,6 +114,16 @@ describe('buildTiledMap', () => {
     expect(water.slice(2, 5)).toEqual([TILES.waterSurface + 1, TILES.waterSurface + 1, TILES.waterSurface + 1]);
   });
 
+  it('agrupa hongos "M" y ramas "R" seguidos en objetos Bouncer y Crumble, sin tiles', () => {
+    const map = buildTiledMap(parseAscii('size 8x2\n---\nPMM.RRR.\n########\n')) as { layers: { name: string; data?: number[]; objects?: Obj[] }[] };
+    const objects = map.layers.find((l) => l.name === 'Objects')!.objects!;
+    const bouncers = objects.filter((o) => o.type === 'Bouncer');
+    const crumbles = objects.filter((o) => o.type === 'Crumble');
+    expect(bouncers.map((o) => [o.x, o.y, o.width, o.height])).toEqual([[16, 0, 32, 16]]);
+    expect(crumbles.map((o) => [o.x, o.y, o.width, o.height])).toEqual([[64, 0, 48, 16]]);
+    for (const name of ['Ground', 'Platforms']) expect(map.layers.find((l) => l.name === name)!.data!.slice(0, 8).every((v) => v === 0)).toBe(true);
+  });
+
   it('"H" va a la capa Foreground (sin colisión)', () => {
     const map = buildTiledMap(parseAscii('size 3x2\n---\nPH.\n###\n'));
     const layer = (name: string) => map.layers.find((l: { name: string }) => l.name === name) as { data: number[] };
