@@ -595,6 +595,17 @@ export const GAMEPLAY = {
     /** Plumas coleccionables por nivel (GDD §4.4). */
     featherMax: 3,
   },
+
+  fireflies: {
+    /** Luciérnagas decorativas que insinúan un secreto (rect Fireflies): sin colisión ni contador. */
+    perTile: 1,
+    radius: 1.5,
+    color: 0xf4f18c,
+    /** Vaivén (px) y duración del parpadeo (ms). */
+    drift: 3,
+    blinkMs: 900,
+    depth: 12,
+  },
 } as const;
 
 export type GameplayConfig = typeof GAMEPLAY;

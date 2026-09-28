@@ -1131,6 +1131,9 @@ export class LevelScene extends Phaser.Scene {
           this.crumbles.push(new Crumble(this, zone, (state) => state !== 'solid' && AudioManager.play(state === 'cracking' ? 'creak' : 'rockBreak')));
           break;
         }
+        case 'Fireflies':
+          this.addFireflies(new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)));
+          break;
         case 'SleepFog':
           this.addFog(new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)));
           break;
@@ -1154,7 +1157,30 @@ export class LevelScene extends Phaser.Scene {
       right: this.inputs.label('right'),
       jump: this.inputs.label('jump'),
       attack: this.inputs.label('attack'),
+      dash: this.inputs.label('dash'),
     };
+  }
+
+  /** Hilera de luciérnagas que parpadean (decorativas): insinúan un secreto cerca. */
+  private addFireflies(zone: Phaser.Geom.Rectangle): void {
+    const fc = GAMEPLAY.fireflies;
+    const count = Math.max(1, Math.round((zone.width / this.map.tileWidth) * fc.perTile));
+    for (let i = 0; i < count; i++) {
+      const fx = zone.x + ((i + 0.5) / count) * zone.width;
+      const fy = zone.y + Math.random() * zone.height;
+      const dot = this.add.circle(fx, fy, fc.radius, fc.color).setDepth(fc.depth);
+      this.darkness?.glow(dot);
+      this.tweens.add({
+        targets: dot,
+        alpha: { from: 1, to: 0.15 },
+        y: fy - fc.drift,
+        duration: fc.blinkMs,
+        delay: Math.random() * fc.blinkMs,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
   }
 
   private tileAt(layer: TileLayerName, x: number, y: number): boolean {

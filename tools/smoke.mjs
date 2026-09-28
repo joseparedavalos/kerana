@@ -285,8 +285,13 @@ async function main() {
     await l5Page.close();
 
     // 1g) Nivel 5 desde el principio: caminando a la derecha, el primer hongo hace rebotar a Kerana más alto que un salto.
+    // (Empieza pasadas las espinas de práctica del Paso de la siesta, x 7-9.)
     const l5aPage = await open('/?debug=1&level=5&god=1');
     await l5aPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await l5aPage.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(11 * 16 + 8, d.player.y);
+    });
     await sleep(500);
     const l5y0 = await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y);
     let l5top = l5y0;
