@@ -55,7 +55,9 @@ export class PreloadScene extends Phaser.Scene {
   create(): void {
     for (const entry of this.missing) {
       console.warn(`[ASSET FALTANTE] ${entry.key}`);
-      if (entry.type === 'image') makePlaceholderTexture(this, entry.key, entry.width, entry.height);
+      if (entry.type === 'image') {
+        if (!entry.codePlaceholder) makePlaceholderTexture(this, entry.key, entry.width, entry.height);
+      }
       else if (entry.type === 'spritesheet')
         makePlaceholderTexture(this, entry.key, entry.frameWidth, entry.frameHeight, entry.frames);
       // Un mapa faltante no tiene placeholder: LevelScene avisa y vuelve al título.

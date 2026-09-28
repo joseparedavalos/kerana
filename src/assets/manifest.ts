@@ -2,7 +2,7 @@ import { BIOMES } from '../data/types';
 
 // Lista única de assets (GDD §11.8). Rutas relativas a public/assets.
 export type AssetEntry =
-  | { type: 'image'; key: string; path: string; width: number; height: number }
+  | { type: 'image'; key: string; path: string; width: number; height: number; codePlaceholder?: boolean }
   | { type: 'spritesheet'; key: string; path: string; frameWidth: number; frameHeight: number; frames: number }
   | { type: 'tilemap'; key: string; path: string }
   | { type: 'json'; key: string; path: string };
@@ -41,6 +41,11 @@ export const MANIFEST: AssetEntry[] = [
   { type: 'tilemap', key: 'map_l5', path: 'maps/l5.json' },
   { type: 'tilemap', key: 'map_l6', path: 'maps/l6.json' },
   { type: 'tilemap', key: 'map_l7', path: 'maps/l7.json' },
+  { type: 'tilemap', key: 'map_yvaga', path: 'maps/yvaga.json' },
+
+  // Fondos del final (ASSETS §7). Si faltan, la escena los dibuja por código (`codePlaceholder`).
+  { type: 'image', key: 'bg_yvaga_far', path: 'backgrounds/yvaga_far.png', width: 640, height: 360, codePlaceholder: true },
+  { type: 'image', key: 'bg_final', path: 'backgrounds/final.png', width: 640, height: 360, codePlaceholder: true },
 
   // Sprites del pipeline: PNG en grilla de frames iguales + JSON con las animaciones.
   { type: 'spritesheet', key: PLAYER_KEY, path: 'sprites/kerana.png', frameWidth: PLAYER_FRAME, frameHeight: PLAYER_FRAME, frames: 1 },

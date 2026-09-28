@@ -24,6 +24,8 @@ export const es = {
   'level.l6.subtitle': 'Ybytyruzú: las montañas',
   'level.l7.name': 'Asunción',
   'level.l7.subtitle': 'Pyhare: la noche del camposanto',
+  'level.yvaga.name': 'Yvága',
+  'level.yvaga.subtitle': 'El cielo de las siete estrellas',
 
   'hint.test.move': 'Movete con {left} y {right}. Saltá con {jump}: mantenelo para llegar más alto.',
   'hint.l1.move': '{left} / {right}: caminar',
@@ -90,9 +92,12 @@ export const es = {
   // Final (GDD §2.6).
   'story.ending.1': 'Siete estrellas subieron al cielo, una por cada hijo.',
   'story.ending.2': 'Los guaraníes las llaman Eichu. Cuando aparecen antes del amanecer, a comienzos de junio, empieza el año nuevo: el tiempo de volver a empezar.',
-  'story.ending.3': 'Kerana se sentó junto a un manantial que nunca dejaría de correr y miró a sus hijos brillar.',
-  'story.ending.4_missing_feathers': 'Pero lejos, en la oscuridad, Tau todavía escuchaba…',
-  'story.ending.4_all_feathers': 'Kerana… Tau está en Yvága. Esta vez no se escapa.',
+  'story.tau.appears': 'Las siete estrellas se juntaron y formaron Eichu. Pero entre ellas se movió una sombra con ojos rojos: Tau.',
+  'story.tau.mainumby': 'Mainumby: «Kerana… Tau está en Yvága. Esta vez no se escapa.»',
+  'story.final.sealed': 'Como hizo una vez el sabio Tume Arandu, Kerana lo dejó hechizado. Tau quedó sellado y ya no volvió a escuchar.',
+  'story.final.healed': 'La tierra guaraní sanó. Los cerros, los esteros, los campos y las selvas recuperaron sus colores.',
+  'story.final.spring': 'Al amanecer de Ary Pyahu, el año nuevo, Kerana descansó junto a un manantial que nunca dejaría de correr y miró a sus hijos brillar en Eichu.',
+  'story.final.feathers': 'Mainumby se posó en su hombro. «Descansá, Kerana. Esta vez, dormir es un regalo.»',
 
   // Diálogos de liberación (GDD §6).
   'speaker.kerana': 'Kerana',
@@ -126,6 +131,9 @@ export const es = {
   'dialogue.l6.3': 'El último, Luisón… te espera donde duermen los muertos, en Asunción.',
   'dialogue.l7.1': 'Che sy… Nací último. Y nací en la oscuridad.',
   'dialogue.l7.2': 'Y en la oscuridad te encontré. Vení, che memby. Tus hermanos te esperan arriba.',
+  'dialogue.yvaga.1': 'Esa luz… no la soporto. ¡Kerana, dejame dormir en la oscuridad!',
+  'dialogue.yvaga.2': 'Vas a dormir, Tau. Pero esta vez no te despertás.',
+  'dialogue.yvaga.3': 'Ya está, Kerana. Mirá cómo brillan tus hijos.',
 
   // Dones (GDD §3.7).
   'boss.teju_jagua.name': 'Teju Jagua',
@@ -142,6 +150,8 @@ export const es = {
   'boss.ao_ao.epithet': 'Señor de los cerros',
   'boss.luison.name': 'Luisón',
   'boss.luison.epithet': 'Señor de la noche y los camposantos',
+  'boss.tau.name': 'Tau',
+  'boss.tau.epithet': 'El espíritu del mal',
   'liberation.gift': 'Don obtenido: {gift}',
   'gift_hint.charged_slash': 'Mainumby: «¡Mantené el ataque y soltalo! Así se rompen las rocas agrietadas.»',
   'gift_hint.double_jump': 'Mainumby: «¡El aire es de Moñái… y ahora también tuyo! Saltá otra vez en el aire.»',

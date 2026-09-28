@@ -473,6 +473,63 @@ export const GAMEPLAY = {
     tauShadowPadPx: 14,
   },
 
+  /** Tau, jefe final en Yvága (GDD §7). Lugares en tiles, relativos a la arena (tools/levels/yvaga.txt). */
+  tau: {
+    /** Disfraz (joven de la flauta) y forma real (humo), en px. */
+    width: 16,
+    height: 32,
+    trueWidth: 44,
+    trueHeight: 36,
+    /** Las siete estrellas: borde izquierdo (tile) y fila de la plataforma (3 tiles de ancho). */
+    starTiles: [
+      [3, 20],
+      [9, 17],
+      [15, 14],
+      [21, 17],
+      [27, 14],
+      [31, 17],
+      [35, 20],
+    ] as ReadonlyArray<readonly [number, number]>,
+    starWidthTiles: 3,
+    /** Fase 1: dónde se para en las nubes (tiles) y cuánto tarda en cambiar de lado (ms). */
+    floorTiles: [6, 34],
+    blinkMs: 350,
+    /** Notas de la flauta: cuántas por ataque, velocidad (px/s) y radio (px). */
+    notesPerAttack: 4,
+    noteSpeed: 110,
+    noteRadius: 3,
+    noteColor: 0x9fe0ff,
+    /** Melodía: anillo que hipnotiza (radio máximo y grosor en px). */
+    melodyRadius: 120,
+    melodyBandPx: 10,
+    /** Fases 2 y 3: altura a la que flota (tiles sobre el suelo). */
+    floatTiles: 11,
+    floatMs: 500,
+    /** Eco de Teju Jagua: rocas que caen (cuántas y separación en tiles). */
+    echoRocks: 4,
+    echoRockGapTiles: 3,
+    /** Eco de Mbói Tu'i: empujón del graznido (px/s, ms) y barrida de la sombra por las nubes (px de alto). */
+    squawkPush: 130,
+    squawkMs: 450,
+    sweepHeight: 14,
+    /** Eco de Jasy Jatere: enjambres por ataque. */
+    echoSwarms: 1,
+    /** Fase 3: humo sobre las nubes (tiles de alto), rayos rojos y el rayo de la estrella. */
+    smokeTiles: 2,
+    smokeColor: 0x6a2e8f,
+    boltsPerAttack: 3,
+    boltSpeed: 170,
+    boltColor: 0xe04848,
+    eyeColor: 0xe04848,
+    beamColor: 0xfff2c0,
+    /** El rayo de la estrella baja a Tau junto a ella: distancia al centro de la estrella (px). */
+    pullOffsetPx: 30,
+    /** Estrella encendida: brillo y escala. */
+    starColor: 0xf2eee3,
+    starLitColor: 0xf2c14e,
+    starLitScale: 1.5,
+  },
+
   /** Enjambre de abejas (GDD §5.2 Swarm): se dibuja con partículas. */
   swarm: {
     /** Partículas: cada cuánto sale una (ms), vida (ms) y dispersión (px). */

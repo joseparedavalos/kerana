@@ -439,14 +439,76 @@ async function main() {
     check(l7save.freed?.includes('luison'), 'guardado: Luisón liberado');
     await l7Page.keyboard.press('Enter');
     await l7Page.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
-    check(true, 'último nivel → final (diapositivas)');
+    check(true, 'último nivel → Eichu y aparece Tau (diapositivas)');
     await sleep(500);
-    await l7Page.screenshot({ path: join(SHOTS, 'ending.png') });
+    await l7Page.screenshot({ path: join(SHOTS, 'tau-arrival.png') });
     await l7Page.keyboard.down('Escape');
-    for (let t = 0; t < 5000 && !(await l7Active('Credits')); t += 100) await sleep(100);
+    const inYvaga = () =>
+      l7Page.evaluate(() => (window.__KERANA_GAME__?.scene.isActive('Level') ?? false) && window.__KERANA_DEBUG__?.scene.def.id === 'yvaga');
+    for (let t = 0; t < 5000 && !(await inYvaga()); t += 100) await sleep(100);
     await l7Page.keyboard.up('Escape');
-    check(await l7Active('Credits'), 'final → créditos');
+    check(await inYvaga(), 'diapositivas → Yvága (arena de Tau)');
     await l7Page.close();
+
+    // 1l) Yvága con ?level=yvaga: Tau en 3 fases (disfraz, ecos, forma real), sellado, final y créditos.
+    const tauPage = await open('/?debug=1&level=yvaga&god=1');
+    await tauPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    await walkIntoArena(tauPage, 8000);
+    check(await tauPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'Yvága: la arena de Tau se cierra');
+    await sleep(4000);
+    const tau1 = await tauPage.evaluate(() => {
+      const b = window.__KERANA_DEBUG__.scene.boss;
+      return { state: b.brain.state, form: b.form, stars: b.stars.length };
+    });
+    check(tau1.state !== 'waiting' && tau1.form === 'disguise' && tau1.stars === 7, `Tau fase 1: el joven de la flauta ataca (${JSON.stringify(tau1)})`);
+    await tauPage.screenshot({ path: join(SHOTS, 'tau-1.png') });
+    const tau2 = await tauPage.evaluate(async () => {
+      const b = window.__KERANA_DEBUG__.scene.boss;
+      b.brain.damage(7);
+      const seen = new Set();
+      for (let i = 0; i < 40; i++) {
+        await new Promise((res) => setTimeout(res, 150));
+        for (const [id, e] of Object.entries(b.echoes)) if (e.visible) seen.add(id);
+      }
+      return { phase: b.brain.phase, form: b.form, echoes: [...seen] };
+    });
+    check(tau2.phase === 1 && tau2.form === 'echoes' && tau2.echoes.length > 0, `Tau fase 2: los ecos de los hijos (${JSON.stringify(tau2)})`);
+    await tauPage.screenshot({ path: join(SHOTS, 'tau-2.png') });
+    const tau3 = await tauPage.evaluate(async () => {
+      const b = window.__KERANA_DEBUG__.scene.boss;
+      b.brain.damage(7);
+      let smoke = false;
+      let lit = -1;
+      for (let i = 0; i < 40; i++) {
+        await new Promise((res) => setTimeout(res, 150));
+        if (b.smokeRect.visible) smoke = true;
+        if (b.litStar >= 0) lit = b.litStar;
+      }
+      return { phase: b.brain.phase, form: b.form, core: b.core.visible, smoke, lit };
+    });
+    check(tau3.phase === 2 && tau3.form === 'true' && tau3.core, `Tau fase 3: forma real de humo (${JSON.stringify(tau3)})`);
+    await tauPage.screenshot({ path: join(SHOTS, 'tau-3.png') });
+    await tauPage.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const tauActive = (key) => tauPage.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
+    for (let i = 0; i < 60 && !(await tauActive('Story')); i++) {
+      await tauPage.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await tauActive('Story'), 'Tau sellado → final verdadero (diapositivas)');
+    const tauSave = await tauPage.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
+    check(tauSave.freed?.includes('tau'), 'guardado: Tau sellado (el mapa recupera sus colores)');
+    // Hasta la diapositiva con imagen (amanecer de Ary Pyahu).
+    for (let i = 0; i < 12; i++) {
+      await tauPage.keyboard.press('Space');
+      await sleep(250);
+    }
+    await tauPage.screenshot({ path: join(SHOTS, 'ending.png') });
+    await tauPage.keyboard.down('Escape');
+    for (let t = 0; t < 5000 && !(await tauActive('Credits')); t += 100) await sleep(100);
+    await tauPage.keyboard.up('Escape');
+    check(await tauActive('Credits'), 'final → créditos');
+    await tauPage.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');

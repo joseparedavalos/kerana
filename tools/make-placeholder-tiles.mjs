@@ -25,6 +25,7 @@ const BIOMES = {
   selva: { ground: '#3E3A2A', top: '#1F5A33', platform: '#6A5236', hazard: '#8CBF5A', water: '#2F5E5A' },
   montana: { ground: '#6A5A4A', top: '#6F7F6A', platform: '#5A4A3A', hazard: '#D9D9D9', water: '#46607A' },
   ciudad: { ground: '#3A4466', top: '#D9DCE6', platform: '#5A5F80', hazard: '#6FD9A5', water: '#23305A' },
+  cielo: { ground: '#9AA3C9', top: '#E6E8F2', platform: '#F2C14E', hazard: '#6A2E8F', water: '#2A2A5A' },
 };
 
 function hex(c) {

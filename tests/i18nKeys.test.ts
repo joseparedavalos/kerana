@@ -15,8 +15,8 @@ describe('i18n: claves usadas en los datos', () => {
   });
 
   it('las diapositivas de historia referencian claves existentes', async () => {
-    const { PROLOGUE_SLIDES, ENDING_SLIDES, endingLastSlide } = await import('../src/data/story');
-    for (const slide of [...PROLOGUE_SLIDES, ...ENDING_SLIDES, endingLastSlide(true), endingLastSlide(false)]) {
+    const { PROLOGUE_SLIDES, TAU_ARRIVAL_SLIDES, ENDING_SLIDES, FEATHERS_SLIDE } = await import('../src/data/story');
+    for (const slide of [...PROLOGUE_SLIDES, ...TAU_ARRIVAL_SLIDES, ...ENDING_SLIDES, FEATHERS_SLIDE]) {
       expect(table[slide.textKey], slide.textKey).toBeDefined();
     }
   });

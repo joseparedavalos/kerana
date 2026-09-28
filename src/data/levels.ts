@@ -118,11 +118,27 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     dark: true,
     mapNode: { x: -57.63, y: -25.28 },
   },
+  // Yvága, el cielo (GDD §7): solo la arena de Tau, sin nivel previo. Se llega al liberar a Luisón.
+  yvaga: {
+    id: 'yvaga',
+    order: 8,
+    nameKey: 'level.yvaga.name',
+    subtitleKey: 'level.yvaga.subtitle',
+    mapKey: 'map_yvaga',
+    mapSource: 'ascii',
+    biome: 'cielo',
+    backgrounds: [{ key: 'bg_yvaga_far', factor: 1 }],
+    musicKey: '',
+    boss: 'tau',
+    gift: null,
+    finale: true,
+    mapNode: { x: -57.63, y: -25.28 },
+  },
 };
 
-/** Los 7 niveles jugables, en orden (sin el nivel de prueba), para el mapa del mundo. */
+/** Los 7 niveles jugables, en orden (sin el nivel de prueba ni Yvága), para el mapa del mundo. */
 export const WORLD_LEVELS: LevelDef[] = Object.values(LEVELS)
-  .filter((l): l is LevelDef => l != null && l.order > 0)
+  .filter((l): l is LevelDef => l != null && l.order > 0 && !l.finale)
   .sort((a, b) => a.order - b.order);
 
 export const DEFAULT_LEVEL: LevelId = 'test';

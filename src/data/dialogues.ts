@@ -1,4 +1,4 @@
-import type { BossId, DialogueLine, LevelId } from './types';
+import type { DialogueLine, LevelId } from './types';
 
 // Diálogos de liberación (GDD §6.1 a §6.7), uno por nivel con jefe.
 export const LIBERATION_DIALOGUES: Partial<Record<LevelId, DialogueLine[]>> = {
@@ -36,6 +36,12 @@ export const LIBERATION_DIALOGUES: Partial<Record<LevelId, DialogueLine[]>> = {
     { speaker: 'luison', textKey: 'dialogue.l7.1' },
     { speaker: 'kerana', textKey: 'dialogue.l7.2' },
   ],
+  // Tau queda sellado (GDD §7): no es un hijo, no se libera.
+  yvaga: [
+    { speaker: 'tau', textKey: 'dialogue.yvaga.1' },
+    { speaker: 'kerana', textKey: 'dialogue.yvaga.2' },
+    { speaker: 'mainumby', textKey: 'dialogue.yvaga.3' },
+  ],
 };
 
 export function liberationDialogue(levelId: LevelId): DialogueLine[] {
@@ -43,6 +49,6 @@ export function liberationDialogue(levelId: LevelId): DialogueLine[] {
 }
 
 /** Nombre de retrato provisional para un hablante (ASSETS §4; hasta S13, placeholder por código). */
-export function speakerPortraitKey(speaker: 'kerana' | BossId): string {
+export function speakerPortraitKey(speaker: DialogueLine['speaker']): string {
   return `portrait_${speaker}`;
 }
