@@ -147,7 +147,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S7 | 2026-09-27 | Opus 5.5 | 58 | 53 | 5 | 47 | Verde |
 | S8 | 2026-09-27 | Opus 5.5 | 53 | 50 | 3 | 50 | Verde |
 | S9 | 2026-09-27 | Opus 5.5 | 50 | 44 | 6 | 56 | Verde |
-| S10 | | | | | | | |
+| S10 | 2026-09-27 | Opus 5.5 (esfuerzo High, por error) | 44 | 37 | 7 | 63 | Verde |
 | S11 | | | | | | | |
 | S12 | | | | | | | |
 | S13 | | | | | | | |
@@ -163,6 +163,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S8:** meta acumulada 52 + 6,50 (S8) = 58,50; gastado 50 → **Verde**.
 
 **Semáforo de S9:** meta acumulada 58,50 + 6,50 (S9) = 65; gastado 56 → **Verde**.
+
+**Semáforo de S10:** meta acumulada 65 + 6,50 (S10) = 71,50; gastado 63 → **Verde**. Costó más que las anteriores porque corrió con esfuerzo High por error.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -183,7 +185,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S8 | Hecha | rama `claude/awesome-carson-qhwqjn` | Nivel 3 Misiones (ASCII), `WindZone` con aviso, `nandu` (Charger), `karakara` (Diver), hipnosis (`StatusEffects`), Moñái con 3 fases (descenso, pulso, robo del corazón), salto doble. Arreglos previos: postes de l2 a 3 tiles y arena que no se recierra tras caer. Build, tests y smoke OK |
 | S9 | Hecha | rama `claude/elegant-hypatia-1ryhow` | Nivel 4 Capiatá (ASCII), `SleepFog` (sueño de siesta), tejas (`FallingHazard kind=teja`), `jagua` (Charger que ladra), `abejas` (Swarm con partículas), Jasy Jatere (chispas, fase invisible con pistas, enjambres, carrera por el bastón), dash intangible. Build, tests y smoke OK |
 | S10 | Hecha | rama `claude/pensive-hopper-ogtwls` | Nivel 5 Canindeyú (ASCII, 280 × 45, vertical), hongos que rebotan (`Bouncer`, `M`), ramas que se quiebran (`Crumble`, `R`), `kuati` (Jumper), `kai` (Thrower con frutas), `mboi_colgante` (Lurker colgante), Kurupi con pies al revés (llamado, huellas invertidas y pisotón, engaño en tres), +1 corazón. Build, tests y smoke OK |
-| S11 | Pendiente | | |
+| S11 | Hecha | rama `claude/wizardly-keller-hk38hc` | Nivel 6 Guairá (ASCII, 290 × 26), `taitetu` (Charger en manada), `ao_ao_cria` (Jumper), pindó como refugio (`Pindo`), rocas que caen con sombra (`FallingHazard kind=roca`), Ao Ao con 3 fases, +1 corazón (7). Extras: vacas de Capiatá en N4 y onda de luz del tajo cargado. Build, tests y smoke OK |
 | S12 | Pendiente | | |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
@@ -485,7 +487,18 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 
 **Criterios:** como en S6, para el nivel 6.
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S11 → S12):**
+- **Mapa:** `tools/levels/l6.txt` (290 × 26, generado a mano por perfil de alturas) → `map_l6`. A: el ascenso (x 0–69) en escalones de 2 (suelo en las filas 21, 19, 17 y 15), manadas de taitetu (3 en x 24–28, 2 en x 40–42), pluma 1 en la cornisa sobre la manada (x 24–31, fila 14; se llega desde el escalón de x 34), 2 rocas que caen (x 56 y 64). B: las cumbres (x 70–139) con pozos de 4 tiles, 3 zonas de viento y 3 karakara; pluma 2 en la cornisa x 107–110 (fila 8) sobre un pozo: **pide viento a favor** (o salto doble + dash). Checkpoint 1 en x 134. C: la manada (x 140–229, alternativa a la persecución): Luz de Arasy en x 144, 4 pindó (copas en x 150, 170, 190 y 210, fila 13) y 3 manadas; pluma 3 en la ruta alta (plataformas x 174–176 y 182–184 en la fila 10, x 188–190 en la 8) con 2 rocas que caen. Antesala x 230–249 (checkpoint 2 en x 235). Arena x 250–289: pindó en x 252–254 y 285–287 (copas en la fila 13), rocas de 2 × 2 en x 261–262 y 277–278; la columna central (x 270) queda libre. Los lugares del jefe están en `GAMEPLAY.aoAo` (`rockTiles`, `pindoTiles`, `startTile`, en tiles desde el borde de la arena): si se cambia la arena, ajustarlos.
+- **Nuevo en el ASCII:** `rect Pindo` (tronco y hojas por código; la copa es la plataforma `=` de arriba y es refugio) y `point FallingHazard kind=roca` (roca redonda con sombra en el suelo como aviso, 0,8 s).
+- **Pindó (refugio):** `aoAoLogic.onRefuge` (lógica pura, tests en `tests/aoAo.test.ts`): Kerana parada en la copa (pies a ± 3 px de la copa). En la arena, si está en un pindó entre ataques, Ao Ao no ataca: da vueltas al pie del más cercano y aúlla cada 1,8 s; el ataque en curso termina pero no la daña (`hurtsPlayer` es falso). Para ganar hay que bajar. **Las crías sí pueden saltar a la copa** (el hechizo es contra Ao Ao); si molesta, se puede excluir en `LevelScene.onPlayerTouchEnemy`. Los taitetu no la ven arriba porque el Charger solo mira su mismo piso.
+- **Enemigos:** `taitetu` (Charger con `warnSfx: 'grunt'`; la "manada" es poner 2 o 3 juntos en el mapa) y `ao_ao_cria` (Jumper, 1 de vida). `karakara` reutilizado.
+- **Ao Ao** (`bosses/AoAo.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.aoAo`, lógica en `aoAoLogic.ts` con tests): 15 de vida (3 fases de 5). Fase 1: embestida (rasca y resopla 0,8 s) hasta la roca o el borde (`chargeTarget`); si choca con una roca queda aturdido 2 s con estrellitas (la ventana); si llega al borde, `brain.interrupt()` y no hay ventana. Fase 2: zarpazo erguido (0,7 s; ventana 1 s), aullido (1 s) que llama 2 crías, y la embestida. Fase 3: embestida doble (ida y vuelta; aturdido 1,5 s si choca), rocas que caen del cerro (3, la primera sobre Kerana) y crías de a 3 (máx. 3 vivas). `BossContext` suma `playerOnRefuge()`, `spawnFalling(x, kind)` y `spawnMinion(kind, x, y, max)`.
+- **Extra N4, vacas:** `entities/Cow.ts` (no es enemigo): camina despacio (±3,5 tiles, pausa al girar), muge al azar si está en pantalla (con paneo) y es plataforma de un solo sentido que lleva a Kerana. En el ASCII es `v` (`enemy v=vaca`; `LevelScene` la crea en vez de un enemigo). `vaca_embrujada` (`e`) es un Charger (muge como aviso, 3 de vida) con `purifiesInto: 'vaca'`: al purificarse deja una vaca tranquila (`EnemyBase.onPurified`). En l4: 3 vacas (x 14, 34, 58), la embrujada en x 50 y el cartel 8 (`hint.l4.vacas`) en x 11. Valores en `GAMEPLAY.cow` y `enemies.ts`.
+- **Extra, onda de luz:** al soltar el tajo cargado sale una onda dorada (`LightWaveMotor`, lógica pura con tests en `tests/lightWave.test.ts`; `LevelScene.updateLightWave`): 240 px/s, 96 px (6 tiles), se desvanece desde el 60 %; una sola en pantalla. Purifica enemigos comunes (sin importar la vida), rompe rocas agrietadas y a los jefes les hace 1 solo en la ventana vulnerable; si el tajo cargado ya pegó de cerca (3), la onda no suma. Atraviesa paredes (no choca con el mapa). Valores en `GAMEPLAY.lightWave`.
+- **Smoke:** suma `?level=6&boss=1&god=1` (antesala, cierre, refugio en el pindó con Ao Ao dando vueltas, fase 3, liberación con 7 corazones) y `?level=4&gifts=all&god=1` (3 vacas y la onda de luz).
+- **Sin probar a mano (Jose):** si la pluma 2 se alcanza con el viento, la altura de la cornisa de la pluma 1, si las manadas son justas, si la embestida de Ao Ao se esquiva (subiéndose a una roca o a un pindó), cuánto dura el mareo, si las vacas son buenas plataformas (se mueven 14 px/s), el alcance de la onda de luz. Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l6.txt` / `l4.txt` (+ `npm run maps`).
+- **No hecho (anotado):** relámpagos y tormenta del atardecer (S13, fondos y efectos); persecución (recortada); el jefe, las crías, los taitetu, el pindó y las vacas son placeholder por código; la onda no choca con paredes.
+- **Assets faltantes:** sprites de Ao Ao (4 patas y erguido), `taitetu`, `ao_ao_cria`, pindó, roca, `vaca` y `vaca_embrujada` (prompts en ASSETS §3.5), tileset real de `montana` (hoy placeholder de color).
 
 ### S12: Nivel 7 Asunción + Luisón + final
 **Lee:** GDD §6.7, §6.8, §2.6 y §4.8 (oscuridad).

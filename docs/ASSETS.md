@@ -161,6 +161,8 @@ side view facing left, small 2D platformer enemy, 16-bit pixel art
 | `kai` | `raw/kai/` | `A small brown capuchin monkey holding a fruit` | Idle · Attack (lanzar) | 48 × 48 | S10 |
 | `taitetu` | `raw/taitetu/` | `A collared peccary` | Run | 64 × 64 | S11 |
 | `ao_ao_cria` | `raw/ao_ao_cria/` | `A small woolly sheep-like cub with tiny fangs` | Run | 48 × 48 | S11 |
+| `vaca` | `raw/vaca/` | `A calm skinny Paraguayan street cow, white with brown patches, small curved horns, walking slowly with its head low` | Walk · Idle (mugido, cabeza en alto) | 64 × 48 | S11 (extra N4) |
+| `vaca_embrujada` | `raw/vaca_embrujada/` | `The same white and brown street cow but bewitched: glowing violet spiral mark on its forehead, red eyes, lowered horns, charging` | Run (embestida) · Attack (rasca el suelo) | 64 × 48 | S11 (extra N4) |
 | `pora` | `raw/pora/` | `A translucent pale green ghost with a sad face and a wispy tail` | Idle (flotando) | 48 × 48 | S12 |
 | `jagua_hu` | `raw/jagua_hu/` | `A black dog with glowing eyes` | Run | 64 × 64 | S12 |
 | `abejas` | — | Hechas con partículas por código | — | — | S9 |
