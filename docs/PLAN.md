@@ -148,7 +148,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S8 | 2026-09-27 | Opus 5.5 | 53 | 50 | 3 | 50 | Verde |
 | S9 | 2026-09-27 | Opus 5.5 | 50 | 44 | 6 | 56 | Verde |
 | S10 | 2026-09-27 | Opus 5.5 (esfuerzo High, por error) | 44 | 37 | 7 | 63 | Verde |
-| S11 | | | | | | | |
+| S11 | 2026-09-28 | Opus 5.5 | 37 | 33 | 4 | 67 | Verde |
 | S12 | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
@@ -165,6 +165,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 **Semáforo de S9:** meta acumulada 58,50 + 6,50 (S9) = 65; gastado 56 → **Verde**.
 
 **Semáforo de S10:** meta acumulada 65 + 6,50 (S10) = 71,50; gastado 63 → **Verde**. Costó más que las anteriores porque corrió con esfuerzo High por error.
+
+**Semáforo de S11:** meta acumulada 71,50 + 6,50 (S11) = 78; gastado 67 → **Verde**.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -186,7 +188,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S9 | Hecha | rama `claude/elegant-hypatia-1ryhow` | Nivel 4 Capiatá (ASCII), `SleepFog` (sueño de siesta), tejas (`FallingHazard kind=teja`), `jagua` (Charger que ladra), `abejas` (Swarm con partículas), Jasy Jatere (chispas, fase invisible con pistas, enjambres, carrera por el bastón), dash intangible. Build, tests y smoke OK |
 | S10 | Hecha | rama `claude/pensive-hopper-ogtwls` | Nivel 5 Canindeyú (ASCII, 280 × 45, vertical), hongos que rebotan (`Bouncer`, `M`), ramas que se quiebran (`Crumble`, `R`), `kuati` (Jumper), `kai` (Thrower con frutas), `mboi_colgante` (Lurker colgante), Kurupi con pies al revés (llamado, huellas invertidas y pisotón, engaño en tres), +1 corazón. Build, tests y smoke OK |
 | S11 | Hecha | rama `claude/wizardly-keller-hk38hc` | Nivel 6 Guairá (ASCII, 290 × 26), `taitetu` (Charger en manada), `ao_ao_cria` (Jumper), pindó como refugio (`Pindo`), rocas que caen con sombra (`FallingHazard kind=roca`), Ao Ao con 3 fases, +1 corazón (7). Extras: vacas de Capiatá en N4 y onda de luz del tajo cargado. Build, tests y smoke OK |
-| S12 | Pendiente | | |
+| S12 | Hecha | rama `claude/tender-rubin-4kwtdf` | Nivel 7 Asunción (ASCII, 280 × 30), oscuridad con la iluminación de Phaser 4 (`Darkness`: halo de Kerana, `DarkZone`, faroles `Lantern`, checkpoints que alumbran), `pora` (Flyer, vulnerable solo iluminado) y `jagua_hu` (Charger con ojos), Luisón con 3 fases (terrones, aullido, apagón, embestida con ojos, sombra de Tau), velas al liberarlo, final según las plumas → créditos. Antes: la onda de luz choca con el terreno. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -507,7 +509,21 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 
 **Criterios:** el juego completo se puede terminar de principio a fin · el final se muestra según las plumas (§2.6).
 
-**Notas para la próxima sesión:** —
+**Notas para la próxima sesión (S12 → S13):**
+- **Arreglo previo (pendiente de S11):** la onda de luz ya no atraviesa paredes. `LightWaveMotor.step(dt, isSolid)` avanza en pasos de medio ancho y, si el borde delantero entra en un tile de `Ground`, se detiene (`blocked`), deja de dañar (`canHit` falso: ni enemigos, ni rocas, ni jefe del otro lado) y se apaga en `GAMEPLAY.lightWave.wallFadeMs` (120 ms). Las plataformas de un sentido no la frenan. Si sale pegada a una pared, se apaga ahí. Tests en `tests/lightWave.test.ts`.
+- **Otro arreglo de paso:** los `FallingHazard kind=roca` de l6 se creaban como estalactitas (`LevelScene` solo leía `teja`); ahora respeta `roca`.
+- **Mapa:** `tools/levels/l7.txt` (280 × 30, suelo en la fila 26) → `map_l7`; se genera con un script de bloques (no está en el repo; el ASCII es la fuente). A: calles (x 0–69), 4 faroles, mbopi, pluma 1 en el balcón alto (x 42–45, fila 20; se sube por el de x 36–39). B: entrada (x 70–139), rejas con puntas (`^` de 3 tiles en x 80, 96, 118), muros de 3 que los póra atraviesan, pluma 2 en el rincón oscuro (`DarkZone` x 122–135) sobre la plataforma x 130–133, con farol en x 126. Checkpoint 1 en x 137. C: laberinto (x 140–219, todo `DarkZone`), mausoleos de 3, jagua hũ (x 158, 186, 202), Luz de Arasy en x 170, pluma 3 en la cúpula del mausoleo alto (x 178–180, fila 16; escalones de 3). Antesala x 220–239 (guavirá, farol, checkpoint 2 en x 230). Arena x 240–279: mausoleos x 241–247 y 273–279 (techos a 3 tiles: **para entrar hay que subir al techo del de la izquierda**), lápida por código en el centro y 2 faroles encendidos (x 252 y 267). Lugares del jefe en `GAMEPLAY.luison` (`roofTiles`, `floorTiles`, `tombTile`, `startTile`).
+- **Nuevo en el ASCII:** `point Lantern` (farol; `lit=true` = ya encendido) y `rect DarkZone` (oscuridad total). Letras de enemigos: `m`=mbopi, `p`=pora, `j`=jagua_hu.
+- **Oscuridad** (`systems/Darkness.ts`, lógica pura en `systems/lightLogic.ts` con tests): solo en niveles con `dark: true` (`levels.ts`). Activa `scene.lights`, y todo lo que se agrega a la escena después recibe `setLighting(true)` (menos los textos: carteles y diálogo se leen siempre). Halo de Kerana, ambiente de noche / oscuro (zona oscura o apagón) / velas, con fundido. `darkness.glow(obj)` = brilla con luz propia (ojos, terrones, llamas, onda de luz). Sin WebGL no hay luces pero la lógica de qué está iluminado sigue igual (avisa en consola). Phaser dibuja hasta 10 luces por cámara (`maxLights`): no poner más de ~8 faroles en una pantalla.
+- **Faroles** (`entities/Lantern.ts`): poste por código, se encienden al tocarlos (sonido `lantern`). Los checkpoints del nivel oscuro también alumbran al encenderse. Valores en `GAMEPLAY.lantern` y `GAMEPLAY.darkness`.
+- **Enemigos:** `pora` (Flyer lento, `needsLight`): a oscuras se ve al 35 % y el sable lo atraviesa; con el halo, un farol o una vela cerca queda vulnerable. La onda de luz y la Luz de Arasy lo purifican igual. `jagua_hu` (Charger, `glowEyes`): ojos amarillos que brillan tenues y se encienden en el aviso (gruñido 0,7 s). `EnemyBase.lit` / `vulnerable` / `glowParts`.
+- **Luisón** (`bosses/Luison.ts`, datos en `bosses.ts`, sensación en `GAMEPLAY.luison`, lógica en `luisonLogic.ts` con tests): 18 de vida (3 fases de 6). Fase 1: salta al techo más lejano, gira el brazo (0,6 s) y tira 3 terrones en arco (sin ventana); trepa a la lápida (1 s), aúlla y llama 2 póra (ventana 1,5 s mientras aúlla). Fase 2: crece (× 1,3) y acelera (× 1,35); apagón (la arena queda oscura y sus faroles se apagan; Kerana los vuelve a encender tocándolos, pero cada aullido los apaga de nuevo); embestida de mausoleo a mausoleo anunciada por los ojos y un gruñido (1 s; ventana 1,2 s). Fase 3: sombra de Tau detrás (se mece), cadena embestida → terrones → póra (aviso 0,6 s, ventana 1 s). Los techos de los mausoleos protegen de la embestida, no de los terrones. `BossContext` suma `setBlackout(on)` y `glow(obj)`. Los efectos de fase se aplican al detectar el cambio de fase en cada frame (sirve también con `brain.damage` directo).
+- **Velas:** al liberar a Luisón se encienden solas 10 velas en la arena (4 con luz propia) y el ambiente pasa a cálido (`GAMEPLAY.candles`).
+- **Final:** `LevelCompleteScene` del último nivel lleva a `StoryScene` con `endingSlides(plumas, 21)` (3 diapositivas + la 4.ª según las plumas, GDD §2.6) y después a `Credits` → Título. El jefe secreto está recortado: con las 21 plumas se muestra la línea de Mainumby y siguen los créditos. Test en `tests/luison.test.ts`.
+- **Smoke:** suma `?level=7&god=1` (faroles, póra a oscuras, encender el primer farol, póra iluminado y vulnerable junto a Kerana) y `?level=7&boss=1&god=1` (cierre de la arena saltando al techo, apagón en la fase 2, sombra de Tau, velas, nivel completado, final y créditos). `walkIntoArena` acepta saltar. Ojo: dos chequeos viejos fallan a veces por tiempo en máquinas lentas (arena de Mbói Tu'i y la onda de luz en N4); al repetir, pasan.
+- **Sin probar a mano (Jose):** si la oscuridad se ve bien (ambiente `ambientNight`/`ambientDark`, radio del halo y de los faroles), si el laberinto se puede recorrer a oscuras, si los póra se leen (alfa 0,35), si los terrones se esquivan, si la embestida en la oscuridad se anticipa con los ojos, si entrar a la arena subiendo al mausoleo se entiende. Todo en `gameplay.ts`, `bosses.ts`, `enemies.ts` y `l7.txt` (+ `npm run maps`).
+- **No hecho (anotado):** luna, nubes y niebla (S13, fondos y efectos); campanas y música (S13); ilustración de Kerana junto al manantial en el final (GDD §6.8, si hay arte); Luisón, póra, jagua hũ, faroles, lápida, velas y sombra de Tau son placeholder por código.
+- **Assets faltantes:** sprites de Luisón (normal y crecido), `pora`, `jagua_hu`, farol, lápida, vela, sombra de Tau; tileset real de `ciudad` (hoy placeholder de color); ilustración del final.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
