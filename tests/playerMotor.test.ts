@@ -407,3 +407,30 @@ describe('PlayerMotor: Paso de la siesta (dash, S9)', () => {
     expect(s.motor.dashing).toBe(true);
   });
 });
+
+describe('PlayerMotor: rebote del hongo (GDD §6.5)', () => {
+  it('rebota más alto que un salto y recupera el salto doble', () => {
+    const s = new Sim();
+    s.motor.doubleJumpEnabled = true;
+    // Salto doble ya gastado en el aire.
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.wait(100, { jumpHeld: true });
+    s.step({ jumpPressed: true, jumpHeld: true });
+    s.wait(3000);
+    expect(s.body.onGround).toBe(true);
+    s.motor.bounce(GAMEPLAY.jungle.bounceVelocity);
+    s.step();
+    expect(s.motor.state).toBe('jump');
+    let top = 0;
+    for (let t = 0; t < 500; t++) {
+      s.step({}, 1);
+      top = Math.min(top, s.y);
+    }
+    const jumpHeight = (P.jumpVelocity * P.jumpVelocity) / (2 * GAMEPLAY.gravity);
+    expect(-top).toBeGreaterThan(jumpHeight * 1.5);
+    // En el aire después del rebote todavía tiene el salto doble.
+    const vyBefore = s.body.vy;
+    s.step({ jumpPressed: true, jumpHeld: true });
+    expect(s.body.vy).toBeLessThan(vyBefore);
+  });
+});

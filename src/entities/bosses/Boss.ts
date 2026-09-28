@@ -32,6 +32,8 @@ export interface BossContext {
   healPlayer(amount: number): void;
   /** Suelta un enjambre de abejas que persigue a Kerana (Jasy Jatere). */
   spawnSwarm(x: number, y: number): void;
+  /** Llama un enemigo común a la arena (kuati o ka'i de Kurupi); respeta el máximo a la vez. */
+  spawnMinion(kind: string, x: number, y: number): void;
   sfx(key: SfxKey): void;
   /** Sonido con paneo estéreo según dónde está `x` en la pantalla (silbido de Jasy Jatere). */
   sfxAt(key: SfxKey, x: number): void;

@@ -167,6 +167,15 @@ export function buildTiledMap(parsed, options = {}) {
           addObject('Sinking', x * TILE, y * TILE, len * TILE, TILE);
           break;
         }
+        case 'M':
+        case 'R': {
+          // Hongo que rebota (M) o rama que se quiebra (R): los seguidos de una fila forman un solo objeto.
+          if (grid[y][x - 1] === c) break;
+          let len = 1;
+          while (grid[y][x + len] === c) len++;
+          addObject(c === 'M' ? 'Bouncer' : 'Crumble', x * TILE, y * TILE, len * TILE, TILE);
+          break;
+        }
         case 'H':
           // Capa Foreground: se dibuja delante de Kerana y no choca (patios escondidos, GDD §6.4).
           data.Foreground[i] = gid(TILES.groundBase + 15);

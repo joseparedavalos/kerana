@@ -108,6 +108,8 @@ export class PlayerMotor {
   /** Empuje externo (graznido de Mbói Tu'i): fija la velocidad horizontal mientras dura. */
   private pushMsLeft = 0;
   private pushVx = 0;
+  /** Rebote pendiente de un hongo (px/s, negativa = arriba); 0 = ninguno. */
+  private bounceVy = 0;
   private readonly out: MotorOutput = { vx: 0, vy: 0 };
 
   constructor(
@@ -167,7 +169,17 @@ export class PlayerMotor {
     else this.bufferLeftMs = Math.max(0, this.bufferLeftMs - dt);
 
     let justJumped = false;
-    if (this.bufferLeftMs > 0 && (grounded || this.coyoteLeftMs > 0)) {
+    if (this.bounceVy < 0) {
+      // Hongo: sale disparada hacia arriba como en un vuelo nuevo (recupera el salto doble y el dash).
+      vy = this.bounceVy;
+      this.bounceVy = 0;
+      this.bufferLeftMs = 0;
+      this.coyoteLeftMs = 0;
+      this.jumpCuttable = false;
+      this.airJumpUsed = false;
+      this.airDashUsed = false;
+      justJumped = true;
+    } else if (this.bufferLeftMs > 0 && (grounded || this.coyoteLeftMs > 0)) {
       vy = cfg.jumpVelocity;
       this.bufferLeftMs = 0;
       this.coyoteLeftMs = 0;
@@ -273,9 +285,15 @@ export class PlayerMotor {
     this.pushMsLeft = ms;
   }
 
+  /** Rebote de un hongo: se aplica en el próximo paso. */
+  bounce(vy: number): void {
+    this.bounceVy = vy;
+  }
+
   /** Reinicia tiempos y estado (al reaparecer). */
   reset(): void {
     this.pushMsLeft = 0;
+    this.bounceVy = 0;
     this.coyoteLeftMs = 0;
     this.bufferLeftMs = 0;
     this.jumpCuttable = false;

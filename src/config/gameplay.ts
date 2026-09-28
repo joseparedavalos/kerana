@@ -283,6 +283,42 @@ export const GAMEPLAY = {
     staffWidth: 6,
     staffHeight: 24,
   },
+  /** Kurupi (GDD §6.5, pies al revés). Los tiempos de cada ataque están en src/data/bosses.ts. */
+  kurupi: {
+    width: 26,
+    height: 44,
+    /** Lugares del suelo (tiles desde el borde izquierdo de la arena) para caminar y para las copias. Ver l5.txt. */
+    floorSpots: [6, 20, 34],
+    /** Ramas altas donde aparecen los ka'i (tiles desde el borde izquierdo y altura sobre el suelo). */
+    kaiSpots: [
+      { tx: 10.5, ty: 6 },
+      { tx: 30.5, ty: 6 },
+    ],
+    /** Los kuati del llamado aparecen a esta distancia de los bordes (tiles). */
+    edgeSpawnTiles: 2,
+    /** Llamado de la selva: kuati por llamado; probabilidad de que venga un ka'i en vez de kuati. */
+    callKuati: 2,
+    callKaiChance: 0.35,
+    /** Enemigos llamados vivos a la vez (el llamado no suma más). */
+    maxMinions: 3,
+    /** Caminata entre ataques (px/s) y embestida corta de la fase 1 (px). */
+    walkSpeed: 60,
+    chargeDistance: 150,
+    /** Carrera al revés (fase 2) y de las copias (fase 3): hasta esta distancia del borde (px). */
+    runEdgeMarginPx: 24,
+    /** Huellas: px entre huellas, cuántas y cuánto tardan en borrarse (ms). */
+    footprintGapPx: 14,
+    footprintMax: 14,
+    footprintFadeMs: 1800,
+    /** Pisotón: ondas de hojas por el suelo (velocidad px/s, alto px, vida ms). */
+    waveSpeed: 150,
+    waveHeight: 10,
+    waveWidth: 18,
+    waveLifeMs: 1700,
+    /** Copias (fase 3): parpadeo al aparecer (ms por destello) y opacidad. */
+    copyBlinkMs: 90,
+    copyAlpha: 0.9,
+  },
   /** Enjambre de abejas (GDD §5.2 Swarm): se dibuja con partículas. */
   swarm: {
     /** Partículas: cada cuánto sale una (ms), vida (ms) y dispersión (px). */
@@ -307,6 +343,22 @@ export const GAMEPLAY = {
     /** Grosor del camalote (px) y cuánto baja al hundirse. */
     raftHeight: 6,
     sinkDepthPx: 10,
+  },
+
+  /** Selva (GDD §6.5): hongos que rebotan y ramas que se quiebran. */
+  jungle: {
+    /** Velocidad del rebote del hongo (px/s, negativa = arriba). ≈ 7,5 tiles de altura. */
+    bounceVelocity: -540,
+    /** Alto del sombrero del hongo (px) y aplastamiento visual al rebotar. */
+    mushroomHeight: 10,
+    squashMs: 140,
+    /** Rama que se quiebra: aviso (crujido) desde que se pisa (ms) y tiempo hasta reaparecer (ms). */
+    crumbleDelayMs: 600,
+    crumbleRespawnMs: 3000,
+    /** Grosor de la rama (px), temblor del aviso (px) y caída al quebrarse (px). */
+    branchHeight: 6,
+    crumbleShakePx: 1,
+    crumbleFallPx: 40,
   },
 
   hurt: {

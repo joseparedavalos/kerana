@@ -10,6 +10,8 @@ import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
+import { Bouncer } from '../entities/hazards/Bouncer';
+import { Crumble } from '../entities/hazards/Crumble';
 import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
@@ -121,8 +123,11 @@ export class LevelScene extends Phaser.Scene {
   private fogZones: Phaser.Geom.Rectangle[] = [];
   /** "Zzz" sobre Kerana: bostezo (tenue) y dormida. */
   private sleepIcon?: Phaser.GameObjects.Text;
-  /** Enjambres que llamó el jefe (se limpian al reiniciar la pelea). */
-  private bossSwarms: EnemyBase[] = [];
+  /** Enemigos que llamó el jefe: enjambres, kuati, ka'i (se limpian al reiniciar la pelea). */
+  private bossMinions: EnemyBase[] = [];
+  /** Hongos que rebotan y ramas que se quiebran (GDD §6.5). */
+  private bouncers: Bouncer[] = [];
+  private crumbles: Crumble[] = [];
   private arenaRect?: Phaser.Geom.Rectangle;
   private arenaBossId?: BossId;
   private arena?: BossArena;
@@ -155,7 +160,9 @@ export class LevelScene extends Phaser.Scene {
     this.hypnosisIcon = undefined;
     this.fogZones = [];
     this.sleepIcon = undefined;
-    this.bossSwarms = [];
+    this.bossMinions = [];
+    this.bouncers = [];
+    this.crumbles = [];
     this.arenaRect = undefined;
     this.arenaBossId = undefined;
     this.arena = undefined;
@@ -236,6 +243,11 @@ export class LevelScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerTouchEnemy, undefined, this);
     this.physics.add.overlap(this.player, this.pickups, this.onPickupOverlap, undefined, this);
     for (const sinker of this.sinkers) this.physics.add.collider(this.player, sinker.raft);
+    for (const b of this.bouncers) this.physics.add.collider(this.player, b.cap);
+    for (const c of this.crumbles) {
+      this.physics.add.collider(this.player, c.branch);
+      this.physics.add.collider(this.enemies, c.branch, undefined, (enemy) => isGroundedEnemy(enemy), this);
+    }
     for (const b of this.breakables) {
       if (!b.block) continue;
       this.physics.add.collider(this.player, b.block);
@@ -309,6 +321,8 @@ export class LevelScene extends Phaser.Scene {
     else this.trackSafeGround(body);
 
     this.updateWater(delta, body);
+    this.updateJungle(delta, body);
+    this.updateProjectiles();
     this.updateWind(delta, body);
     this.updateHypnosisIcon(delta);
     this.updateSleep(body);
@@ -365,7 +379,8 @@ export class LevelScene extends Phaser.Scene {
       },
       setArenaPlatformsCycling: (on) => this.setArenaPlatformsCycling(on),
       spawnHealFlower: (x) => this.spawnHealFlower(x, rect.top),
-      spawnSwarm: (x, y) => this.spawnBossSwarm(x, y),
+      spawnSwarm: (x, y) => this.spawnBossMinion('abejas', x, y, GAMEPLAY.jasyJatere.maxSwarms),
+      spawnMinion: (kind, x, y) => this.spawnBossMinion(kind, x, y, GAMEPLAY.kurupi.maxMinions),
       sfx: (key: SfxKey) => AudioManager.play(key),
       sfxAt: (key: SfxKey, x: number) => {
         const view = this.cameras.main.worldView;
@@ -423,7 +438,7 @@ export class LevelScene extends Phaser.Scene {
     this.arena?.unlock(this.cameras.main, this.map.widthInPixels, this.map.heightInPixels);
     this.clearOneShotHazards();
     this.clearFlowers();
-    this.clearBossSwarms();
+    this.clearBossMinions();
   }
 
   private startLiberation(): void {
@@ -432,7 +447,7 @@ export class LevelScene extends Phaser.Scene {
     this.fighting = false;
     this.clearOneShotHazards();
     this.clearFlowers();
-    this.clearBossSwarms();
+    this.clearBossMinions();
     EventBus.emit(GameEvents.bossBarHide);
     const gift = this.def.gift;
     const giftText = gift ? `${t('liberation.gift', { gift: t(`gift.${gift}`) })}\n${t(`gift_hint.${gift}`)}` : null;
@@ -608,21 +623,46 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  /** Enjambre que llama Jasy Jatere: persigue enseguida y se va al dispersarse. */
-  private spawnBossSwarm(x: number, y: number): void {
+  /**
+   * Enemigo que llama el jefe (enjambre de Jasy Jatere, kuati y ka'i de Kurupi). Los enjambres
+   * persiguen enseguida y se van al dispersarse. `max`: cuántos llamados puede haber vivos a la vez.
+   */
+  private spawnBossMinion(kind: string, x: number, y: number, max: number): void {
     if (!this.fighting) return;
     this.pruneEnemies();
-    this.bossSwarms = this.bossSwarms.filter((e) => e.active && !e.purified);
-    if (this.bossSwarms.length >= GAMEPLAY.jasyJatere.maxSwarms) return;
-    const swarm = createEnemy(this, 'abejas', x, y, -1, true);
+    this.bossMinions = this.bossMinions.filter((e) => e.active && !e.purified);
+    if (this.bossMinions.length >= max) return;
+    const facing: 1 | -1 = this.player.x >= x ? 1 : -1;
+    const minion = createEnemy(this, kind, x, y, facing, true);
     // En el lugar: el overlap guarda la referencia a este arreglo.
-    this.enemies.push(swarm);
-    this.bossSwarms.push(swarm);
+    this.enemies.push(minion);
+    this.bossMinions.push(minion);
   }
 
-  private clearBossSwarms(): void {
-    for (const swarm of this.bossSwarms) if (swarm.active && !swarm.purified) swarm.purify();
-    this.bossSwarms = [];
+  private clearBossMinions(): void {
+    for (const minion of this.bossMinions) if (minion.active && !minion.purified) minion.purify();
+    this.bossMinions = [];
+  }
+
+  // ── Selva: hongos, ramas y frutas (GDD §6.5) ─────────────────────────────
+
+  /** Hongos que rebotan al pisarlos; ramas que crujen y se quiebran. */
+  private updateJungle(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
+    for (const b of this.bouncers) {
+      if (!b.isStoodOn(body)) continue;
+      this.player.motor.bounce(GAMEPLAY.jungle.bounceVelocity);
+      b.squash();
+      AudioManager.play('bounce');
+    }
+    for (const c of this.crumbles) c.update(deltaMs, c.isStoodOn(body));
+  }
+
+  /** Frutas de los ka'i (y otros proyectiles de enemigos) que tocan a Kerana. */
+  private updateProjectiles(): void {
+    for (const enemy of this.enemies) {
+      if (!enemy.active) continue;
+      if (enemy.projectileHits(this.playerRect)) this.hurtPlayer(enemy.x);
+    }
   }
 
   /** Quita del arreglo los enemigos ya destruidos (en el lugar: los overlaps guardan la referencia). */
@@ -860,6 +900,14 @@ export class LevelScene extends Phaser.Scene {
           const speed = Number(objectProp(obj, 'speed') ?? GAMEPLAY.wind.speed);
           const offsetMs = Number(objectProp(obj, 'offsetMs') ?? 0);
           this.windZones.push(new WindZone(this, zone, dir, speed, offsetMs, (phase, z) => phase === 'gust' && this.onWindPhase(z)));
+          break;
+        }
+        case 'Bouncer':
+          this.bouncers.push(new Bouncer(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16))));
+          break;
+        case 'Crumble': {
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          this.crumbles.push(new Crumble(this, zone, (state) => state !== 'solid' && AudioManager.play(state === 'cracking' ? 'creak' : 'rockBreak')));
           break;
         }
         case 'SleepFog':
