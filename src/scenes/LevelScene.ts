@@ -7,7 +7,9 @@ import { liberationDialogue } from '../data/dialogues';
 import { getLevel } from '../data/levels';
 import type { BossId, LevelDef, LevelId } from '../data/types';
 import { createBoss, type Boss, type BossContext } from '../entities/bosses';
+import { onRefuge, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
+import { Cow } from '../entities/Cow';
 import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { Bouncer } from '../entities/hazards/Bouncer';
@@ -15,6 +17,7 @@ import { Crumble } from '../entities/hazards/Crumble';
 import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
+import { LightWaveMotor } from '../entities/LightWaveMotor';
 import { Player } from '../entities/Player';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
 import type { PlayerStateName } from '../entities/PlayerMotor';
@@ -63,6 +66,8 @@ const FX_PARTICLE = 'fx_particle';
 const SHALLOW_COLOR = 0x5aa6b8;
 const FOG_COLOR = 0xc8b8e6;
 const LIANA_COLOR = 0x3f7a3a;
+const PINDO_TRUNK_COLOR = 0x7a6248;
+const PINDO_LEAF_COLOR = 0x4f8a3a;
 const SIGN_RANGE = 20;
 const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: FONT_FAMILY,
@@ -128,6 +133,16 @@ export class LevelScene extends Phaser.Scene {
   /** Hongos que rebotan y ramas que se quiebran (GDD §6.5). */
   private bouncers: Bouncer[] = [];
   private crumbles: Crumble[] = [];
+  /** Copas de pindó (GDD §6.6): refugio de Ao Ao. */
+  private refuges: Refuge[] = [];
+  /** Vacas sueltas de Capiatá: plataformas que caminan. */
+  private cows: Cow[] = [];
+  private cowGroup?: Phaser.Physics.Arcade.Group;
+  /** Onda de luz del tajo cargado (una sola en pantalla). */
+  private readonly lightWave = new LightWaveMotor(GAMEPLAY.lightWave);
+  private lightWaveSprite?: Phaser.GameObjects.Rectangle;
+  private readonly waveRect = new Phaser.Geom.Rectangle();
+  private readonly enemyRect = new Phaser.Geom.Rectangle();
   private arenaRect?: Phaser.Geom.Rectangle;
   private arenaBossId?: BossId;
   private arena?: BossArena;
@@ -163,6 +178,11 @@ export class LevelScene extends Phaser.Scene {
     this.bossMinions = [];
     this.bouncers = [];
     this.crumbles = [];
+    this.refuges = [];
+    this.cows = [];
+    this.cowGroup = undefined;
+    this.lightWave.stop();
+    this.lightWaveSprite = undefined;
     this.arenaRect = undefined;
     this.arenaBossId = undefined;
     this.arena = undefined;
@@ -248,6 +268,13 @@ export class LevelScene extends Phaser.Scene {
       this.physics.add.collider(this.player, c.branch);
       this.physics.add.collider(this.enemies, c.branch, undefined, (enemy) => isGroundedEnemy(enemy), this);
     }
+    if (this.cows.length > 0) {
+      this.cowGroup = this.physics.add.group();
+      for (const cow of this.cows) this.addCowToGroup(cow);
+      this.physics.add.collider(this.player, this.cowGroup);
+    }
+    const lw = GAMEPLAY.lightWave;
+    this.lightWaveSprite = this.add.rectangle(0, 0, lw.width, lw.height, lw.color, 0.85).setDepth(12).setVisible(false);
     for (const b of this.breakables) {
       if (!b.block) continue;
       this.physics.add.collider(this.player, b.block);
@@ -310,6 +337,7 @@ export class LevelScene extends Phaser.Scene {
     this.reportPlayerStateSfx();
     this.cameraCtl.update(this.player.motor.facing);
     this.updateEnemies(delta);
+    for (const cow of this.cows) cow.tick(delta);
     this.updateMainumby();
 
     const body = this.player.body;
@@ -328,6 +356,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateSleep(body);
     this.updateFallingHazards(delta);
     this.updateBreakables();
+    this.updateLightWave(delta);
     this.updateBoss(delta);
     this.updateCheckpoints();
     this.updateSigns();
@@ -368,8 +397,8 @@ export class LevelScene extends Phaser.Scene {
       ledgeY,
       playerX: () => this.player.x,
       playerY: () => this.player.y,
-      spawnFalling: (x) => {
-        if (this.fighting) this.spawnFalling(x, rect.top, true);
+      spawnFalling: (x, kind) => {
+        if (this.fighting) this.spawnFalling(x, rect.top, true, undefined, kind);
       },
       pushPlayer: (vx, ms) => this.player.motor.push(vx, ms),
       hypnotizePlayer: () => this.hypnotizePlayer(),
@@ -380,7 +409,8 @@ export class LevelScene extends Phaser.Scene {
       setArenaPlatformsCycling: (on) => this.setArenaPlatformsCycling(on),
       spawnHealFlower: (x) => this.spawnHealFlower(x, rect.top),
       spawnSwarm: (x, y) => this.spawnBossMinion('abejas', x, y, GAMEPLAY.jasyJatere.maxSwarms),
-      spawnMinion: (kind, x, y) => this.spawnBossMinion(kind, x, y, GAMEPLAY.kurupi.maxMinions),
+      spawnMinion: (kind, x, y, max) => this.spawnBossMinion(kind, x, y, max ?? GAMEPLAY.kurupi.maxMinions),
+      playerOnRefuge: () => this.playerOnRefuge(),
       sfx: (key: SfxKey) => AudioManager.play(key),
       sfxAt: (key: SfxKey, x: number) => {
         const view = this.cameras.main.worldView;
@@ -408,6 +438,8 @@ export class LevelScene extends Phaser.Scene {
       const result = boss.tryHit(this.player.attackRect, this.player.attackDamage);
       if (result.hit) {
         this.player.markHitThisSwing(boss);
+        // El tajo cargado de cerca ya hizo su daño: la onda que sale con él no suma otro golpe.
+        if (this.player.motor.chargedSwing) this.lightWave.tryHit(boss);
         if (result.defeated) {
           this.startLiberation();
           return;
@@ -474,6 +506,95 @@ export class LevelScene extends Phaser.Scene {
     }
     boss.brain.damage(boss.brain.hp);
     this.startLiberation();
+  }
+
+  // ── Pindó, vacas y onda de luz ────────────────────────────────────────────
+
+  /** Pindó (GDD §6.6): tronco y hojas por código; la copa (plataforma `=` del mapa) es refugio. */
+  private addPindo(zone: Phaser.Geom.Rectangle): void {
+    this.refuges.push({ left: zone.left, right: zone.right, top: zone.top });
+    const trunk = GAMEPLAY.pindo.trunkWidth;
+    this.add.rectangle(zone.centerX - trunk / 2, zone.top, trunk, zone.height, PINDO_TRUNK_COLOR).setOrigin(0, 0).setDepth(1);
+    for (const dx of [-1, 1]) {
+      this.add.ellipse(zone.centerX + dx * zone.width * 0.35, zone.top - 2, zone.width * 0.8, 6, PINDO_LEAF_COLOR).setDepth(2).setAngle(dx * 15);
+    }
+  }
+
+  private playerOnRefuge(): boolean {
+    if (this.refuges.length === 0) return false;
+    const body = this.player.body;
+    const grounded = body.blocked.down || body.touching.down;
+    return onRefuge(body.center.x, body.bottom, grounded, this.refuges, GAMEPLAY.pindo.feetTolerancePx);
+  }
+
+  private makeCow(x: number, feetY: number, facing: 1 | -1): Cow {
+    return new Cow(this, x, feetY, facing, (cow) => {
+      const view = this.cameras.main.worldView;
+      if (view.contains(cow.x, cow.y - 4)) AudioManager.play('moo', panFor(cow.x, view.centerX, view.width / 2));
+    });
+  }
+
+  private addCowToGroup(cow: Cow): void {
+    // El grupo pisa las propiedades del cuerpo: se vuelven a poner.
+    this.cowGroup?.add(cow);
+    cow.body.setAllowGravity(false).setImmovable(true);
+    cow.body.checkCollision.down = false;
+    cow.body.checkCollision.left = false;
+    cow.body.checkCollision.right = false;
+  }
+
+  /** La vaca embrujada purificada queda como una vaca tranquila más. */
+  private cowFromEnemy(enemy: EnemyBase): void {
+    const cow = this.makeCow(enemy.x, enemy.y, enemy.facing);
+    cow.setAlpha(0);
+    this.tweens.add({ targets: cow, alpha: 1, duration: 400, delay: 200 });
+    this.cows.push(cow);
+    this.addCowToGroup(cow);
+  }
+
+  /** Al soltar el tajo cargado sale una onda dorada hacia adelante. */
+  private fireLightWave(): void {
+    const facing = this.player.motor.facing;
+    const x = this.player.x + facing * GAMEPLAY.lightWave.offsetPx;
+    const y = this.player.y - this.player.body.height / 2;
+    if (!this.lightWave.fire(x, y, facing)) return;
+    AudioManager.play('lightWave');
+  }
+
+  /** La onda purifica enemigos comunes, rompe rocas agrietadas y daña al jefe solo en su ventana. */
+  private updateLightWave(deltaMs: number): void {
+    const wave = this.lightWave;
+    const sprite = this.lightWaveSprite;
+    if (!sprite) return;
+    wave.step(deltaMs);
+    sprite.setVisible(wave.active);
+    if (!wave.active) return;
+    const lw = GAMEPLAY.lightWave;
+    sprite.setPosition(wave.x, wave.y).setAlpha(wave.alpha * 0.85);
+    const rect = this.waveRect.setTo(wave.x - lw.width / 2, wave.y - lw.height / 2, lw.width, lw.height);
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.purified) continue;
+      const eb = enemy.body;
+      if (!Phaser.Geom.Rectangle.Overlaps(rect, this.enemyRect.setTo(eb.x, eb.y, eb.width, eb.height))) continue;
+      if (!wave.tryHit(enemy)) continue;
+      enemy.purify();
+      AudioManager.play('purify');
+    }
+    for (const b of this.breakables) {
+      if (b.broken || !b.needsCharge || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
+      if (wave.tryHit(b)) this.breakBreakable(b);
+    }
+    const boss = this.boss;
+    if (boss && this.fighting && boss.brain.state !== 'defeated') {
+      const damage = wave.bossDamage(boss.brain.vulnerable);
+      if (damage > 0 && !wave.hasHit(boss)) {
+        const result = boss.tryHit(rect, damage);
+        if (result.hit) {
+          wave.tryHit(boss);
+          if (result.defeated) this.startLiberation();
+        }
+      }
+    }
   }
 
   /** Superficie (y) del primer tile sólido o plataforma debajo de (x, fromY), o null. */
@@ -849,7 +970,19 @@ export class LevelScene extends Phaser.Scene {
         case 'Enemy': {
           const kind = String(objectProp(obj, 'kind') ?? 'walker');
           const facing: 1 | -1 = objectProp(obj, 'facing') === 'right' ? 1 : -1;
-          this.enemies.push(createEnemy(this, kind, x, y, facing));
+          if (kind === 'vaca') {
+            this.cows.push(this.makeCow(x, y, facing));
+            break;
+          }
+          const enemy = createEnemy(this, kind, x, y, facing);
+          if (enemy.def.purifiesInto === 'vaca') enemy.onPurified = (e) => this.cowFromEnemy(e);
+          this.enemies.push(enemy);
+          break;
+        }
+        case 'Pindo': {
+          const w = Number(obj.width ?? 16);
+          const h = Number(obj.height ?? 16);
+          this.addPindo(new Phaser.Geom.Rectangle(x, y, w, h));
           break;
         }
         case 'Pickup': {
@@ -1071,7 +1204,11 @@ export class LevelScene extends Phaser.Scene {
     if (state === 'jump') AudioManager.play('jump');
     else if (state === 'dash') AudioManager.play('dash');
     else if ((state === 'idle' || state === 'run') && this.lastPlayerState === 'fall') AudioManager.play('land');
-    else if (state === 'attack') AudioManager.play(this.player.motor.chargedSwing ? 'chargedSlash' : 'slash');
+    else if (state === 'attack') {
+      const charged = this.player.motor.chargedSwing;
+      AudioManager.play(charged ? 'chargedSlash' : 'slash');
+      if (charged) this.fireLightWave();
+    }
     this.lastPlayerState = state;
   }
 

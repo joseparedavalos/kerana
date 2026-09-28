@@ -66,6 +66,22 @@ export const GAMEPLAY = {
     damage: 3,
   },
 
+  /** Onda de luz del tajo cargado: sale hacia adelante al soltarlo, avanza y se desvanece (una a la vez). */
+  lightWave: {
+    /** Velocidad (px/s) y alcance (px, ≈ 6 tiles). */
+    speed: 240,
+    rangePx: 96,
+    width: 14,
+    height: 26,
+    /** Sale a esta distancia del centro de Kerana (px). */
+    offsetPx: 14,
+    /** Se desvanece en el último tramo (fracción del alcance). */
+    fadeFrom: 0.6,
+    /** Daño a un jefe, solo en su ventana vulnerable (el tajo cargado de cerca hace `chargedSlash.damage`). */
+    bossDamage: 1,
+    color: 0xf2c14e,
+  },
+
   /** Estalactitas y otros objetos que caen (GDD §6.1): aviso de polvo y caída. */
   fallingHazard: {
     /** Distancia horizontal (px) a la que Kerana dispara la estalactita. */
@@ -81,6 +97,8 @@ export const GAMEPLAY = {
     /** Tejas del nivel 4 (GDD §6.4): más anchas y bajas que una estalactita. */
     tejaWidth: 14,
     tejaHeight: 7,
+    /** Rocas del cerro (GDD §6.6): redondas, con sombra en el suelo como aviso. */
+    rocaSize: 14,
     /** Temblor durante el aviso (px). */
     shakePx: 1,
   },
@@ -319,6 +337,60 @@ export const GAMEPLAY = {
     copyBlinkMs: 90,
     copyAlpha: 0.9,
   },
+  /** Ao Ao (GDD §6.6). Los tiempos de cada ataque están en src/data/bosses.ts. */
+  aoAo: {
+    width: 44,
+    height: 30,
+    /** Erguido en dos patas (fase 2): alto del cuerpo. */
+    rearHeight: 46,
+    /** Rocas grandes de la arena (tiles desde el borde izquierdo al centro de la roca, y medio ancho en px). Ver l6.txt. */
+    rockTiles: [12, 28],
+    rockHalfWidthPx: 16,
+    /** Pindó de la arena (tiles desde el borde izquierdo al centro): da vueltas al pie aullando. */
+    pindoTiles: [3.5, 36.5],
+    /** Lugar de inicio (tiles desde el borde izquierdo). */
+    startTile: 20,
+    /** Embestida: margen a los bordes de la arena (px); caminata entre ataques (px/s). */
+    edgeMarginPx: 20,
+    walkSpeed: 50,
+    /** Zarpazo: alcance delante del cuerpo (px) y alto (px). */
+    clawReachPx: 34,
+    clawHeight: 40,
+    /** Crías por aullido (fase 2 y 3) y máximo vivas a la vez. */
+    cubsPerHowl: [2, 3],
+    maxCubs: 3,
+    /** Los cachorros aparecen a esta distancia de los bordes (tiles). */
+    edgeSpawnTiles: 2,
+    /** Fase 3: rocas que caen del cerro por ataque (con sombra 0,8 s). */
+    rocksPerFall: 3,
+    rockFallGapMs: 250,
+    /** Refugio: aullido mientras Kerana está en el pindó (ms entre aullidos) y velocidad de las vueltas (px/s). */
+    refugeHowlEveryMs: 1800,
+    refugeCircleSpeed: 45,
+    /** Cuánto se aleja al dar vueltas al pie del pindó (px). */
+    refugeCirclePx: 28,
+  },
+
+  /** Pindó (GDD §6.6): refugio. Kerana está a salvo parada en la copa. */
+  pindo: {
+    /** Tolerancia vertical entre los pies y la copa (px). */
+    feetTolerancePx: 3,
+    trunkWidth: 5,
+  },
+
+  /** Vacas sueltas de Capiatá (extra del nivel 4): caminan despacio, mugen y sirven de plataforma. */
+  cow: {
+    width: 30,
+    height: 18,
+    speed: 14,
+    patrolDistance: 56,
+    /** Mugido: cada cuánto, al azar entre estos valores (ms); solo si está en pantalla. */
+    mooMinMs: 4000,
+    mooMaxMs: 9000,
+    /** Pausa al llegar a cada punta de la patrulla (ms). */
+    turnPauseMs: 1200,
+  },
+
   /** Enjambre de abejas (GDD §5.2 Swarm): se dibuja con partículas. */
   swarm: {
     /** Partículas: cada cuánto sale una (ms), vida (ms) y dispersión (px). */

@@ -46,6 +46,9 @@ const JASY_HP = 9;
 /** Kurupi: 12 golpes, 3 fases de 4 (GDD §6.5, versión con los pies al revés). */
 const KURUPI_HP = 12;
 
+/** Ao Ao: 15 golpes, 3 fases de 5 (GDD §6.6). */
+const AO_AO_HP = 15;
+
 export const BOSSES: Partial<Record<BossId, BossDef>> = {
   teju_jagua: {
     id: 'teju_jagua',
@@ -215,6 +218,42 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         attacks: [
           { id: 'decoy', weight: 2, telegraphMs: 900, activeMs: 900, recoverMs: 1000 },
           { id: 'stomp', weight: 1, telegraphMs: 600, activeMs: 400, recoverMs: 1000 },
+        ],
+      },
+    ],
+  },
+  ao_ao: {
+    id: 'ao_ao',
+    nameKey: 'boss.ao_ao.name',
+    epithetKey: 'boss.ao_ao.epithet',
+    hp: AO_AO_HP,
+    phases: [
+      // Fase 1: embestida en cuatro patas (rasca y resopla 0,8 s). Si choca contra una roca, aturdido 2 s (la ventana);
+      // si llega al borde sin chocar, no hay ventana (Ao Ao interrumpe la recuperación).
+      {
+        untilHpRatio: 10 / AO_AO_HP,
+        idleMs: 900,
+        attacks: [{ id: 'charge', weight: 1, telegraphMs: 800, activeMs: 900, recoverMs: 2000 }],
+      },
+      // Fase 2: se yergue (0,7 s) y da un zarpazo amplio (ventana 1 s); aúlla con la cabeza en alto (1 s) y llama 2 crías.
+      {
+        untilHpRatio: 5 / AO_AO_HP,
+        idleMs: 800,
+        attacks: [
+          { id: 'claw', weight: 2, telegraphMs: 700, activeMs: 250, recoverMs: 1000 },
+          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 400, punishable: false },
+          { id: 'charge', weight: 1, telegraphMs: 800, activeMs: 900, recoverMs: 2000 },
+        ],
+      },
+      // Fase 3 (furia): embestidas dobles (aturdido 1,5 s si choca), rocas que caen del cerro (sombra 0,8 s)
+      // y las crías llegan de a 3.
+      {
+        untilHpRatio: 0,
+        idleMs: 700,
+        attacks: [
+          { id: 'double_charge', weight: 2, telegraphMs: 800, activeMs: 1400, recoverMs: 1500 },
+          { id: 'rockfall', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 300, punishable: false },
+          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 400, punishable: false },
         ],
       },
     ],

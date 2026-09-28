@@ -3,6 +3,7 @@ import { GAMEPLAY } from '../../config/gameplay';
 import type { BossDef } from '../../data/bosses';
 import { EventBus, GameEvents } from '../../systems/EventBus';
 import type { SfxKey } from '../../systems/sfxPresets';
+import type { FallingKind } from '../hazards/FallingHazard';
 import { BossBrain, type BossTransition } from './BossBrain';
 
 /** Lo que el jefe necesita del nivel, sin conocer a LevelScene (GDD §11.5). */
@@ -16,8 +17,8 @@ export interface BossContext {
   /** Pies de Kerana. */
   playerX(): number;
   playerY(): number;
-  /** Deja caer una estalactita de un solo uso en x (con su aviso). */
-  spawnFalling(x: number): void;
+  /** Deja caer una estalactita (o una roca del cerro) de un solo uso en x (con su aviso). */
+  spawnFalling(x: number, kind?: FallingKind): void;
   /** Empuja a Kerana horizontalmente (px/s) durante `ms` (graznido de Mbói Tu'i). */
   pushPlayer(vx: number, ms: number): void;
   /** Los camalotes de la arena se hunden y reaparecen solos (fase 3 de Mbói Tu'i). */
@@ -32,8 +33,10 @@ export interface BossContext {
   healPlayer(amount: number): void;
   /** Suelta un enjambre de abejas que persigue a Kerana (Jasy Jatere). */
   spawnSwarm(x: number, y: number): void;
-  /** Llama un enemigo común a la arena (kuati o ka'i de Kurupi); respeta el máximo a la vez. */
-  spawnMinion(kind: string, x: number, y: number): void;
+  /** Llama un enemigo común a la arena (kuati o ka'i de Kurupi, crías de Ao Ao); respeta el máximo a la vez. */
+  spawnMinion(kind: string, x: number, y: number, max?: number): void;
+  /** Kerana está parada en lo alto de un pindó (refugio de Ao Ao, GDD §6.6). */
+  playerOnRefuge(): boolean;
   sfx(key: SfxKey): void;
   /** Sonido con paneo estéreo según dónde está `x` en la pantalla (silbido de Jasy Jatere). */
   sfxAt(key: SfxKey, x: number): void;

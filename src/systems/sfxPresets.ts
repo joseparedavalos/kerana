@@ -54,7 +54,13 @@ export type SfxKey =
   | 'scrape'
   | 'stomp'
   | 'leaves'
-  | 'liberation';
+  | 'liberation'
+  // Ao Ao y el cerro (GDD §6.6); vacas de Capiatá; onda de luz
+  | 'howl'
+  | 'claw'
+  | 'grunt'
+  | 'moo'
+  | 'lightWave';
 
 // [volumen, aleatoriedad, frecuencia, ataque, sostenido, caída, forma, curva, slide, deltaSlide,
 //  saltoDeTono, tiempoSaltoDeTono, repetición, ruido, modulación, bitCrush, delay, sostenidoVol, decay, tremolo]
@@ -106,5 +112,10 @@ export const SFX_PRESETS: Record<SfxKey, number[]> = {
   scrape: [0.6, 0.2, 80, 0.02, 0.12, 0.15, 4, 1, 0, 0, 0, 0, 0.05, 1.4, 0, 0, 0, 0.4, 0.05],
   stomp: [1, 0.1, 50, 0, 0.08, 0.35, 4, 1, -1, 0, 0, 0, 0, 1.6, 0, 0.3, 0, 0.6, 0.08],
   leaves: [0.4, 0.3, 300, 0.02, 0.1, 0.2, 4, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0.3, 0.06],
+  howl: [0.8, 0.05, 240, 0.08, 0.35, 0.3, 0, 1, 0, 0, -60, 0.2, 0.25, 0, 5, 0, 0, 0.7, 0.15],
+  claw: [0.9, 0.1, 500, 0, 0.04, 0.12, 3, 1.3, -40, 0, 0, 0, 0, 0.6, 0, 0, 0, 0.5, 0.03],
+  grunt: [0.7, 0.2, 110, 0, 0.05, 0.08, 2, 1.6, 0, 0, 0, 0, 0.05, 0.8, 0, 0, 0, 0.5, 0.02],
+  moo: [0.6, 0.05, 130, 0.08, 0.4, 0.25, 1, 1, 0, 0, -20, 0.3, 0, 0, 4, 0, 0, 0.6, 0.12],
+  lightWave: [0.6, 0.02, 800, 0.01, 0.1, 0.25, 0, 1, 12, 0, 200, 0.05, 0, 0, 0, 0, 0, 0.5, 0.08],
   sink: [0.6, 0.1, 160, 0.03, 0.12, 0.2, 0, 1, -6, 0, 0, 0, 0, 0.4, 0, 0, 0, 0.5, 0.06],
 };
