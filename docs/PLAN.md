@@ -152,7 +152,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12 | 2026-09-28 | Opus 5.5 | 33 | 27 | 6 | 73 | Verde |
 | S12b | 2026-09-28 | Opus 5.5 | 27 | 24 | 3 | 76 | Verde |
 | S12c | 2026-09-28 | Opus 5.5 | 24 | 19 | 5 | 81 | Verde |
-| S12e | | | | | | | |
+| S12e | 2026-09-30 | Opus 5.5 | 19 | 16 | 3 | 84 | Verde |
+| S13a | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -177,7 +178,9 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 **Semáforo de S12c** (Tau como jefe final; no estaba en el reparto, sale de la Reserva): costó 5. Acumulado 81 contra una meta de 84,50 → **Verde**. La Reserva (10) queda en 0 tras S6b (2), S12b (3) y S12c (5).
 
-**S12e** (fondos de los niveles) tampoco estaba en el reparto y la Reserva ya está gastada: sale del margen que queda (crédito 19; S13 tiene meta 6). Jose anota el costo al cerrar.
+**Semáforo de S12e** (fondos de los niveles; no estaba en el reparto y la Reserva ya estaba gastada, sale del margen): costó 3. Acumulado 84 contra una meta de 84,50 (no cambia: S12e no tenía meta propia) → **Verde**, pero sin margen: cualquier sesión extra ya pasa la meta.
+
+**S13a** (fondos en .jpg y por nivel, encuadre, boca de la cueva, fondos del final y tiempo de juego) tampoco estaba en el reparto: sale del crédito que queda (16; S13 tiene meta 6). Con cualquier costo el acumulado pasa la meta de 84,50: hasta 16,90 (20 % más) sería **Amarillo**, así que S13a tendría que costar menos de 0,90 para seguir en verde. Jose anota el costo al cerrar.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -203,6 +206,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12b | Hecha | rama `claude/eager-shannon-b9wnnb` | Pulido de niveles (fuera del plan, sale de la Reserva): práctica segura del don recién ganado al inicio de l2, l4 y l5, camalotes sobre agua baja e islote de descanso en l2, isla de monte en l3, tramos sin karaguatá y hongos bajo el dosel en l5, un secreto con luciérnagas por nivel, carteles de una línea. Build, tests y smoke OK |
 | S12c | Hecha | rama `claude/loving-allen-tln9s3` | Tau como jefe final para todos (fuera del plan, sale de la Reserva): Luisón → Eichu y Tau → Yvága (solo arena, `?level=yvaga`) → Tau en 3 fases (flauta e hipnosis, ecos de Teju Jagua, Mbói Tu'i y Jasy Jatere, humo con las siete estrellas) → sellado → final verdadero (+ diapositiva con las 21 plumas) → créditos; el mapa recupera sus colores. Build, tests y smoke OK |
 | S12e | Hecha | rama `claude/intelligent-mayer-99ulbv` | Fondos de los niveles (fuera del plan): `npm run backgrounds` (jpg → png 1280 × 720, estrella de más tapada en Yvága), `LevelBackdrop` fijo a la cámara con parallax lento sin repetir, cielo ↔ cueva en l1 (`rect Cave`), brillo por nivel, Yvága con imagen. Build, tests y smoke OK |
+| S13a | Hecha | rama `claude/admiring-bell-dppp81` | Fondos, cueva y final (fuera del plan): fondos en .jpg (≈ 2,6 MB en vez de ≈ 14) cargados por nivel y por StoryScene, `shiftY` por nivel (l1 y l4 subidos), l1_cave solo dentro de las zonas `Cave` y l1_far solo fuera con degradado oscuro en la boca (sin fundido por tiempo), final con `final_asuncion` y `final`, Eichu por código con la forma de las Pléyades, tiempo de juego en el guardado y en los créditos. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -584,6 +588,18 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Encuadre:** el fondo va centrado en vertical; en l1 el horizonte (cerros) queda casi todo tapado por el suelo. Si se quiere ver más, agregar un ancla vertical por nivel (anotado, no hecho).
 - **Sin probar a mano (Jose):** si el suelo se distingue del fondo en todos los niveles (subir o bajar `brightness` en `levels.ts`), si el parallax se nota o marea (`overscale`, `panRange`), si el fundido de la cueva es corto (`fadeMs`).
 - **Assets faltantes:** `backgrounds/final.png`, capas `mid`/`near` (no se usan).
+
+### S13a: Fondos, cueva y final (fuera del plan original; sale del crédito que queda)
+**Criterios:** `npm run backgrounds` genera .jpg (calidad ≈ 85, `jpeg-js`) y acepta .png · cada nivel carga solo sus fondos al empezar y StoryScene los del final; si falta uno, el color de siempre · ajuste vertical por nivel en `levels.ts` (0 por defecto), subido en l1 (cerros) y l4 (casas y lapacho sobre el suelo) · l1: `l1_cave` solo dentro de las zonas `Cave` y `l1_far` solo fuera; en la boca, los dos con un degradado oscuro de ≈ 2 tiles; sin fundido por tiempo · final: `story.final.healed` con `final_asuncion`, `story.final.spring` y la de las plumas con `final`; Eichu por código con la forma de las Pléyades sobre `final` y en `story.ending.1` y `story.ending.2` (noche); la banda del texto no tapa lo principal · tiempo de juego en el guardado (niveles e historia, sin pausa ni menús), en los créditos con `t()`, reiniciado con la partida nueva.
+
+**Notas para la próxima sesión (S13a → S13):**
+- **Peso:** los 11 fondos en .jpg suman ≈ 2,6 MB (antes ≈ 14 MB en .png). No están en `MANIFEST`: `queueBackgrounds` (`src/assets/backgrounds.ts`) los pide en `LevelScene.preload` y `StoryScene.preload`, con la ruta `backgrounds/<nombre>.jpg` sacada de la clave `bg_<nombre>`. Las texturas quedan cargadas al volver a entrar (no se liberan). `npm run sprites` ya no toca `raw/backgrounds/`.
+- **Encuadre:** `LevelBackgrounds.shiftY` (unidades; positivo sube la imagen). `backdropFit` corre la imagen y, si destaparía el borde opuesto, la agranda solo hacia ese lado. l1 = 110 (los cerros se ven sobre la ladera), l4 = 100 (la base de las casas queda sobre la vereda). Los demás niveles se revisaron con capturas y quedan en 0. Agrandar hace el parallax un poco más rápido en l1 y l4.
+- **Cueva (l1):** `caveSpan` da el tramo de la vista cubierto por zonas `Cave` (se supone que ocupan toda la altura) y `LevelBackdrop` recorta `l1_cave` con `setCrop`; el cielo se oculta solo cuando la cueva cubre toda la vista. El degradado es una textura por código (`bg_cave_edge`) en cada boca dentro del mapa (no en los bordes del nivel). Sensación en `GAMEPLAY.backdrop`: `caveEdgeWidth` (32), `caveEdgeAlpha`, `caveEdgeColor`. Se quitó `fadeMs`. Si hay varias zonas a la vista, la cueva va de la primera a la última (en l1 nunca pasa).
+- **Final:** `StorySlide` suma `night`, `eichu` (centro y ancho) y `band` ('bottom' en las de imagen: el cielo, la cúpula y Kerana quedan libres). Las posiciones de las estrellas (Atlas, Alcyone, Merope, Maia, Taygeta, Electra, Celaeno) están en `EICHU_STARS` (`data/story.ts`); el dibujo y el titilar, en `addEichu` (`systems/Backdrops.ts`).
+- **Tiempo de juego:** `SaveData.playTimeMs`; `SaveManager.addPlayTime` desde los `update` de LevelScene y StoryScene (la pausa detiene la escena, así que no cuenta) y guarda cada 10 s y al salir de la escena. Nivel completado, mapa, título y opciones no cuentan. `formatPlayTime` → "1:02:33".
+- **Sin probar a mano (Jose):** si el degradado de la boca es muy ancho o muy oscuro (`caveEdgeWidth`, `caveEdgeAlpha`), si l1 y l4 quedan bien en otros tramos del nivel (`shiftY`), si las estrellas de `final` se ven en pantallas chicas (`EICHU_FINAL`).
+- **Assets faltantes:** ninguno de fondos; siguen `heart_full`, `heart_empty`, `sign`, `checkpoint` y las capas `mid`/`near` (no se usan).
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.

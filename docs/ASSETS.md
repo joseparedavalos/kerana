@@ -183,7 +183,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 ## 5. Fondos por nivel (parallax) [Núcleo; MVP: solo la capa lejana]
 
 - Por nivel: `raw/backgrounds/l<N>_far.png`, `l<N>_mid.png` y `l<N>_near.png`. El pipeline los escala a 360 px de alto → `public/assets/backgrounds/`.
-- **Desde S12e:** `raw/backgrounds/*.jpg` (1792 × 1008) → `npm run backgrounds` → `backgrounds/*.png` a 1280 × 720, dibujados a escala 0,5 (doble detalle). Fijos a la cámara, un poco agrandados y con parallax lento según el avance (no se repiten). l1 tiene además `l1_cave` para las zonas `rect Cave`.
+- **Desde S12e / S13a:** `raw/backgrounds/*.jpg` o `*.png` (1792 × 1008) → `npm run backgrounds` → `backgrounds/*.jpg` (calidad 85) a 1280 × 720, dibujados a escala 0,5 (doble detalle). No van en el manifest: cada nivel carga los suyos al empezar (`queueBackgrounds`) y StoryScene los del final. Fijos a la cámara, un poco agrandados y con parallax lento según el avance (no se repiten); `shiftY` en `levels.ts` los sube o baja. l1 tiene además `l1_cave`, que se ve solo dentro de las zonas `rect Cave` (degradado oscuro en la boca).
 - **Capa lejana** (cielo y horizonte), prompt base:
   ```
   16-bit pixel art side-scrolling game background, wide panoramic, [escena],
@@ -204,6 +204,8 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Yvága (arena de Tau) | `night sky above the clouds just before dawn, deep indigo fading to violet, soft cloud floor, the seven stars of the Pleiades shining, faint golden light on the horizon` → `backgrounds/yvaga_far.png` (640 × 360) |
 
 **Final (GDD §6.8, §7):** `backgrounds/final.png` (640 × 360): `dawn of the new year in Paraguay, a young Guarani woman with long dark hair sitting peacefully beside a small spring among green hills, a hummingbird near her shoulder, the seven stars of the Pleiades fading in the pink sky, 16-bit pixel art, no text`. Se muestra detrás de las dos últimas diapositivas del final. Si falta, `systems/Backdrops.ts` dibuja un amanecer por código (igual con `yvaga_far`).
+
+**Desde S13a:** `final_asuncion.jpg` (Asunción sanada) va en `story.final.healed`; `final.jpg` (sin estrellas) en `story.final.spring` y en la de las plumas. Eichu (las siete estrellas, con la forma de las Pléyades) se dibuja por código encima de `final` y sobre el cielo de noche de `story.ending.1` y `story.ending.2` (`addEichu`, posición en `data/story.ts`).
 
 **Arena de Teju Jagua:** además, `raw/backgrounds/l1_boss_body.png`, con la silueta del cuerpo enorme en la penumbra: `a colossal lizard body in a dark cave full of gold and crystals, seen from the side, heads hidden in shadow, 16-bit pixel art`.
 
