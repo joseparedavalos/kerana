@@ -10,6 +10,8 @@ export interface LevelBackgrounds {
   far?: string;
   cave?: string;
   brightness?: number;
+  /** Ajuste vertical del fondo (unidades del mundo; positivo lo sube). 0 por defecto: centrado. */
+  shiftY?: number;
 }
 
 export interface LevelDef {

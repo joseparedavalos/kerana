@@ -27,7 +27,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l1',
     mapSource: 'ascii',
     biome: 'cerro',
-    backgrounds: { far: 'bg_l1_far', cave: 'bg_l1_cave' },
+    // Subido: con el suelo tan arriba de la vista, centrado quedaban tapados los cerros.
+    backgrounds: { far: 'bg_l1_far', cave: 'bg_l1_cave', shiftY: 110 },
     musicKey: '',
     boss: 'teju_jagua',
     gift: 'charged_slash',
@@ -69,7 +70,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l4',
     mapSource: 'ascii',
     biome: 'pueblo',
-    backgrounds: { far: 'bg_l4_far' },
+    // Subido: las casas y el lapacho quedan sobre el suelo (centrado, la base quedaba ~45 u por debajo).
+    backgrounds: { far: 'bg_l4_far', shiftY: 100 },
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',

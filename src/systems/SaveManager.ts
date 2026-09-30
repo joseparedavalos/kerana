@@ -23,7 +23,21 @@ export interface SaveData {
   maxHearts: number;
   feathers: Record<string, boolean[]>;
   bestTimes: Record<string, number>;
+  /** Tiempo jugado en niveles e historia (ms), sin pausa ni menús. */
+  playTimeMs: number;
   settings: SaveSettings;
+}
+
+/** Cada cuánto se guarda el tiempo jugado mientras corre (ms); al salir de la escena se guarda igual. */
+const PLAY_TIME_PERSIST_MS = 10000;
+
+/** Tiempo de juego como "1:02:33" (horas sin ceros a la izquierda). */
+export function formatPlayTime(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -39,6 +53,7 @@ export function defaultSave(): SaveData {
     maxHearts: GAMEPLAY.hearts.start,
     feathers: {},
     bestTimes: {},
+    playTimeMs: 0,
     settings: { music: 1, sfx: 1, lang: 'es', assist: false, shake: true, flashes: true, textSpeed: 2 },
   };
 }
@@ -56,12 +71,14 @@ function sanitize(raw: unknown): SaveData {
     maxHearts: typeof raw.maxHearts === 'number' ? raw.maxHearts : def.maxHearts,
     feathers: isRecord(raw.feathers) ? (raw.feathers as Record<string, boolean[]>) : def.feathers,
     bestTimes: isRecord(raw.bestTimes) ? (raw.bestTimes as Record<string, number>) : def.bestTimes,
+    playTimeMs: typeof raw.playTimeMs === 'number' && raw.playTimeMs >= 0 ? raw.playTimeMs : def.playTimeMs,
     settings: settings as SaveSettings,
   };
 }
 
 export class SaveManager {
   private static _current: SaveData = defaultSave();
+  private static unsavedPlayMs = 0;
 
   static get current(): SaveData {
     return this._current;
@@ -77,6 +94,7 @@ export class SaveManager {
 
   /** Carga desde localStorage (o crea una partida nueva) y la deja como partida actual. */
   static load(): SaveData {
+    this.unsavedPlayMs = 0;
     try {
       const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
       this._current = raw ? sanitize(JSON.parse(raw)) : defaultSave();
@@ -93,11 +111,21 @@ export class SaveManager {
   }
 
   static persist(): void {
+    this.unsavedPlayMs = 0;
     try {
       globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(this._current));
     } catch {
       // Sigue sin guardar (por ejemplo, almacenamiento bloqueado).
     }
+  }
+
+  /** Suma tiempo jugado (lo llaman los `update` de LevelScene y StoryScene: la pausa los detiene). */
+  static addPlayTime(ms: number): void {
+    if (!(ms > 0)) return;
+    // Sin copiar el objeto: se llama en cada frame.
+    this._current.playTimeMs += ms;
+    this.unsavedPlayMs += ms;
+    if (this.unsavedPlayMs >= PLAY_TIME_PERSIST_MS) this.persist();
   }
 
   static updateSettings(patch: Partial<SaveSettings>): void {

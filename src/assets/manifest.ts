@@ -21,8 +21,12 @@ export const PLAYER_FRAME = 128;
 /** Sufijo de la clave del JSON de animaciones que genera el pipeline (`kerana` → `kerana_anims`). */
 export const ANIMS_SUFFIX = '_anims';
 
-/** Fondos de nivel (`raw/backgrounds/<nombre>.jpg` → `backgrounds/<nombre>.png`); la clave de textura es `bg_<nombre>`. */
-export const BACKGROUND_KEYS = ['l1_far', 'l1_cave', 'l2_far', 'l3_far', 'l4_far', 'l5_far', 'l6_far', 'l7_far', 'yvaga_far'] as const;
+/**
+ * Fondos de los niveles y del final (`raw/backgrounds/<nombre>.jpg` → `backgrounds/<nombre>.jpg`, 1280 × 720).
+ * No van en el manifest: cada nivel (y StoryScene) carga solo los suyos (`queueBackgrounds`). Clave de textura: `bg_<nombre>`.
+ */
+export const BACKGROUND_PREFIX = 'bg_';
+export const backgroundPath = (key: string): string => `backgrounds/${key.slice(BACKGROUND_PREFIX.length)}.jpg`;
 
 export const tilesetKey = (biome: string): string => `tiles_${biome}`;
 
@@ -45,14 +49,6 @@ export const MANIFEST: AssetEntry[] = [
   { type: 'tilemap', key: 'map_l6', path: 'maps/l6.json' },
   { type: 'tilemap', key: 'map_l7', path: 'maps/l7.json' },
   { type: 'tilemap', key: 'map_yvaga', path: 'maps/yvaga.json' },
-
-  // Fondos de los niveles (ASSETS §6, `npm run backgrounds`): 1280 × 720, dibujados a escala 0,5.
-  // Si faltan, el nivel usa el color de fondo de la cámara (Yvága, su cielo por código).
-  ...BACKGROUND_KEYS.map(
-    (name): AssetEntry => ({ type: 'image', key: `bg_${name}`, path: `backgrounds/${name}.png`, width: 1280, height: 720, codePlaceholder: true }),
-  ),
-  // Fondo del final (ASSETS §7). Si falta, StoryScene lo dibuja por código (`codePlaceholder`).
-  { type: 'image', key: 'bg_final', path: 'backgrounds/final.png', width: 640, height: 360, codePlaceholder: true },
 
   // Sprites del pipeline: PNG en grilla de frames iguales + JSON con las animaciones.
   { type: 'spritesheet', key: PLAYER_KEY, path: 'sprites/kerana.png', frameWidth: PLAYER_FRAME, frameHeight: PLAYER_FRAME, frames: 1 },

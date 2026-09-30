@@ -1,6 +1,6 @@
 // Pipeline de sprites raw/ → public/assets/sprites/ (docs/ASSETS.md §2).
 // raw/<id>/<anim>_<C>x<R>.png → sprites/<id>.png + .json; raw/<id>/<parte>/ → sprites/<id>_<parte>.*
-// raw/backgrounds/*.png → backgrounds/ (360 px de alto); raw/portraits/*.png → portraits/ (96 × 96).
+// raw/portraits/*.png → portraits/ (96 × 96). Los fondos (raw/backgrounds) los procesa `npm run backgrounds`.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
@@ -8,7 +8,6 @@ import { coverImage, parseSheetName, processCharacter, resizeImage } from './lib
 
 const RAW = 'raw';
 const OUT = 'public/assets';
-const BACKGROUND_HEIGHT = 360;
 const PORTRAIT_SIZE = 96;
 const SPECIAL = new Set(['backgrounds', 'portraits']);
 
@@ -63,5 +62,4 @@ for (const id of readdirSync(RAW)) {
     if (isDir(join(dir, part))) processFolder(join(dir, part), `${id}_${part}`);
   }
 }
-processImages('backgrounds', (img) => resizeImage(img, Math.round((img.width * BACKGROUND_HEIGHT) / img.height), BACKGROUND_HEIGHT), `${BACKGROUND_HEIGHT} px de alto`);
 processImages('portraits', (img) => coverImage(img, PORTRAIT_SIZE, PORTRAIT_SIZE), `${PORTRAIT_SIZE}×${PORTRAIT_SIZE}`);

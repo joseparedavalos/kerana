@@ -1,5 +1,5 @@
-// Fondos de los niveles (docs/ASSETS.md §6): raw/backgrounds/*.jpg → public/assets/backgrounds/*.png a 1280 × 720
-// (se dibujan a escala 0,5: doble detalle, como Kerana). Los .png de raw/backgrounds los sigue procesando `npm run sprites`.
+// Fondos de los niveles y del final (docs/ASSETS.md §6-7): raw/backgrounds/*.jpg|png → public/assets/backgrounds/*.jpg
+// a 1280 × 720 (se dibujan a escala 0,5: doble detalle, como Kerana). Se guardan en JPEG para que pesen poco.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import jpeg from 'jpeg-js';
@@ -10,6 +10,8 @@ const RAW = 'raw/backgrounds';
 const OUT = 'public/assets/backgrounds';
 const WIDTH = 1280;
 const HEIGHT = 720;
+/** Calidad del JPEG de salida (0-100). */
+const QUALITY = 85;
 
 /** Retoques sobre el original (coordenadas del .jpg): discos que se tapan con el cielo de alrededor. */
 const PATCHES = {
@@ -54,14 +56,23 @@ if (!existsSync(RAW)) {
   process.exit(0);
 }
 mkdirSync(OUT, { recursive: true });
-for (const file of readdirSync(RAW).filter((f) => /\.jpe?g$/i.test(f))) {
-  const name = basename(file).replace(/\.jpe?g$/i, '');
-  const src = jpeg.decode(readFileSync(join(RAW, file)), { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 256 });
-  const img = { width: src.width, height: src.height, data: new Uint8Array(src.data) };
+/** Lee un .jpg o .png como RGBA. */
+function readImage(file) {
+  if (/\.png$/i.test(file)) {
+    const png = PNG.sync.read(readFileSync(file));
+    return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
+  }
+  const src = jpeg.decode(readFileSync(file), { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 256 });
+  return { width: src.width, height: src.height, data: new Uint8Array(src.data) };
+}
+
+for (const file of readdirSync(RAW).filter((f) => /\.(jpe?g|png)$/i.test(f))) {
+  const name = basename(file).replace(/\.(jpe?g|png)$/i, '');
+  const img = readImage(join(RAW, file));
   for (const p of PATCHES[name] ?? []) patchDisc(img, p.x, p.y, p.r);
   const out = resizeImage(img, WIDTH, HEIGHT);
-  const png = new PNG({ width: out.width, height: out.height });
-  png.data = Buffer.from(out.data.buffer, out.data.byteOffset, out.data.length);
-  writeFileSync(join(OUT, `${name}.png`), PNG.sync.write(png));
-  console.log(`backgrounds/${name}.png: ${src.width}×${src.height} → ${out.width}×${out.height}`);
+  const data = Buffer.from(out.data.buffer, out.data.byteOffset, out.data.length);
+  const jpg = jpeg.encode({ width: out.width, height: out.height, data }, QUALITY);
+  writeFileSync(join(OUT, `${name}.jpg`), jpg.data);
+  console.log(`backgrounds/${name}.jpg: ${img.width}×${img.height} → ${out.width}×${out.height} (${Math.round(jpg.data.length / 1024)} KB)`);
 }

@@ -105,18 +105,25 @@ async function main() {
     check(true, 'Mapa → nivel 1 listo');
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
-    // Fondos (S12e): la cueva inicial va con l1_cave; en la ladera, el cielo (l1_far).
-    const backdropState = (page) =>
-      page.evaluate(() => {
-        const b = window.__KERANA_DEBUG__.scene.backdrop;
-        return { images: b.images.length, cave: b.cave?.alpha ?? -1, far: b.far?.visible ?? false };
-      });
+    // Fondos (S12e, S13a): l1_cave solo dentro de las zonas Cave y l1_far solo fuera; en la boca, los dos con un degradado.
+    const backdropState = (page) => page.evaluate(() => window.__KERANA_DEBUG__.scene.backdrop.debugState);
     const bgStart = await backdropState(title);
-    check(bgStart.images === 2 && bgStart.cave === 1, `nivel 1: la cueva inicial usa el fondo de cueva (alpha ${bgStart.cave})`);
+    check(bgStart.images === 2 && bgStart.cave && !bgStart.far, `nivel 1: la cueva inicial usa solo el fondo de cueva (${JSON.stringify(bgStart)})`);
+    // Boca de la cueva inicial (x ≈ 45) y entrada al descenso (x ≈ 118): cielo y cueva a la vez, con el borde oscuro.
+    for (const [tx, ty] of [
+      [45, 11],
+      [118, 15],
+    ]) {
+      await title.evaluate(([x, y]) => window.__KERANA_DEBUG__.player.body.reset(x * 16, y * 16), [tx, ty]);
+      await sleep(1200);
+      const bgMouth = await backdropState(title);
+      check(bgMouth.cave && bgMouth.far && bgMouth.edges === 1, `nivel 1: en la boca x ${tx} se ven cielo y cueva con el borde (${JSON.stringify(bgMouth)})`);
+      await title.screenshot({ path: join(SHOTS, `bg-l1-boca-${tx}.png`) });
+    }
     await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(75 * 16, 8 * 16));
     await sleep(1200);
     const bgSlope = await backdropState(title);
-    check(bgSlope.cave === 0 && bgSlope.far, `nivel 1: en la ladera se funde al cielo (alpha cueva ${bgSlope.cave})`);
+    check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
     await title.screenshot({ path: join(SHOTS, 'bg-l1-ladera.png') });
 
     // Liberación de Teju Jagua (atajo de depuración): cámara lenta, marca, diálogo, ascenso, don → Nivel completado.
@@ -148,7 +155,8 @@ async function main() {
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
     await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
     await bossPage.screenshot({ path: join(SHOTS, 'bg-l1-caverna.png') });
-    check((await backdropState(bossPage)).cave === 1, 'nivel 1: la caverna de Teju Jagua usa el fondo de cueva');
+    const bgBoss = await backdropState(bossPage);
+    check(bgBoss.cave && !bgBoss.far, 'nivel 1: la caverna de Teju Jagua usa solo el fondo de cueva');
     const bstate = await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
     check(bstate !== 'waiting', `Teju Jagua ataca (estado ${bstate})`);
     await bossPage.close();
@@ -515,16 +523,36 @@ async function main() {
     check(await tauActive('Story'), 'Tau sellado → final verdadero (diapositivas)');
     const tauSave = await tauPage.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(tauSave.freed?.includes('tau'), 'guardado: Tau sellado (el mapa recupera sus colores)');
-    // Hasta la diapositiva con imagen (amanecer de Ary Pyahu).
-    for (let i = 0; i < 12; i++) {
-      await tauPage.keyboard.press('Space');
-      await sleep(250);
+    check(tauSave.playTimeMs > 0, `guardado: tiempo de juego (${tauSave.playTimeMs} ms)`);
+    // Diapositivas del final con fondo (S13a): Asunción sanada, noche con Eichu y el manantial con Eichu.
+    // Pulsa hasta llegar a la diapositiva `index` con el texto entero (sin contar pulsaciones a ciegas).
+    const storyState = () =>
+      tauPage.evaluate(() => {
+        const s = window.__KERANA_GAME__.scene.getScene('Story');
+        return { index: s.index, done: s.shownChars >= s.fullText.length, imageKey: s.slides[s.index]?.imageKey };
+      });
+    for (const [index, name] of [
+      [1, 'healed'],
+      [2, 'night'],
+      [3, 'spring'],
+    ]) {
+      for (let i = 0; i < 30; i++) {
+        const st = await storyState();
+        if (st.index === index && st.done) break;
+        await tauPage.keyboard.press('Space');
+        await sleep(200);
+      }
+      await sleep(300);
+      await tauPage.screenshot({ path: join(SHOTS, `ending-${name}.png`) });
     }
-    await tauPage.screenshot({ path: join(SHOTS, 'ending.png') });
+    const slideKey = (await storyState()).imageKey;
+    check(slideKey === 'bg_final' && (await tauPage.evaluate(() => window.__KERANA_GAME__.textures.exists('bg_final'))), 'final: el manantial con su imagen (bg_final)');
     await tauPage.keyboard.down('Escape');
     for (let t = 0; t < 5000 && !(await tauActive('Credits')); t += 100) await sleep(100);
     await tauPage.keyboard.up('Escape');
     check(await tauActive('Credits'), 'final → créditos');
+    await sleep(300);
+    await tauPage.screenshot({ path: join(SHOTS, 'credits.png') });
     await tauPage.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.

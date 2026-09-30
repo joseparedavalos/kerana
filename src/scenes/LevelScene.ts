@@ -38,6 +38,7 @@ import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
+import { queueBackgrounds } from '../assets/backgrounds';
 
 type RespawnReason = 'pit' | 'water' | 'hazard';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
@@ -207,6 +208,11 @@ export class LevelScene extends Phaser.Scene {
     this.cutscene = false;
   }
 
+  /** Solo los fondos de este nivel (el resto de los assets ya cargó en Preload). */
+  preload(): void {
+    queueBackgrounds(this, [this.def.backgrounds.far, this.def.backgrounds.cave]);
+  }
+
   create(): void {
     // Zoom antes de crear la caja de diálogo y el texto de depuración (usan fixedOffset).
     setupView(this, false);
@@ -336,6 +342,7 @@ export class LevelScene extends Phaser.Scene {
     EventBus.on(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scene.stop('UI');
+      SaveManager.persist();
       EventBus.off(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
     });
 
@@ -345,7 +352,8 @@ export class LevelScene extends Phaser.Scene {
 
   override update(_time: number, delta: number): void {
     this.inputs.update();
-    this.backdrop.update(this.player.x, this.player.y - this.player.body.height / 2, delta, this.darkness?.ambientColor);
+    this.backdrop.update(this.darkness?.ambientColor);
+    SaveManager.addPlayTime(delta);
 
     if (this.dialogueBox.active) {
       this.dialogueBox.update(delta, this.inputs.justPressed('jump') || this.inputs.justPressed('attack'));
