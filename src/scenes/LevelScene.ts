@@ -37,6 +37,7 @@ import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
+import { LevelBackdrop } from '../systems/LevelBackdrop';
 
 type RespawnReason = 'pit' | 'water' | 'hazard';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
@@ -146,6 +147,7 @@ export class LevelScene extends Phaser.Scene {
   private cowGroup?: Phaser.Physics.Arcade.Group;
   /** Oscuridad del nivel 7 (GDD §4.8): solo en los niveles con `dark`. */
   private darkness?: Darkness;
+  private backdrop!: LevelBackdrop;
   /** Faroles que se encienden al tocarlos (GDD §6.7). */
   private lanterns: Lantern[] = [];
   /** Onda de luz del tajo cargado (una sola en pantalla). */
@@ -242,7 +244,10 @@ export class LevelScene extends Phaser.Scene {
     // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
     if (this.def.dark) this.darkness = new Darkness(this);
     this.buildMap();
-    if (this.def.finale) for (const bg of this.def.backgrounds) addYvagaSky(this, bg.key, this.map.widthInPixels, this.map.heightInPixels, bg.factor);
+    this.backdrop = new LevelBackdrop(this, this.def.backgrounds, this.map.widthInPixels);
+    // El fondo no recibe la luz del nivel oscuro: se tiñe con el ambiente (la oscuridad sigue por encima).
+    for (const img of this.backdrop.images) this.darkness?.glow(img);
+    if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
     const spawn = this.buildObjects();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
 
@@ -340,6 +345,7 @@ export class LevelScene extends Phaser.Scene {
 
   override update(_time: number, delta: number): void {
     this.inputs.update();
+    this.backdrop.update(this.player.x, this.player.y - this.player.body.height / 2, delta, this.darkness?.ambientColor);
 
     if (this.dialogueBox.active) {
       this.dialogueBox.update(delta, this.inputs.justPressed('jump') || this.inputs.justPressed('attack'));
@@ -1049,6 +1055,9 @@ export class LevelScene extends Phaser.Scene {
         }
         case 'Lantern':
           if (this.darkness) this.lanterns.push(new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true));
+          break;
+        case 'Cave':
+          this.backdrop.addCave({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
           break;
         case 'DarkZone':
           this.darkness?.addZone({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });

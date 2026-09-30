@@ -12,13 +12,15 @@
     "maps": "node tools/build-maps.mjs",
     "tiles": "node tools/make-placeholder-tiles.mjs",
     "sprites": "node tools/sprites.mjs",
-    "smoke": "node tools/smoke.mjs"
+    "smoke": "node tools/smoke.mjs",
+    "backgrounds": "node tools/backgrounds.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1",
     "zzfx": "^1.3.2"
   },
   "devDependencies": {
+    "jpeg-js": "^0.4.4",
     "pngjs": "^7.0.0",
     "puppeteer-core": "^25.12.0",
     "typescript": "~5.9.3",
