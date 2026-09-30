@@ -105,6 +105,19 @@ async function main() {
     check(true, 'Mapa → nivel 1 listo');
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
+    // Fondos (S12e): la cueva inicial va con l1_cave; en la ladera, el cielo (l1_far).
+    const backdropState = (page) =>
+      page.evaluate(() => {
+        const b = window.__KERANA_DEBUG__.scene.backdrop;
+        return { images: b.images.length, cave: b.cave?.alpha ?? -1, far: b.far?.visible ?? false };
+      });
+    const bgStart = await backdropState(title);
+    check(bgStart.images === 2 && bgStart.cave === 1, `nivel 1: la cueva inicial usa el fondo de cueva (alpha ${bgStart.cave})`);
+    await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(75 * 16, 8 * 16));
+    await sleep(1200);
+    const bgSlope = await backdropState(title);
+    check(bgSlope.cave === 0 && bgSlope.far, `nivel 1: en la ladera se funde al cielo (alpha cueva ${bgSlope.cave})`);
+    await title.screenshot({ path: join(SHOTS, 'bg-l1-ladera.png') });
 
     // Liberación de Teju Jagua (atajo de depuración): cámara lenta, marca, diálogo, ascenso, don → Nivel completado.
     const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
@@ -134,6 +147,8 @@ async function main() {
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
     await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
+    await bossPage.screenshot({ path: join(SHOTS, 'bg-l1-caverna.png') });
+    check((await backdropState(bossPage)).cave === 1, 'nivel 1: la caverna de Teju Jagua usa el fondo de cueva');
     const bstate = await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
     check(bstate !== 'waiting', `Teju Jagua ataca (estado ${bstate})`);
     await bossPage.close();
@@ -216,6 +231,8 @@ async function main() {
     check(await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 4: la arena de Jasy Jatere se cierra');
     await sleep(5000);
     await l4Page.screenshot({ path: join(SHOTS, 'boss-l4.png') });
+    await l4Page.screenshot({ path: join(SHOTS, 'bg-l4.png') });
+    check((await backdropState(l4Page)).images === 1, 'nivel 4: tiene su fondo (l4_far)');
     const l4state = await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
     check(l4state !== 'waiting', `Jasy Jatere ataca (estado ${l4state})`);
     const l4phase = await l4Page.evaluate(async () => {

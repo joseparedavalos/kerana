@@ -183,6 +183,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 ## 5. Fondos por nivel (parallax) [Núcleo; MVP: solo la capa lejana]
 
 - Por nivel: `raw/backgrounds/l<N>_far.png`, `l<N>_mid.png` y `l<N>_near.png`. El pipeline los escala a 360 px de alto → `public/assets/backgrounds/`.
+- **Desde S12e:** `raw/backgrounds/*.jpg` (1792 × 1008) → `npm run backgrounds` → `backgrounds/*.png` a 1280 × 720, dibujados a escala 0,5 (doble detalle). Fijos a la cámara, un poco agrandados y con parallax lento según el avance (no se repiten). l1 tiene además `l1_cave` para las zonas `rect Cave`.
 - **Capa lejana** (cielo y horizonte), prompt base:
   ```
   16-bit pixel art side-scrolling game background, wide panoramic, [escena],

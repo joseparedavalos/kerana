@@ -151,7 +151,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S11 | 2026-09-28 | Opus 5.5 | 37 | 33 | 4 | 67 | Verde |
 | S12 | 2026-09-28 | Opus 5.5 | 33 | 27 | 6 | 73 | Verde |
 | S12b | 2026-09-28 | Opus 5.5 | 27 | 24 | 3 | 76 | Verde |
-| S12c | | | | | | | |
+| S12c | 2026-09-28 | Opus 5.5 | 24 | 19 | 5 | 81 | Verde |
+| S12e | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -174,7 +175,9 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 **Semáforo de S12b:** costó 3 (de la Reserva, que queda en 5 tras S6b y S12b). Acumulado 76 contra una meta de 84,50 → **Verde**.
 
-**S12c** (Tau como jefe final) tampoco estaba en el reparto: sale de la Reserva. Jose anota el costo al cerrar.
+**Semáforo de S12c** (Tau como jefe final; no estaba en el reparto, sale de la Reserva): costó 5. Acumulado 81 contra una meta de 84,50 → **Verde**. La Reserva (10) queda en 0 tras S6b (2), S12b (3) y S12c (5).
+
+**S12e** (fondos de los niveles) tampoco estaba en el reparto y la Reserva ya está gastada: sale del margen que queda (crédito 19; S13 tiene meta 6). Jose anota el costo al cerrar.
 
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
@@ -199,6 +202,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12 | Hecha | rama `claude/tender-rubin-4kwtdf` | Nivel 7 Asunción (ASCII, 280 × 30), oscuridad con la iluminación de Phaser 4 (`Darkness`: halo de Kerana, `DarkZone`, faroles `Lantern`, checkpoints que alumbran), `pora` (Flyer, vulnerable solo iluminado) y `jagua_hu` (Charger con ojos), Luisón con 3 fases (terrones, aullido, apagón, embestida con ojos, sombra de Tau), velas al liberarlo, final según las plumas → créditos. Antes: la onda de luz choca con el terreno. Build, tests y smoke OK |
 | S12b | Hecha | rama `claude/eager-shannon-b9wnnb` | Pulido de niveles (fuera del plan, sale de la Reserva): práctica segura del don recién ganado al inicio de l2, l4 y l5, camalotes sobre agua baja e islote de descanso en l2, isla de monte en l3, tramos sin karaguatá y hongos bajo el dosel en l5, un secreto con luciérnagas por nivel, carteles de una línea. Build, tests y smoke OK |
 | S12c | Hecha | rama `claude/loving-allen-tln9s3` | Tau como jefe final para todos (fuera del plan, sale de la Reserva): Luisón → Eichu y Tau → Yvága (solo arena, `?level=yvaga`) → Tau en 3 fases (flauta e hipnosis, ecos de Teju Jagua, Mbói Tu'i y Jasy Jatere, humo con las siete estrellas) → sellado → final verdadero (+ diapositiva con las 21 plumas) → créditos; el mapa recupera sus colores. Build, tests y smoke OK |
+| S12e | Hecha | rama `claude/intelligent-mayer-99ulbv` | Fondos de los niveles (fuera del plan): `npm run backgrounds` (jpg → png 1280 × 720, estrella de más tapada en Yvága), `LevelBackdrop` fijo a la cámara con parallax lento sin repetir, cielo ↔ cueva en l1 (`rect Cave`), brillo por nivel, Yvága con imagen. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -565,6 +569,21 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Sin probar a mano (Jose):** si las notas y los rayos se esquivan (`noteSpeed`, `boltSpeed`), si el anillo de la melodía se lee, si con el graznido se cae de la estrella, si la ventana de la fase 3 (Tau junto a la estrella encendida) se alcanza con el sable (`pullOffsetPx`), si las estrellas se alcanzan saltando (3 tiles). Todo en `gameplay.ts`, `bosses.ts` y `yvaga.txt` (+ `npm run maps`).
 - **No hecho (anotado):** música del final y de Tau (S13); ilustraciones reales (`raw/tau/disguise`, `raw/tau/true`, `backgrounds/yvaga_far.png`, `backgrounds/final.png`); retrato de Tau y de Mainumby (placeholder de `DialogueBox`). La secuencia de liberación es la común (la marca estalla y sube una luz): no tiene una animación propia de "sellado".
 - **Assets faltantes:** los cuatro de arriba y el tileset real de `cielo`.
+
+### S12e: Fondos de los niveles (fuera del plan original; sale del margen, la Reserva ya está gastada)
+**Criterios:** `raw/backgrounds/*.jpg` → `public/assets/backgrounds/*.png` (1280 × 720, escala 0,5) con la estrella de más de Yvága tapada · cada nivel con su fondo, fijo a la cámara, agrandado y desplazándose en horizontal según el avance (sin repetir) · l1: cielo en la ladera y cueva bajo tierra con fundido (`rect Cave`) · brillo por nivel · Yvága con la imagen · sin fondo, el color de antes.
+
+**Notas para la próxima sesión (S12e → S13):**
+- **Pipeline:** `npm run backgrounds` (`tools/backgrounds.mjs`, usa `jpeg-js` como devDependency para leer los .jpg). Retoques en `PATCHES` (coordenadas del original): en `yvaga_far` se tapa el disco (895, 425, r 40) interpolando fila por fila el cielo de los costados. Los .png de `raw/backgrounds/` los sigue procesando `npm run sprites` (360 px de alto); si en S13 llegan fondos en .png, conviene pasarlos por este script.
+- **Datos:** `LevelDef.backgrounds` ahora es `{ far?, cave?, brightness? }` (antes era una lista con `factor`). Claves `bg_<nombre>` en `BACKGROUND_KEYS` (`manifest.ts`, todas con `codePlaceholder`). `brightness` (0-1, 1 por defecto) oscurece el fondo si compite con el juego: por ahora todos en 1.
+- **Sensación** en `GAMEPLAY.backdrop`: `overscale` (1,12: margen para desplazarse), `panRange` (fracción del margen que recorre), `fadeMs` (fundido cielo ↔ cueva), `depth`. Lógica pura en `systems/backdropLogic.ts` (tests en `tests/backdrop.test.ts`); la clase es `systems/LevelBackdrop.ts`.
+- **l1:** `rect Cave` en `tools/levels/l1.txt`: x 0–44 (cueva inicial) y x 118–239 (descenso, antesala y caverna). La bajada por el pozo x 106–117 queda con cielo porque está abierto arriba. Si se mueve un tramo, cambiar el rect y `npm run maps`.
+- **l7:** el fondo no recibe la luz (`glow`), pero se tiñe con el ambiente de `Darkness` (`ambientColor`): la noche, las zonas oscuras y el apagón lo oscurecen igual que al resto.
+- **Yvága:** `LevelBackdrop` pone la imagen; `addYvagaSky` (por código) solo si falta. `final.png` sigue para S13.
+- **Peso:** los 9 PNG suman ≈ 14 MB y se cargan todos en `Preload`. Si la carga en GitHub Pages se siente lenta, pasar a carga por nivel o a .jpg/.webp (anotado, no hecho).
+- **Encuadre:** el fondo va centrado en vertical; en l1 el horizonte (cerros) queda casi todo tapado por el suelo. Si se quiere ver más, agregar un ancla vertical por nivel (anotado, no hecho).
+- **Sin probar a mano (Jose):** si el suelo se distingue del fondo en todos los niveles (subir o bajar `brightness` en `levels.ts`), si el parallax se nota o marea (`overscale`, `panRange`), si el fundido de la cueva es corto (`fadeMs`).
+- **Assets faltantes:** `backgrounds/final.png`, capas `mid`/`near` (no se usan).
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
