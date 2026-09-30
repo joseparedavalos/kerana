@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backdropPanX, backdropTint, stepFade } from '../src/systems/backdropLogic';
+import { backdropFit, backdropPanX, backdropTint, caveSpan } from '../src/systems/backdropLogic';
 
 describe('fondo del nivel', () => {
   it('se desplaza de 0 a -margen según el avance, sin pasarse', () => {
@@ -22,10 +22,31 @@ describe('fondo del nivel', () => {
     expect(backdropTint(2)).toBe(0xffffff);
   });
 
-  it('el fundido avanza hacia el objetivo sin pasarse', () => {
-    expect(stepFade(0, 1, 100, 400)).toBeCloseTo(0.25);
-    expect(stepFade(0.9, 1, 100, 400)).toBe(1);
-    expect(stepFade(1, 0, 200, 400)).toBeCloseTo(0.5);
-    expect(stepFade(0, 1, 16, 0)).toBe(1);
+  it('el ajuste vertical sube la imagen y la agranda si destaparía el borde', () => {
+    const centered = backdropFit(360, 1.1, 0);
+    expect(centered.scale).toBe(1.1);
+    expect(centered.top).toBeCloseTo(-18);
+    const up = backdropFit(360, 1.1, 10);
+    expect(up.top).toBeCloseTo(-28);
+    const far = backdropFit(360, 1.1, 40);
+    expect(far.top).toBeCloseTo(-58);
+    expect(far.scale).toBeCloseTo(418 / 360);
+    // El borde de abajo sigue cubriendo la vista.
+    expect(far.top + 360 * far.scale).toBeCloseTo(360);
+    // Hacia abajo: el borde de arriba queda pegado a la vista.
+    const down = backdropFit(360, 1.1, -40);
+    expect(down.top).toBeCloseTo(0);
+    expect(down.scale).toBeCloseTo(418 / 360);
+  });
+
+  it('la cueva se ve solo en su tramo de la vista', () => {
+    const caves = [
+      { x: 0, width: 720 },
+      { x: 1888, width: 1952 },
+    ];
+    expect(caveSpan(0, 640, caves)).toEqual({ left: 0, right: 720 });
+    expect(caveSpan(400, 640, caves)).toEqual({ left: -400, right: 320 });
+    expect(caveSpan(1000, 640, caves)).toBeNull();
+    expect(caveSpan(1500, 640, caves)).toEqual({ left: 388, right: 2340 });
   });
 });

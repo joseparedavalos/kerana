@@ -669,8 +669,12 @@ export const GAMEPLAY = {
     overscale: 1.12,
     /** Fracción del margen sobrante que recorre de punta a punta del nivel (1 = todo el margen; parallax lento). */
     panRange: 1,
-    /** Fundido entre el cielo y la cueva (l1) al entrar o salir de una zona `Cave` (ms). */
-    fadeMs: 450,
+    /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */
+    caveEdgeWidth: 32,
+    /** Opacidad del degradado en su centro (0-1). */
+    caveEdgeAlpha: 0.9,
+    /** Color del degradado del borde de la cueva. */
+    caveEdgeColor: '#0b0a14',
     /** Profundidad: detrás de todo el nivel. */
     depth: -20,
   },

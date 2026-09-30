@@ -1,22 +1,24 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
 import type { LevelBackgrounds } from '../data/types';
-import { inAnyArea, type Area } from './lightLogic';
-import { backdropPanX, backdropTint, stepFade } from './backdropLogic';
+import type { Area } from './lightLogic';
+import { backdropFit, backdropPanX, backdropTint, caveSpan } from './backdropLogic';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
+const EDGE_KEY = 'bg_cave_edge';
 
 // Fondo del nivel (ASSETS §6): una imagen fija a la cámara, un poco agrandada, que se desplaza en horizontal
-// según el avance por el nivel (no se repite, así no se ve la unión). En l1, dentro de las zonas `Cave`
-// se funde al fondo de cueva. Si falta la imagen, queda el color de fondo de la cámara.
+// según el avance por el nivel (no se repite, así no se ve la unión). En l1, el fondo de cueva se ve solo
+// dentro de las zonas `Cave` (ocupan toda la altura: basta recortarlo en horizontal) y el cielo solo fuera;
+// en la boca se ven los dos, con un degradado oscuro en el borde. Si falta la imagen, queda el color de la cámara.
 export class LevelBackdrop {
   private readonly far?: Phaser.GameObjects.Image;
   private readonly cave?: Phaser.GameObjects.Image;
+  private readonly edges: Phaser.GameObjects.Image[] = [];
   private readonly caves: Area[] = [];
   private readonly brightness: number;
-  private caveMix = 0;
-  private started = false;
+  private readonly fit: { scale: number; top: number };
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -24,9 +26,24 @@ export class LevelBackdrop {
     private readonly mapWidth: number,
   ) {
     this.brightness = defs.brightness ?? 1;
+    this.fit = backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0);
     this.far = this.makeImage(defs.far);
     this.cave = this.makeImage(defs.cave);
-    this.cave?.setAlpha(0);
+    if (this.cave) {
+      this.cave.setVisible(false);
+      this.makeEdgeTexture();
+      for (let i = 0; i < 2; i++) {
+        this.edges.push(
+          scene.add
+            .image(0, 0, EDGE_KEY)
+            .setOrigin(0.5, 0)
+            .setScrollFactor(0)
+            .setDisplaySize(CFG.caveEdgeWidth, VIEW.height)
+            .setDepth(CFG.depth + 1)
+            .setVisible(false),
+        );
+      }
+    }
     this.applyTint(0xffffff);
   }
 
@@ -43,30 +60,71 @@ export class LevelBackdrop {
     this.caves.push(area);
   }
 
-  /** Posición según la cámara y fundido cielo ↔ cueva según dónde está Kerana. `ambient`: color del nivel oscuro. */
-  update(playerX: number, playerY: number, deltaMs: number, ambient?: number): void {
+  /** Posición según la cámara y tramo de cueva a la vista. `ambient`: color del nivel oscuro. */
+  update(ambient?: number): void {
     if (!this.hasImage) return;
     const cam = this.scene.cameras.main;
     const off = fixedOffset(cam);
-    const width = VIEW.width * CFG.overscale;
-    const height = VIEW.height * CFG.overscale;
-    const x = off.x + backdropPanX(cam.worldView.x, this.mapWidth - VIEW.width, width - VIEW.width, CFG.panRange);
-    const y = off.y - (height - VIEW.height) / 2;
-    for (const img of this.images) img.setPosition(x, y);
-
-    if (this.cave) {
-      const target = inAnyArea(playerX, playerY, this.caves) ? 1 : 0;
-      this.caveMix = this.started ? stepFade(this.caveMix, target, deltaMs, CFG.fadeMs) : target;
-      this.cave.setAlpha(this.caveMix);
-      this.far?.setVisible(this.caveMix < 1);
-    }
-    this.started = true;
+    const width = VIEW.width * this.fit.scale;
+    const panX = backdropPanX(cam.worldView.x, this.mapWidth - VIEW.width, width - VIEW.width, CFG.panRange);
+    for (const img of this.images) img.setPosition(off.x + panX, off.y + this.fit.top);
+    if (this.cave) this.updateCave(cam.worldView.x, off, panX);
     if (ambient !== undefined) this.applyTint(ambient);
+  }
+
+  private updateCave(viewX: number, off: { x: number; y: number }, panX: number): void {
+    const cave = this.cave!;
+    const span = caveSpan(viewX, VIEW.width, this.caves);
+    const left = span ? Math.max(0, span.left) : 0;
+    const right = span ? Math.min(VIEW.width, span.right) : 0;
+    cave.setVisible(span !== null);
+    // Cueva de borde a borde: el cielo no se ve.
+    this.far?.setVisible(!span || left > 0 || right < VIEW.width);
+    if (span) cave.setCrop((left - panX) / cave.scaleX, 0, (right - left) / cave.scaleX, cave.frame.height);
+    // Degradado en cada boca de la cueva que cae dentro del mapa (no en los bordes del nivel).
+    this.placeEdge(this.edges[0], span?.left, viewX, off);
+    this.placeEdge(this.edges[1], span?.right, viewX, off);
+  }
+
+  /** Degradado en `x` (unidades desde el borde izquierdo de la vista), si cae dentro del mapa y cerca de la vista. */
+  private placeEdge(edge: Phaser.GameObjects.Image, x: number | undefined, viewX: number, off: { x: number; y: number }): void {
+    const show =
+      x !== undefined && viewX + x > 0 && viewX + x < this.mapWidth && x > -CFG.caveEdgeWidth && x < VIEW.width + CFG.caveEdgeWidth;
+    edge.setVisible(show);
+    if (show) edge.setPosition(off.x + x, off.y);
+  }
+
+  /** Estado para la prueba de humo. */
+  get debugState(): { images: number; far: boolean; cave: boolean; edges: number } {
+    return {
+      images: this.images.length,
+      far: this.far?.visible ?? false,
+      cave: this.cave?.visible ?? false,
+      edges: this.edges.filter((e) => e.visible).length,
+    };
   }
 
   private applyTint(ambient: number): void {
     const tint = backdropTint(this.brightness, ambient);
     for (const img of this.images) img.setTint(tint);
+  }
+
+  /** Franja horizontal transparente → oscura → transparente (se estira a lo alto de la vista). */
+  private makeEdgeTexture(): void {
+    if (this.scene.textures.exists(EDGE_KEY)) return;
+    const w = 64;
+    const tex = this.scene.textures.createCanvas(EDGE_KEY, w, 4);
+    if (!tex) return;
+    const ctx = tex.getContext();
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    const color = Phaser.Display.Color.HexStringToColor(CFG.caveEdgeColor);
+    const rgba = (a: number) => `rgba(${color.red},${color.green},${color.blue},${a})`;
+    grad.addColorStop(0, rgba(0));
+    grad.addColorStop(0.5, rgba(CFG.caveEdgeAlpha));
+    grad.addColorStop(1, rgba(0));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, 4);
+    tex.refresh();
   }
 
   private makeImage(key?: string): Phaser.GameObjects.Image | undefined {
@@ -76,7 +134,7 @@ export class LevelBackdrop {
       .setOrigin(0)
       .setScrollFactor(0)
       // Arte de 1280 × 720 en una vista de 640 × 360: escala 0,5 (doble detalle), más el agrandado.
-      .setDisplaySize(VIEW.width * CFG.overscale, VIEW.height * CFG.overscale)
+      .setDisplaySize(VIEW.width * this.fit.scale, VIEW.height * this.fit.scale)
       .setDepth(CFG.depth);
   }
 }
