@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import type { StorySlide } from '../data/story';
-import { addDawn } from '../systems/Backdrops';
+import { queueBackgrounds } from '../assets/backgrounds';
+import { addDawn, addEichu, addNightSky } from '../systems/Backdrops';
 import { t } from '../i18n';
 import { SaveManager } from '../systems/SaveManager';
 import { charsToShow } from '../systems/textReveal';
@@ -9,6 +10,10 @@ import { InputManager } from '../systems/InputManager';
 import { setupView, VIEW } from '../systems/View';
 
 const HOLD_TO_SKIP_MS = 500;
+/** Franja del texto sobre una imagen: alto al centro, alto abajo (entra el texto de 3 líneas y la ayuda) y centro del texto sobre el borde de abajo. */
+const BAND_HEIGHT = 90;
+const BAND_BOTTOM_HEIGHT = 112;
+const BAND_BOTTOM_TEXT_Y = 60;
 
 // Diapositivas genéricas (GDD §8.3): prólogo y final. Recibe `slides` y a qué escena ir al terminar.
 export class StoryScene extends Phaser.Scene {
@@ -39,13 +44,18 @@ export class StoryScene extends Phaser.Scene {
     this.holdMs = 0;
   }
 
+  /** Solo las imágenes de estas diapositivas. */
+  preload(): void {
+    queueBackgrounds(this, this.slides.map((s) => s.imageKey));
+  }
+
   create(): void {
     setupView(this);
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
     // Franja para leer el texto sobre una imagen.
-    this.band = this.add.rectangle(0, height / 2, width, 90, 0x1b1a2e, 0.75).setOrigin(0, 0.5).setDepth(1).setVisible(false);
+    this.band = this.add.rectangle(0, height / 2, width, BAND_HEIGHT, 0x1b1a2e, 0.75).setOrigin(0, 0.5).setDepth(1).setVisible(false);
     this.text = this.add
       .text(width / 2, height / 2, '', {
         fontFamily: FONT_FAMILY,
@@ -58,13 +68,16 @@ export class StoryScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2);
     this.hint = this.add
-      .text(width / 2, height - 18, '', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#CFE3F2' })
-      .setOrigin(0.5);
+      .text(width / 2, height - 12, '', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#CFE3F2' })
+      .setOrigin(0.5)
+      .setDepth(2);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => SaveManager.persist());
     this.advanceSlide();
   }
 
   override update(_time: number, delta: number): void {
     this.inputs.update();
+    SaveManager.addPlayTime(delta);
     const advance = this.inputs.justPressed('jump') || this.inputs.justPressed('attack');
 
     if (this.inputs.isDown('pause')) {
@@ -96,7 +109,7 @@ export class StoryScene extends Phaser.Scene {
       return;
     }
     const slide = this.slides[this.index];
-    this.showBackdrop(slide.imageKey);
+    this.showBackdrop(slide);
     this.fullText = t(slide.textKey);
     this.shownChars = 0;
     this.charTimerMs = 0;
@@ -104,11 +117,22 @@ export class StoryScene extends Phaser.Scene {
     this.hint.setText('');
   }
 
-  /** Imagen de la diapositiva (o su placeholder por código). */
-  private showBackdrop(key?: string): void {
-    for (const part of this.backdrop) part.destroy();
-    this.backdrop = key ? addDawn(this, key, VIEW.width, VIEW.height) : [];
-    this.band.setVisible(this.backdrop.length > 0);
+  /** Imagen (o su placeholder), cielo de noche y Eichu de la diapositiva; la franja no tapa lo principal. */
+  private showBackdrop(slide: StorySlide): void {
+    const { width, height } = VIEW;
+    for (const part of this.backdrop) {
+      this.tweens.killTweensOf(part);
+      part.destroy();
+    }
+    this.backdrop = [];
+    if (slide.imageKey) this.backdrop.push(...addDawn(this, slide.imageKey, width, height));
+    else if (slide.night) this.backdrop.push(...addNightSky(this, width, height));
+    if (slide.eichu) this.backdrop.push(...addEichu(this, slide.eichu, width, height));
+
+    const bottom = slide.band === 'bottom';
+    const bandHeight = bottom ? BAND_BOTTOM_HEIGHT : BAND_HEIGHT;
+    this.band.setVisible(slide.imageKey !== undefined).setSize(width, bandHeight).setY(bottom ? height - bandHeight / 2 : height / 2);
+    this.text.setY(bottom ? height - BAND_BOTTOM_TEXT_Y : height / 2);
   }
 
   private finish(): void {
