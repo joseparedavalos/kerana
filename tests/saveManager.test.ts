@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { defaultSave, SaveManager } from '../src/systems/SaveManager';
+import { defaultSave, formatPlayTime, SaveManager } from '../src/systems/SaveManager';
 import type { LevelDef } from '../src/data/types';
 
 // vitest corre en entorno 'node': no hay localStorage real, se simula uno en memoria.
@@ -98,5 +98,27 @@ describe('SaveManager', () => {
     SaveManager.completeLevel(heartLevel);
     expect(SaveManager.current.maxHearts).toBe(5);
     expect(SaveManager.current.freed.filter((b) => b === 'mboi_tui')).toHaveLength(1);
+  });
+
+  it('suma el tiempo jugado, lo guarda cada tanto y una partida nueva lo reinicia', () => {
+    SaveManager.startNewGame();
+    SaveManager.addPlayTime(4000);
+    SaveManager.addPlayTime(-5);
+    expect(SaveManager.current.playTimeMs).toBe(4000);
+    const stored = () => JSON.parse(globalThis.localStorage.getItem('kerana.save.v1') ?? '{}').playTimeMs;
+    // Todavía no se guardó (se guarda cada 10 s o al salir de la escena).
+    expect(stored()).toBe(0);
+    SaveManager.addPlayTime(4000);
+    SaveManager.addPlayTime(4000);
+    expect(stored()).toBe(12000);
+    expect(SaveManager.load().playTimeMs).toBe(12000);
+    SaveManager.startNewGame();
+    expect(SaveManager.current.playTimeMs).toBe(0);
+  });
+
+  it('muestra el tiempo como h:mm:ss', () => {
+    expect(formatPlayTime(0)).toBe('0:00:00');
+    expect(formatPlayTime(3753_000)).toBe('1:02:33');
+    expect(formatPlayTime(59_999)).toBe('0:00:59');
   });
 });

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { InputManager } from '../systems/InputManager';
+import { formatPlayTime, SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
 
 // Créditos (GDD §8.9): idea y dirección, desarrollo, arte y sonido, agradecimientos.
@@ -23,6 +24,14 @@ export class CreditsScene extends Phaser.Scene {
     lines.forEach((line, i) => {
       this.add.text(width / 2, 90 + i * 22, line, { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2EEE3' }).setOrigin(0.5);
     });
+
+    this.add
+      .text(width / 2, 90 + lines.length * 22 + 14, t('credits.play_time', { time: formatPlayTime(SaveManager.current.playTimeMs) }), {
+        fontFamily: FONT_FAMILY,
+        fontSize: '11px',
+        color: '#F2C14E',
+      })
+      .setOrigin(0.5);
 
     // Frase de prueba de la tipografía (ASSETS §8): confirma que se ven ñ y las vocales nasales.
     this.add
