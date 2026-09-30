@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-// Fondos del final (GDD §7, §6.8). Si el arte existe (ASSETS §7) se usa la imagen; si no, placeholder por código.
+// Fondos del final (GDD §7, §6.8) por código, para cuando falta el arte (ASSETS §7).
 
 const YVAGA_TOP = 0x0e0c24;
 const YVAGA_BOTTOM = 0x3a2a5a;
@@ -24,18 +24,13 @@ function gradient(scene: Phaser.Scene, x: number, y: number, w: number, h: numbe
   return scene.add.graphics().fillGradientStyle(top, top, bottom, bottom, 1).fillRect(x, y, w, h);
 }
 
-/** Cielo de Yvága detrás de la arena (fijo con `factor` de parallax). */
-export function addYvagaSky(scene: Phaser.Scene, key: string, width: number, height: number, factor: number): void {
-  if (scene.textures.exists(key)) {
-    scene.add.image(0, 0, key).setOrigin(0).setDisplaySize(width, height).setScrollFactor(factor).setDepth(-10);
-    return;
-  }
-  gradient(scene, 0, 0, width, height, YVAGA_TOP, YVAGA_BOTTOM).setScrollFactor(factor).setDepth(-10);
+/** Cielo de Yvága por código, detrás de la arena, si falta `bg_yvaga_far` (la imagen la pone `LevelBackdrop`). */
+export function addYvagaSky(scene: Phaser.Scene, width: number, height: number): void {
+  gradient(scene, 0, 0, width, height, YVAGA_TOP, YVAGA_BOTTOM).setDepth(-10);
   const rng = new Phaser.Math.RandomDataGenerator(['yvaga']);
   for (let i = 0; i < 60; i++) {
     scene.add
       .circle(rng.between(0, width), rng.between(0, height * 0.8), rng.realInRange(0.5, 1.2), STAR_COLOR, rng.realInRange(0.3, 0.9))
-      .setScrollFactor(factor)
       .setDepth(-9);
   }
 }

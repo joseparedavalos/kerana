@@ -24,7 +24,7 @@ const LEVEL_1: LevelDef = {
   mapKey: 'map_test',
   mapSource: 'ascii',
   biome: 'cerro',
-  backgrounds: [],
+  backgrounds: {},
   musicKey: '',
   boss: 'teju_jagua',
   gift: 'charged_slash',

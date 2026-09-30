@@ -6,6 +6,12 @@ export type Biome = 'cerro' | 'estero' | 'campo' | 'pueblo' | 'selva' | 'montana
 
 export const BIOMES: readonly Biome[] = ['cerro', 'estero', 'campo', 'pueblo', 'selva', 'montana', 'ciudad', 'cielo'];
 
+export interface LevelBackgrounds {
+  far?: string;
+  cave?: string;
+  brightness?: number;
+}
+
 export interface LevelDef {
   id: LevelId;
   order: number;
@@ -14,7 +20,8 @@ export interface LevelDef {
   mapKey: string;
   mapSource: 'ascii' | 'tiled';
   biome: Biome;
-  backgrounds: { key: string; factor: number }[];
+  /** Fondo fijo a la cámara (ASSETS §6): `far` general, `cave` bajo tierra (zonas `Cave`), `brightness` 0-1 (1 por defecto). */
+  backgrounds: LevelBackgrounds;
   musicKey: string;
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;

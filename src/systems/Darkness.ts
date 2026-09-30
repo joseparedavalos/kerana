@@ -80,6 +80,11 @@ export class Darkness {
     return isLit(x, y, this.sources);
   }
 
+  /** Color ambiente actual (el fondo del nivel, que no recibe luz, se tiñe con él). */
+  get ambientColor(): number {
+    return this.ambient;
+  }
+
   /** El halo sigue a Kerana; el ambiente se funde hacia el que corresponde. */
   update(playerX: number, playerY: number, deltaMs: number): void {
     this.halo.source.x = playerX;

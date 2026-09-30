@@ -663,6 +663,17 @@ export const GAMEPLAY = {
     blinkMs: 900,
     depth: 12,
   },
+
+  backdrop: {
+    /** Fondo del nivel fijo a la cámara (sin repetir): cuánto se agranda sobre la vista para poder desplazarse. */
+    overscale: 1.12,
+    /** Fracción del margen sobrante que recorre de punta a punta del nivel (1 = todo el margen; parallax lento). */
+    panRange: 1,
+    /** Fundido entre el cielo y la cueva (l1) al entrar o salir de una zona `Cave` (ms). */
+    fadeMs: 450,
+    /** Profundidad: detrás de todo el nivel. */
+    depth: -20,
+  },
 } as const;
 
 export type GameplayConfig = typeof GAMEPLAY;
