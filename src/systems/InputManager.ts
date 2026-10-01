@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { t } from '../i18n';
 
 // Traduce teclas a acciones abstractas (GDD §3.2). El jugador nunca lee teclas directas.
 export type Action = 'left' | 'right' | 'up' | 'down' | 'jump' | 'attack' | 'dash' | 'pause' | 'confirm';
@@ -21,7 +22,6 @@ const KEY_LABELS: Record<string, string> = {
   RIGHT: '→',
   UP: '↑',
   DOWN: '↓',
-  SPACE: 'Espacio',
   ENTER: 'Enter',
   ESC: 'Esc',
   SHIFT: 'Shift',
@@ -79,6 +79,7 @@ export class InputManager {
   /** Nombre visible de la primera tecla de una acción. */
   label(action: Action): string {
     const name = KEYMAP[action][0];
+    if (name === 'SPACE') return t('key.space');
     return KEY_LABELS[name] ?? name;
   }
 

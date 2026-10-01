@@ -278,7 +278,10 @@ export class LevelScene extends Phaser.Scene {
       // Sprite real (mira a la derecha), con un brillo dorado por código detrás.
       const look = GAMEPLAY.sprites.mainumby;
       this.mainumbyGlow = this.add.circle(spawn.x, spawn.y - 40, look.glowRadius, look.glowColor, look.glowAlpha).setDepth(14);
-      this.mainumby = this.add.sprite(spawn.x, spawn.y - 40, 'mainumby').play('mainumby_idle').setScale(1 / spriteDetail(this, 'mainumby')).setDepth(15);
+      const bird = this.add.sprite(spawn.x, spawn.y - 40, 'mainumby').setScale(1 / spriteDetail(this, 'mainumby')).setDepth(15);
+      // Con flapMode 'frames' el aleteo es por código (los cuadros de la hoja casi no cambian).
+      if (look.flapMode !== 'frames') bird.play('mainumby_idle');
+      this.mainumby = bird;
       this.darkness?.glow(this.mainumby);
       this.darkness?.glow(this.mainumbyGlow);
     } else {
@@ -385,7 +388,7 @@ export class LevelScene extends Phaser.Scene {
     this.cameraCtl.update(this.player.motor.facing);
     this.updateEnemies(delta);
     for (const cow of this.cows) cow.tick(delta);
-    this.updateMainumby();
+    this.updateMainumby(delta);
 
     const body = this.player.body;
     this.playerRect.setTo(body.x, body.y, body.width, body.height);
@@ -423,20 +426,32 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /** Mainumby sigue a Kerana con un retraso suave, flotando sobre su hombro (GDD §4.5). */
-  private updateMainumby(): void {
+  private updateMainumby(delta: number): void {
     if (!this.mainumby) return;
     const targetX = this.player.x - this.player.motor.facing * 14;
     const targetY = this.player.y - 44;
     const pos = this.mainumbyPos;
-    pos.x += (targetX - pos.x) * 0.08;
+    const dx = (targetX - pos.x) * 0.08;
+    pos.x += dx;
     pos.y += (targetY - pos.y) * 0.08;
     if (!this.mainumbyGlow) {
       this.mainumby.setPosition(pos.x, pos.y);
       return;
     }
-    // Flota suave y mira hacia donde mira Kerana.
+    // Flota, aletea rápido, se inclina hacia donde se mueve y mira hacia donde mira Kerana.
     const look = GAMEPLAY.sprites.mainumby;
-    const bob = Math.sin((this.time.now / look.bobMs) * Math.PI * 2) * look.bobAmplitude;
+    const now = this.time.now;
+    const bob = Math.sin((now / look.bobMs) * Math.PI * 2) * look.bobAmplitude;
+    const flapPhase = Math.floor((now / 1000) * look.flapFps) % 2;
+    const baseScale = 1 / spriteDetail(this, 'mainumby');
+    if (look.flapMode === 'frames' && this.mainumby instanceof Phaser.GameObjects.Sprite) {
+      this.mainumby.setFrame(look.flapFrames[flapPhase]);
+    } else {
+      this.mainumby.setScale(baseScale, baseScale * (flapPhase ? look.squashY : 1));
+    }
+    const speed = delta > 0 ? dx / (delta / 1000) : 0;
+    const tilt = Phaser.Math.Clamp(speed * look.tiltPerSpeed, -look.tiltMaxDeg, look.tiltMaxDeg);
+    this.mainumby.angle += (tilt - this.mainumby.angle) * look.tiltLerp;
     this.mainumby.setPosition(pos.x, pos.y + bob).setFlipX(this.player.motor.facing < 0);
     this.mainumbyGlow.setPosition(pos.x, pos.y + bob);
   }

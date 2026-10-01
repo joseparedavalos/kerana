@@ -58,7 +58,7 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 src/main.ts               config de Phaser (GDD §11.3)
 src/config/gameplay.ts    TODOS los parámetros de sensación (GDD §3.4)
 src/data/                 levels, enemies, bosses, dialogues, story
-src/i18n/                 es.ts (completo), en.ts, index.ts → t('clave')
+src/i18n/                 es.ts, en.ts (completos), lang.ts, index.ts → t('clave')
 src/assets/manifest.ts    lista única de assets
 src/scenes/               Boot, Preload, Title, Story, WorldMap, Level, UI, Pause, Credits
 src/entities/             Player, enemies/, bosses/ (un archivo por jefe), pickups/, hazards/
@@ -74,6 +74,7 @@ tests/                    Vitest
 - TypeScript estricto. **Identificadores en inglés; comentarios breves en español.**
 - Nada de números mágicos: todo número de sensación va en `src/config/gameplay.ts`.
 - Datos (niveles, enemigos, jefes, diálogos) en `src/data/`. Ningún texto visible escrito en las escenas: siempre `t('clave')`.
+- Toda clave nueva va en `src/i18n/es.ts` **y** en `src/i18n/en.ts` (el build falla si falta en inglés; el test compara claves y `{marcadores}`). Los nombres guaraníes no se traducen.
 - Máquinas de estado explícitas para Kerana, enemigos y jefes.
 - El jugador lee **acciones** de `InputManager` (left, right, jump, attack, dash, pause), nunca teclas directas.
 - Comunicación Level ↔ UI con `EventBus`, sin referencias cruzadas entre escenas.
@@ -98,7 +99,7 @@ tests/                    Vitest
 - Todo asset de terceros se registra en `CREDITS.md` (autor, URL, licencia).
 
 ## Depuración
-Parámetros de URL (en dev o con `?debug=1`): `debug=1` (hitboxes, FPS, estado de Kerana), `level=test|1..7`, `boss=1` (empieza en la antesala del jefe), `gifts=all`, `god=1`.
+Parámetros de URL (en dev o con `?debug=1`): `debug=1` (hitboxes, FPS, estado de Kerana), `level=test|1..7`, `boss=1` (empieza en la antesala del jefe), `gifts=all`, `god=1`. `lang=en|es` funciona siempre (sin `debug=1`) y se guarda.
 El juego define `window.__KERANA_READY__ = true` cuando la primera escena jugable está lista.
 
 ## Git y GitHub

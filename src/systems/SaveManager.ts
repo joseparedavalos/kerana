@@ -1,5 +1,6 @@
 import { GAMEPLAY } from '../config/gameplay';
 import type { BossId, GiftId, LevelDef } from '../data/types';
+import { langFromBrowser, langFromUrl, type Lang } from '../i18n/lang';
 
 // Guardado (GDD §11.9). localStorage con try/catch: si falla, el juego sigue sin guardar.
 const STORAGE_KEY = 'kerana.save.v1';
@@ -8,7 +9,7 @@ const VERSION = 1;
 export interface SaveSettings {
   music: number;
   sfx: number;
-  lang: 'es' | 'en';
+  lang: Lang;
   assist: boolean;
   shake: boolean;
   flashes: boolean;
@@ -54,7 +55,7 @@ export function defaultSave(): SaveData {
     feathers: {},
     bestTimes: {},
     playTimeMs: 0,
-    settings: { music: 1, sfx: 1, lang: 'es', assist: false, shake: true, flashes: true, textSpeed: 2 },
+    settings: { music: 1, sfx: 1, lang: langFromBrowser(globalThis.navigator?.language), assist: false, shake: true, flashes: true, textSpeed: 2 },
   };
 }
 
@@ -95,17 +96,26 @@ export class SaveManager {
   /** Carga desde localStorage (o crea una partida nueva) y la deja como partida actual. */
   static load(): SaveData {
     this.unsavedPlayMs = 0;
+    let saved = false;
     try {
       const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+      saved = raw != null;
       this._current = raw ? sanitize(JSON.parse(raw)) : defaultSave();
     } catch {
       this._current = defaultSave();
     }
+    // ?lang= siempre gana. Sin partida no se crea una (aparecería "Continuar"): se guarda al empezar a jugar.
+    const lang = langFromUrl(globalThis.location?.search ?? '');
+    if (lang && lang !== this._current.settings.lang) {
+      this._current = { ...this._current, settings: { ...this._current.settings, lang } };
+      if (saved) this.persist();
+    }
     return this._current;
   }
 
+  /** Partida nueva (también "Borrar partida"): reinicia el progreso pero conserva los ajustes. */
   static startNewGame(): SaveData {
-    this._current = defaultSave();
+    this._current = { ...defaultSave(), settings: { ...this._current.settings } };
     this.persist();
     return this._current;
   }

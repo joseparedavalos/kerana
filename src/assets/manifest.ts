@@ -30,7 +30,7 @@ export const backgroundPath = (key: string): string => `backgrounds/${key.slice(
 
 /** Sprites de los jefes y de Mainumby (`npm run sprites`): clave → frame en píxeles de textura (ver raw/<id>/sprite.json). */
 export const CHARACTER_SPRITES: Record<string, [number, number]> = {
-  teju_jagua_head: [56, 48],
+  teju_jagua_head: [112, 96],
   mboi_tui: [128, 96],
   monai: [72, 128],
   jasy_jatere: [64, 72],

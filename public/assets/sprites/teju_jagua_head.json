@@ -1,7 +1,7 @@
 {
   "key": "teju_jagua_head",
-  "frameWidth": 56,
-  "frameHeight": 48,
+  "frameWidth": 112,
+  "frameHeight": 96,
   "frames": 8,
   "detail": 2,
   "anims": {

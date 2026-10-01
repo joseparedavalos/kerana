@@ -8,6 +8,7 @@ export const es = {
   'title.options': 'Opciones',
   'title.credits': 'Créditos',
   'loading': 'Cargando…',
+  'key.space': 'Espacio',
 
   'level.test.name': 'Nivel de prueba',
   'level.l1.name': 'Paraguarí',
