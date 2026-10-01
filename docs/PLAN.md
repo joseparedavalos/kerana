@@ -154,7 +154,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12c | 2026-09-28 | Opus 5.5 | 24 | 19 | 5 | 81 | Verde |
 | S12e | 2026-09-30 | Opus 5.5 | 19 | 16 | 3 | 84 | Verde |
 | S13a | 2026-09-30 | Opus 5.5 | 16 | 11 | 5 | 89 | Amarillo |
-| S13b | | | | | | | |
+| S13b | 2026-10-01 | Opus 5.5 | 11 | 5 | 6 | 95 | Amarillo |
+| S12d | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -187,6 +188,10 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 **S13b** (sprites de los jefes y de Mainumby) tampoco estaba en el reparto: sale del crédito que queda (11). Con el acumulado en 89, el amarillo llega hasta 101,40 (20 % sobre 84,50): S13b puede costar hasta 12,40 sin pasar a rojo. Jose anota el costo al cerrar.
 
+**Semáforo de S13b:** costó 6. Acumulado 95 contra una meta de 84,50: un 12,4 % por encima (menos del 20 %, el tope del amarillo es 101,40) → **Amarillo**. Quedan 5 de crédito.
+
+**S12d** (el juego en inglés y dos ajustes de arte de S13b) tampoco estaba en el reparto: sale de los 5 que quedan. Con el acumulado en 95, S12d puede costar hasta 6,40 sin pasar a rojo. Jose anota el costo al cerrar.
+
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
 ---
@@ -213,6 +218,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12e | Hecha | rama `claude/intelligent-mayer-99ulbv` | Fondos de los niveles (fuera del plan): `npm run backgrounds` (jpg → png 1280 × 720, estrella de más tapada en Yvága), `LevelBackdrop` fijo a la cámara con parallax lento sin repetir, cielo ↔ cueva en l1 (`rect Cave`), brillo por nivel, Yvága con imagen. Build, tests y smoke OK |
 | S13a | Hecha | rama `claude/admiring-bell-dppp81` | Fondos, cueva y final (fuera del plan): fondos en .jpg (≈ 2,6 MB en vez de ≈ 14) cargados por nivel y por StoryScene, `shiftY` por nivel (l1 y l4 subidos), l1_cave solo dentro de las zonas `Cave` y l1_far solo fuera con degradado oscuro en la boca (sin fundido por tiempo), final con `final_asuncion` y `final`, Eichu por código con la forma de las Pléyades, tiempo de juego en el guardado y en los créditos. Build, tests y smoke OK |
 | S13b | Hecha | rama `claude/quirky-fermi-7jx7oo` | Sprites de los 8 jefes y de Mainumby (fuera del plan): `sprite.json` con detail 2, borde verde de Tau quitado en el pipeline (`greenEdge`), `SpriteSkin` dibuja el sprite sobre el placeholder (misma lógica y hitbox), casos especiales (7 cabezas teñidas, agua de Mbói Tu'i, cuerpo de Moñái hasta fuera de cámara, bastón de Jasy Jatere recortado con "¡!", Tau disfraz/real), Mainumby con vaivén y brillo. Build, tests y smoke OK |
+| S12d | Hecha | rama `claude/admiring-mccarthy-qwoulz` | Inglés y ajustes de arte (fuera del plan): `en.ts` completo y tipado, `t()` según `settings.lang` con caída al español, `?lang=` que siempre gana y se guarda, idioma del navegador sin partida, Nueva partida/Borrar partida conservan los ajustes, "Espacio" con `t()`, smoke por estado (arena de l2 y tajo cargado), cabezas de Teju Jagua al doble, Mainumby aletea y se inclina. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -618,6 +624,17 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Smoke:** corrió una vez y fallaron 5 chequeos de tiempo (arena de l2 que no se cierra en 3 s, rebote del hongo, onda del tajo cargado), con 16-26 FPS en swiftshader. Con el código anterior a S13b la misma medición da lo mismo (≈ 155 px en 3 s en l2, sin cerrar la arena): es la lentitud del contenedor, no los sprites. Si vuelve a pasar en otra máquina, alargar las esperas de esos chequeos en `tools/smoke.mjs`.
 - **Sin probar a mano (Jose):** el tamaño de las cabezas de Teju Jagua (18 unidades, como el placeholder: se ven chicas), si la franja de Moñái hacia arriba molesta, si el recorte del bastón de Jasy Jatere corta la mano (`staffColumns`), el brillo de Mainumby (`GAMEPLAY.sprites.mainumby`).
 - **Assets faltantes:** poses de ataque y daño de todos los jefes; Jasy Jatere sin bastón (`raw/jasy_jatere/nostaff/`); Ao Ao quieto y erguido; cuerpo de Teju Jagua (`l1_boss_body.png`); siguen `heart_full`, `heart_empty`, `sign` y `checkpoint`.
+
+### S12d: El juego en inglés y ajustes de arte de S13b (fuera del plan original; sale del crédito que queda)
+**Criterios:** `src/i18n/en.ts` con todas las claves (`Record<TextKey, string>`) · `t()` usa `settings.lang` y cae al español · `?lang=en|es` siempre gana y se guarda; sin parámetro ni partida, el idioma del navegador ("es"/"gn" → español) · Nueva partida y Borrar partida conservan los ajustes · "Espacio" con `t()` · test de claves y `{marcadores}` · CLAUDE.md y GDD §12.2 · smoke por estado en la arena de l2 y el tajo cargado · cabezas de Teju Jagua al doble (sprite, hitbox, cuellos, abanico) · Mainumby con aleteo, vaivén mayor e inclinación.
+
+**Notas para la próxima sesión (S12d → S13):**
+- **Idioma:** `src/i18n/lang.ts` (`langFromUrl`, `langFromBrowser`). `SaveManager.load` aplica `?lang=`; si ya hay partida, la guarda; si no, no crea una (aparecería "Continuar") y se guarda al empezar la partida. `defaultSave` toma el idioma del navegador. Cambiar el idioma en Opciones se ve al volver al título o al mapa (los textos ya creados no se rehacen).
+- **Traducción:** inglés simple, imperativos en los carteles, nombres guaraníes sin traducir (jefes, lugares, enemigos, "che sy", "che memby", guavirá). Jose: revisar el tono de los diálogos y si algún cartel queda largo en pantalla. "¡!" de Jasy Jatere queda "!".
+- **Teju Jagua:** `GAMEPLAY.tejuJagua`: `headWidth` 60, `headHeight` 36, `neckWidth` 14, `fanSpacing` 72, `fanRise` 12, `neckSpacing` 36, `neckAttachX` 10 (el dibujo de la cabeza es más angosto que la hitbox: el cuello se engancha detrás del centro), ojos `eyeOffsetX/Y` y `eyeScale`, `fireRecoverHeadHeight` 36. Hoja `teju_jagua_head` regenerada a 112 × 96 (altura 72, detail 2). `neckAttachX` se agregó después del smoke (en la captura los cuellos quedaban sueltos): Jose, mirá si se ven unidos.
+- **Mainumby:** `GAMEPLAY.sprites.mainumby`: `flapMode` 'frames' (alterna `flapFrames` [1, 3] a `flapFps` 12, sin la animación de la hoja) o 'squash' (aplasta a `squashY`), `bobAmplitude` 3,5, inclinación `tiltPerSpeed`, `tiltMaxDeg` 14, `tiltLerp`. Sin probar a mano: si el aleteo se ve mejor con 'squash'.
+- **Smoke:** la arena de l2 usa `walkIntoArena` (tope 15 s) y el tajo cargado espera `chargeFraction` = 1 (tope 10 s) y la onda (tope 3 s). Pasó entero.
+- **Assets faltantes:** los mismos de S13b (`heart_full`, `heart_empty`, `sign`, `checkpoint`, poses de ataque y daño de los jefes, cuerpo de Teju Jagua).
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
