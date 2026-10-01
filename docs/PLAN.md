@@ -153,7 +153,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12b | 2026-09-28 | Opus 5.5 | 27 | 24 | 3 | 76 | Verde |
 | S12c | 2026-09-28 | Opus 5.5 | 24 | 19 | 5 | 81 | Verde |
 | S12e | 2026-09-30 | Opus 5.5 | 19 | 16 | 3 | 84 | Verde |
-| S13a | | | | | | | |
+| S13a | 2026-09-30 | Opus 5.5 | 16 | 11 | 5 | 89 | Amarillo |
+| S13b | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -182,6 +183,10 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 **S13a** (fondos en .jpg y por nivel, encuadre, boca de la cueva, fondos del final y tiempo de juego) tampoco estaba en el reparto: sale del crédito que queda (16; S13 tiene meta 6). Con cualquier costo el acumulado pasa la meta de 84,50: hasta 16,90 (20 % más) sería **Amarillo**, así que S13a tendría que costar menos de 0,90 para seguir en verde. Jose anota el costo al cerrar.
 
+**Semáforo de S13a:** costó 5. Acumulado 89 contra una meta de 84,50: un 5,3 % por encima (menos del 20 %) → **Amarillo**. Los recortes 1 a 3 del GDD §12.2 ya están aplicados desde S4, así que no hay nada nuevo que recortar; quedan 11 de crédito.
+
+**S13b** (sprites de los jefes y de Mainumby) tampoco estaba en el reparto: sale del crédito que queda (11). Con el acumulado en 89, el amarillo llega hasta 101,40 (20 % sobre 84,50): S13b puede costar hasta 12,40 sin pasar a rojo. Jose anota el costo al cerrar.
+
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
 ---
@@ -207,6 +212,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12c | Hecha | rama `claude/loving-allen-tln9s3` | Tau como jefe final para todos (fuera del plan, sale de la Reserva): Luisón → Eichu y Tau → Yvága (solo arena, `?level=yvaga`) → Tau en 3 fases (flauta e hipnosis, ecos de Teju Jagua, Mbói Tu'i y Jasy Jatere, humo con las siete estrellas) → sellado → final verdadero (+ diapositiva con las 21 plumas) → créditos; el mapa recupera sus colores. Build, tests y smoke OK |
 | S12e | Hecha | rama `claude/intelligent-mayer-99ulbv` | Fondos de los niveles (fuera del plan): `npm run backgrounds` (jpg → png 1280 × 720, estrella de más tapada en Yvága), `LevelBackdrop` fijo a la cámara con parallax lento sin repetir, cielo ↔ cueva en l1 (`rect Cave`), brillo por nivel, Yvága con imagen. Build, tests y smoke OK |
 | S13a | Hecha | rama `claude/admiring-bell-dppp81` | Fondos, cueva y final (fuera del plan): fondos en .jpg (≈ 2,6 MB en vez de ≈ 14) cargados por nivel y por StoryScene, `shiftY` por nivel (l1 y l4 subidos), l1_cave solo dentro de las zonas `Cave` y l1_far solo fuera con degradado oscuro en la boca (sin fundido por tiempo), final con `final_asuncion` y `final`, Eichu por código con la forma de las Pléyades, tiempo de juego en el guardado y en los créditos. Build, tests y smoke OK |
+| S13b | Hecha | rama `claude/quirky-fermi-7jx7oo` | Sprites de los 8 jefes y de Mainumby (fuera del plan): `sprite.json` con detail 2, borde verde de Tau quitado en el pipeline (`greenEdge`), `SpriteSkin` dibuja el sprite sobre el placeholder (misma lógica y hitbox), casos especiales (7 cabezas teñidas, agua de Mbói Tu'i, cuerpo de Moñái hasta fuera de cámara, bastón de Jasy Jatere recortado con "¡!", Tau disfraz/real), Mainumby con vaivén y brillo. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -600,6 +606,18 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Tiempo de juego:** `SaveData.playTimeMs`; `SaveManager.addPlayTime` desde los `update` de LevelScene y StoryScene (la pausa detiene la escena, así que no cuenta) y guarda cada 10 s y al salir de la escena. Nivel completado, mapa, título y opciones no cuentan. `formatPlayTime` → "1:02:33".
 - **Sin probar a mano (Jose):** si el degradado de la boca es muy ancho o muy oscuro (`caveEdgeWidth`, `caveEdgeAlpha`), si l1 y l4 quedan bien en otros tramos del nivel (`shiftY`), si las estrellas de `final` se ven en pantallas chicas (`EICHU_FINAL`).
 - **Assets faltantes:** ninguno de fondos; siguen `heart_full`, `heart_empty`, `sign`, `checkpoint` y las capas `mid`/`near` (no se usan).
+
+### S13b: Sprites de los jefes y de Mainumby (fuera del plan original; sale del crédito que queda)
+**Criterios:** `raw/<id>/sprite.json` con detail 2 para los 8 jefes y Mainumby, a la altura del placeholder (se escala el sprite, nunca la hitbox) · borde verde quitado solo en el contorno de `tau/disguise` y `tau/true` · cada jefe con su sprite en vez del placeholder, flipX al mirar a la derecha, daño y destellos por código · Teju Jagua: la cabeza gris en las 7 cabezas, teñida por código, sobre los cuellos · Mbói Tu'i: el agua tapa la parte de abajo · Moñái: el corte de arriba tapado (follaje o fuera de cámara) · Jasy Jatere: el bastón de la mano se oculta cuando vuela, con "¡!" · Tau: disfraz en fases 1 y 2, forma real en la 3 · Mainumby: mira según Kerana, flota y lleva un brillo dorado detrás · lo que no tiene sprite sigue como placeholder.
+
+**Notas para la próxima sesión (S13b → S13):**
+- **Cómo funciona:** `SpriteSkin` (`src/systems/SpriteSkin.ts`) saca el placeholder de la lista de dibujo y en cada `POST_UPDATE` copia al sprite posición, giro, escala (÷ detail), alfa, visibilidad, profundidad, tinte y volteo. La lógica de cada jefe no cambió: sigue moviendo el placeholder y midiendo la hitbox con `gameplay.ts`. Sin la hoja (o sin sus animaciones), el placeholder se ve como antes.
+- **Encuadre:** `GAMEPLAY.sprites` guarda el `origin` de las cabezas (Teju Jagua, Mbói Tu'i, Moñái) y de la forma real de Tau, más los colores y tamaños de los agregados por código. Con flipX, Phaser refleja la textura pero no el origen: `SpriteSkin` refleja el origen.
+- **Tamaños de frame** en `CHARACTER_SPRITES` (`manifest.ts`) y en cada `sprite.json`: si se cambia uno, cambiar el otro. Mbói Tu'i mide 44 unidades (cabeza ≈ 20, como el placeholder, más el cuerpo enroscado) y Moñái 60 (cabeza ≈ 18 más el cuerpo colgando); los demás, la altura del placeholder. Mainumby, 12 unidades (el placeholder era un cuadrado de 8).
+- **Casos especiales:** Mbói Tu'i se recorta en la superficie del agua (`floorY`); sin sprite vuelven el cuello y la cresta. Moñái: el cuerpo se prolonga con una franja verde hasta salir de cámara (`columnWidth`, `columnColor`) y la cuerda de segmentos (la cola con el corazón robado) pasa a verde. Jasy Jatere: mientras el bastón vuela, se ilumina o se alza, se recorta del sprite la franja `staffColumns` y se ve el bastón de código; "¡!" (`boss.jasy_jatere.surprise`) mientras está suelto. Ao Ao: la hoja de carrera en todos los estados, a `idleTimeScale` cuando está quieto (el zarpazo erguido no tiene pose propia). Luisón: los ojos que brillan en la oscuridad se corrieron hacia la cabeza del sprite (`eyeForward`). Tau: los ojos de código se ocultan con la forma real (el sprite ya los tiene); el destello de daño tiñe el sprite.
+- **Smoke:** corrió una vez y fallaron 5 chequeos de tiempo (arena de l2 que no se cierra en 3 s, rebote del hongo, onda del tajo cargado), con 16-26 FPS en swiftshader. Con el código anterior a S13b la misma medición da lo mismo (≈ 155 px en 3 s en l2, sin cerrar la arena): es la lentitud del contenedor, no los sprites. Si vuelve a pasar en otra máquina, alargar las esperas de esos chequeos en `tools/smoke.mjs`.
+- **Sin probar a mano (Jose):** el tamaño de las cabezas de Teju Jagua (18 unidades, como el placeholder: se ven chicas), si la franja de Moñái hacia arriba molesta, si el recorte del bastón de Jasy Jatere corta la mano (`staffColumns`), el brillo de Mainumby (`GAMEPLAY.sprites.mainumby`).
+- **Assets faltantes:** poses de ataque y daño de todos los jefes; Jasy Jatere sin bastón (`raw/jasy_jatere/nostaff/`); Ao Ao quieto y erguido; cuerpo de Teju Jagua (`l1_boss_body.png`); siguen `heart_full`, `heart_empty`, `sign` y `checkpoint`.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
