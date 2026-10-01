@@ -73,6 +73,8 @@ Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el fram
 - `sheets.<hoja>.ref`: frame de pie que define la escala de esa hoja; `anchor`: `"waist"` (por defecto) o `"cell"`.
 - `frames: [desde, hasta]` usa solo parte de la hoja; `list: [..]` elige frames sueltos; `source` saca la animación de otra hoja; `skip: true` no la registra.
 - Kerana usa: `idle` (con `blink` ocasional), `run`, `jump` (sin la preparación agachada: salto inmediato), `fall`, `land` (breve, al aterrizar quieta), `attack` (≈ 280 ms) y `hurt`. El destello de daño, el parpadeo de invulnerabilidad y el brillo de carga se hacen por código (`src/entities/Player.ts`, valores en `GAMEPLAY.playerFx`).
+- `greenEdge: true` borra el borde verde que deja el Chroma key, solo en los píxeles del contorno (Tau). No lo uses en personajes verdes de verdad (Mainumby, Mbói Tu'i, Moñái, Kurupi, Jasy Jatere).
+- **Jefes y Mainumby (S13b):** cada uno con su `sprite.json` (detail 2, `height` = la altura de su placeholder). Si `frame` cambia, actualizá `CHARACTER_SPRITES` en `src/assets/manifest.ts`. En el juego, `SpriteSkin` (`src/systems/SpriteSkin.ts`) dibuja el sprite encima del placeholder, que deja de verse pero sigue llevando la lógica y la hitbox; el encuadre (`origin`) está en `GAMEPLAY.sprites`.
 - Si cambiás algo, corré `npm run sprites` y recargá el juego.
 
 ---

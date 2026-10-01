@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
+import { skinIfAvailable, type SpriteSkin } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { HeartThief, pulseBlocked, type Trunk } from './monaiLogic';
@@ -67,6 +68,8 @@ export class Monai extends Boss {
   private shadowMs = 0;
   private shadowLockMs = 0;
   private glowMs = 0;
+  /** Sprite real (cabeza y cuerpo colgando); el corte de arriba se prolonga hasta fuera de cámara. */
+  private readonly skin?: SpriteSkin;
 
   constructor(scene: Phaser.Scene, ctx: BossContext) {
     super(scene, getBossDef('monai'), ctx);
@@ -83,6 +86,7 @@ export class Monai extends Boss {
     this.shadow = scene.add.ellipse(0, ctx.floorY - 1, CFG.shadowWidth, 8, SHADOW_COLOR, 0.6).setDepth(3).setVisible(false);
     this.bodyGfx = scene.add.graphics().setDepth(4);
     this.head = scene.add.image(0, 0, HEAD_TEXTURE).setDepth(5);
+    this.skin = skinIfAvailable(scene, this.head, 'monai', { origin: GAMEPLAY.sprites.monai.origin });
     this.pulse = scene.add.circle(0, 0, 10).setStrokeStyle(3, PULSE_COLORS[0]).setDepth(6).setVisible(false);
     this.tailHeart = scene.add.circle(0, 0, 4, HEART_COLOR).setDepth(6).setVisible(false);
     for (let i = 0; i < CFG.segments; i++) this.segments.push({ x: 0, y: 0 });
@@ -324,12 +328,29 @@ export class Monai extends Boss {
     const g = this.bodyGfx;
     g.clear();
     if (this.head.alpha <= 0) return;
+    const look = GAMEPLAY.sprites.monai;
+    const body = this.skin ? look.bodyColor : BODY_COLOR;
+    const belly = this.skin ? look.bellyColor : BELLY_COLOR;
     const n = this.segments.length;
     for (let i = n - 1; i >= 0; i--) {
       const s = this.segments[i];
       const r = CFG.segmentRadius * (1 - (i / n) * 0.6);
-      g.fillStyle(i % 2 === 0 ? BODY_COLOR : BELLY_COLOR, this.head.alpha).fillCircle(s.x, s.y, r);
+      g.fillStyle(i % 2 === 0 ? body : belly, this.head.alpha).fillCircle(s.x, s.y, r);
     }
+    if (this.skin) this.drawHangingBody(this.skin.sprite);
+  }
+
+  /** El sprite corta el cuerpo arriba: se prolonga hacia arriba hasta salir de cámara (lo tapa el follaje si hay). */
+  private drawHangingBody(sprite: Phaser.GameObjects.Sprite): void {
+    const look = GAMEPLAY.sprites.monai;
+    const top = sprite.getTopCenter();
+    const camTop = this.scene.cameras.main.worldView.top - TILE;
+    if (top.y === undefined || top.x === undefined || top.y <= camTop) return;
+    // El cuello sale del centro del borde superior del frame (ver monai.png).
+    const x = sprite.x + (0.5 - sprite.originX) * sprite.displayWidth;
+    this.bodyGfx
+      .fillStyle(look.columnColor, this.head.alpha)
+      .fillRect(x - look.columnWidth / 2, camTop, look.columnWidth, top.y - camTop + 1);
   }
 
   protected resetVisuals(): void {

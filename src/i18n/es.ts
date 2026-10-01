@@ -144,6 +144,7 @@ export const es = {
   'boss.monai.epithet': 'Señor de los campos abiertos y del aire',
   'boss.jasy_jatere.name': 'Jasy Jatere',
   'boss.jasy_jatere.epithet': 'Señor de la siesta',
+  'boss.jasy_jatere.surprise': '¡!',
   'boss.kurupi.name': 'Kurupi',
   'boss.kurupi.epithet': 'Señor de la selva y sus animales',
   'boss.ao_ao.name': 'Ao Ao',

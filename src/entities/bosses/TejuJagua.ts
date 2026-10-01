@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { TEJU_JAGUA_COLORS, TEJU_JAGUA_HEADS, TEJU_JAGUA_HITS_PER_HEAD, getBossDef } from '../../data/bosses';
+import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 
@@ -102,12 +103,14 @@ export class TejuJagua extends Boss {
       })
       .setDepth(7);
 
-    const texture = scene.textures.exists(HEAD_SPRITE) ? HEAD_SPRITE : HEAD_PLACEHOLDER;
+    // La cabeza gris del sprite sirve para las siete: cada una se tiñe con su color (como el placeholder).
+    const texture = HEAD_PLACEHOLDER;
     for (let i = 0; i < TEJU_JAGUA_HEADS; i++) {
       const offset = i - (TEJU_JAGUA_HEADS - 1) / 2;
       const anchorX = this.bodyX + offset * 44;
       const anchorY = this.bodyY - 50 - (3 - Math.abs(offset)) * 10;
       const img = scene.add.image(anchorX, anchorY, texture).setDepth(-2);
+      skinIfAvailable(scene, img, HEAD_SPRITE, { origin: GAMEPLAY.sprites.tejuHead.origin });
       const eyes = scene.add.image(anchorX, anchorY, EYES_TEXTURE).setDepth(-1);
       const color = TEJU_JAGUA_COLORS[i % TEJU_JAGUA_COLORS.length];
       this.heads.push({

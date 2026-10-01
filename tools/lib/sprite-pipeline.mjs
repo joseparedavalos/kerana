@@ -49,6 +49,39 @@ export function removeBackground(img) {
   return 'magenta';
 }
 
+/** Cuánto más verde que rojo y azul tiene que ser un píxel del contorno para tratarlo como resto del Chroma key. */
+const GREEN_EDGE_MARGIN = 30;
+
+/**
+ * Borra el borde verde que deja el Chroma key: solo píxeles opacos del contorno (vecinos de un
+ * transparente) con el verde dominante. Repite `passes` veces (el borde puede tener más de un píxel).
+ * Modifica `img` y devuelve cuántos píxeles borró. Solo para hojas sin verde propio (Tau).
+ */
+export function removeGreenEdge(img, passes = 3) {
+  const { width: w, height: h, data: d } = img;
+  let removed = 0;
+  for (let p = 0; p < passes; p++) {
+    const kill = [];
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        if (d[i + 3] < ALPHA_SOLID) continue;
+        const g = d[i + 1];
+        if (g - d[i] < GREEN_EDGE_MARGIN || g - d[i + 2] < GREEN_EDGE_MARGIN) continue;
+        const edge =
+          x === 0 || y === 0 || x === w - 1 || y === h - 1 ||
+          d[i - 4 + 3] < ALPHA_SOLID || d[i + 4 + 3] < ALPHA_SOLID ||
+          d[i - w * 4 + 3] < ALPHA_SOLID || d[i + w * 4 + 3] < ALPHA_SOLID;
+        if (edge) kill.push(i);
+      }
+    }
+    if (kill.length === 0) break;
+    for (const i of kill) d[i + 3] = 0;
+    removed += kill.length;
+  }
+  return removed;
+}
+
 /** Celdas de la hoja (rectángulos en píxeles de origen), de izquierda a derecha y de arriba abajo. */
 export function sliceCells(img, cols, rows) {
   const cells = [];
@@ -209,7 +242,8 @@ export function processCharacter(name, sheets, config = {}) {
 
   for (const sheet of sheets) {
     const opts = config.sheets?.[sheet.anim] ?? {};
-    const bg = removeBackground(sheet.img);
+    let bg = removeBackground(sheet.img);
+    if (config.greenEdge) bg += ` · borde verde −${removeGreenEdge(sheet.img)}px`;
     const cells = sliceCells(sheet.img, sheet.cols, sheet.rows);
     const bounds = cells.map((c) => opaqueBounds(sheet.img, c));
     // Escala por hoja (no por frame): la altura del frame de pie (`ref`) pasa a `height`.

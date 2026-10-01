@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
 import { arcVelocity } from '../enemies/ThrowerMotor';
+import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { chainStepAt, chargeDir, farthestIndex, howlBlacksOut, type ChainStep } from './luisonLogic';
@@ -48,6 +49,8 @@ function ensureTexture(scene: Phaser.Scene): void {
 export class Luison extends Boss {
   private readonly body: Phaser.GameObjects.Image;
   private readonly eyes: Phaser.GameObjects.Rectangle;
+  /** Distancia de los ojos al centro, hacia adelante (el sprite tiene la cabeza más adelante que el placeholder). */
+  private readonly eyeForward: number;
   private readonly arm: Phaser.GameObjects.Rectangle;
   private readonly tauShadow: Phaser.GameObjects.Ellipse;
   private readonly dust: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -75,6 +78,7 @@ export class Luison extends Boss {
     scene.add.rectangle(this.tombX(), ctx.floorY - CFG.tombHeight + 5, 8, 2, 0x6e6e76).setDepth(1);
     this.tauShadow = ctx.glow(scene.add.ellipse(0, 0, CFG.width + CFG.tauShadowPadPx * 2, CFG.height * 2, TAU_COLOR, 1).setDepth(4).setVisible(false));
     this.body = scene.add.image(0, ctx.floorY, TEXTURE).setOrigin(0.5, 1).setDepth(5);
+    this.eyeForward = skinIfAvailable(scene, this.body, 'luison', { sourceFacesRight: true }) ? GAMEPLAY.sprites.luison.eyeForward : 8;
     this.arm = scene.add.rectangle(0, 0, 12, 3, 0x4a4252).setOrigin(0, 0.5).setDepth(6).setVisible(false);
     this.eyes = ctx.glow(scene.add.rectangle(0, 0, 6, 2, CFG.eyeColor).setDepth(7));
     for (let i = 0; i < CLOD_POOL; i++) {
@@ -397,7 +401,7 @@ export class Luison extends Boss {
     this.updateClods(deltaMs);
     this.body.setFlipX(this.facing < 0);
     const s = this.body.scaleX;
-    this.eyes.setPosition(this.body.x + this.facing * 8 * s, this.body.y - (CFG.height - 5) * s);
+    this.eyes.setPosition(this.body.x + this.facing * this.eyeForward * s, this.body.y - (CFG.height - 5) * s);
     this.arm.setPosition(this.body.x + this.facing * 4 * s, this.body.y - (CFG.height - 12) * s);
     if (this.tauShadow.visible) {
       // La sombra se mece detrás, como quien mueve un títere.

@@ -28,6 +28,20 @@ export const ANIMS_SUFFIX = '_anims';
 export const BACKGROUND_PREFIX = 'bg_';
 export const backgroundPath = (key: string): string => `backgrounds/${key.slice(BACKGROUND_PREFIX.length)}.jpg`;
 
+/** Sprites de los jefes y de Mainumby (`npm run sprites`): clave → frame en píxeles de textura (ver raw/<id>/sprite.json). */
+export const CHARACTER_SPRITES: Record<string, [number, number]> = {
+  teju_jagua_head: [56, 48],
+  mboi_tui: [128, 96],
+  monai: [72, 128],
+  jasy_jatere: [64, 72],
+  kurupi: [64, 96],
+  ao_ao: [128, 64],
+  luison: [104, 72],
+  tau_disguise: [64, 68],
+  tau_true: [88, 80],
+  mainumby: [40, 28],
+};
+
 export const tilesetKey = (biome: string): string => `tiles_${biome}`;
 
 export const MANIFEST: AssetEntry[] = [
@@ -53,6 +67,10 @@ export const MANIFEST: AssetEntry[] = [
   // Sprites del pipeline: PNG en grilla de frames iguales + JSON con las animaciones.
   { type: 'spritesheet', key: PLAYER_KEY, path: 'sprites/kerana.png', frameWidth: PLAYER_FRAME, frameHeight: PLAYER_FRAME, frames: 1 },
   { type: 'json', key: PLAYER_KEY + ANIMS_SUFFIX, path: 'sprites/kerana.json' },
+  ...Object.entries(CHARACTER_SPRITES).flatMap(([key, [frameWidth, frameHeight]]): AssetEntry[] => [
+    { type: 'spritesheet', key, path: `sprites/${key}.png`, frameWidth, frameHeight, frames: 1 },
+    { type: 'json', key: key + ANIMS_SUFFIX, path: `sprites/${key}.json` },
+  ]),
 
   // Interfaz y props: por ahora sin arte, PreloadScene genera placeholders.
   { type: 'image', key: 'heart_full', path: 'ui/heart_full.png', width: 12, height: 12 },

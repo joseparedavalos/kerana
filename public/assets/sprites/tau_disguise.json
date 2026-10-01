@@ -1,0 +1,25 @@
+{
+  "key": "tau_disguise",
+  "frameWidth": 64,
+  "frameHeight": 68,
+  "frames": 10,
+  "detail": 2,
+  "anims": {
+    "tau_disguise_idle": {
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "frameRate": 8,
+      "repeat": -1
+    }
+  }
+}
