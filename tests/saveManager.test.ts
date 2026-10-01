@@ -63,6 +63,16 @@ describe('SaveManager', () => {
     expect(save.freed).toEqual([]);
   });
 
+  it('startNewGame conserva los ajustes (idioma, volumen, modo asistido…)', () => {
+    SaveManager.startNewGame();
+    SaveManager.updateSettings({ lang: 'en', music: 0.3, assist: true, textSpeed: 3 });
+    SaveManager.completeLevel(LEVEL_1);
+    const fresh = SaveManager.startNewGame();
+    expect(fresh.unlockedLevel).toBe(1);
+    expect(fresh.settings).toMatchObject({ lang: 'en', music: 0.3, assist: true, textSpeed: 3 });
+    expect(SaveManager.load().settings.lang).toBe('en');
+  });
+
   it('completeLevel desbloquea el siguiente nivel, libera al jefe y guarda el don', () => {
     SaveManager.startNewGame();
     SaveManager.completeLevel(LEVEL_1);

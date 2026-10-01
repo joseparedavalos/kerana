@@ -1,13 +1,16 @@
+import { SaveManager } from '../systems/SaveManager';
+import { en } from './en';
 import { es } from './es';
 
 type Vars = Record<string, string | number>;
 
 const warned = new Set<string>();
 
-// Traduce una clave; si falta, devuelve ⟦clave⟧ y avisa en desarrollo.
+// Traduce una clave al idioma de los ajustes; si falta en inglés, cae al español; si falta en los dos, ⟦clave⟧.
 export function t(key: string, vars?: Vars): string {
-  const table: Record<string, string> = es;
-  const raw = table[key];
+  const base: Record<string, string> = es;
+  const table: Record<string, string> = SaveManager.current.settings.lang === 'en' ? en : es;
+  const raw = table[key] ?? base[key];
   if (raw === undefined) {
     if (import.meta.env.DEV && !warned.has(key)) {
       warned.add(key);
