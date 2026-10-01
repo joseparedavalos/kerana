@@ -167,10 +167,8 @@ async function main() {
     await sleep(500);
     const l2x = await l2Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
     check(l2x > 220 * TILE && l2x < 240 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
-    // Camina hasta que se cierre la arena (islote A), sin llegar al agua: con tiempo fijo fallaba en máquinas lentas.
-    await l2Page.keyboard.down('ArrowRight');
-    for (let i = 0; i < 30 && !(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)); i++) await sleep(100);
-    await l2Page.keyboard.up('ArrowRight');
+    // Camina hasta que se cierre la arena (islote A): se detiene en cuanto se cierra (tope 15 s, para máquinas lentas).
+    await walkIntoArena(l2Page);
     check(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), "nivel 2: la arena de Mbói Tu'i se cierra");
     await sleep(6000);
     await l2Page.screenshot({ path: join(SHOTS, 'boss-l2.png') });
@@ -382,11 +380,13 @@ async function main() {
     const cows = await cowPage.evaluate(() => window.__KERANA_DEBUG__.scene.cows.length);
     check(cows === 3, `nivel 4: vacas sueltas (${cows})`);
     // Mantener hasta que el tajo esté cargado (en máquinas lentas el tiempo de juego va más lento que el real).
+    // Espera por estado (carga completa, tope 10 s) en vez de un tiempo fijo.
     await cowPage.keyboard.down('KeyX');
-    await sleep(1500);
+    for (let t = 0; t < 10000 && (await cowPage.evaluate(() => window.__KERANA_DEBUG__.player.motor.chargeFraction)) < 1; t += 50) await sleep(50);
+    await sleep(100);
     await cowPage.keyboard.up('KeyX');
     let wave = false;
-    for (let t = 0; t < 600 && !wave; t += 30) {
+    for (let t = 0; t < 3000 && !wave; t += 30) {
       wave = await cowPage.evaluate(() => window.__KERANA_DEBUG__.scene.lightWave.active);
       if (!wave) await sleep(30);
     }
