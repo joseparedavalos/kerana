@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
+import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { callPlan, pickRealSlot, runDirection, runTargetX, toeSide, type CallPlan } from './kurupiLogic';
@@ -89,9 +90,11 @@ export class Kurupi extends Boss {
     }
     for (let i = 0; i < 2; i++) {
       const image = scene.add.image(0, ctx.floorY, BODY_TEXTURE).setOrigin(0.5, 1).setDepth(5).setVisible(false);
+      skinIfAvailable(scene, image, 'kurupi', { sourceFacesRight: true });
       this.copies.push({ image, alive: false, facing: -1 });
     }
     this.body = scene.add.image(0, ctx.floorY, BODY_TEXTURE).setOrigin(0.5, 1).setDepth(5);
+    skinIfAvailable(scene, this.body, 'kurupi', { sourceFacesRight: true });
     for (let i = 0; i < WAVE_POOL; i++) {
       const rect = scene.add.rectangle(0, ctx.floorY, CFG.waveWidth, CFG.waveHeight, WAVE_COLOR).setOrigin(0.5, 1).setDepth(6).setVisible(false);
       this.waves.push({ rect, vx: 0, lifeMs: 0 });

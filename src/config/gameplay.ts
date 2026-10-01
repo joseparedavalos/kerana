@@ -678,6 +678,21 @@ export const GAMEPLAY = {
     /** Profundidad: detrás de todo el nivel. */
     depth: -20,
   },
+
+  /**
+   * Sprites de los jefes y de Mainumby (S13b). `origin`: punto del frame (fracciones) que coincide con la
+   * posición del placeholder; `offset` en unidades (mirando a la izquierda). La hitbox no cambia.
+   */
+  sprites: {
+    tejuHead: { origin: [0.48, 0.62] },
+    mboiTui: { origin: [0.31, 0.33] },
+    monai: { origin: [0.39, 0.86], bodyColor: 0x55702a, bellyColor: 0x7a9a3a, columnWidth: 6, columnColor: 0x4f6a26 },
+    jasyJatere: { staffColumns: [0, 0.3], surpriseOffsetY: 10 },
+    aoAo: { idleTimeScale: 0.35 },
+    luison: { eyeForward: 15 },
+    tauTrue: { origin: [0.49, 0.54] },
+    mainumby: { bobAmplitude: 2, bobMs: 900, glowColor: 0xffd76a, glowAlpha: 0.45, glowRadius: 7 },
+  },
 } as const;
 
 export type GameplayConfig = typeof GAMEPLAY;

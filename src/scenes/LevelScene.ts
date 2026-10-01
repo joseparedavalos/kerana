@@ -38,6 +38,7 @@ import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
+import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
 
 type RespawnReason = 'pit' | 'water' | 'hazard';
@@ -118,7 +119,11 @@ export class LevelScene extends Phaser.Scene {
   private debugText?: Phaser.GameObjects.Text;
   private levelExitZone?: Phaser.Geom.Rectangle;
   private dialogueBox!: DialogueBox;
-  private mainumby?: Phaser.GameObjects.Image;
+  private mainumby?: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
+  /** Brillo dorado detrás de Mainumby (solo con el sprite real). */
+  private mainumbyGlow?: Phaser.GameObjects.Arc;
+  /** Posición de Mainumby sin el vaivén del vuelo. */
+  private readonly mainumbyPos = new Phaser.Math.Vector2();
   private completing = false;
   private breakables: Breakable[] = [];
   private fallingHazards: FallingHazard[] = [];
@@ -268,8 +273,18 @@ export class LevelScene extends Phaser.Scene {
     });
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
-    ensurePlaceholder(this, 'mainumby_placeholder', 8, 8);
-    this.mainumby = this.add.image(spawn.x, spawn.y - 40, 'mainumby_placeholder').setDepth(15);
+    this.mainumbyPos.set(spawn.x, spawn.y - 40);
+    if (hasSprite(this, 'mainumby')) {
+      // Sprite real (mira a la derecha), con un brillo dorado por código detrás.
+      const look = GAMEPLAY.sprites.mainumby;
+      this.mainumbyGlow = this.add.circle(spawn.x, spawn.y - 40, look.glowRadius, look.glowColor, look.glowAlpha).setDepth(14);
+      this.mainumby = this.add.sprite(spawn.x, spawn.y - 40, 'mainumby').play('mainumby_idle').setScale(1 / spriteDetail(this, 'mainumby')).setDepth(15);
+      this.darkness?.glow(this.mainumby);
+      this.darkness?.glow(this.mainumbyGlow);
+    } else {
+      ensurePlaceholder(this, 'mainumby_placeholder', 8, 8);
+      this.mainumby = this.add.image(spawn.x, spawn.y - 40, 'mainumby_placeholder').setDepth(15);
+    }
     this.hypnosisIcon = this.add.image(spawn.x, spawn.y, this.makeSpiralTexture()).setDepth(16).setVisible(false);
     this.sleepIcon = this.add
       .text(spawn.x, spawn.y, t('status.zzz'), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' })
@@ -412,8 +427,18 @@ export class LevelScene extends Phaser.Scene {
     if (!this.mainumby) return;
     const targetX = this.player.x - this.player.motor.facing * 14;
     const targetY = this.player.y - 44;
-    this.mainumby.x += (targetX - this.mainumby.x) * 0.08;
-    this.mainumby.y += (targetY - this.mainumby.y) * 0.08;
+    const pos = this.mainumbyPos;
+    pos.x += (targetX - pos.x) * 0.08;
+    pos.y += (targetY - pos.y) * 0.08;
+    if (!this.mainumbyGlow) {
+      this.mainumby.setPosition(pos.x, pos.y);
+      return;
+    }
+    // Flota suave y mira hacia donde mira Kerana.
+    const look = GAMEPLAY.sprites.mainumby;
+    const bob = Math.sin((this.time.now / look.bobMs) * Math.PI * 2) * look.bobAmplitude;
+    this.mainumby.setPosition(pos.x, pos.y + bob).setFlipX(this.player.motor.facing < 0);
+    this.mainumbyGlow.setPosition(pos.x, pos.y + bob);
   }
 
   // ── Jefe (GDD §6.0, §11.5) ────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
+import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { chargeTarget, cubsForPhase, nearestIndex, type ChargeResult } from './aoAoLogic';
@@ -74,6 +75,12 @@ export class AoAo extends Boss {
     super(scene, getBossDef('ao_ao'), ctx);
     ensureTextures(scene);
     this.body = scene.add.image(0, ctx.floorY, RUN_TEXTURE).setOrigin(0.5, 1).setDepth(5);
+    // Solo hay hoja de carrera: sirve para todos los estados, más lenta cuando está quieto.
+    skinIfAvailable(scene, this.body, 'ao_ao', {
+      anim: 'ao_ao_run',
+      sourceFacesRight: true,
+      idleTimeScale: GAMEPLAY.sprites.aoAo.idleTimeScale,
+    });
     this.claw = scene.add.rectangle(0, 0, CFG.clawReachPx, 6, CLAW_COLOR, 0.8).setDepth(6).setVisible(false);
     for (let i = 0; i < STARS; i++) this.stars.push(scene.add.circle(0, 0, 2, STAR_COLOR).setDepth(7).setVisible(false));
     this.dust = scene.add.particles(0, 0, 'fx_particle', {

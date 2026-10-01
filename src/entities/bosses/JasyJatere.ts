@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
+import { FONT_FAMILY } from '../../config/fonts';
+import { t } from '../../i18n';
+import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { lethalClamp, Reveal, StaffRace } from './jasyLogic';
@@ -80,6 +83,10 @@ export class JasyJatere extends Boss {
   private staffFlashMs = 0;
   /** El bastón está suelto (carrera). */
   private staffLoose = false;
+  /** Hay sprite real: el bastón en la mano lo dibuja el sprite. */
+  private readonly skinned: boolean;
+  /** "¡!" sobre él cuando se le escapa el bastón. */
+  private readonly surprise: Phaser.GameObjects.Text;
   private whistleMs = 0;
   private noteMs = 0;
   private lastPrintX = 0;
@@ -93,6 +100,16 @@ export class JasyJatere extends Boss {
     }
     this.body = scene.add.image(0, 0, BODY_TEXTURE).setOrigin(0.5, 1).setDepth(5);
     this.staff = scene.add.image(0, 0, STAFF_TEXTURE).setDepth(6);
+    // Sprite real (siempre con bastón): el de la mano se recorta cuando el bastón de código se ve aparte.
+    const look = GAMEPLAY.sprites.jasyJatere;
+    this.skinned = !!skinIfAvailable(scene, this.body, 'jasy_jatere', {
+      hideColumns: () => (this.staffLoose || this.staffRaised || this.staffFlashMs > 0 ? look.staffColumns : null),
+    });
+    this.surprise = scene.add
+      .text(0, 0, t('boss.jasy_jatere.surprise'), { fontFamily: FONT_FAMILY, fontSize: '12px', color: '#ffffff', stroke: '#1b1a2e', strokeThickness: 3, resolution: 2 })
+      .setOrigin(0.5, 1)
+      .setDepth(8)
+      .setVisible(false);
     for (let i = 0; i < SPARK_POOL; i++) {
       const arc = scene.add.circle(0, 0, CFG.sparkRadius, SPARK_COLOR).setDepth(7).setVisible(false);
       this.sparks.push({ arc, vx: 0, vy: 0, lifeMs: 0 });
@@ -328,7 +345,7 @@ export class JasyJatere extends Boss {
     this.body.setFlipX(this.facing > 0);
     if (!this.staffLoose) {
       const lift = this.staffRaised ? 14 : 0;
-      this.staff.setPosition(this.body.x + this.facing * 7, this.body.y - CFG.height / 2 - lift).setAngle(this.staffRaised ? this.facing * 20 : 0);
+      this.staff.setPosition(this.body.x + this.facing * (this.skinned ? 10 : 7), this.body.y - CFG.height / 2 - lift).setAngle(this.staffRaised ? this.facing * 20 : 0);
     } else {
       this.staff.angle += deltaMs * 0.9;
     }
@@ -339,8 +356,12 @@ export class JasyJatere extends Boss {
       this.staff.setAlpha(1).setTint(on ? 0xffffff : SPARK_COLOR).setTintMode(Phaser.TintModes.FILL);
     } else {
       this.staff.setTintMode(Phaser.TintModes.MULTIPLY).clearTint();
-      this.staff.setAlpha(this.staffLoose || this.staffRaised ? 1 : this.body.alpha);
+      const held = this.skinned ? 0 : this.body.alpha;
+      this.staff.setAlpha(this.staffLoose || this.staffRaised ? 1 : held);
     }
+    const surprised = this.skinned && this.staffLoose && this.brain.state !== 'defeated';
+    this.surprise.setVisible(surprised);
+    if (surprised) this.surprise.setPosition(this.body.x, this.body.y - CFG.height - GAMEPLAY.sprites.jasyJatere.surpriseOffsetY);
     if (invisible && this.brain.state !== 'waiting') this.updateClues(deltaMs);
   }
 

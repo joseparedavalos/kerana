@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
+import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 
@@ -71,6 +72,8 @@ export class MboiTui extends Boss {
   private coiled = false;
   private bubbleMs = 0;
   private flowerMs = 0;
+  /** Hay sprite real (sin cuello ni cresta por código). */
+  private readonly skinned: boolean;
 
   constructor(scene: Phaser.Scene, ctx: BossContext) {
     super(scene, getBossDef('mboi_tui'), ctx);
@@ -83,6 +86,11 @@ export class MboiTui extends Boss {
     this.neck = scene.add.graphics().setDepth(4);
     this.head = scene.add.image(0, 0, HEAD_TEXTURE).setDepth(5);
     this.crest = scene.add.triangle(0, 0, 0, 10, 5, 0, 10, 10, CREST_COLOR).setDepth(4);
+    // Sprite real: cabeza y cuerpo enroscado; el agua tapa la parte de abajo (cuello y cresta, solo en el placeholder).
+    this.skinned = !!skinIfAvailable(scene, this.head, 'mboi_tui', {
+      origin: GAMEPLAY.sprites.mboiTui.origin,
+      clipBelowY: () => ctx.floorY,
+    });
     this.bubbles = scene.add
       .particles(0, 0, 'fx_particle', {
         speedY: { min: -40, max: -15 },
@@ -387,7 +395,7 @@ export class MboiTui extends Boss {
     const dir = this.head.flipX ? -1 : 1;
     this.crest.setPosition(this.head.x + dir * 8, this.head.y - CFG.headHeight / 2 - 3).setAlpha(this.head.alpha);
     this.neck.clear();
-    if (this.head.alpha > 0) {
+    if (this.head.alpha > 0 && !this.skinned) {
       this.neck.lineStyle(CFG.neckWidth * this.neckScale, NECK_COLOR, this.head.alpha);
       this.neck.lineBetween(this.baseX, this.baseY, this.head.x + dir * (CFG.headWidth / 2 - 4), this.head.y + 2);
     }
@@ -461,7 +469,7 @@ export class MboiTui extends Boss {
 
   /** Pico abierto y plumas erizadas (aviso del graznido). */
   private bristle(on: boolean): void {
-    this.crest.setVisible(on);
+    this.crest.setVisible(on && !this.skinned);
     this.head.setScale(on ? 1.15 : 1);
   }
 

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
+import { skinIfAvailable, type SpriteSkin } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { echoOf, echoRockXs, farSide, formForPhase, pickLitStar, smokeHurts, type TauForm } from './tauLogic';
@@ -45,6 +46,8 @@ export class Tau extends Boss {
   private readonly body: Phaser.GameObjects.Image;
   private readonly core: Phaser.GameObjects.Ellipse;
   private readonly eyes: Phaser.GameObjects.Rectangle[];
+  /** Forma real con sprite (humo violeta con ojos rojos): reemplaza al óvalo y a los ojos de código. */
+  private readonly trueSkin?: SpriteSkin;
   private readonly smokeFx: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly stars: Phaser.GameObjects.Star[] = [];
   private readonly starCenters: number[] = [];
@@ -94,6 +97,14 @@ export class Tau extends Boss {
     this.core = scene.add.ellipse(0, 0, CFG.trueWidth, CFG.trueHeight, CFG.smokeColor, 0.85).setDepth(5).setVisible(false);
     this.body = scene.add.image(0, ctx.floorY, DISGUISE_TEXTURE).setOrigin(0.5, 1).setDepth(5);
     this.eyes = [0, 1].map(() => scene.add.rectangle(0, 0, 4, 2, CFG.eyeColor).setDepth(8).setVisible(false));
+    // Sprites reales: disfraz en las fases 1 y 2, forma real en la 3. Notas, rayos y humo siguen por código.
+    skinIfAvailable(scene, this.body, 'tau_disguise', { sourceFacesRight: true });
+    this.trueSkin = skinIfAvailable(scene, this.core, 'tau_true', { origin: GAMEPLAY.sprites.tauTrue.origin });
+    if (this.trueSkin) {
+      // Los ojos ya vienen en el sprite: los de código se siguen moviendo, pero no se dibujan.
+      for (const eye of this.eyes) eye.removeFromDisplayList();
+      scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.eyes.forEach((eye) => eye.destroy()));
+    }
     this.ring = scene.add.circle(0, 0, 10).setStrokeStyle(3, CFG.noteColor).setDepth(6).setVisible(false);
     for (let i = 0; i < SHOT_POOL; i++) {
       this.shots.push({ arc: scene.add.circle(0, 0, CFG.noteRadius, CFG.noteColor).setDepth(8).setVisible(false), vx: 0, vy: 0, active: false });
@@ -550,6 +561,10 @@ export class Tau extends Boss {
       return;
     }
     this.core.setFillStyle(0xffffff, 0.9);
-    this.scene.time.delayedCall(GAMEPLAY.boss.hitFlashMs, () => this.core.setFillStyle(CFG.smokeColor, 0.85));
+    this.trueSkin?.sprite.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
+    this.scene.time.delayedCall(GAMEPLAY.boss.hitFlashMs, () => {
+      this.core.setFillStyle(CFG.smokeColor, 0.85);
+      this.trueSkin?.sprite.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    });
   }
 }
