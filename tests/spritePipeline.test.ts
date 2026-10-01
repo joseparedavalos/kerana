@@ -7,6 +7,7 @@ import {
   parseSheetName,
   processCharacter,
   removeBackground,
+  removeGreenEdge,
   resizeImage,
 } from '../tools/lib/sprite-pipeline.mjs';
 
@@ -119,5 +120,17 @@ describe('sprite pipeline', () => {
     const portrait = coverImage(img, 96, 96);
     expect(portrait.width).toBe(96);
     expect(portrait.height).toBe(96);
+  });
+
+  it('quita el borde verde del contorno, pero no el verde del interior', () => {
+    const img = createImage(10, 10) as Img;
+    fillRect(img, 2, 2, 6, 6, [30, 200, 30, 255]); // borde verde (1 px) …
+    fillRect(img, 3, 3, 4, 4, [120, 60, 160, 255]); // … alrededor de un cuerpo violeta
+    fillRect(img, 4, 4, 2, 2, [30, 200, 30, 255]); // verde de verdad, adentro
+    const removed = removeGreenEdge(img);
+    expect(removed).toBe(20);
+    expect(img.data[(2 * 10 + 2) * 4 + 3]).toBe(0);
+    expect(img.data[(3 * 10 + 3) * 4 + 3]).toBe(255);
+    expect(img.data[(4 * 10 + 4) * 4 + 3]).toBe(255);
   });
 });
