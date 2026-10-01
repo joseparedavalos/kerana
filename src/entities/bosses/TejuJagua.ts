@@ -37,13 +37,14 @@ function ensureTextures(scene: Phaser.Scene): void {
   const h = CFG.headHeight;
   if (!scene.textures.exists(HEAD_PLACEHOLDER)) {
     // Cabeza de perro de perfil mirando a la izquierda, en gris claro para teñirla.
+    // Dibujada a 30 × 18 y escalada a la medida de la hitbox.
+    const k = w / 30;
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0xe6e6e6).fillRoundedRect(8, 0, w - 8, h - 4, 4);
-    g.fillStyle(0xd0d0d0).fillRect(0, 5, 12, 8);
-    g.fillStyle(0xb0b0b0).fillRect(0, 11, 14, 3);
-    g.fillStyle(0xffffff).fillTriangle(2, 13, 5, 13, 3, 16);
-    g.fillStyle(0xffffff).fillTriangle(8, 13, 11, 13, 9, 16);
-    g.fillStyle(0xc8c8c8).fillTriangle(w - 8, 0, w - 2, 0, w - 4, -4);
+    g.fillStyle(0xe6e6e6).fillRoundedRect(8 * k, 0, w - 8 * k, h - 4 * k, 4 * k);
+    g.fillStyle(0xd0d0d0).fillRect(0, 5 * k, 12 * k, 8 * k);
+    g.fillStyle(0xb0b0b0).fillRect(0, 11 * k, 14 * k, 3 * k);
+    g.fillStyle(0xffffff).fillTriangle(2 * k, 13 * k, 5 * k, 13 * k, 3 * k, 16 * k);
+    g.fillStyle(0xffffff).fillTriangle(8 * k, 13 * k, 11 * k, 13 * k, 9 * k, 16 * k);
     g.generateTexture(HEAD_PLACEHOLDER, w, h);
     g.destroy();
   }
@@ -107,11 +108,11 @@ export class TejuJagua extends Boss {
     const texture = HEAD_PLACEHOLDER;
     for (let i = 0; i < TEJU_JAGUA_HEADS; i++) {
       const offset = i - (TEJU_JAGUA_HEADS - 1) / 2;
-      const anchorX = this.bodyX + offset * 44;
-      const anchorY = this.bodyY - 50 - (3 - Math.abs(offset)) * 10;
+      const anchorX = this.bodyX + offset * CFG.fanSpacing;
+      const anchorY = this.bodyY - 50 - (3 - Math.abs(offset)) * CFG.fanRise;
       const img = scene.add.image(anchorX, anchorY, texture).setDepth(-2);
       skinIfAvailable(scene, img, HEAD_SPRITE, { origin: GAMEPLAY.sprites.tejuHead.origin });
-      const eyes = scene.add.image(anchorX, anchorY, EYES_TEXTURE).setDepth(-1);
+      const eyes = scene.add.image(anchorX, anchorY, EYES_TEXTURE).setDepth(-1).setScale(CFG.eyeScale);
       const color = TEJU_JAGUA_COLORS[i % TEJU_JAGUA_COLORS.length];
       this.heads.push({
         index: i,
@@ -125,7 +126,7 @@ export class TejuJagua extends Boss {
         exposed: false,
         anchorX,
         anchorY,
-        neckX: this.bodyX + offset * 24,
+        neckX: this.bodyX + offset * CFG.neckSpacing,
         neckY: this.bodyY - 30,
       });
     }
@@ -380,11 +381,11 @@ export class TejuJagua extends Boss {
     this.necks.clear();
     for (const head of this.heads) {
       const dir = head.img.flipX ? 1 : -1;
-      head.eyes.setPosition(head.img.x + dir * 4, head.img.y - 3);
+      head.eyes.setPosition(head.img.x + dir * CFG.eyeOffsetX, head.img.y + CFG.eyeOffsetY);
       head.eyes.setAlpha(head.img.alpha > 0 ? 1 : 0);
       if (head.img.alpha <= 0) continue;
       this.necks.lineStyle(CFG.neckWidth, head.asleep ? SLEEP_TINT : head.neckColor, head.img.alpha);
-      this.necks.lineBetween(head.neckX, head.neckY, head.img.x - dir * (CFG.headWidth / 2 - 2), head.img.y);
+      this.necks.lineBetween(head.neckX, head.neckY, head.img.x - dir * CFG.neckAttachX, head.img.y);
     }
   }
 
@@ -406,7 +407,7 @@ export class TejuJagua extends Boss {
       head.harmful = false;
       head.exposed = false;
       head.img.setPosition(head.anchorX, head.anchorY).setAlpha(0).setFlipX(false).setTint(head.color);
-      head.eyes.setVisible(false).setScale(1);
+      head.eyes.setVisible(false).setScale(CFG.eyeScale);
     }
   }
 
@@ -423,8 +424,8 @@ export class TejuJagua extends Boss {
 
   private glowEyes(head: Head, on: boolean): void {
     this.scene.tweens.killTweensOf(head.eyes);
-    head.eyes.setScale(1);
-    if (on) this.scene.tweens.add({ targets: head.eyes, scale: 2, duration: 160, yoyo: true, repeat: -1 });
+    head.eyes.setScale(CFG.eyeScale);
+    if (on) this.scene.tweens.add({ targets: head.eyes, scale: CFG.eyeScale * 2, duration: 160, yoyo: true, repeat: -1 });
   }
 
   private flash(head: Head): void {

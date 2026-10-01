@@ -134,9 +134,20 @@ export const GAMEPLAY = {
   tejuJagua: {
     /** Presentación: un par de ojos cada tantos ms. */
     introEyeMs: 260,
-    headWidth: 30,
-    headHeight: 18,
-    neckWidth: 7,
+    /** Cabeza (hitbox y placeholder, en unidades). S12d: el doble que antes (30 × 18). */
+    headWidth: 60,
+    headHeight: 36,
+    neckWidth: 14,
+    /** Abanico de cabezas en reposo: separación horizontal, subida hacia el centro y separación de los cuellos en el cuerpo. */
+    fanSpacing: 72,
+    fanRise: 12,
+    neckSpacing: 36,
+    /** Dónde se engancha el cuello: unidades detrás del centro de la cabeza (el dibujo es más angosto que la hitbox). */
+    neckAttachX: 10,
+    /** Ojos que brillan: posición respecto del centro de la cabeza (hacia el hocico) y escala. */
+    eyeOffsetX: 8,
+    eyeOffsetY: -6,
+    eyeScale: 2,
     /** Distancia que recorre la mordida (fracción del ancho de la arena). */
     biteReach: 0.62,
     /** Velocidad del coletazo por el suelo (px/s) y tamaño de la onda. */
@@ -147,7 +158,7 @@ export const GAMEPLAY = {
     stalactitesMin: 3,
     stalactitesMax: 4,
     /** Altura (px sobre el suelo) de las cabezas vulnerables tras el fuego. */
-    fireRecoverHeadHeight: 26,
+    fireRecoverHeadHeight: 36,
   },
 
   /** Mbói Tu'i (GDD §6.2). Los tiempos de cada ataque están en src/data/bosses.ts. */
@@ -691,7 +702,25 @@ export const GAMEPLAY = {
     aoAo: { idleTimeScale: 0.35 },
     luison: { eyeForward: 15 },
     tauTrue: { origin: [0.49, 0.54] },
-    mainumby: { bobAmplitude: 2, bobMs: 900, glowColor: 0xffd76a, glowAlpha: 0.45, glowRadius: 7 },
+    /**
+     * Mainumby (S12d): vaivén vertical, aleteo por código y leve inclinación hacia donde se mueve.
+     * `flapMode` 'frames' alterna `flapFrames` a `flapFps`; 'squash' aplasta en vertical hasta `squashY`.
+     * Inclinación: grados por unidad/s de velocidad horizontal, con tope `tiltMaxDeg` y suavizado `tiltLerp`.
+     */
+    mainumby: {
+      bobAmplitude: 3.5,
+      bobMs: 900,
+      glowColor: 0xffd76a,
+      glowAlpha: 0.45,
+      glowRadius: 7,
+      flapMode: 'frames' as 'frames' | 'squash',
+      flapFps: 12,
+      flapFrames: [1, 3],
+      squashY: 0.82,
+      tiltPerSpeed: 0.12,
+      tiltMaxDeg: 14,
+      tiltLerp: 0.15,
+    },
   },
 } as const;
 
