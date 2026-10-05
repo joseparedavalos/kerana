@@ -1,19 +1,27 @@
 // Pipeline de sprites raw/ → public/assets/sprites/ (docs/ASSETS.md §2).
 // raw/<id>/<anim>_<C>x<R>.png → sprites/<id>.png + .json; raw/<id>/<parte>/ → sprites/<id>_<parte>.*
 // raw/portraits/*.png → portraits/ (96 × 96). Los fondos (raw/backgrounds) los procesa `npm run backgrounds`.
+// raw/props/*.png → props/ y raw/hud/*.png|jpg → ui/ (props e íconos de la interfaz; tamaños en raw/<carpeta>/sprite.json).
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import jpeg from 'jpeg-js';
 import { PNG } from 'pngjs';
-import { coverImage, parseSheetName, processCharacter, resizeImage } from './lib/sprite-pipeline.mjs';
+import { coverImage, parseSheetName, processCharacter, processIcon } from './lib/sprite-pipeline.mjs';
 
 const RAW = 'raw';
 const OUT = 'public/assets';
 const PORTRAIT_SIZE = 96;
-const SPECIAL = new Set(['backgrounds', 'portraits']);
+/** Carpetas de props e íconos → carpeta de salida en public/assets. */
+const ICON_FOLDERS = { props: 'props', hud: 'ui' };
+const SPECIAL = new Set(['backgrounds', 'portraits', ...Object.keys(ICON_FOLDERS)]);
 
 const readPng = (file) => {
   const png = PNG.sync.read(readFileSync(file));
   return { width: png.width, height: png.height, data: new Uint8Array(png.data.buffer, png.data.byteOffset, png.data.length) };
+};
+const readJpg = (file) => {
+  const img = jpeg.decode(readFileSync(file), { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 256 });
+  return { width: img.width, height: img.height, data: new Uint8Array(img.data.buffer, img.data.byteOffset, img.data.length) };
 };
 const writePng = (file, img) => {
   const png = new PNG({ width: img.width, height: img.height });
@@ -50,6 +58,27 @@ function processImages(sub, fn, label) {
   }
 }
 
+/** Props e íconos: un PNG por imagen, recortado al dibujo y escalado a `size[nombre]` (unidades) × `detail`. */
+function processIcons(sub, outSub) {
+  const dir = join(RAW, sub);
+  if (!existsSync(dir)) return;
+  const cfgPath = join(dir, 'sprite.json');
+  const config = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) : {};
+  mkdirSync(join(OUT, outSub), { recursive: true });
+  for (const file of readdirSync(dir).filter((f) => /\.(png|jpe?g)$/i.test(f))) {
+    const name = file.replace(/\.[^.]+$/, '');
+    const img = /\.png$/i.test(file) ? readPng(join(dir, file)) : readJpg(join(dir, file));
+    const opts = { ...config, size: config.size?.[name] ?? config.size?.default };
+    const result = processIcon(img, opts);
+    if (!result) {
+      console.log(`${sub}/${file}: vacío, se omite`);
+      continue;
+    }
+    writePng(join(OUT, outSub, `${name}.png`), result.image);
+    console.log(`${sub}/${file} → ${outSub}/${name}.png: ${result.image.width}×${result.image.height} (detail ${config.detail ?? 1}, fondo ${result.background})`);
+  }
+}
+
 if (!existsSync(RAW)) {
   console.log('No hay carpeta raw/: nada que procesar.');
   process.exit(0);
@@ -62,4 +91,5 @@ for (const id of readdirSync(RAW)) {
     if (isDir(join(dir, part))) processFolder(join(dir, part), `${id}_${part}`);
   }
 }
+for (const [sub, outSub] of Object.entries(ICON_FOLDERS)) processIcons(sub, outSub);
 processImages('portraits', (img) => coverImage(img, PORTRAIT_SIZE, PORTRAIT_SIZE), `${PORTRAIT_SIZE}×${PORTRAIT_SIZE}`);

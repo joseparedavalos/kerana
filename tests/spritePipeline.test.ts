@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   coverImage,
   createImage,
+  cropToContent,
   detectPixelSize,
   greenEdgePasses,
   opaqueBounds,
   parseSheetName,
   processCharacter,
+  processIcon,
   removeBackground,
+  removeColorEdge,
+  EDGE_COLORS,
   removeGreenEdge,
   resizeImage,
 } from '../tools/lib/sprite-pipeline.mjs';
@@ -191,5 +195,38 @@ describe('sprite pipeline', () => {
     });
     expect(summary[0]).toMatch(/ref 100px/);
     expect(img.data[(195 * 200 + 50) * 4 + 3]).toBe(0);
+  });
+
+  it('greenEdgeMargin más bajo toma los verdes oliva del contorno', () => {
+    const make = () => {
+      const img = createImage(10, 10) as Img;
+      fillRect(img, 2, 2, 6, 6, [60, 80, 20, 255]); // oliva: verde apenas sobre el rojo
+      fillRect(img, 3, 3, 4, 4, [200, 150, 90, 255]);
+      return img;
+    };
+    expect(removeGreenEdge(make())).toBe(0);
+    expect(removeGreenEdge(make(), 3, 12)).toBe(20);
+  });
+
+  it('quita el borde celeste de los props y el rosado de los JPG', () => {
+    const img = createImage(8, 8) as Img;
+    fillRect(img, 1, 1, 6, 6, [20, 60, 60, 255]); // contorno celeste oscuro
+    fillRect(img, 2, 2, 4, 4, [140, 90, 40, 255]); // madera
+    expect(removeColorEdge(img, 2, EDGE_COLORS.cyan)).toBe(20);
+    expect(EDGE_COLORS.magenta(200, 20, 150)).toBe(true);
+    expect(EDGE_COLORS.magenta(160, 5, 15)).toBe(false); // rojo oscuro del corazón
+  });
+
+  it('processIcon recorta al dibujo y escala a size × detail', () => {
+    const img = createImage(100, 100) as Img;
+    fillRect(img, 0, 0, 100, 100, [240, 5, 220, 255]); // magenta desparejo de un JPG
+    fillRect(img, 30, 20, 40, 60, [200, 30, 30, 255]);
+    const crop = cropToContent(createImage(4, 4) as Img);
+    expect(crop).toBeNull();
+    const out = processIcon(img, { size: { height: 12 }, detail: 2, tolerance: 140, edge: 'magenta', edgePasses: 2 });
+    expect(out?.image).toMatchObject({ width: 16, height: 24 });
+    expect(out?.background).toMatch(/magenta/);
+    const wide = processIcon(createImage(1, 1) as Img, { size: { width: 20 } });
+    expect(wide).toBeNull();
   });
 });
