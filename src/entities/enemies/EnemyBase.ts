@@ -1,10 +1,34 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
+import { ENEMY_SPRITES } from '../../assets/manifest';
 import type { EnemyDef } from '../../data/enemies';
 import { takesDamage } from '../../systems/lightLogic';
+import { skinIfAvailable, type SkinOptions, type SpriteSkin } from '../../systems/SpriteSkin';
 import { colorForKey } from '../../utils/placeholder';
 
 const FLASH_MS = 60;
+const TILE = 16;
+const LOOK = GAMEPLAY.sprites.enemies;
+/** Hojas posibles de un enemigo (una por enemigo); walk y run muestran el cuadro 0 si está quieto. */
+const SHEETS = ['walk', 'run', 'idle', 'hang'] as const;
+
+/** Encuadre del sprite según el enemigo (S13c): anclado arriba, recortado en el agua o en la rama, aleteo. */
+function skinOptions(enemy: EnemyBase, sheet: (typeof SHEETS)[number]): SkinOptions {
+  const def = enemy.def;
+  const opts: SkinOptions = { anim: `${def.id}_${sheet}`, sourceFacesRight: true, stillFrame: sheet === 'walk' || sheet === 'run' };
+  // Colgante (mbói en N5): el lazo de la cola en la rama y la cabeza abajo; lo de arriba de la rama no se ve.
+  if (def.hangs) return { ...opts, origin: [0.5, 0], offset: [0, -def.height], clipAboveY: () => enemy.spawnY - TILE };
+  // Jakare: lo que queda bajo la superficie del agua no se ve.
+  if (def.archetype === 'lurker') return { ...opts, clipBelowY: () => enemy.spawnY };
+  // Póra: la cabeza en la parte de arriba de la hitbox.
+  if (def.needsLight) return { ...opts, origin: [0.5, 0], offset: [0, -def.height] };
+  // Mbopi: aleteo por código (la hoja casi no mueve las alas), aplastando desde el centro.
+  if (def.id === 'mbopi') {
+    const flap = () => (Math.floor((enemy.scene.time.now / 1000) * LOOK.mbopiFlapFps) % 2 ? LOOK.mbopiSquashY : 1);
+    return { ...opts, origin: [0.5, 0.5], offset: [0, -def.height / 2], scaleY: flap };
+  }
+  return opts;
+}
 
 /** Textura placeholder por arquetipo: rectángulo de color con espiral violeta (marca de Tau). */
 function ensureEnemyTexture(scene: Phaser.Scene, def: EnemyDef): string {
@@ -61,6 +85,10 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
   lit = true;
   /** Partes que brillan con luz propia en la oscuridad (ojos del jagua hũ). */
   readonly glowParts: Phaser.GameObjects.GameObject[] = [];
+  /** Sprite real (S13c) sobre el placeholder, si existe la hoja. */
+  protected readonly skin?: SpriteSkin;
+  /** En aviso (antes de embestir, picar, lanzar o saltar): con sprite, tiembla. */
+  warning = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, ensureEnemyTexture(scene, def));
@@ -73,6 +101,10 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.body.setSize(def.width, def.height);
+    if (def.id in ENEMY_SPRITES) {
+      const sheet = SHEETS.find((a) => scene.anims.exists(`${def.id}_${a}`));
+      if (sheet) this.skin = skinIfAvailable(scene, this, def.id, skinOptions(this, sheet));
+    }
   }
 
   /** Tocarlo daña a Kerana (el enjambre, solo mientras persigue). */
@@ -126,9 +158,16 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
 
   override preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+    if (this.skin) {
+      const shaking = this.warning && !this.purified;
+      this.skin.shakeX = shaking ? Math.sin((time / 1000) * LOOK.warnShakeHz * Math.PI * 2) * LOOK.warnShakeAmplitude : 0;
+    }
     if (this.purified) return;
     this.setFlipX(this.facing < 0);
-    // El póra se ve apenas en la oscuridad y se vuelve sólido con la luz.
-    if (this.def.needsLight) this.setAlpha(this.lit ? 1 : GAMEPLAY.darkness.unlitPoraAlpha);
+    // El póra se ve apenas en la oscuridad y se vuelve sólido con la luz; con sprite, siempre algo translúcido.
+    if (this.def.needsLight) {
+      const own = this.skin ? LOOK.poraAlpha : 1;
+      this.setAlpha(own * (this.lit ? 1 : GAMEPLAY.darkness.unlitPoraAlpha));
+    }
   }
 }

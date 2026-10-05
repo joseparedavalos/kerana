@@ -69,12 +69,15 @@ Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el fram
   }
 }
 ```
-- `detail` (1 por defecto): píxeles de textura por unidad del mundo; se copia al `.json` de salida y el juego dibuja el sprite a escala 1/detail. `frame` y `height` van en píxeles de textura. **Regla:** Kerana y los jefes, `detail: 2` (el doble de detalle); enemigos chicos y tiles, `detail: 1`. Hitbox, ataque y efectos no cambian: se miden en unidades del mundo (`gameplay.ts`).
+- `detail` (1 por defecto): píxeles de textura por unidad del mundo; se copia al `.json` de salida y el juego dibuja el sprite a escala 1/detail. `frame` y `height` van en píxeles de textura. **Regla:** Kerana, los jefes y los enemigos, `detail: 2` (el doble de detalle); tiles, `detail: 1`. Hitbox, ataque y efectos no cambian: se miden en unidades del mundo (`gameplay.ts`).
 - `sheets.<hoja>.ref`: frame de pie que define la escala de esa hoja; `anchor`: `"waist"` (por defecto) o `"cell"`.
 - `frames: [desde, hasta]` usa solo parte de la hoja; `list: [..]` elige frames sueltos; `source` saca la animación de otra hoja; `skip: true` no la registra.
 - Kerana usa: `idle` (con `blink` ocasional), `run`, `jump` (sin la preparación agachada: salto inmediato), `fall`, `land` (breve, al aterrizar quieta), `attack` (≈ 280 ms) y `hurt`. El destello de daño, el parpadeo de invulnerabilidad y el brillo de carga se hacen por código (`src/entities/Player.ts`, valores en `GAMEPLAY.playerFx`).
-- `greenEdge: true` borra el borde verde que deja el Chroma key, solo en los píxeles del contorno (Tau). No lo uses en personajes verdes de verdad (Mainumby, Mbói Tu'i, Moñái, Kurupi, Jasy Jatere).
+- `greenEdge: true` borra el borde verde que deja el Chroma key, solo en los píxeles del contorno (Tau), en 3 pasadas; un número (`"greenEdge": 5`) da esas pasadas (borde más grueso). También va por hoja (`sheets.<hoja>.greenEdge`). No lo uses en personajes verdes de verdad (Mainumby, Mbói Tu'i, Moñái, Kurupi, Jasy Jatere, teju'i, mbói, mbói colgante, jakare).
+- `sheets.<hoja>.align`: `"top"` lleva lo más alto del dibujo a la primera fila del frame (en vez de los pies a la última; póra, mbói colgante); `"cell"` conserva la posición del dibujo dentro de su celda: todos los cuadros de la hoja usan la misma ancla, el centro de abajo de la unión de sus cajas (aleteo de Mainumby, que sube y baja en la hoja).
+- `sheets.<hoja>.cropBottom: n` borra las `n` filas de abajo de cada celda (píxeles de origen) antes de medir: quita una rama o un suelo dibujado bajo el personaje (ñakurutu).
 - **Jefes y Mainumby (S13b):** cada uno con su `sprite.json` (detail 2, `height` = la altura de su placeholder). Si `frame` cambia, actualizá `CHARACTER_SPRITES` en `src/assets/manifest.ts`. En el juego, `SpriteSkin` (`src/systems/SpriteSkin.ts`) dibuja el sprite encima del placeholder, que deja de verse pero sigue llevando la lógica y la hitbox; el encuadre (`origin`) está en `GAMEPLAY.sprites`.
+- **Enemigos y vaca (S13c):** una hoja por enemigo (`<id>_walk`, `_run`, `_idle` o `_hang`), detail 2, frame en `ENEMY_SPRITES` (`manifest.ts`). `EnemyBase` y `Cow` se visten con `SpriteSkin` (`sourceFacesRight: true`: las hojas miran a la izquierda); quietos, los de walk/run muestran el cuadro 0. Sin sprite: abejas y los de prueba (walker, charger, flyer).
 - Si cambiás algo, corré `npm run sprites` y recargá el juego.
 
 ---
@@ -271,6 +274,8 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Asset | Prioridad | Se necesita en | Estado |
 |---|---|---|---|
 | Kerana: Idle, Run, Jump, Attack, Hurt | MVP | S3 | ☐ |
+| Enemigos (16) y vaca: teju_i, mbopi, jakare, nakurutu, mboi, mboi_colgante, nandu, karakara, jagua, kuati, kai, vaca, vaca_embrujada, taitetu, ao_ao_cria, pora, jagua_hu | MVP | S13c | ☑ (una animación por enemigo; sin poses de ataque ni daño) |
+| Mainumby aleteando (`fly_8x1`) | Núcleo | S13c | ☑ |
 | Mainumby | Núcleo | S4 | ☐ |
 | Fuentes (con prueba de caracteres) | MVP | S4 | ☐ |
 | 3 pistas de música (title, level, boss) | MVP | S5 | ☐ |

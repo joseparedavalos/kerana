@@ -26,6 +26,10 @@ export interface SkinOptions {
   clipBelowY?: () => number;
   /** Lo que queda por encima de esta y (mundo) no se dibuja (rama de Moñái). */
   clipAboveY?: () => number;
+  /** Quieto, muestra el primer cuadro de la animación en vez de correr en el lugar (hojas walk/run de enemigos). */
+  stillFrame?: boolean;
+  /** Factor extra de escala vertical del dibujo, sin tocar la hitbox (aleteo del mbopi). */
+  scaleY?: () => number;
   /** Lo que queda en esta franja horizontal del frame (fracciones, mirando a la izquierda) no se dibuja (bastón de Jasy Jatere). */
   hideColumns?: () => readonly [number, number] | null;
 }
@@ -51,6 +55,9 @@ export class SpriteSkin {
   private readonly detail: number;
   private lastX: number;
   private lastY: number;
+  private released = false;
+  /** Desplazamiento horizontal pasajero en unidades del mundo (temblor del aviso de los enemigos). */
+  shakeX = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -68,6 +75,10 @@ export class SpriteSkin {
     this.lastY = source.y;
     scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.sync, this);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
+    // Si el placeholder se destruye (enemigo purificado), el sprite se va con él.
+    source.once(Phaser.GameObjects.Events.DESTROY, this.release, this);
+    // Sacarlo de la lista de dibujo también lo saca de la de actualización: un Sprite necesita su preUpdate.
+    if ('preUpdate' in source) scene.sys.updateList.add(source);
     this.sync();
   }
 
@@ -76,11 +87,11 @@ export class SpriteSkin {
     const s = this.sprite;
     const faceRight = (src.flipX ?? false) !== (this.opts.sourceFacesRight ?? false);
     const [dx, dy] = this.opts.offset ?? [0, 0];
-    s.setPosition(src.x + (faceRight ? -dx : dx), src.y + dy);
+    s.setPosition(src.x + (faceRight ? -dx : dx) + this.shakeX, src.y + dy);
     // flipX refleja la textura dentro del cuadro, no el origen: el origen se refleja a mano.
     const [ox, oy] = this.opts.origin ?? [0.5, 1];
     s.setFlipX(faceRight).setOrigin(faceRight ? 1 - ox : ox, oy);
-    s.setScale(src.scaleX / this.detail, src.scaleY / this.detail);
+    s.setScale(src.scaleX / this.detail, (src.scaleY / this.detail) * (this.opts.scaleY?.() ?? 1));
     s.setAngle(src.angle);
     s.setAlpha(src.alpha);
     s.setVisible(src.visible);
@@ -89,9 +100,11 @@ export class SpriteSkin {
       s.setTintMode(src.tintMode);
       s.setTint(src.tintTopLeft);
     }
-    if (this.opts.idleTimeScale !== undefined) {
-      const moving = Math.abs(src.x - this.lastX) + Math.abs(src.y - this.lastY) > 0.05;
-      s.anims.timeScale = moving ? 1 : this.opts.idleTimeScale;
+    const moving = Math.abs(src.x - this.lastX) + Math.abs(src.y - this.lastY) > 0.05;
+    if (this.opts.idleTimeScale !== undefined) s.anims.timeScale = moving ? 1 : this.opts.idleTimeScale;
+    if (this.opts.stillFrame) {
+      if (!moving && !s.anims.isPaused) s.anims.pause(s.anims.currentAnim?.frames[0]);
+      else if (moving && s.anims.isPaused) s.anims.resume();
     }
     this.lastX = src.x;
     this.lastY = src.y;
@@ -124,10 +137,19 @@ export class SpriteSkin {
     s.setCrop(x0, y0, Math.max(0, x1 - x0), Math.max(0, y1 - y0));
   }
 
-  destroy(): void {
+  /** Suelta el sprite (sin tocar el placeholder: puede estar destruyéndose ya). */
+  private release(): void {
+    if (this.released) return;
+    this.released = true;
     this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.sync, this);
     this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     this.sprite.destroy();
+  }
+
+  destroy(): void {
+    if (this.released) return;
+    this.release();
+    this.source.off(Phaser.GameObjects.Events.DESTROY, this.release, this);
     this.source.destroy();
   }
 }

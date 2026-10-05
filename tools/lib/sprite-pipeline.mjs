@@ -221,6 +221,34 @@ function resampleInto(src, dst, dstX, dstY, w, h, blockSize, sampleAt, clip) {
   }
 }
 
+/** `greenEdge` de sprite.json → pasadas: true = 3, un número = esas pasadas, falso = ninguna. */
+export function greenEdgePasses(value) {
+  if (value === true) return 3;
+  return typeof value === 'number' && value > 0 ? Math.floor(value) : 0;
+}
+
+/** Borra (alfa 0) las `n` filas de abajo de la celda `rect`. Modifica `img`. */
+export function clearBottomRows(img, rect, n) {
+  const y0 = Math.max(rect.y, rect.y + rect.h - n);
+  for (let y = y0; y < rect.y + rect.h; y++) {
+    for (let x = rect.x; x < rect.x + rect.w; x++) img.data[(y * img.width + x) * 4 + 3] = 0;
+  }
+}
+
+/** Unión de las cajas opacas en coordenadas de celda → centro en X y borde de abajo (exclusivo). */
+function cellUnion(cells, bounds) {
+  let x0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  bounds.forEach((b, i) => {
+    if (!b) return;
+    x0 = Math.min(x0, b.x0 - cells[i].x);
+    x1 = Math.max(x1, b.x1 - cells[i].x);
+    y1 = Math.max(y1, b.y1 - cells[i].y);
+  });
+  return { cx: (x0 + x1 + 1) / 2, bottom: y1 + 1 };
+}
+
 /** Convierte `[desde, hasta]` (índices 0) → lista de índices. */
 function rangeToList(range, count) {
   if (!range) return Array.from({ length: count }, (_, i) => i);
@@ -243,9 +271,13 @@ export function processCharacter(name, sheets, config = {}) {
   for (const sheet of sheets) {
     const opts = config.sheets?.[sheet.anim] ?? {};
     let bg = removeBackground(sheet.img);
-    if (config.greenEdge) bg += ` · borde verde −${removeGreenEdge(sheet.img)}px`;
+    const passes = greenEdgePasses(opts.greenEdge ?? config.greenEdge);
+    if (passes > 0) bg += ` · borde verde −${removeGreenEdge(sheet.img, passes)}px`;
     const cells = sliceCells(sheet.img, sheet.cols, sheet.rows);
+    if (opts.cropBottom > 0) for (const c of cells) clearBottomRows(sheet.img, c, opts.cropBottom);
     const bounds = cells.map((c) => opaqueBounds(sheet.img, c));
+    // align 'cell': una sola ancla para toda la hoja (centro de abajo de la unión de las cajas, relativa a la celda).
+    const union = opts.align === 'cell' ? cellUnion(cells, bounds) : null;
     // Escala por hoja (no por frame): la altura del frame de pie (`ref`) pasa a `height`.
     const refIndex = opts.ref ?? 0;
     const ref = bounds[refIndex] ?? bounds.find(Boolean);
@@ -261,11 +293,23 @@ export function processCharacter(name, sheets, config = {}) {
       const img = createImage(fw, fh);
       const b = bounds[i];
       if (b) {
-        // Pies (borde inferior de lo opaco) en la última fila; cintura centrada en X.
-        const bottom = b.y1 + 1;
-        const anchorX =
-          opts.anchor === 'cell' ? cell.x + cell.w / 2 : waistAnchorX(sheet.img, cell, bottom, refHeight);
-        const sampleAt = (dx, dy) => [anchorX + (dx + 0.5 - fw / 2) * blockSize, bottom + (dy + 0.5 - fh) * blockSize];
+        let sampleAt;
+        if (union) {
+          // Conserva la posición del dibujo en su celda: misma ancla para todos los cuadros.
+          const anchorX = cell.x + union.cx;
+          const bottom = cell.y + union.bottom;
+          sampleAt = (dx, dy) => [anchorX + (dx + 0.5 - fw / 2) * blockSize, bottom + (dy + 0.5 - fh) * blockSize];
+        } else {
+          // Pies (borde inferior de lo opaco) en la última fila, o lo más alto en la primera (align 'top');
+          // cintura centrada en X.
+          const bottom = b.y1 + 1;
+          const anchorX =
+            opts.anchor === 'cell' ? cell.x + cell.w / 2 : waistAnchorX(sheet.img, cell, bottom, refHeight);
+          sampleAt =
+            opts.align === 'top'
+              ? (dx, dy) => [anchorX + (dx + 0.5 - fw / 2) * blockSize, b.y0 + (dy + 0.5) * blockSize]
+              : (dx, dy) => [anchorX + (dx + 0.5 - fw / 2) * blockSize, bottom + (dy + 0.5 - fh) * blockSize];
+        }
         resampleInto(sheet.img, img, 0, 0, fw, fh, blockSize, sampleAt, cell);
       }
       frames.push(img);

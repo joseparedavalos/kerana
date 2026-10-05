@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
 import { AudioManager } from '../../systems/AudioManager';
 import { ChargerMotor } from './ChargerMotor';
@@ -16,7 +17,9 @@ export class Charger extends EnemyBase {
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, def, facing);
     if (def.glowEyes) {
-      this.eyes = scene.add.rectangle(x, y, 6, 2, EYE_COLOR, EYE_DIM).setDepth(6);
+      const eyes = GAMEPLAY.sprites.enemies.jaguaHuEyes;
+      const [w, h] = this.skin ? [eyes.width, eyes.height] : [6, 2];
+      this.eyes = scene.add.rectangle(x, y, w, h, EYE_COLOR, EYE_DIM).setDepth(6);
       this.glowParts.push(this.eyes);
       this.once(Phaser.GameObjects.Events.DESTROY, () => this.eyes?.destroy());
     }
@@ -41,13 +44,17 @@ export class Charger extends EnemyBase {
     if (out.state === 'telegraph' && before !== 'telegraph' && this.def.warnSfx) AudioManager.play(this.def.warnSfx);
     if (out.vx !== 0) this.facing = out.vx > 0 ? 1 : -1;
     this.body.setVelocityX(out.vx);
+    this.warning = out.state === 'telegraph';
     if (!this.flashing) {
       if (out.state === 'telegraph') this.setTint(0xf2eee3);
       else this.clearTint();
     }
     if (this.eyes) {
-      const h = this.def.height;
-      this.eyes.setPosition(this.x + this.facing * (this.def.width / 2 - 4), this.y - h + 4);
+      // Con sprite, los ojos van sobre los del dibujo (GAMEPLAY.sprites.enemies.jaguaHuEyes).
+      const eyes = GAMEPLAY.sprites.enemies.jaguaHuEyes;
+      const forward = this.skin ? eyes.forward : this.def.width / 2 - 4;
+      const rise = this.skin ? eyes.rise : this.def.height - 4;
+      this.eyes.setPosition(this.x + this.facing * forward, this.y - rise);
       this.eyes.setAlpha(out.state === 'telegraph' || out.state === 'charge' ? 1 : EYE_DIM);
     }
   }

@@ -1,20 +1,22 @@
 {
-  "key": "mainumby",
-  "frameWidth": 40,
+  "key": "mboi",
+  "frameWidth": 56,
   "frameHeight": 28,
-  "frames": 16,
+  "frames": 8,
   "detail": 2,
   "anims": {
-    "mainumby_fly": {
+    "mboi_idle": {
       "frames": [
+        0,
         1,
         2,
         3,
         4,
         5,
-        6
+        6,
+        7
       ],
-      "frameRate": 18,
+      "frameRate": 8,
       "repeat": -1
     }
   }

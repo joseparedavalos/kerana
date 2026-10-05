@@ -145,9 +145,9 @@ export const GAMEPLAY = {
     /** Dónde se engancha el cuello: unidades detrás del centro de la cabeza (el dibujo es más angosto que la hitbox). */
     neckAttachX: 10,
     /** Ojos que brillan: posición respecto del centro de la cabeza (hacia el hocico) y escala. */
-    eyeOffsetX: 8,
-    eyeOffsetY: -6,
-    eyeScale: 2,
+    eyeOffsetX: 2,
+    eyeOffsetY: 0,
+    eyeScale: 1,
     /** Distancia que recorre la mordida (fracción del ancho de la arena). */
     biteReach: 0.62,
     /** Velocidad del coletazo por el suelo (px/s) y tamaño de la onda. */
@@ -394,7 +394,8 @@ export const GAMEPLAY = {
   /** Vacas sueltas de Capiatá (extra del nivel 4): caminan despacio, mugen y sirven de plataforma. */
   cow: {
     width: 30,
-    height: 18,
+    /** Con el sprite, el lomo queda ≈ 20 unidades sobre los pies: el cuerpo (height − 4) llega ahí. */
+    height: 24,
     speed: 14,
     patrolDistance: 56,
     /** Mugido: cada cuánto, al azar entre estos valores (ms); solo si está en pantalla. */
@@ -703,23 +704,38 @@ export const GAMEPLAY = {
     luison: { eyeForward: 15 },
     tauTrue: { origin: [0.49, 0.54] },
     /**
-     * Mainumby (S12d): vaivén vertical, aleteo por código y leve inclinación hacia donde se mueve.
-     * `flapMode` 'frames' alterna `flapFrames` a `flapFps`; 'squash' aplasta en vertical hasta `squashY`.
+     * Mainumby: la animación de la hoja (`mainumby_fly`), vaivén vertical y leve inclinación hacia donde se mueve.
      * Inclinación: grados por unidad/s de velocidad horizontal, con tope `tiltMaxDeg` y suavizado `tiltLerp`.
+     * Brillo: degradado radial por código (alfa `glowAlpha` en el centro → 0 en el borde) de radio `glowRadius`.
      */
     mainumby: {
       bobAmplitude: 3.5,
       bobMs: 900,
       glowColor: 0xffd76a,
       glowAlpha: 0.45,
-      glowRadius: 7,
-      flapMode: 'frames' as 'frames' | 'squash',
-      flapFps: 12,
-      flapFrames: [1, 3],
-      squashY: 0.82,
+      glowRadius: 16,
+      /** Tamaño de la textura del brillo (px; se escala a `glowRadius`). */
+      glowTextureSize: 64,
       tiltPerSpeed: 0.12,
       tiltMaxDeg: 14,
       tiltLerp: 0.15,
+    },
+    /**
+     * Enemigos (S13c). El sprite va sobre el placeholder (la hitbox no cambia).
+     * Aviso (Charger, Diver, Thrower, Jumper): temblor en x de `warnShakeAmplitude` unidades a `warnShakeHz`.
+     */
+    enemies: {
+      warnShakeAmplitude: 1,
+      warnShakeHz: 22,
+      /** Póra: alfa propio (se multiplica por `darkness.unlitPoraAlpha` en la oscuridad). */
+      poraAlpha: 0.8,
+      /** Mbopi: aleteo por código, aplastando el dibujo en y hasta `mbopiSquashY` a `mbopiFlapFps`. */
+      mbopiFlapFps: 14,
+      mbopiSquashY: 0.7,
+      /** Ojos del jagua hũ con sprite: unidades hacia adelante y sobre los pies, y tamaño. */
+      jaguaHuEyes: { forward: 9, rise: 13, width: 3, height: 2 },
+      /** Fruta que lanza el ka'i (rojo de la fruta del sprite). */
+      fruitColor: 0xb5442c,
     },
   },
 } as const;

@@ -121,7 +121,7 @@ export class LevelScene extends Phaser.Scene {
   private dialogueBox!: DialogueBox;
   private mainumby?: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
   /** Brillo dorado detrás de Mainumby (solo con el sprite real). */
-  private mainumbyGlow?: Phaser.GameObjects.Arc;
+  private mainumbyGlow?: Phaser.GameObjects.Image;
   /** Posición de Mainumby sin el vaivén del vuelo. */
   private readonly mainumbyPos = new Phaser.Math.Vector2();
   private completing = false;
@@ -274,13 +274,16 @@ export class LevelScene extends Phaser.Scene {
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
     this.mainumbyPos.set(spawn.x, spawn.y - 40);
-    if (hasSprite(this, 'mainumby')) {
-      // Sprite real (mira a la derecha), con un brillo dorado por código detrás.
+    if (hasSprite(this, 'mainumby', 'mainumby_fly')) {
+      // Sprite real (mira a la derecha) aleteando, con un brillo dorado suave por código detrás.
       const look = GAMEPLAY.sprites.mainumby;
-      this.mainumbyGlow = this.add.circle(spawn.x, spawn.y - 40, look.glowRadius, look.glowColor, look.glowAlpha).setDepth(14);
+      this.mainumbyGlow = this.add
+        .image(spawn.x, spawn.y - 40, ensureSoftGlow(this, look.glowTextureSize, look.glowColor))
+        .setDisplaySize(look.glowRadius * 2, look.glowRadius * 2)
+        .setAlpha(look.glowAlpha)
+        .setDepth(14);
       const bird = this.add.sprite(spawn.x, spawn.y - 40, 'mainumby').setScale(1 / spriteDetail(this, 'mainumby')).setDepth(15);
-      // Con flapMode 'frames' el aleteo es por código (los cuadros de la hoja casi no cambian).
-      if (look.flapMode !== 'frames') bird.play('mainumby_idle');
+      bird.play('mainumby_fly');
       this.mainumby = bird;
       this.darkness?.glow(this.mainumby);
       this.darkness?.glow(this.mainumbyGlow);
@@ -438,17 +441,9 @@ export class LevelScene extends Phaser.Scene {
       this.mainumby.setPosition(pos.x, pos.y);
       return;
     }
-    // Flota, aletea rápido, se inclina hacia donde se mueve y mira hacia donde mira Kerana.
+    // Flota (el aleteo es la animación de la hoja), se inclina hacia donde se mueve y mira hacia donde mira Kerana.
     const look = GAMEPLAY.sprites.mainumby;
-    const now = this.time.now;
-    const bob = Math.sin((now / look.bobMs) * Math.PI * 2) * look.bobAmplitude;
-    const flapPhase = Math.floor((now / 1000) * look.flapFps) % 2;
-    const baseScale = 1 / spriteDetail(this, 'mainumby');
-    if (look.flapMode === 'frames' && this.mainumby instanceof Phaser.GameObjects.Sprite) {
-      this.mainumby.setFrame(look.flapFrames[flapPhase]);
-    } else {
-      this.mainumby.setScale(baseScale, baseScale * (flapPhase ? look.squashY : 1));
-    }
+    const bob = Math.sin((this.time.now / look.bobMs) * Math.PI * 2) * look.bobAmplitude;
     const speed = delta > 0 ? dx / (delta / 1000) : 0;
     const tilt = Phaser.Math.Clamp(speed * look.tiltPerSpeed, -look.tiltMaxDeg, look.tiltMaxDeg);
     this.mainumby.angle += (tilt - this.mainumby.angle) * look.tiltLerp;
@@ -1414,4 +1409,23 @@ export class LevelScene extends Phaser.Scene {
 
 function isGroundedEnemy(obj: unknown): boolean {
   return (obj as EnemyBase).collidesWithGround ?? true;
+}
+
+/** Brillo suave por código: degradado radial de `color` (alfa 1 en el centro → 0 en el borde), sin borde marcado. */
+function ensureSoftGlow(scene: Phaser.Scene, size: number, color: number): string {
+  const key = `soft_glow_${color.toString(16)}`;
+  if (scene.textures.exists(key)) return key;
+  const tex = scene.textures.createCanvas(key, size, size);
+  if (!tex) return key;
+  const ctx = tex.getContext();
+  const r = size / 2;
+  const rgb = `${(color >> 16) & 0xff}, ${(color >> 8) & 0xff}, ${color & 0xff}`;
+  const grad = ctx.createRadialGradient(r, r, 0, r, r, r);
+  grad.addColorStop(0, `rgba(${rgb}, 1)`);
+  grad.addColorStop(0.5, `rgba(${rgb}, 0.45)`);
+  grad.addColorStop(1, `rgba(${rgb}, 0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  tex.refresh();
+  return key;
 }

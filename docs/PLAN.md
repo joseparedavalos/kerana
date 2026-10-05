@@ -155,7 +155,8 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12e | 2026-09-30 | Opus 5.5 | 19 | 16 | 3 | 84 | Verde |
 | S13a | 2026-09-30 | Opus 5.5 | 16 | 11 | 5 | 89 | Amarillo |
 | S13b | 2026-10-01 | Opus 5.5 | 11 | 5 | 6 | 95 | Amarillo |
-| S12d | | | | | | | |
+| S12d | 2026-10-01 | Opus 5.5 | 5 | 3 | 2 | 97 | Amarillo |
+| S13c | | | | | | | |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -192,6 +193,10 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 
 **S12d** (el juego en inglés y dos ajustes de arte de S13b) tampoco estaba en el reparto: sale de los 5 que quedan. Con el acumulado en 95, S12d puede costar hasta 6,40 sin pasar a rojo. Jose anota el costo al cerrar.
 
+**Semáforo de S12d:** costó 2. Acumulado 97 contra una meta de 84,50: un 14,8 % por encima (menos del 20 %, el tope del amarillo es 101,40) → **Amarillo**. Quedan 3 de crédito.
+
+**S13c** (sprites de los enemigos, la vaca y el aleteo de Mainumby) tampoco estaba en el reparto: sale de los 3 que quedan y, si se acaban, del uso del plan Pro. Con el acumulado en 97, S13c puede costar hasta 4,40 sin pasar a rojo. Jose anota el costo al cerrar.
+
 **Modelo:** desde S3, todas las sesiones usan **Opus 5.5** (S3 costó US$3 contra una meta de 7).
 
 ---
@@ -219,6 +224,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S13a | Hecha | rama `claude/admiring-bell-dppp81` | Fondos, cueva y final (fuera del plan): fondos en .jpg (≈ 2,6 MB en vez de ≈ 14) cargados por nivel y por StoryScene, `shiftY` por nivel (l1 y l4 subidos), l1_cave solo dentro de las zonas `Cave` y l1_far solo fuera con degradado oscuro en la boca (sin fundido por tiempo), final con `final_asuncion` y `final`, Eichu por código con la forma de las Pléyades, tiempo de juego en el guardado y en los créditos. Build, tests y smoke OK |
 | S13b | Hecha | rama `claude/quirky-fermi-7jx7oo` | Sprites de los 8 jefes y de Mainumby (fuera del plan): `sprite.json` con detail 2, borde verde de Tau quitado en el pipeline (`greenEdge`), `SpriteSkin` dibuja el sprite sobre el placeholder (misma lógica y hitbox), casos especiales (7 cabezas teñidas, agua de Mbói Tu'i, cuerpo de Moñái hasta fuera de cámara, bastón de Jasy Jatere recortado con "¡!", Tau disfraz/real), Mainumby con vaivén y brillo. Build, tests y smoke OK |
 | S12d | Hecha | rama `claude/admiring-mccarthy-qwoulz` | Inglés y ajustes de arte (fuera del plan): `en.ts` completo y tipado, `t()` según `settings.lang` con caída al español, `?lang=` que siempre gana y se guarda, idioma del navegador sin partida, Nueva partida/Borrar partida conservan los ajustes, "Espacio" con `t()`, smoke por estado (arena de l2 y tajo cargado), cabezas de Teju Jagua al doble, Mainumby aletea y se inclina. Build, tests y smoke OK |
+| S13c | Hecha | rama `claude/modest-wright-o3kjs8` | Sprites de los enemigos, la vaca y el aleteo de Mainumby (fuera del plan): pipeline con `greenEdge` por pasadas, `align` ('top', 'cell') y `cropBottom`; 16 enemigos y la vaca con detail 2 (`ENEMY_SPRITES`), temblor en el aviso, cuadro 0 quietos, skin destruido al purificar; póra translúcido y anclado arriba, mbói colgante desde la rama, jakare recortado en el agua, mbopi aplastado, ojos del jagua hũ y de Teju Jagua; vaca más alta (plataforma); Mainumby con `mainumby_fly` y brillo en degradado; 3 textos en inglés. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -635,6 +641,16 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Mainumby:** `GAMEPLAY.sprites.mainumby`: `flapMode` 'frames' (alterna `flapFrames` [1, 3] a `flapFps` 12, sin la animación de la hoja) o 'squash' (aplasta a `squashY`), `bobAmplitude` 3,5, inclinación `tiltPerSpeed`, `tiltMaxDeg` 14, `tiltLerp`. Sin probar a mano: si el aleteo se ve mejor con 'squash'.
 - **Smoke:** la arena de l2 usa `walkIntoArena` (tope 15 s) y el tajo cargado espera `chargeFraction` = 1 (tope 10 s) y la onda (tope 3 s). Pasó entero.
 - **Assets faltantes:** los mismos de S13b (`heart_full`, `heart_empty`, `sign`, `checkpoint`, poses de ataque y daño de los jefes, cuerpo de Teju Jagua).
+
+### S13c: Sprites de los enemigos, la vaca y el aleteo de Mainumby (fuera del plan original; sale del crédito que queda)
+**Criterios:** pipeline: `greenEdge` acepta pasadas (true = 3), `sheets.<hoja>.align` 'top' y 'cell', `cropBottom`, con tests · `raw/<id>/sprite.json` con detail 2 para los 16 enemigos y la vaca (alturas y frames medidos; una animación en bucle por hoja) y `mainumby/fly_8x1` (align 'cell', cuadros 1 a 6 a 18 fps) · `ENEMY_SPRITES` en `manifest.ts` · `EnemyBase` con `skinIfAvailable` (`sourceFacesRight: true`), lógica y hitbox sin cambios; quietos, walk/run en el cuadro 0; el skin se destruye con el enemigo; el aviso se ve con sprite (temblor en x) · vaca tranquila con sprite y `cow.height` 24 (Kerana se para en el lomo) · póra translúcido y anclado arriba; mbói colgante desde la rama; jakare recortado en el agua; mbopi aleteando por código; ojos del jagua hũ y de Teju Jagua; fruta del ka'i roja · Mainumby: brillo en degradado radial y `mainumby_fly` en bucle (sin `flapMode`) · 3 textos en inglés · CLAUDE.md y ASSETS §2.3 y §10.
+
+**Notas para la próxima sesión (S13c → S13):**
+- **Pipeline:** `greenEdgePasses` (true = 3, número = pasadas; también por hoja), `align: 'top'` (lo más alto a la fila 0: póra y mbói colgante), `align: 'cell'` (una ancla por hoja, centro de abajo de la unión de las cajas en coordenadas de celda: Mainumby sube y baja como en la hoja), `cropBottom` (borra filas de abajo de cada celda antes de medir: la rama del ñakurutu). Ningún frame corta el dibujo (revisado en los bordes de cada frame); el cuadro 0 de `mainumby/fly` sí se corta arriba, pero no se usa. La hoja `mainumby/idle` sigue empaquetada sin animación (`skip`).
+- **Cómo funciona:** `EnemyBase` busca `<id>_walk`, `_run`, `_idle` o `_hang` y crea el `SpriteSkin` en su constructor (`skinOptions` arma el encuadre por enemigo). `SpriteSkin` ahora: vuelve a poner el placeholder en la lista de actualización (sacarlo de la de dibujo saca a un `Sprite` de las dos: sin eso, el enemigo no corría `preUpdate`), suelta el sprite cuando el placeholder se destruye (`release`, sin recursión), `shakeX` (temblor), `stillFrame` (cuadro 0 quieto, por movimiento real del placeholder: el jakare queda en el cuadro 0 salvo al emerger) y `scaleY` (aleteo del mbopi). El aviso sigue tiñendo casi blanco; además `warning` hace temblar el sprite (`GAMEPLAY.sprites.enemies.warnShake*`).
+- **Para ajustar a mano (Jose):** alturas en cada `raw/<id>/sprite.json` (`height`; si el dibujo crece, también `frame` aquí y en `ENEMY_SPRITES`) y `npm run sprites`; alfa del póra (`sprites.enemies.poraAlpha` 0,8 × `darkness.unlitPoraAlpha`); aplastamiento del mbopi (`mbopiSquashY` 0,7, `mbopiFlapFps` 14); ojos del jagua hũ (`jaguaHuEyes`: 9 adelante, 13 arriba, 3 × 2); ojos de Teju Jagua (`tejuJagua.eyeOffsetX` 2, `eyeOffsetY` 0, `eyeScale` 1); brillo de Mainumby (`sprites.mainumby.glowRadius` 16, `glowAlpha` 0,45); lomo de la vaca (`cow.height` 24: el cuerpo físico es `height − 4` desde los pies); temblor del aviso (`warnShakeAmplitude` 1, `warnShakeHz` 22).
+- **Sin probar a mano:** el mbói colgante es más largo (30 unidades) que su hitbox y se recorta en la rama (`clipAboveY`); el jakare muestra ≈ 12 unidades sobre el agua; el póra y el mbopi se escalan desde su ancla al purificarse (como antes).
+- **Assets faltantes:** poses de ataque, daño y espera de los enemigos (una sola hoja cada uno); abejas sin sprite (son partículas); siguen `heart_full`, `heart_empty`, `sign`, `checkpoint`, poses de los jefes y cuerpo de Teju Jagua.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
