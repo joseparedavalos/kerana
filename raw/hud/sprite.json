@@ -1,0 +1,12 @@
+{
+  "detail": 2,
+  "tolerance": 140,
+  "edge": "magenta",
+  "edgePasses": 3,
+  "coverage": 0.3,
+  "size": {
+    "default": {
+      "height": 12
+    }
+  }
+}

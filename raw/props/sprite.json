@@ -1,0 +1,23 @@
+{
+  "detail": 2,
+  "edge": "cyan",
+  "edgePasses": 2,
+  "coverage": 0.4,
+  "size": {
+    "sign": {
+      "height": 22
+    },
+    "fire_off": {
+      "width": 20
+    },
+    "fire_on": {
+      "width": 20
+    },
+    "lantern_off": {
+      "height": 32
+    },
+    "lantern_on": {
+      "height": 32
+    }
+  }
+}

@@ -29,8 +29,11 @@ export function createImage(width, height) {
   return { width, height, data: new Uint8Array(width * height * 4) };
 }
 
-/** Quita el fondo: si la hoja no trae transparencia, borra el magenta (Chroma key). Modifica `img`. */
-export function removeBackground(img) {
+/**
+ * Quita el fondo: si la hoja no trae transparencia, borra el magenta (Chroma key). Modifica `img`.
+ * `tolerance`: distancia RGB al magenta (los JPG lo dejan desparejo: piden más).
+ */
+export function removeBackground(img, tolerance = MAGENTA_TOLERANCE) {
   const d = img.data;
   let hasAlpha = false;
   for (let i = 3; i < d.length; i += 4) {
@@ -44,20 +47,31 @@ export function removeBackground(img) {
     const dr = 255 - d[i];
     const dg = d[i + 1];
     const db = 255 - d[i + 2];
-    if (dr * dr + dg * dg + db * db <= MAGENTA_TOLERANCE * MAGENTA_TOLERANCE) d[i + 3] = 0;
+    if (dr * dr + dg * dg + db * db <= tolerance * tolerance) d[i + 3] = 0;
   }
   return 'magenta';
 }
 
 /** Cuánto más verde que rojo y azul tiene que ser un píxel del contorno para tratarlo como resto del Chroma key. */
 const GREEN_EDGE_MARGIN = 30;
+/** Celeste del contorno de los props (verde y azul sobre el rojo). */
+const CYAN_EDGE_MARGIN = 25;
+/** Rosado del contorno de los íconos en JPG (rojo y azul sobre el verde). */
+const MAGENTA_EDGE_MARGIN = 40;
+
+/** Predicados de color del contorno (r, g, b) → es resto del Chroma key. */
+export const EDGE_COLORS = {
+  green: (r, g, b) => g - r >= GREEN_EDGE_MARGIN && g - b >= GREEN_EDGE_MARGIN,
+  cyan: (r, g, b) => g - r >= CYAN_EDGE_MARGIN && b - r >= CYAN_EDGE_MARGIN,
+  magenta: (r, g, b) => r - g >= MAGENTA_EDGE_MARGIN && b - g >= MAGENTA_EDGE_MARGIN,
+};
 
 /**
- * Borra el borde verde que deja el Chroma key: solo píxeles opacos del contorno (vecinos de un
- * transparente) con el verde dominante. Repite `passes` veces (el borde puede tener más de un píxel).
- * Modifica `img` y devuelve cuántos píxeles borró. Solo para hojas sin verde propio (Tau).
+ * Borra el borde de color que deja el Chroma key: solo píxeles opacos del contorno (vecinos de un
+ * transparente) que cumplen `isEdgeColor`. Repite `passes` veces (el borde puede tener más de un píxel).
+ * Modifica `img` y devuelve cuántos píxeles borró.
  */
-export function removeGreenEdge(img, passes = 3) {
+export function removeColorEdge(img, passes, isEdgeColor) {
   const { width: w, height: h, data: d } = img;
   let removed = 0;
   for (let p = 0; p < passes; p++) {
@@ -66,8 +80,7 @@ export function removeGreenEdge(img, passes = 3) {
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
         if (d[i + 3] < ALPHA_SOLID) continue;
-        const g = d[i + 1];
-        if (g - d[i] < GREEN_EDGE_MARGIN || g - d[i + 2] < GREEN_EDGE_MARGIN) continue;
+        if (!isEdgeColor(d[i], d[i + 1], d[i + 2])) continue;
         const edge =
           x === 0 || y === 0 || x === w - 1 || y === h - 1 ||
           d[i - 4 + 3] < ALPHA_SOLID || d[i + 4 + 3] < ALPHA_SOLID ||
@@ -80,6 +93,15 @@ export function removeGreenEdge(img, passes = 3) {
     removed += kill.length;
   }
   return removed;
+}
+
+/**
+ * Borde verde del Chroma key (Tau, enemigos sin verde propio, la vaca). `margin`: cuánto más verde que rojo y
+ * azul tiene que ser (más bajo toma también los verdes oliva que quedan al mezclarse con el contorno).
+ */
+export function removeGreenEdge(img, passes = 3, margin = GREEN_EDGE_MARGIN) {
+  const isEdge = margin === GREEN_EDGE_MARGIN ? EDGE_COLORS.green : (r, g, b) => g - r >= margin && g - b >= margin;
+  return removeColorEdge(img, passes, isEdge);
 }
 
 /** Celdas de la hoja (rectángulos en píxeles de origen), de izquierda a derecha y de arriba abajo. */
@@ -180,7 +202,7 @@ export function detectPixelSize(img, rect, maxSize = 32) {
  * Reduce con "moda": cada píxel de salida toma el color más frecuente de su bloque de origen
  * (colores nítidos, sin mezclas borrosas). `sampleAt(dx, dy)` da el centro del bloque en el origen.
  */
-function resampleInto(src, dst, dstX, dstY, w, h, blockSize, sampleAt, clip) {
+function resampleInto(src, dst, dstX, dstY, w, h, blockSize, sampleAt, clip, coverageMin = COVERAGE_MIN) {
   const half = blockSize / 2;
   const bins = new Map();
   for (let dy = 0; dy < h; dy++) {
@@ -209,7 +231,7 @@ function resampleInto(src, dst, dstX, dstY, w, h, blockSize, sampleAt, clip) {
           b[3] += src.data[i + 2];
         }
       }
-      if (solid / total < COVERAGE_MIN) continue;
+      if (solid / total < coverageMin) continue;
       let win = null;
       for (const b of bins.values()) if (!win || b[0] > win[0]) win = b;
       const o = ((dstY + dy) * dst.width + dstX + dx) * 4;
@@ -272,7 +294,8 @@ export function processCharacter(name, sheets, config = {}) {
     const opts = config.sheets?.[sheet.anim] ?? {};
     let bg = removeBackground(sheet.img);
     const passes = greenEdgePasses(opts.greenEdge ?? config.greenEdge);
-    if (passes > 0) bg += ` · borde verde −${removeGreenEdge(sheet.img, passes)}px`;
+    const margin = opts.greenEdgeMargin ?? config.greenEdgeMargin;
+    if (passes > 0) bg += ` · borde verde −${removeGreenEdge(sheet.img, passes, margin)}px`;
     const cells = sliceCells(sheet.img, sheet.cols, sheet.rows);
     if (opts.cropBottom > 0) for (const c of cells) clearBottomRows(sheet.img, c, opts.cropBottom);
     const bounds = cells.map((c) => opaqueBounds(sheet.img, c));
@@ -359,8 +382,11 @@ export function processCharacter(name, sheets, config = {}) {
   return { image, meta, summary };
 }
 
-/** Escala una imagen entera a `w`×`h` con muestreo por moda (fondos, retratos). */
-export function resizeImage(src, w, h) {
+/**
+ * Escala una imagen entera a `w`×`h` con muestreo por moda (fondos, retratos, íconos).
+ * `coverageMin`: cobertura opaca mínima de un bloque (más baja conserva contornos finos en diagonal).
+ */
+export function resizeImage(src, w, h, coverageMin = COVERAGE_MIN) {
   const dst = createImage(w, h);
   const bx = src.width / w;
   const by = src.height / h;
@@ -369,7 +395,7 @@ export function resizeImage(src, w, h) {
     y: 0,
     w: src.width,
     h: src.height,
-  });
+  }, coverageMin);
   return dst;
 }
 
@@ -389,4 +415,40 @@ export function coverImage(src, w, h) {
     crop.data.set(src.data.subarray(((oy + y) * src.width + ox) * 4, ((oy + y) * src.width + ox + cw) * 4), y * cw * 4);
   }
   return resizeImage(crop, w, h);
+}
+
+/** Recorta la imagen a la caja de sus píxeles opacos (null si está vacía). */
+export function cropToContent(src) {
+  const b = opaqueBounds(src, { x: 0, y: 0, w: src.width, h: src.height });
+  if (!b) return null;
+  const w = b.x1 - b.x0 + 1;
+  const h = b.y1 - b.y0 + 1;
+  const out = createImage(w, h);
+  for (let y = 0; y < h; y++) {
+    out.data.set(src.data.subarray(((b.y0 + y) * src.width + b.x0) * 4, ((b.y0 + y) * src.width + b.x1 + 1) * 4), y * w * 4);
+  }
+  return out;
+}
+
+/**
+ * Props e íconos de la interfaz (raw/props, raw/hud): quita el fondo y el borde de color, recorta al dibujo y lo
+ * escala con muestreo por moda. `size` en unidades del mundo ({ height } o { width }); la salida mide `size × detail` px.
+ * `coverage`: cobertura mínima de cada bloque (0,5 por defecto; más baja conserva contornos finos).
+ * Modifica `img`. Devuelve { image, background } o null si el dibujo está vacío.
+ */
+export function processIcon(img, { size, detail = 1, edge, edgePasses = 0, tolerance, coverage } = {}) {
+  let background = removeBackground(img, tolerance);
+  if (edge && edgePasses > 0) background += ` · borde ${edge} −${removeColorEdge(img, edgePasses, EDGE_COLORS[edge])}px`;
+  const crop = cropToContent(img);
+  if (!crop) return null;
+  let w;
+  let h;
+  if (size?.width) {
+    w = Math.round(size.width * detail);
+    h = Math.max(1, Math.round((crop.height * w) / crop.width));
+  } else {
+    h = Math.round((size?.height ?? crop.height) * detail);
+    w = Math.max(1, Math.round((crop.width * h) / crop.height));
+  }
+  return { image: resizeImage(crop, w, h, coverage ?? COVERAGE_MIN), background };
 }
