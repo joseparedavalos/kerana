@@ -29,6 +29,7 @@ export class Diver extends EnemyBase {
         if (this.msLeft <= 0 && dy > 0 && Math.hypot(dx, dy) <= (def.detectRadius ?? 96)) {
           this.facing = dx >= 0 ? 1 : -1;
           this.enter('telegraph', def.telegraphMs ?? 500);
+          this.warning = true;
           if (!this.flashing) this.setTint(0xf2eee3);
         }
         break;
@@ -43,6 +44,7 @@ export class Diver extends EnemyBase {
           // Llega un poco más allá de donde estaba Kerana; solo choca con el suelo en la picada.
           this.enter('dive', Math.min(def.chargeMaxMs ?? 1200, (dist / speed) * 1000 + DIVE_OVERSHOOT_MS));
           this.collidesWithGround = true;
+          this.warning = false;
           if (!this.flashing) this.clearTint();
         }
         break;

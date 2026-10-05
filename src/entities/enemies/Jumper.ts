@@ -32,5 +32,6 @@ export class Jumper extends EnemyBase {
       if (out.state === 'wait') this.facing = dir;
     }
     this.setScale(1, out.state === 'crouch' ? 0.75 : 1);
+    this.warning = out.state === 'crouch';
   }
 }

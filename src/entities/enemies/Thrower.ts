@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
+import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
 import { AudioManager } from '../../systems/AudioManager';
 import { EnemyBase } from './EnemyBase';
 import { arcVelocity, flightTimeFor, ThrowerMotor } from './ThrowerMotor';
 
-const FRUIT_COLOR = 0xe0a030;
 /** Altura de la mano desde los pies (fracción del alto). */
 const HAND = 0.8;
 /** Mitad del cuerpo de Kerana: apunta al pecho, no a los pies. */
@@ -34,7 +34,7 @@ export class Thrower extends EnemyBase {
     });
     const radius = def.projectileRadius ?? 4;
     for (let i = 0; i < (def.projectilePool ?? 3); i++) {
-      const arc = scene.add.circle(0, 0, radius, FRUIT_COLOR).setDepth(7).setVisible(false);
+      const arc = scene.add.circle(0, 0, radius, GAMEPLAY.sprites.enemies.fruitColor).setDepth(7).setVisible(false);
       this.fruits.push({ arc, vx: 0, vy: 0, lifeMs: 0 });
     }
   }
@@ -48,6 +48,7 @@ export class Thrower extends EnemyBase {
     // Aviso: levanta la fruta (se estira y se aclara).
     const windup = this.motor.state === 'windup';
     this.setScale(1, windup ? 1.15 : 1);
+    this.warning = windup;
     if (!this.flashing) {
       if (windup) this.setTint(0xf2eee3);
       else this.clearTint();

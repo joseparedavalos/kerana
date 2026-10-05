@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
+import { skinIfAvailable } from '../systems/SpriteSkin';
 
 const CFG = GAMEPLAY.cow;
 const TEXTURE = 'vaca_placeholder';
@@ -53,6 +54,8 @@ export class Cow extends Phaser.Physics.Arcade.Image {
     this.body.checkCollision.down = false;
     this.body.checkCollision.left = false;
     this.body.checkCollision.right = false;
+    // Sprite real (S13c): el placeholder mira a la derecha sin voltear; quieta, el cuadro 0.
+    skinIfAvailable(scene, this, 'vaca', { anim: 'vaca_walk', sourceFacesRight: true, stillFrame: true });
   }
 
   tick(deltaMs: number): void {

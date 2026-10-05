@@ -42,6 +42,30 @@ export const CHARACTER_SPRITES: Record<string, [number, number]> = {
   mainumby: [40, 28],
 };
 
+/**
+ * Sprites de los enemigos y de la vaca (S13c): id del enemigo (= clave del sprite) → frame en píxeles de textura
+ * (ver raw/<id>/sprite.json). Una hoja por enemigo: `<id>_walk`, `_run`, `_idle` o `_hang`.
+ */
+export const ENEMY_SPRITES: Record<string, [number, number]> = {
+  teju_i: [64, 24],
+  mbopi: [56, 28],
+  jakare: [92, 32],
+  nakurutu: [32, 40],
+  mboi: [56, 28],
+  mboi_colgante: [16, 64],
+  nandu: [64, 64],
+  karakara: [60, 40],
+  jagua: [64, 36],
+  kuati: [76, 32],
+  kai: [48, 48],
+  vaca: [96, 52],
+  vaca_embrujada: [84, 52],
+  taitetu: [44, 32],
+  ao_ao_cria: [40, 32],
+  pora: [44, 60],
+  jagua_hu: [52, 40],
+};
+
 export const tilesetKey = (biome: string): string => `tiles_${biome}`;
 
 export const MANIFEST: AssetEntry[] = [
@@ -67,7 +91,7 @@ export const MANIFEST: AssetEntry[] = [
   // Sprites del pipeline: PNG en grilla de frames iguales + JSON con las animaciones.
   { type: 'spritesheet', key: PLAYER_KEY, path: 'sprites/kerana.png', frameWidth: PLAYER_FRAME, frameHeight: PLAYER_FRAME, frames: 1 },
   { type: 'json', key: PLAYER_KEY + ANIMS_SUFFIX, path: 'sprites/kerana.json' },
-  ...Object.entries(CHARACTER_SPRITES).flatMap(([key, [frameWidth, frameHeight]]): AssetEntry[] => [
+  ...Object.entries({ ...CHARACTER_SPRITES, ...ENEMY_SPRITES }).flatMap(([key, [frameWidth, frameHeight]]): AssetEntry[] => [
     { type: 'spritesheet', key, path: `sprites/${key}.png`, frameWidth, frameHeight, frames: 1 },
     { type: 'json', key: key + ANIMS_SUFFIX, path: `sprites/${key}.json` },
   ]),
