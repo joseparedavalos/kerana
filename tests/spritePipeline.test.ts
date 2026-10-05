@@ -3,6 +3,7 @@ import {
   coverImage,
   createImage,
   detectPixelSize,
+  greenEdgePasses,
   opaqueBounds,
   parseSheetName,
   processCharacter,
@@ -132,5 +133,63 @@ describe('sprite pipeline', () => {
     expect(img.data[(2 * 10 + 2) * 4 + 3]).toBe(0);
     expect(img.data[(3 * 10 + 3) * 4 + 3]).toBe(255);
     expect(img.data[(4 * 10 + 4) * 4 + 3]).toBe(255);
+  });
+
+  it('greenEdge acepta un número de pasadas (true = 3)', () => {
+    expect(greenEdgePasses(true)).toBe(3);
+    expect(greenEdgePasses(5)).toBe(5);
+    expect(greenEdgePasses(undefined)).toBe(0);
+    expect(greenEdgePasses(false)).toBe(0);
+    // Borde verde de 4 px: 3 pasadas dejan uno, 5 lo borran entero.
+    const make = () => {
+      const img = createImage(20, 20) as Img;
+      fillRect(img, 2, 2, 16, 16, [30, 200, 30, 255]);
+      fillRect(img, 6, 6, 8, 8, [120, 60, 160, 255]);
+      return img;
+    };
+    const three = make();
+    removeGreenEdge(three, greenEdgePasses(true));
+    expect(three.data[(5 * 20 + 10) * 4 + 3]).toBe(255);
+    const five = make();
+    removeGreenEdge(five, greenEdgePasses(5));
+    expect(five.data[(5 * 20 + 10) * 4 + 3]).toBe(0);
+  });
+
+  /** Fila más alta con algo opaco dentro del frame `i`. */
+  const highestOpaqueRow = (image: Img, i: number, fw: number, fh: number): number => {
+    const cols = image.width / fw;
+    const b = opaqueBounds(image, { x: (i % cols) * fw, y: Math.floor(i / cols) * fh, w: fw, h: fh });
+    return b ? b.y0 - Math.floor(i / cols) * fh : -1;
+  };
+
+  it("align 'top' lleva lo más alto del dibujo a la primera fila", () => {
+    const sheet = { anim: 'hang', cols: 3, rows: 1, img: syntheticSheet(3, 100) };
+    const { image } = processCharacter('x', [sheet], { frame: [32, 48], height: 20, sheets: { hang: { align: 'top' } } });
+    for (let i = 0; i < 3; i++) expect(highestOpaqueRow(image as Img, i, 32, 48)).toBe(0);
+  });
+
+  it("align 'cell' conserva la posición del dibujo en su celda", () => {
+    // Pies a 140, 160 y 180: con una sola ancla, el dibujo sube y baja igual que en la hoja.
+    const img = createImage(300, 200) as Img;
+    for (let i = 0; i < 3; i++) fillRect(img, i * 100 + 40, 40 + i * 20, 20, 100, [200, 150, 100, 255]);
+    const sheet = { anim: 'fly', cols: 3, rows: 1, img };
+    const { image } = processCharacter('x', [sheet], { frame: [32, 32], height: 20, sheets: { fly: { align: 'cell' } } });
+    const rows = [0, 1, 2].map((i) => lowestOpaqueRow(image as Img, i, 32, 32));
+    expect(rows[2]).toBe(31); // el más bajo toca el borde
+    expect(rows[0]).toBeLessThan(rows[1]);
+    expect(rows[1]).toBeLessThan(rows[2]);
+  });
+
+  it('cropBottom borra las filas de abajo de cada celda antes de medir', () => {
+    // Una "rama" de 10 px pegada al borde de abajo de cada celda: sin ella, la escala sale del cuerpo.
+    const img = syntheticSheet(2, 100);
+    for (let i = 0; i < 2; i++) fillRect(img, i * 100, 190, 100, 10, [90, 60, 30, 255]);
+    const { summary } = processCharacter('x', [{ anim: 'idle', cols: 2, rows: 1, img }], {
+      frame: [32, 32],
+      height: 20,
+      sheets: { idle: { cropBottom: 10 } },
+    });
+    expect(summary[0]).toMatch(/ref 100px/);
+    expect(img.data[(195 * 200 + 50) * 4 + 3]).toBe(0);
   });
 });
