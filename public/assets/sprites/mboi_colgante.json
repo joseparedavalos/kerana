@@ -1,0 +1,23 @@
+{
+  "key": "mboi_colgante",
+  "frameWidth": 16,
+  "frameHeight": 64,
+  "frames": 8,
+  "detail": 2,
+  "anims": {
+    "mboi_colgante_hang": {
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "frameRate": 8,
+      "repeat": -1
+    }
+  }
+}
