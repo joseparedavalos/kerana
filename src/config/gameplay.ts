@@ -436,6 +436,17 @@ export const GAMEPLAY = {
     postHeight: 34,
   },
 
+  /**
+   * Parpadeo de la fogata del checkpoint encendida (arte fire_on): estira la llama `amplitude` (fracción de la escala)
+   * con dos ondas (rad/s) y la entibia hasta `tintDip` (fracción menos de verde y azul).
+   */
+  checkpointFire: {
+    amplitude: 0.05,
+    speedA: 9,
+    speedB: 15.5,
+    tintDip: 0.12,
+  },
+
   /** Velas que se encienden al liberar a Luisón (GDD §6.7). */
   candles: {
     count: 10,
@@ -663,6 +674,8 @@ export const GAMEPLAY = {
   hud: {
     /** Plumas coleccionables por nivel (GDD §4.4). */
     featherMax: 3,
+    /** Pluma del contador en color: con 'all' cuando están todas las del nivel; con 'any', desde la primera (si no, gris). */
+    featherColorWhen: 'all' as 'all' | 'any',
   },
 
   fireflies: {
@@ -689,6 +702,11 @@ export const GAMEPLAY = {
     caveEdgeColor: '#0b0a14',
     /** Profundidad: detrás de todo el nivel. */
     depth: -20,
+    /**
+     * Roca (capa Ground) dentro de las zonas `Cave`: tinte que multiplica la textura (casi negro azulado, la textura
+     * apenas se ve) para que la roca enmarque el fondo de cueva. 0xffffff = sin cambio.
+     */
+    caveRockTint: 0x343a58,
   },
 
   /**

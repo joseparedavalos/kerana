@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { tilesetKey } from '../assets/manifest';
+import { artOrPlaceholder, hasArt } from '../assets/art';
+import { ART_DETAIL, tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -78,6 +79,11 @@ const LIANA_COLOR = 0x3f7a3a;
 const PINDO_TRUNK_COLOR = 0x7a6248;
 const PINDO_LEAF_COLOR = 0x4f8a3a;
 const SIGN_RANGE = 20;
+/** Placeholders si falta el arte de raw/props: cartel (16 × 16) y fuego (16 × 24, cuadro 0 apagado y 4 encendido). */
+const SIGN_PLACEHOLDER = 16;
+const FIRE_PLACEHOLDER = 'checkpoint';
+const FIRE_OFF = 'prop_fire_off';
+const FIRE_ON = 'prop_fire_on';
 const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: FONT_FAMILY,
   fontSize: '10px',
@@ -413,6 +419,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateDarkness(delta);
     this.updateBoss(delta);
     this.updateCheckpoints();
+    this.flickerCheckpoints();
     this.updateSigns();
     this.updateLuzArasyHud();
     this.updateLevelExit();
@@ -1088,7 +1095,7 @@ export class LevelScene extends Phaser.Scene {
           spawn.set(x, y);
           break;
         case 'Checkpoint': {
-          const sprite = this.add.sprite(x, y, 'checkpoint', 0).setOrigin(0.5, 1);
+          const sprite = this.makeCheckpointSprite(x, y);
           const id = Number(objectProp(obj, 'id') ?? this.checkpoints.length);
           const zone = new Phaser.Geom.Rectangle(x - 8, y - 24, 16, 24);
           const lc = GAMEPLAY.lantern;
@@ -1100,13 +1107,14 @@ export class LevelScene extends Phaser.Scene {
           if (this.darkness) this.lanterns.push(new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true));
           break;
         case 'Cave':
-          this.backdrop.addCave({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
+          this.addCave(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
           break;
         case 'DarkZone':
           this.darkness?.addZone({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
           break;
         case 'Sign': {
-          this.add.image(x, y, 'sign').setOrigin(0.5, 1);
+          const look = artOrPlaceholder(this, 'prop_sign', 'sign', SIGN_PLACEHOLDER, SIGN_PLACEHOLDER);
+          this.add.image(x, y, look.key).setOrigin(0.5, 1).setScale(look.scale);
           const text = this.add
             .text(x, y - 48, t(String(objectProp(obj, 'textKey') ?? ''), this.keyVars()), TEXT_STYLE)
             .setOrigin(0.5, 1)
@@ -1353,10 +1361,10 @@ export class LevelScene extends Phaser.Scene {
       if (cp.active || !Phaser.Geom.Rectangle.Overlaps(cp.zone, this.playerRect)) continue;
       for (const other of this.checkpoints) {
         other.active = false;
-        other.sprite.setFrame(other.lit ? 4 : 0);
+        this.setFire(other, other.lit);
       }
       cp.active = true;
-      cp.sprite.setFrame(4);
+      this.setFire(cp, true);
       if (cp.light && this.darkness) {
         this.darkness.setOn(cp.light, true);
         this.darkness.glow(cp.sprite);
@@ -1369,6 +1377,44 @@ export class LevelScene extends Phaser.Scene {
       AudioManager.play('fire');
       EventBus.emit(GameEvents.checkpointActivated, cp.id);
     }
+  }
+
+  /** Fuego del checkpoint: fire_off sin activar, fire_on encendido (o los cuadros 0 y 4 del placeholder). */
+  private makeCheckpointSprite(x: number, y: number): Phaser.GameObjects.Sprite {
+    if (hasArt(this, FIRE_OFF) && hasArt(this, FIRE_ON)) {
+      return this.add.sprite(x, y, FIRE_OFF).setOrigin(0.5, 1).setScale(1 / ART_DETAIL);
+    }
+    ensurePlaceholder(this, FIRE_PLACEHOLDER, 16, 24, 8);
+    return this.add.sprite(x, y, FIRE_PLACEHOLDER, 0).setOrigin(0.5, 1);
+  }
+
+  private setFire(cp: Checkpoint, on: boolean): void {
+    if (cp.sprite.texture.key === FIRE_PLACEHOLDER) cp.sprite.setFrame(on ? 4 : 0);
+    else cp.sprite.setTexture(on ? FIRE_ON : FIRE_OFF);
+  }
+
+  /** Parpadeo de la llama por código: la fogata encendida se estira y se entibia un poco (GAMEPLAY.checkpointFire). */
+  private flickerCheckpoints(): void {
+    const f = GAMEPLAY.checkpointFire;
+    const now = this.time.now / 1000;
+    for (const cp of this.checkpoints) {
+      if (!cp.lit || cp.sprite.texture.key !== FIRE_ON) continue;
+      const phase = cp.sprite.x * 0.37;
+      const wave = 0.6 * Math.sin(now * f.speedA + phase) + 0.4 * Math.sin(now * f.speedB + phase * 1.7);
+      const base = 1 / ART_DETAIL;
+      cp.sprite.setScale(base * (1 - f.amplitude * 0.5 * wave), base * (1 + f.amplitude * wave));
+      const warm = Math.round(255 * (1 - f.tintDip * (0.5 + 0.5 * wave)));
+      cp.sprite.setTint(Phaser.Display.Color.GetColor(255, warm, Math.round(warm * 0.92)));
+    }
+  }
+
+  /** Zona de cueva: el fondo de cueva (LevelBackdrop) y la roca oscura (GAMEPLAY.backdrop.caveRockTint). */
+  private addCave(x: number, y: number, width: number, height: number): void {
+    this.backdrop.addCave({ x, y, width, height });
+    const tile = this.map.tileWidth;
+    const tx = Math.floor(x / tile);
+    const ty = Math.floor(y / tile);
+    this.layers.Ground?.setTint(GAMEPLAY.backdrop.caveRockTint, tx, ty, Math.ceil(width / tile), Math.ceil(height / tile));
   }
 
   private updateSigns(): void {

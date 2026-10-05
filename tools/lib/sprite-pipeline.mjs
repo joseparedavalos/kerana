@@ -435,6 +435,9 @@ export function cropToContent(src) {
  * escala con muestreo por moda. `size` en unidades del mundo ({ height } o { width }); la salida mide `size × detail` px.
  * `coverage`: cobertura mínima de cada bloque (0,5 por defecto; más baja conserva contornos finos).
  * Modifica `img`. Devuelve { image, background } o null si el dibujo está vacío.
+ * @param {{ width: number, height: number, data: Uint8Array }} img
+ * @param {{ size?: { width?: number, height?: number }, detail?: number, edge?: 'green' | 'cyan' | 'magenta',
+ *   edgePasses?: number, tolerance?: number, coverage?: number }} [options]
  */
 export function processIcon(img, { size, detail = 1, edge, edgePasses = 0, tolerance, coverage } = {}) {
   let background = removeBackground(img, tolerance);

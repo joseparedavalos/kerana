@@ -66,6 +66,25 @@ export const ENEMY_SPRITES: Record<string, [number, number]> = {
   jagua_hu: [52, 40],
 };
 
+/** Píxeles de arte por unidad del mundo de los props e íconos (raw/props y raw/hud → `sprite.json`). */
+export const ART_DETAIL = 2;
+
+/** Props e íconos (`npm run sprites`: raw/props → props/, raw/hud → ui/): clave de textura → ruta. */
+export const ART_IMAGES = {
+  ui_heart_full: 'ui/heart_full.png',
+  ui_heart_empty: 'ui/heart_empty.png',
+  ui_feather: 'ui/feather.png',
+  ui_feather_empty: 'ui/feather_empty.png',
+  ui_guavira: 'ui/guavira.png',
+  ui_luz_arasy: 'ui/luz_arasy.png',
+  prop_sign: 'props/sign.png',
+  prop_fire_off: 'props/fire_off.png',
+  prop_fire_on: 'props/fire_on.png',
+  prop_lantern_off: 'props/lantern_off.png',
+  prop_lantern_on: 'props/lantern_on.png',
+} as const;
+export type ArtKey = keyof typeof ART_IMAGES;
+
 export const tilesetKey = (biome: string): string => `tiles_${biome}`;
 
 export const MANIFEST: AssetEntry[] = [
@@ -96,9 +115,8 @@ export const MANIFEST: AssetEntry[] = [
     { type: 'json', key: key + ANIMS_SUFFIX, path: `sprites/${key}.json` },
   ]),
 
-  // Interfaz y props: por ahora sin arte, PreloadScene genera placeholders.
-  { type: 'image', key: 'heart_full', path: 'ui/heart_full.png', width: 12, height: 12 },
-  { type: 'image', key: 'heart_empty', path: 'ui/heart_empty.png', width: 12, height: 12 },
-  { type: 'image', key: 'sign', path: 'sprites/sign.png', width: 16, height: 16 },
-  { type: 'spritesheet', key: 'checkpoint', path: 'sprites/checkpoint.png', frameWidth: 16, frameHeight: 24, frames: 8 },
+  // Props e íconos de la interfaz (S13d): sin arte, cada uso dibuja su placeholder (`artOrPlaceholder`).
+  ...Object.entries(ART_IMAGES).map(
+    ([key, path]): AssetEntry => ({ type: 'image', key, path, width: 1, height: 1, codePlaceholder: true }),
+  ),
 ];

@@ -1,21 +1,33 @@
 import Phaser from 'phaser';
+import { artOrPlaceholder, type ArtLook } from '../assets/art';
 import { FONT_FAMILY } from '../config/fonts';
+import { GAMEPLAY } from '../config/gameplay';
 import { t } from '../i18n';
-import { ensurePlaceholder } from '../utils/placeholder';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { setupView, VIEW } from '../systems/View';
 
 const HEART_SPACING = 14;
 const MARGIN = 8;
-const FEATHER_ICON = 'hud_pluma';
-const LUZ_ICON = 'hud_luz_arasy';
+/** Placeholders (si falta el arte de raw/hud). */
+const HEART_FULL_PH = 'heart_full';
+const HEART_EMPTY_PH = 'heart_empty';
+const FEATHER_PH = 'hud_pluma';
+const FEATHER_EMPTY_PH = 'hud_pluma_gris';
+const LUZ_PH = 'hud_luz_arasy';
+const PH_SIZE = 10;
+const HEART_PH_SIZE = 12;
 const BAR_WIDTH = 40;
 const BOSS_BAR_WIDTH = 240;
 const BOSS_BAR_COLOR = 0xb8322a;
 
-// HUD en paralelo al nivel. Solo escucha EventBus (placeholders dibujados por código).
+// HUD en paralelo al nivel. Solo escucha EventBus. Íconos de raw/hud (o placeholders por código).
 export class UIScene extends Phaser.Scene {
   private hearts: Phaser.GameObjects.Image[] = [];
+  private heartFull!: ArtLook;
+  private heartEmpty!: ArtLook;
+  private featherFull!: ArtLook;
+  private featherEmpty!: ArtLook;
+  private featherIcon!: Phaser.GameObjects.Image;
   private featherText!: Phaser.GameObjects.Text;
   private luzIcon!: Phaser.GameObjects.Image;
   private luzBarBg!: Phaser.GameObjects.Rectangle;
@@ -31,17 +43,20 @@ export class UIScene extends Phaser.Scene {
   create(): void {
     setupView(this);
     this.hearts = [];
-    ensurePlaceholder(this, FEATHER_ICON, 10, 10);
-    ensurePlaceholder(this, LUZ_ICON, 10, 10);
+    this.heartFull = artOrPlaceholder(this, 'ui_heart_full', HEART_FULL_PH, HEART_PH_SIZE, HEART_PH_SIZE);
+    this.heartEmpty = artOrPlaceholder(this, 'ui_heart_empty', HEART_EMPTY_PH, HEART_PH_SIZE, HEART_PH_SIZE);
+    this.featherFull = artOrPlaceholder(this, 'ui_feather', FEATHER_PH, PH_SIZE, PH_SIZE);
+    this.featherEmpty = artOrPlaceholder(this, 'ui_feather_empty', FEATHER_EMPTY_PH, PH_SIZE, PH_SIZE);
+    const luz = artOrPlaceholder(this, 'ui_luz_arasy', LUZ_PH, PH_SIZE, PH_SIZE);
 
     const featherY = MARGIN + HEART_SPACING;
-    this.add.image(MARGIN, featherY, FEATHER_ICON).setOrigin(0, 0);
+    this.featherIcon = this.add.image(MARGIN, featherY, this.featherEmpty.key).setOrigin(0, 0).setScale(this.featherEmpty.scale);
     this.featherText = this.add
       .text(MARGIN + 14, featherY, '0/0', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#F2EEE3' })
       .setOrigin(0, 0);
 
     const luzY = featherY + 14;
-    this.luzIcon = this.add.image(MARGIN, luzY, LUZ_ICON).setOrigin(0, 0).setVisible(false);
+    this.luzIcon = this.add.image(MARGIN, luzY, luz.key).setOrigin(0, 0).setScale(luz.scale).setVisible(false);
     this.luzBarBg = this.add.rectangle(MARGIN + 14, luzY + 5, BAR_WIDTH, 4).setOrigin(0, 0.5).setStrokeStyle(1, 0xf2eee3).setVisible(false);
     this.luzBarFill = this.add.rectangle(MARGIN + 15, luzY + 5, BAR_WIDTH - 2, 2, 0xc8c8e6).setOrigin(0, 0.5).setVisible(false);
 
@@ -79,11 +94,12 @@ export class UIScene extends Phaser.Scene {
   private renderHearts(current: number, max: number): void {
     while (this.hearts.length < max) {
       const i = this.hearts.length;
-      this.hearts.push(this.add.image(MARGIN + i * HEART_SPACING, MARGIN, 'heart_full').setOrigin(0, 0));
+      this.hearts.push(this.add.image(MARGIN + i * HEART_SPACING, MARGIN, this.heartFull.key).setOrigin(0, 0));
     }
     this.hearts.forEach((img, i) => {
+      const look = i < current ? this.heartFull : this.heartEmpty;
       img.setVisible(i < max);
-      img.setTexture(i < current ? 'heart_full' : 'heart_empty');
+      img.setTexture(look.key).setScale(look.scale);
     });
   }
 
@@ -103,6 +119,10 @@ export class UIScene extends Phaser.Scene {
 
   private renderFeathers(current: number, max: number): void {
     this.featherText.setText(`${current}/${max}`);
+    // Pluma en color cuando hay alguna (o todas, según GAMEPLAY.hud.featherColorWhen); si no, en gris.
+    const colored = GAMEPLAY.hud.featherColorWhen === 'all' ? max > 0 && current >= max : current > 0;
+    const look = colored ? this.featherFull : this.featherEmpty;
+    this.featherIcon.setTexture(look.key).setScale(look.scale);
   }
 
   private renderLuzArasy(active: boolean, fraction: number): void {
