@@ -159,6 +159,42 @@ export const GAMEPLAY = {
     stalactitesMax: 4,
     /** Altura (px sobre el suelo) de las cabezas vulnerables tras el fuego. */
     fireRecoverHeadHeight: 36,
+    /**
+     * Cuellos (S13d, solo dibujo): cadena de escamas redondas sobre una Bézier cuadrática del lomo a la cabeza.
+     * Grosor `neckWidth` en la base y `neckTipScale` × eso junto a la cabeza; una escama cada `neckScaleSpacing`
+     * diámetros (tope `neckMaxScales`). Punto de control: `neckCurveLean` del camino en x hacia la cabeza y
+     * `neckCurveRise` unidades por encima del extremo más alto (más = cuello más arqueado).
+     * `neckScaleShade`: gris del cuerpo de la escama (el tinte es el color de la cabeza; el brillo de arriba, el color pleno).
+     */
+    neckTipScale: 0.6,
+    neckScaleSpacing: 0.5,
+    neckMaxScales: 56,
+    neckCurveLean: 0.2,
+    neckCurveRise: 28,
+    neckScaleShade: 0.55,
+    /**
+     * Cuerpo (lomo de lagarto por código): montículo de `bodyWidth` de ancho cuya cima queda `bodyTop` unidades sobre
+     * el centro del cuerpo; `bodyDepth` es el semieje vertical del óvalo (con la cima, decide dónde salen los cuellos).
+     * Filas de escamas en arco cada `bodyRowStep`, escamas de `bodyScaleSize`. Colores: gris pardo oscuro, borde y
+     * reflejos dorados (`bodyGoldAlpha`). Respira escalando `breathScale` (fracción) cada `breathMs`.
+     */
+    bodyWidth: 320,
+    bodyTop: 55,
+    bodyDepth: 95,
+    bodyRowStep: 9,
+    bodyScaleSize: 12,
+    bodyColor: 0x3d362e,
+    bodyDarkColor: 0x1b1713,
+    bodyGoldColor: 0xc9a24a,
+    bodyGoldAlpha: 0.55,
+    clawColor: 0xd8cfb8,
+    breathScale: 0.015,
+    breathMs: 2400,
+    /** Cola gruesa curvada hacia un costado: largo, alto y grosor en la base y en la punta (unidades). */
+    tailLength: 120,
+    tailRise: 70,
+    tailBaseWidth: 26,
+    tailTipWidth: 4,
   },
 
   /** Mbói Tu'i (GDD §6.2). Los tiempos de cada ataque están en src/data/bosses.ts. */

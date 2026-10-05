@@ -4,6 +4,7 @@ import { TEJU_JAGUA_COLORS, TEJU_JAGUA_HEADS, TEJU_JAGUA_HITS_PER_HEAD, getBossD
 import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
+import { ART_K, BODY_TEXTURE, ensureTejuJaguaArt, NECK_SCALE_PX, NECK_SCALE_TEXTURE, TAIL_TEXTURE, tailOrigin } from './tejuJaguaArt';
 
 const CFG = GAMEPLAY.tejuJagua;
 /** Sprite real (npm run sprites → raw/teju_jagua/head/) o placeholder. */
@@ -13,13 +14,19 @@ const EYES_TEXTURE = 'teju_jagua_eyes';
 const SLEEP_TINT = 0x2a2838;
 const FIRE_COLOR = 0xf08a30;
 const WAVE_COLOR = 0xc9a66b;
+/** Centro del cuerpo sobre el suelo (unidades). */
+const BODY_FLOOR_OFFSET = 110;
+/** Base de la cola: hacia el costado derecho del lomo (fracción del ancho) y sobre el suelo (unidades). */
+const TAIL_BASE_X = 0.38;
+const TAIL_BASE_LIFT = 16;
+/** Cola levantada en el aviso del coletazo (escala vertical relativa). */
+const TAIL_RAISE = 1.8;
 
 interface Head {
   index: number;
   img: Phaser.GameObjects.Image;
   eyes: Phaser.GameObjects.Image;
   color: number;
-  neckColor: number;
   hp: number;
   asleep: boolean;
   /** Muerde o escupe fuego: hace daño al tocarla. */
@@ -61,9 +68,11 @@ function ensureTextures(scene: Phaser.Scene): void {
 // Pelean las cabezas; cada una aguanta 2 golpes y al vencerla se duerme.
 export class TejuJagua extends Boss {
   private readonly heads: Head[] = [];
-  private readonly necks: Phaser.GameObjects.Graphics;
-  private readonly body: Phaser.GameObjects.Ellipse;
-  private readonly tail: Phaser.GameObjects.Rectangle;
+  /** Escamas de los cuellos: un pool por cabeza (sin asignar objetos en cada frame). */
+  private readonly necks: Phaser.GameObjects.Container;
+  private readonly neckScales: Phaser.GameObjects.Image[][] = [];
+  private readonly body: Phaser.GameObjects.Image;
+  private readonly tail: Phaser.GameObjects.Image;
   private readonly wave: Phaser.GameObjects.Rectangle;
   private readonly fire: Phaser.GameObjects.Rectangle;
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -84,12 +93,27 @@ export class TejuJagua extends Boss {
     ensureTextures(scene);
     const arena = ctx.arena;
     this.bodyX = arena.centerX;
-    this.bodyY = ctx.floorY - 110;
+    this.bodyY = ctx.floorY - BODY_FLOOR_OFFSET;
 
-    // Silueta del cuerpo enorme en la penumbra del fondo (ASSETS §5: l1_boss_body.png cuando exista).
-    this.body = scene.add.ellipse(this.bodyX, this.bodyY, 300, 150, 0x0e0c16, 0.92).setDepth(-5);
-    this.tail = scene.add.rectangle(this.bodyX + 150, this.bodyY + 20, 10, 60, 0x1c1a28).setOrigin(0.5, 1).setDepth(-4);
-    this.necks = scene.add.graphics().setDepth(-3);
+    // Lomo de lagarto por código (tejuJaguaArt.ts), con patas a los lados y la cola hacia un costado; respira lento.
+    ensureTejuJaguaArt(scene, BODY_FLOOR_OFFSET);
+    this.body = scene.add.image(this.bodyX, ctx.floorY, BODY_TEXTURE).setOrigin(0.5, 1).setScale(1 / ART_K).setDepth(-5);
+    scene.tweens.add({
+      targets: this.body,
+      scaleX: (1 + CFG.breathScale / 2) / ART_K,
+      scaleY: (1 + CFG.breathScale) / ART_K,
+      duration: CFG.breathMs / 2,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    const [tox, toy] = tailOrigin();
+    this.tail = scene.add
+      .image(this.bodyX + CFG.bodyWidth * TAIL_BASE_X, ctx.floorY - TAIL_BASE_LIFT, TAIL_TEXTURE)
+      .setOrigin(tox, toy)
+      .setScale(1 / ART_K)
+      .setDepth(-6);
+    this.necks = scene.add.container(0, 0).setDepth(-3);
     this.wave = scene.add.rectangle(0, 0, CFG.tailWaveWidth, CFG.tailWaveHeight, WAVE_COLOR).setOrigin(0.5, 1).setDepth(6).setVisible(false);
     this.fire = scene.add.rectangle(0, 0, 1, 1, FIRE_COLOR, 0.7).setOrigin(0, 0).setDepth(6).setVisible(false);
     this.smoke = scene.add
@@ -113,13 +137,16 @@ export class TejuJagua extends Boss {
       const img = scene.add.image(anchorX, anchorY, texture).setDepth(-2);
       skinIfAvailable(scene, img, HEAD_SPRITE, { origin: GAMEPLAY.sprites.tejuHead.origin });
       const eyes = scene.add.image(anchorX, anchorY, EYES_TEXTURE).setDepth(-1).setScale(CFG.eyeScale);
+      const scales: Phaser.GameObjects.Image[] = [];
+      for (let k = 0; k < CFG.neckMaxScales; k++) scales.push(scene.add.image(0, 0, NECK_SCALE_TEXTURE).setVisible(false));
+      this.necks.add(scales);
+      this.neckScales.push(scales);
       const color = TEJU_JAGUA_COLORS[i % TEJU_JAGUA_COLORS.length];
       this.heads.push({
         index: i,
         img,
         eyes,
         color,
-        neckColor: Phaser.Display.Color.ValueToColor(color).darken(45).color,
         hp: TEJU_JAGUA_HITS_PER_HEAD,
         asleep: false,
         harmful: false,
@@ -226,7 +253,7 @@ export class TejuJagua extends Boss {
   /** Coletazo: la cola se levanta al fondo. */
   private telegraphTail(): void {
     this.attackers = [];
-    this.scene.tweens.add({ targets: this.tail, scaleY: 1.8, angle: -15, duration: 300, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: this.tail, scaleY: TAIL_RAISE / ART_K, angle: -15, duration: 300, ease: 'Back.easeOut' });
     this.ctx.sfx('growl');
   }
 
@@ -236,7 +263,7 @@ export class TejuJagua extends Boss {
     this.waveDir = this.ctx.playerX() < arena.centerX ? -1 : 1;
     const startX = this.waveDir < 0 ? arena.right - CFG.tailWaveWidth : arena.left + CFG.tailWaveWidth;
     this.wave.setPosition(startX, this.ctx.floorY).setVisible(true);
-    this.scene.tweens.add({ targets: this.tail, scaleY: 1, angle: 0, duration: 200 });
+    this.scene.tweens.add({ targets: this.tail, scaleY: 1 / ART_K, angle: 0, duration: 200 });
     this.ctx.sfx('tailWave');
     this.ctx.shake(200, 0.006);
   }
@@ -377,15 +404,47 @@ export class TejuJagua extends Boss {
     }
     if (this.fire.visible) this.fire.setAlpha(0.55 + Math.random() * 0.3);
 
-    // Cuellos: del cuerpo a cada cabeza. Los ojos siguen a la cabeza.
-    this.necks.clear();
+    // Cuellos: del lomo a cada cabeza. Los ojos siguen a la cabeza.
     for (const head of this.heads) {
       const dir = head.img.flipX ? 1 : -1;
       head.eyes.setPosition(head.img.x + dir * CFG.eyeOffsetX, head.img.y + CFG.eyeOffsetY);
       head.eyes.setAlpha(head.img.alpha > 0 ? 1 : 0);
-      if (head.img.alpha <= 0) continue;
-      this.necks.lineStyle(CFG.neckWidth, head.asleep ? SLEEP_TINT : head.neckColor, head.img.alpha);
-      this.necks.lineBetween(head.neckX, head.neckY, head.img.x - dir * CFG.neckAttachX, head.img.y);
+      this.drawNeck(head, dir);
+    }
+  }
+
+  /**
+   * Cadena de escamas sobre una Bézier cuadrática que sube desde el lomo y llega a la cabeza: gruesa en la base
+   * (neckWidth) y más fina junto a la cabeza (neckTipScale). Las escamas más cercanas a la cabeza van encima.
+   */
+  private drawNeck(head: Head, dir: number): void {
+    const scales = this.neckScales[head.index];
+    const alpha = head.img.alpha;
+    const x0 = head.neckX;
+    const y0 = head.neckY;
+    const x2 = head.img.x - dir * CFG.neckAttachX;
+    const y2 = head.img.y;
+    const x1 = x0 + (x2 - x0) * CFG.neckCurveLean;
+    const y1 = Math.min(y0, y2) - CFG.neckCurveRise;
+    const length = (Math.hypot(x2 - x0, y2 - y0) + Math.hypot(x1 - x0, y1 - y0) + Math.hypot(x2 - x1, y2 - y1)) / 2;
+    const meanWidth = (CFG.neckWidth * (1 + CFG.neckTipScale)) / 2;
+    const count = alpha > 0 ? Phaser.Math.Clamp(Math.ceil(length / (meanWidth * CFG.neckScaleSpacing)) + 1, 2, scales.length) : 0;
+    const tint = head.asleep ? SLEEP_TINT : head.color;
+    for (let i = 0; i < scales.length; i++) {
+      const img = scales[i];
+      if (i >= count) {
+        if (img.visible) img.setVisible(false);
+        continue;
+      }
+      const t = i / (count - 1);
+      const mt = 1 - t;
+      const width = CFG.neckWidth * (1 + (CFG.neckTipScale - 1) * t);
+      img
+        .setVisible(true)
+        .setPosition(mt * mt * x0 + 2 * mt * t * x1 + t * t * x2, mt * mt * y0 + 2 * mt * t * y1 + t * t * y2)
+        .setScale(width / NECK_SCALE_PX)
+        .setTint(tint)
+        .setAlpha(alpha);
     }
   }
 
@@ -396,8 +455,8 @@ export class TejuJagua extends Boss {
     this.lastHit = undefined;
     this.wave.setVisible(false);
     this.fire.setVisible(false);
-    this.tail.setScale(1).setAngle(0);
-    this.body.setAlpha(0.92);
+    this.tail.setScale(1 / ART_K).setAngle(0);
+    this.body.setAlpha(1);
     this.tail.setAlpha(1);
     this.necks.setAlpha(1);
     for (const head of this.heads) {
