@@ -45,8 +45,9 @@ Para jefes con partes separadas, usa una subcarpeta por parte: `raw/teju_jagua/h
 5. Reduce con "moda" (cada píxel toma el color más frecuente de su bloque): colores nítidos sin borrones. Informa el tamaño aparente del "píxel" del arte; con `"snapPixel": true` usa ese tamaño como escala exacta (solo si todas las hojas lo comparten).
 6. Empaqueta todo en `public/assets/sprites/<personaje>.png` (grilla de frames iguales, se carga como spritesheet) + `.json` con las animaciones `<personaje>_<animación>`, que `PreloadScene` registra solo. Imprime un resumen (frames, escala, tamaño final).
 7. Subcarpetas por parte: `raw/<id>/<parte>/` → `sprites/<id>_<parte>.png`. `raw/backgrounds/*.png` → `backgrounds/` a 360 px de alto; `raw/portraits/*.png` → `portraits/` a 96 × 96 (recorte central).
+8. **Props e íconos (S13d):** `raw/props/*.png` → `props/<nombre>.png` y `raw/hud/*.png|jpg` → `ui/<nombre>.png`. Una imagen por archivo (sin hojas): quita el fondo, borra el borde de color del contorno, recorta al dibujo y escala por moda a `size × detail` píxeles (ver abajo).
 
-Solo usa `pngjs` (JavaScript puro): funciona igual en la nube y en Windows. Tarda unos segundos con las hojas de Grok.
+Solo usa `pngjs` y `jpeg-js` (JavaScript puro): funciona igual en la nube y en Windows. Tarda unos segundos con las hojas de Grok.
 
 ### 2.3 Ajustes: `raw/<personaje>/sprite.json`
 Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el frame 1 de la hoja es el 0):
@@ -78,6 +79,16 @@ Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el fram
 - `sheets.<hoja>.cropBottom: n` borra las `n` filas de abajo de cada celda (píxeles de origen) antes de medir: quita una rama o un suelo dibujado bajo el personaje (ñakurutu).
 - **Jefes y Mainumby (S13b):** cada uno con su `sprite.json` (detail 2, `height` = la altura de su placeholder). Si `frame` cambia, actualizá `CHARACTER_SPRITES` en `src/assets/manifest.ts`. En el juego, `SpriteSkin` (`src/systems/SpriteSkin.ts`) dibuja el sprite encima del placeholder, que deja de verse pero sigue llevando la lógica y la hitbox; el encuadre (`origin`) está en `GAMEPLAY.sprites`.
 - **Enemigos y vaca (S13c):** una hoja por enemigo (`<id>_walk`, `_run`, `_idle` o `_hang`), detail 2, frame en `ENEMY_SPRITES` (`manifest.ts`). `EnemyBase` y `Cow` se visten con `SpriteSkin` (`sourceFacesRight: true`: las hojas miran a la izquierda); quietos, los de walk/run muestran el cuadro 0. Sin sprite: abejas y los de prueba (walker, charger, flyer).
+- `greenEdgeMargin` (por defecto 30): cuánto más verde que rojo y azul tiene que ser un píxel del contorno para borrarlo. Más bajo toma también los verdes oliva que deja el Chroma key al mezclarse con el contorno (vaca: `"greenEdge": 6, "greenEdgeMargin": 12`; el pasto de la boca queda más fino).
+- **Props e íconos (S13d):** `raw/props/sprite.json` y `raw/hud/sprite.json`:
+
+```json
+{ "detail": 2, "edge": "cyan", "edgePasses": 2, "coverage": 0.4,
+  "size": { "sign": { "height": 22 }, "fire_off": { "width": 20 }, "default": { "height": 12 } } }
+```
+  - `size.<nombre>` (o `size.default`): `height` o `width` en **unidades del mundo** (la textura mide eso × `detail`; el juego la dibuja a 1/detail, `ART_DETAIL` en `manifest.ts`).
+  - `edge`: color del borde del Chroma key a borrar del contorno (`"cyan"` en los props de Grok con fondo transparente, `"magenta"` en los JPG), en `edgePasses` pasadas. `tolerance`: distancia al magenta para el fondo (90 por defecto; los JPG lo dejan desparejo: 140). `coverage`: cobertura mínima de cada bloque al reducir (0,5 por defecto; más baja conserva contornos finos en diagonal, como el corazón vacío).
+  - En el juego: `ART_IMAGES` en `manifest.ts` (`ui_*`, `prop_*`) y `artOrPlaceholder` (`src/assets/art.ts`): si falta un archivo, cada uso dibuja su placeholder.
 - Si cambiás algo, corré `npm run sprites` y recargá el juego.
 
 ---
@@ -233,12 +244,13 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 | Asset | Archivo | Tamaño |
 |---|---|---|
-| Corazón lleno y vacío | `ui/heart_full.png`, `ui/heart_empty.png` | 12 × 12 |
-| Pluma (HUD, color y gris) | `ui/feather.png`, `ui/feather_empty.png` | 12 × 12 |
-| Icono Luz de Arasy | `ui/luz_arasy_icon.png` | 16 × 16 |
-| Pickups (animados, 4 frames) | `sprites/pickups.png`: guavirá, luz_arasy, pluma, yvoty | 16 × 16 |
-| Fuego apagado y encendido (4 frames) | `sprites/checkpoint.png` | 16 × 24 |
-| Farol apagado y encendido | `sprites/lantern.png` | 16 × 32 |
+| Corazón lleno y vacío | `raw/hud/heart_full.jpg`, `heart_empty.jpg` → `ui/` | 12 de alto (S13d ☑) |
+| Pluma (HUD y pickup, color y gris) | `raw/hud/feather.jpg`, `feather_empty.jpg` → `ui/` | 12 de alto (S13d ☑) |
+| Guavirá y Luz de Arasy (HUD y pickups) | `raw/hud/guavira.jpg`, `luz_arasy.jpg` → `ui/` | 12 de alto (S13d ☑) |
+| Pickup yvoty | — (placeholder) | 12 × 12 |
+| Fogata apagada y encendida (el parpadeo es por código) | `raw/props/fire_off.png`, `fire_on.png` → `props/` | 20 de ancho (S13d ☑) |
+| Farol apagado y encendido | `raw/props/lantern_off.png`, `lantern_on.png` → `props/` | 32 de alto (S13d ☑) |
+| Cartel | `raw/props/sign.png` → `props/` | 22 de alto (S13d ☑) |
 | Camalote, hongo, rama, teja | `sprites/props.png` | 48 × 16 · 32 × 16 · 48 × 8 · 16 × 8 |
 | Marca de Tau (efecto) | `ui/tau_mark.png` | 16 × 16 |
 | Marco de diálogo (9-slice) y barra de jefe | `ui/dialog_frame.png`, `ui/boss_bar.png` | — |
@@ -292,7 +304,8 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Fondos: capas media y cercana (14) | Núcleo | S13 | ☐ |
 | Retratos (13) | Núcleo | S13 | ☐ |
 | Logo y mapa del mundo | Núcleo | S13 | ☐ |
-| Iconos y props de interfaz | Núcleo | S13 | ☐ |
+| Iconos y props de interfaz | Núcleo | S13 | ◐ (S13d: corazones, plumas, guavirá, Luz de Arasy, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
+| Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas) |
 | Música de niveles (7), liberación y final | Núcleo | S13 | ☐ |
 | Tau (disfraz y forma real) + `yvaga_far.png` y `final.png` | MVP | S12c | ☐ |
 
