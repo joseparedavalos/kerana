@@ -98,6 +98,7 @@ export const MANIFEST: AssetEntry[] = [
     }),
   ),
   { type: 'tilemap', key: 'map_test', path: 'maps/test.json' },
+  { type: 'tilemap', key: 'map_vitrina', path: 'maps/vitrina.json' },
   { type: 'tilemap', key: 'map_l1', path: 'maps/l1.json' },
   { type: 'tilemap', key: 'map_l2', path: 'maps/l2.json' },
   { type: 'tilemap', key: 'map_l3', path: 'maps/l3.json' },

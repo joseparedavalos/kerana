@@ -19,6 +19,21 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     gift: null,
     mapNode: { x: 0, y: 0 },
   },
+  // Vitrina de las piezas de motor (S18): fuera de la campaña y del mapa (order 0). ?debug=1&level=vitrina&gifts=all
+  vitrina: {
+    id: 'vitrina',
+    order: 0,
+    nameKey: 'level.vitrina.name',
+    subtitleKey: 'level.vitrina.name',
+    mapKey: 'map_vitrina',
+    mapSource: 'ascii',
+    biome: 'selva',
+    backgrounds: {},
+    musicKey: '',
+    boss: null,
+    gift: null,
+    mapNode: { x: 0, y: 0 },
+  },
   l1: {
     id: 'l1',
     order: 1,
