@@ -159,6 +159,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S13c | 2026-10-05 | Opus 5.5 | 3 | 0 | 3 | 100 | Amarillo |
 | S13d | 2026-10-05 | Opus 5.5 | 0 | 0 | plan Pro | 100 | — |
 | S16 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S17 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -231,6 +232,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S13c | Hecha | rama `claude/modest-wright-o3kjs8` | Sprites de los enemigos, la vaca y el aleteo de Mainumby (fuera del plan): pipeline con `greenEdge` por pasadas, `align` ('top', 'cell') y `cropBottom`; 16 enemigos y la vaca con detail 2 (`ENEMY_SPRITES`), temblor en el aviso, cuadro 0 quietos, skin destruido al purificar; póra translúcido y anclado arriba, mbói colgante desde la rama, jakare recortado en el agua, mbopi aplastado, ojos del jagua hũ y de Teju Jagua; vaca más alta (plataforma); Mainumby con `mainumby_fly` y brillo en degradado; 3 textos en inglés. Build, tests y smoke OK |
 | S13d | Hecha | rama `claude/pensive-meitner-921wb5` | Cuellos, cuerpo, cueva y props (fuera del plan, plan Pro): cuellos de Teju Jagua como cadena de escamas sobre una Bézier (gruesa en la base, fina en la cabeza), lomo de lagarto por código (escamas en arco con reflejos dorados, patas con garras, cola curvada, respiración); l1 con techo de A en la fila 0 y boca de la cueva más alta; roca oscura en las zonas `Cave`; pipeline de props (`raw/props`, borde celeste) e íconos (`raw/hud`, JPG con magenta); corazones, pluma del contador, cartel, fogata con parpadeo, faroles y pickups con arte; vaca sin puntitos verdes. Build, tests y smoke OK |
 | S16 | Hecha | rama `claude/jolly-tesla-rh3p49` | Auditoría del diseño de niveles (fuera del plan, plan Pro): `docs/REVIEW.md` con vocabulario, una ficha por nivel (medidas, grupos de ritmo, tramos vacíos, cinco componentes, verbos, celdas y portales, plumas), duración, huecos globales, verificaciones y los diez huecos principales. Sin cambios de código; GDD §12.2 punto 4 corregido |
+| S17 | Hecha | rama `claude/s17-plumas-modo-asistido-93n2i6` | Arreglos confirmados de REVIEW (fuera del plan, plan Pro): plumas guardadas al tocarlas con su índice del ASCII, acumulativas, sin reaparecer y con migración del conteo viejo; modo asistido completo (avisos de jefe × 1,3 en `BossBrain` y Luz de Arasy en cada arena, en caliente al volver de la pausa); guavirá de l4 dentro de la antesala. Build, tests y smoke OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -695,6 +697,33 @@ Sesión de auditoría: no cambia una sola línea de código. Entregable: `docs/R
 - **GDD §12.2 punto 4** corregido: los jefes 3 a 6 tienen 3 fases.
 - **Pendientes que no son de diseño:** antesala de l4 sin guavirá (el de x 206 queda 4 tiles antes); Luz de Arasy en las arenas del modo asistido (GDD §4.7) sin hacer.
 - **Sin verificar:** las duraciones son cálculo, no medición; `SaveData.playTimeMs` puede dar el tiempo real si Jose juega y lo anota en "Notas de juego".
+
+### S17: Plumas, modo asistido y guavirá de l4 (fuera del plan original; plan Pro)
+Sesión de arreglos confirmados: todo sale de hallazgos de `docs/REVIEW.md` (S16). No rediseña nada; corrige lo que está mal respecto del GDD.
+
+**Lee:** `docs/REVIEW.md` completo · GDD §4.4 (plumas), §4.6 (guardado), §4.7 (modo asistido) y §6.0 (la antesala siempre lleva un guavirá).
+
+**No entra:** los tramos vacíos de l3, l6 y l7 y los pozos que faltan en l1, l4 y l7 (rediseño; dependen de piezas que no existen) · cambios de balance en `gameplay.ts` · `ChaseZone` y el jefe secreto.
+
+**Tareas:**
+
+1. **Guardado de las plumas.** Índice estable (0, 1, 2) por nivel, derivado del orden de aparición en el `.txt` (campo del objeto `Pickup` del parser, con su test). Al tocar una pluma, `collectFeather(levelId, index)` guarda en el momento. El conteo nunca baja (acumulativo en el mismo guardado). Una pluma ya recogida no reaparece. Migración: el conteo viejo de `setFeatherCount(n)` pasa a ser los primeros n índices. El panel del mapa y el HUD muestran lo mismo que hoy (0/3 y 0/21). Tests: acumulación entre partidas, no contar dos veces la misma pluma y migración.
+2. **Modo asistido completo** (GDD §4.7): avisos de jefe un 30 % más largos para los ocho jefes en un solo lugar, y una Luz de Arasy en cada arena de jefe solo con el modo activo. Las dos responden al interruptor en caliente.
+3. **Guavirá de la antesala de l4** (GDD §6.0): el cambio más chico que lo deje dentro de la antesala; `npm run maps`.
+
+**Criterios:** `npm run build`, `npm test` y `npm run smoke` pasan · el smoke junta una pluma, sale al mapa, vuelve a entrar y comprueba que no reaparece y que el conteo no bajó · PR · S17 registrada en §6.3, §7 y §8.
+
+**Notas para la próxima sesión (S17 → la que siga):**
+- **Plumas:** el parser ya numeraba las plumas (`index`, fila por fila y de izquierda a derecha, como se lee el `.txt`); se agregó el test. Si se mueve una `F` a otra fila de un nivel ya jugado, los índices pueden cambiar de dueño: el guardado sigue contando bien, pero puede marcar como recogida la que antes era otra. `SaveManager.collectFeather` ignora índices fuera de 0–2 y los repetidos; `featherCount` y `hasFeather` son nuevos; `setFeatherCount` se quitó (nadie lo llama).
+- **Pluma ya recogida: no se crea.** Elegido frente a "crearla apagada y sin contador" porque es lo más simple (sin cuerpo, sin overlap ni estado extra que pueda contarla dos veces) y el HUD ya dice cuántas faltan. Si Jose quiere ver dónde estaban, la variante apagada cabe en `LevelScene.buildObjects` (caso `Pickup`).
+- **HUD:** el formato es el mismo (`n/3`), pero ahora arranca con las plumas ya guardadas del nivel (antes, siempre en 0): si no, con las recogidas que no reaparecen nunca llegaría a 3/3. El mapa (`0/3`), "Nivel completado" y el total de 21 para la diapositiva final leen el mismo guardado, sin cambios.
+- **Migración:** `normalizeFeathers` en `SaveManager` deja cada nivel como 3 booleanos. Un guardado viejo ya traía `[true, true, false]` (los primeros n): se conserva igual; un número suelto n también se convierte. Vencer al jefe ya no toca las plumas.
+- **Modo asistido en caliente:** antes **ninguna** de las tres partes hechas respondía al interruptor a mitad de un nivel (se leía al crear Kerana). Ahora `LevelScene.applyAssist` corre al volver de la pausa (Opciones se abre desde ahí): `Player.setAssist` suma o quita los 3 corazones (al activarlo también los llena; al quitarlo la vida no pasa del máximo), invulnerabilidad y duración de la Luz de Arasy siguen al instante, `Boss.setAssist` cambia `brain.telegraphScale` (vale desde el próximo aviso) y la Luz de la arena aparece o se va.
+- **Avisos de jefe:** el × 1,3 ya estaba en `BossBrain` (desde S4) pero Moñái, Teju Jagua, Jasy Jatere y Luisón animaban sus avisos con el `telegraphMs` crudo. Ahora `BossTransition.ms` trae la duración ya escalada y los jefes la usan; un solo valor (`boss.assistTelegraphScale`) para los ocho.
+- **Luz de Arasy de la arena:** aparece al cerrarse la arena, a `boss.assistLuzOffsetTiles` (4, valor nuevo, no de balance) del borde izquierdo, sobre la primera superficie de esa columna (en l1, l4, l5, l6 y Yvága cae en una repisa a ≤ 3 tiles; en l7, sobre el mausoleo). Una por intento: si Kerana cae y la pelea se reinicia, vuelve. Se quita al liberar al jefe. Sin probar a mano.
+- **l4:** el guavirá pasó de x 206 a x 212 (fila 16), dentro de la antesala (x 210–229) y antes del checkpoint 2 (x 216). Mismo número de guavirá.
+- **Smoke:** el chequeo del hongo de l5 (`> 90 px`) es inestable en el headless: mide el pico desde fuera cada 50 ms y el rebote depende de los frames. Medido aparte, main da 116, 95, 107 y 69 px y esta rama 107, 80, 69 y 121: no es de S17. La corrida final pasó entera. Conviene medir el pico dentro del juego (evento `step`) o bajar el umbral.
+- **Pendiente de REVIEW (no entró):** tramos vacíos de l3, l6 y l7; pozos en l1, l4 y l7; `ChaseZone`; los demás huecos de la Parte 5.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
