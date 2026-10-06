@@ -621,6 +621,8 @@ async function main() {
         m.reset();
         d.player.body.reset(m.block.x + 24, m.block.y);
       }, tileX);
+    // Mirar a la derecha sin caminar (con la flecha, en un headless lento llegaba a moverse varios px).
+    const vFaceRight = () => vPage.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = 1));
     // Horizontal, sobre el pozo: avanza con ella.
     await vPut(16);
     await sleep(300);
@@ -651,18 +653,14 @@ async function main() {
     // Switch con el sable: abre la reja.
     await vPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(50 * 16 + 8, 27 * 16));
     await sleep(300);
-    await vPage.keyboard.down('ArrowRight');
-    await sleep(60);
-    await vPage.keyboard.up('ArrowRight');
+    await vFaceRight();
     await vPage.keyboard.press('KeyX');
     for (let t = 0; t < 3000 && !(await vPage.evaluate(() => window.__KERANA_DEBUG__.scene.gates[0].isOpen)); t += 50) await sleep(50);
     check(await vPage.evaluate(() => window.__KERANA_DEBUG__.scene.gates[0].isOpen), 'vitrina: el sable enciende el Switch y la reja se abre');
     // Switch encerrado en la pared: solo la onda del tajo cargado lo enciende y el ascensor sube.
     await vPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(70 * 16 + 4, 27 * 16));
     await sleep(300);
-    await vPage.keyboard.down('ArrowRight');
-    await sleep(60);
-    await vPage.keyboard.up('ArrowRight');
+    await vFaceRight();
     await vPage.keyboard.down('KeyX');
     for (let t = 0; t < 10000 && (await vPage.evaluate(() => window.__KERANA_DEBUG__.player.motor.chargeFraction)) < 1; t += 50) await sleep(50);
     await sleep(100);
@@ -681,9 +679,7 @@ async function main() {
     check((await bState(0)) === 'deflated', 'vitrina: el hongo de un solo uso se desinfla al rebotar');
     await vPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(81 * 16 + 4, 14 * 16));
     await sleep(300);
-    await vPage.keyboard.down('ArrowRight');
-    await sleep(40);
-    await vPage.keyboard.up('ArrowRight');
+    await vFaceRight();
     const asleep = (await bState(1)) === 'asleep';
     await vPage.keyboard.down('KeyX');
     for (let t = 0; t < 10000 && (await vPage.evaluate(() => window.__KERANA_DEBUG__.player.motor.chargeFraction)) < 1; t += 50) await sleep(50);
