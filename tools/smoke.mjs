@@ -6,6 +6,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
+import { installPilot } from './lib/pilot.mjs';
+import { L1_HIGH, L1_LOW } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -119,10 +121,10 @@ async function main() {
     const backdropState = (page) => page.evaluate(() => window.__KERANA_DEBUG__.scene.backdrop.debugState);
     const bgStart = await backdropState(title);
     check(bgStart.images === 2 && bgStart.cave && !bgStart.far, `nivel 1: la cueva inicial usa solo el fondo de cueva (${JSON.stringify(bgStart)})`);
-    // Boca de la cueva inicial (x ≈ 45) y entrada al descenso (x ≈ 118): cielo y cueva a la vez, con el borde oscuro.
+    // Boca de la cueva inicial (x ≈ 45) y de la cueva de C (x ≈ 190, S19): cielo y cueva a la vez, con el borde oscuro.
     for (const [tx, ty] of [
       [45, 11],
-      [118, 15],
+      [190, 10],
     ]) {
       await title.evaluate(([x, y]) => window.__KERANA_DEBUG__.player.body.reset(x * 16, y * 16), [tx, ty]);
       await sleep(1200);
@@ -130,7 +132,7 @@ async function main() {
       check(bgMouth.cave && bgMouth.far && bgMouth.edges === 1, `nivel 1: en la boca x ${tx} se ven cielo y cueva con el borde (${JSON.stringify(bgMouth)})`);
       await title.screenshot({ path: join(SHOTS, `bg-l1-boca-${tx}.png`) });
     }
-    await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(75 * 16, 8 * 16));
+    await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(72 * 16, 8 * 16));
     await sleep(1200);
     const bgSlope = await backdropState(title);
     check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
@@ -149,8 +151,12 @@ async function main() {
       });
     const before = await featherState(title);
     check(before.hud === 0 && before.onMap.join() === '0,1,2', `nivel 1: 3 plumas en el mapa y 0 en el HUD (${JSON.stringify(before)})`);
-    // Pluma 0: x 46, fila 4 (sobre la salida de la cueva). Kerana aparece encima y cae a través de ella.
-    await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(46 * 16 + 8, 5 * 16));
+    // Pluma 0 (S19: en el nicho enrejado de la cueva inicial). Kerana aparece sobre ella.
+    await title.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const f = d.scene.pickups.find((p) => p.kind === 'pluma' && p.index === 0);
+      d.player.body.reset(f.x, f.y);
+    });
     await sleep(800);
     const got = await featherState(title);
     check(got.hud === 1 && got.saved?.join() === 'true,false,false', `nivel 1: la pluma 0 se guarda al tocarla (${JSON.stringify(got)})`);
@@ -201,7 +207,7 @@ async function main() {
     await bossPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const bx = await bossPage.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(bx > 176 * TILE && bx < 200 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
+    check(bx > 250 * TILE && bx < 274 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
     await walkIntoArena(bossPage);
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
@@ -212,6 +218,88 @@ async function main() {
     const bstate = await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
     check(bstate !== 'waiting', `Teju Jagua ataca (estado ${bstate})`);
     await bossPage.close();
+
+    // 1b2) l1 de punta a punta (S19): el piloto (tools/lib/pilot.mjs, plan en pilot-plans.mjs) maneja a Kerana con las teclas en cada
+    // paso del juego: piedra y reja, balsa sobre el pozo 2, ruta baja, hongo, cueva, pozo vertical, arena. Después,
+    // la liberación hasta "Nivel completado". god=1 para que un golpe no la tire a un pozo; las caídas se cuentan igual.
+    const l1Page = await open('/?debug=1&level=1&god=1');
+    await l1Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l1Info = await l1Page.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      return {
+        movers: s.movers.length,
+        gates: s.gates.length,
+        switches: s.switches.length,
+        bouncers: s.bouncers.map((b) => b.motor.state).join(','),
+        // Las ya guardadas (la pluma 0 del paso 1) no se crean: en el mapa más las del HUD son 3.
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+      };
+    });
+    check(
+      l1Info.movers === 3 && l1Info.gates === 3 && l1Info.switches === 4 && l1Info.bouncers === 'ready,ready,asleep' && l1Info.feathers === 3,
+      `nivel 1: 3 plataformas, 3 rejas, 4 piedras, hongos de un uso y dormido, 3 plumas (${JSON.stringify(l1Info)})`,
+    );
+    await l1Page.evaluate(installPilot, L1_LOW);
+    const pilot = (page) => page.evaluate(() => {
+      const p = window.__KERANA_PILOT__;
+      return { done: p.done, step: p.step, timeMs: Math.round(p.timeMs), splits: p.splits, respawns: p.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16) };
+    });
+    // Tope de reloj amplio: el headless a veces va a ≈ 35 fps; el piloto avanza por pasos del juego.
+    for (let t = 0; t < 240000 && !(await pilot(l1Page)).done; t += 500) await sleep(500);
+    const run1 = await pilot(l1Page);
+    check(run1.done && run1.respawns === 0, `nivel 1: Kerana cruza el nivel entero sin caer a un pozo (${JSON.stringify(run1)})`);
+    if (!run1.done) {
+      await l1Page.screenshot({ path: join(SHOTS, 'l1-piloto-atascado.png') });
+      console.log((await l1Page.evaluate(() => window.__KERANA_PILOT__.log)).join('\n'));
+    }
+    console.log(`  l1 (ruta baja): ${(run1.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run1.splits)}`);
+    await l1Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    for (let i = 0; i < PRESS_MAX && !(await l1Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false)); i++) {
+      await l1Page.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l1Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false), 'nivel 1 recorrido → liberación → Nivel completado');
+    await l1Page.close();
+
+    // 1b3) l1, ruta alta (S19): desde el fuego de x 101, el hongo del hoyo lleva a las repisas; la pluma B paga el salto.
+    const l1High = await open('/?debug=1&level=1&god=1');
+    await l1High.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    await l1High.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(102 * 16, 9 * 16));
+    await sleep(300);
+    const highStart = await l1High.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
+    await l1High.evaluate(installPilot, L1_HIGH);
+    const highAt = () => l1High.evaluate(() => ({ step: window.__KERANA_PILOT__.step, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16) }));
+    for (let t = 0; t < 120000 && (await highAt()).x < 186; t += 500) await sleep(500);
+    const high = await highAt();
+    check(high.x >= 186 && high.hud === highStart + 1 && high.respawns === 0, `nivel 1: la ruta alta llega a la cima con la pluma B (${JSON.stringify(high)})`);
+    await l1High.close();
+
+    // 1b4) l1 al rejugar (S19): con el tajo cargado, la onda atraviesa la roca hasta la piedra encerrada y abre la cámara
+    // de la pluma C; la piedra temporizada de la cueva inicial abre el nicho de la pluma A.
+    const l1Back = await open('/?debug=1&level=1&gifts=all&god=1');
+    await l1Back.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const powered = (id) => l1Back.evaluate((k) => window.__KERANA_DEBUG__.scene.switchBoard.isPowered(k), id);
+    await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(26 * 16 + 4, 12 * 16));
+    await sleep(300);
+    await l1Back.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = 1));
+    await l1Back.keyboard.press('KeyX');
+    for (let t = 0; t < 3000 && !(await powered('reja_cueva')); t += 50) await sleep(50);
+    check(await powered('reja_cueva'), 'nivel 1: el sable enciende la piedra temporizada de la cueva');
+    const sealedBefore = await powered('reja_camara');
+    await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(204 * 16 + 10, 22 * 16));
+    await sleep(300);
+    await l1Back.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = -1));
+    await l1Back.keyboard.down('KeyX');
+    for (let t = 0; t < 10000 && (await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.motor.chargeFraction)) < 1; t += 50) await sleep(50);
+    await sleep(100);
+    await l1Back.keyboard.up('KeyX');
+    for (let t = 0; t < 3000 && !(await powered('reja_camara')); t += 50) await sleep(50);
+    check(!sealedBefore && (await powered('reja_camara')), 'nivel 1: la onda del tajo cargado atraviesa la roca y abre la cámara de la pluma C');
+    await l1Back.screenshot({ path: join(SHOTS, 'l1-camara.png') });
+    await l1Back.close();
 
     // 1c) Nivel 2: el mapa carga, ?boss=1 lleva a la antesala y Mbói Tu'i ataca.
     const l2Page = await open('/?debug=1&level=2&boss=1&god=1');
