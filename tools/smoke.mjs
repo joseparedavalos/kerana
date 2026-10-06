@@ -29,6 +29,9 @@ function findBrowser() {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Pulsaciones (cada 300 ms) para pasar la liberación hasta "Nivel completado": el bucle corta apenas llega.
+// Con 60 (≈ 18 s) a veces no alcanzaba cuando el headless iba lento (falló una vez en l7, S18).
+const PRESS_MAX = 150;
 
 async function main() {
   const executablePath = findBrowser();
@@ -87,9 +90,16 @@ async function main() {
     // 1) Título → Nueva partida → Prólogo (salteado) → Mapa → nivel 1 → LevelExit → Nivel completado → Mapa.
     // (?debug=1, sin `level`, para poder teletransportar a Kerana sin cambiar el flujo Título → Mapa.)
     const title = await open('/?debug=1');
-    await sleep(1500);
+    // Por estado: con 1500 ms fijos, si la carga iba lenta el Enter se perdía (falló una vez en S18).
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Title') ?? false, { timeout: 20000 });
+    await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'title.png') });
-    await title.keyboard.press('Enter'); // "Nueva partida" (primer ítem del menú)
+    const inStory = () => title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false);
+    // "Nueva partida" (primer ítem del menú); se repite si el menú todavía no escuchaba.
+    for (let t = 0; t < 10000 && !(await inStory()); t += 1000) {
+      await title.keyboard.press('Enter');
+      for (let w = 0; w < 1000 && !(await inStory()); w += 100) await sleep(100);
+    }
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
     check(true, 'Título → Nueva partida → Prólogo');
     // Mantener Pausa salta el prólogo entero: se mantiene hasta que aparece el mapa (con 700 ms fijos fallaba en máquinas lentas).
@@ -260,7 +270,7 @@ async function main() {
     await l3Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l3Done = () => l3Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l3Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l3Done()); i++) {
       await l3Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -304,7 +314,7 @@ async function main() {
     check(l4race.started && l4race.defeated, `carrera por el bastón: Kerana lo toca y gana (${JSON.stringify(l4race)})`);
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l4Done = () => l4Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l4Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l4Done()); i++) {
       await l4Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -340,7 +350,7 @@ async function main() {
     await l5Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l5Done = () => l5Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l5Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l5Done()); i++) {
       await l5Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -358,15 +368,12 @@ async function main() {
       d.player.body.reset(11 * 16 + 8, d.player.y);
     });
     await sleep(500);
-    const l5y0 = await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y);
-    let l5top = l5y0;
+    // La altura la mide el juego (BounceMeter de Kerana, en cada paso): muestrear desde afuera perdía el pico
+    // y una ventana fija de tiempo real se quedaba corta cuando el headless va lento. Espera por estado (tope 15 s).
     await l5aPage.keyboard.down('ArrowRight');
-    for (let i = 0; i < 60; i++) {
-      await sleep(50);
-      l5top = Math.min(l5top, await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y));
-    }
+    for (let t = 0; t < 15000 && (await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.count)) < 1; t += 50) await sleep(50);
     await l5aPage.keyboard.up('ArrowRight');
-    const l5bounce = Math.round(l5y0 - l5top);
+    const l5bounce = Math.round(await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.lastHeight));
     check(l5bounce > 90, `nivel 5: el hongo hace rebotar a Kerana (${l5bounce} px)`);
     await l5aPage.close();
 
@@ -406,7 +413,7 @@ async function main() {
     check(l6phase.phase === 2 && !l6phase.circling, `Ao Ao fase 3 (${JSON.stringify(l6phase)})`);
     await l6Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l6Done = () => l6Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l6Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l6Done()); i++) {
       await l6Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -497,7 +504,7 @@ async function main() {
     await sleep(1500);
     check(await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.darkness.candles), 'Luisón liberado: las velas se encienden');
     await l7Page.screenshot({ path: join(SHOTS, 'l7-candles.png') });
-    for (let i = 0; i < 60 && !(await l7Active('LevelComplete')); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l7Active('LevelComplete')); i++) {
       await l7Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -558,7 +565,7 @@ async function main() {
     await tauPage.screenshot({ path: join(SHOTS, 'tau-3.png') });
     await tauPage.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const tauActive = (key) => tauPage.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
-    for (let i = 0; i < 60 && !(await tauActive('Story')); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await tauActive('Story')); i++) {
       await tauPage.keyboard.press('Space');
       await sleep(300);
     }
@@ -596,6 +603,101 @@ async function main() {
     await sleep(300);
     await tauPage.screenshot({ path: join(SHOTS, 'credits.png') });
     await tauPage.close();
+
+    // 1m) Vitrina de S18: plataformas móviles que llevan a Kerana, Switch con el sable y con la onda tras una pared, hongos.
+    const vPage = await open('/?debug=1&level=vitrina&gifts=all&god=1');
+    await vPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const vInfo = await vPage.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      return { movers: s.movers.length, gates: s.gates.length, switches: s.switches.length, bouncers: s.bouncers.map((b) => b.motor.state).join(',') };
+    });
+    check(
+      vInfo.movers === 3 && vInfo.gates === 1 && vInfo.switches === 3 && vInfo.bouncers === 'ready,asleep',
+      `vitrina: plataformas móviles, reja, Switch y hongos (${JSON.stringify(vInfo)})`,
+    );
+    // Sobre una plataforma (pies y cara de arriba, y corrimiento respecto de ella).
+    const vRide = (tileX) =>
+      vPage.evaluate((tx) => {
+        const d = window.__KERANA_DEBUG__;
+        const m = d.scene.movers.find((mv) => mv.zone.x === tx * 16);
+        const p = d.player.body;
+        return { gap: Math.abs(p.bottom - m.body.top), rel: p.center.x - m.body.x, off: m.motor.offsetX + m.motor.offsetY, down: p.blocked.down || p.touching.down };
+      }, tileX);
+    const vPut = (tileX) =>
+      vPage.evaluate((tx) => {
+        const d = window.__KERANA_DEBUG__;
+        const m = d.scene.movers.find((mv) => mv.zone.x === tx * 16);
+        m.reset();
+        d.player.body.reset(m.block.x + 24, m.block.y);
+      }, tileX);
+    // Mirar a la derecha sin caminar (con la flecha, en un headless lento llegaba a moverse varios px).
+    const vFaceRight = () => vPage.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = 1));
+    // Horizontal, sobre el pozo: avanza con ella.
+    await vPut(16);
+    await sleep(300);
+    const h0 = await vRide(16);
+    for (let t = 0; t < 8000 && (await vRide(16)).off < 64; t += 50) await sleep(50);
+    const h1 = await vRide(16);
+    check(h1.off >= 64 && Math.abs(h1.rel - h0.rel) < 2 && h1.gap < 2 && h1.down, `vitrina: la plataforma horizontal lleva a Kerana (${JSON.stringify(h1)})`);
+    // Vertical: sube y baja sin que Kerana la atraviese ni se despegue.
+    await vPut(36);
+    // El cuerpo se sincroniza en el próximo paso de la física: se mide desde ahí.
+    await sleep(300);
+    let vMaxGap = 0;
+    let vTop = 0;
+    for (let t = 0; t < 15000 && vTop > -100; t += 50) {
+      const r = await vRide(36);
+      vMaxGap = Math.max(vMaxGap, r.gap);
+      vTop = Math.min(vTop, r.off);
+      await sleep(50);
+    }
+    let vBack = vTop;
+    for (let t = 0; t < 15000 && vBack < -16; t += 50) {
+      const r = await vRide(36);
+      vMaxGap = Math.max(vMaxGap, r.gap);
+      vBack = r.off;
+      await sleep(50);
+    }
+    check(vTop <= -100 && vBack >= -16 && vMaxGap < 3, `vitrina: la plataforma vertical sube y baja con Kerana encima (separación máx. ${vMaxGap.toFixed(1)} px)`);
+    // Switch con el sable: abre la reja.
+    await vPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(50 * 16 + 8, 27 * 16));
+    await sleep(300);
+    await vFaceRight();
+    await vPage.keyboard.press('KeyX');
+    for (let t = 0; t < 3000 && !(await vPage.evaluate(() => window.__KERANA_DEBUG__.scene.gates[0].isOpen)); t += 50) await sleep(50);
+    check(await vPage.evaluate(() => window.__KERANA_DEBUG__.scene.gates[0].isOpen), 'vitrina: el sable enciende el Switch y la reja se abre');
+    // Switch encerrado en la pared: solo la onda del tajo cargado lo enciende y el ascensor sube.
+    await vPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(70 * 16 + 4, 27 * 16));
+    await sleep(300);
+    await vFaceRight();
+    await vPage.keyboard.down('KeyX');
+    for (let t = 0; t < 10000 && (await vPage.evaluate(() => window.__KERANA_DEBUG__.player.motor.chargeFraction)) < 1; t += 50) await sleep(50);
+    await sleep(100);
+    await vPage.keyboard.up('KeyX');
+    const ascOn = () => vPage.evaluate(() => window.__KERANA_DEBUG__.scene.switchBoard.isPowered('ascensor'));
+    for (let t = 0; t < 3000 && !(await ascOn()); t += 50) await sleep(50);
+    check(await ascOn(), 'vitrina: la onda atraviesa la pared, enciende el Switch y el ascensor arranca');
+    await vPage.screenshot({ path: join(SHOTS, 'vitrina.png') });
+    // Hongo de un solo uso: rebota y se desinfla. Hongo dormido: no rebota hasta el tajo cargado.
+    const bState = (i) => vPage.evaluate((k) => window.__KERANA_DEBUG__.scene.bouncers[k].motor.state, i);
+    await vPage.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(76 * 16 + 8, 14 * 16 - 20);
+    });
+    for (let t = 0; t < 5000 && (await bState(0)) !== 'deflated'; t += 50) await sleep(50);
+    check((await bState(0)) === 'deflated', 'vitrina: el hongo de un solo uso se desinfla al rebotar');
+    await vPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(81 * 16 + 4, 14 * 16));
+    await sleep(300);
+    await vFaceRight();
+    const asleep = (await bState(1)) === 'asleep';
+    await vPage.keyboard.down('KeyX');
+    for (let t = 0; t < 10000 && (await vPage.evaluate(() => window.__KERANA_DEBUG__.player.motor.chargeFraction)) < 1; t += 50) await sleep(50);
+    await sleep(100);
+    await vPage.keyboard.up('KeyX');
+    for (let t = 0; t < 3000 && (await bState(1)) !== 'ready'; t += 50) await sleep(50);
+    check(asleep && (await bState(1)) === 'ready', 'vitrina: el hongo dormido despierta con el tajo cargado');
+    await vPage.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');

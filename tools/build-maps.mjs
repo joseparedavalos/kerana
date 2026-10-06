@@ -37,8 +37,9 @@ for (const file of readdirSync(SRC_DIR).filter((f) => f.endsWith('.txt'))) {
   }
   try {
     const parsed = parseAscii(readFileSync(join(SRC_DIR, file), 'utf8'));
-    for (const w of parsed.warnings) console.warn(`! ${id}: ${w}`);
     const map = buildTiledMap(parsed);
+    // Después de armar el mapa: buildTiledMap también suma avisos (rejas sin Switch).
+    for (const w of parsed.warnings) console.warn(`! ${id}: ${w}`);
     writeFileSync(join(OUT_DIR, `${id}.json`), JSON.stringify(map));
     console.log(`+ ${id}.json (${parsed.width}×${parsed.height}, ${map.layers.at(-1).objects.length} objetos)`);
   } catch (err) {

@@ -26,6 +26,15 @@ export class LightWaveMotor {
   private blockedMs = 0;
   /** Lo que ya tocó esta onda (cada objetivo recibe un solo golpe). */
   private readonly hits = new Set<object>();
+  /**
+   * Alcance de la luz (S18): avanza con la onda hasta `rangePx` aunque ella choque con una pared.
+   * Solo lo usan los Switch (la luz pasa entre las piedras); no daña nada.
+   */
+  reachActive = false;
+  reachX = 0;
+  private reachTraveled = 0;
+  /** Número de disparo (cada onda nueva suma 1): un Switch cuenta cada onda una sola vez. */
+  shot = 0;
 
   constructor(private readonly cfg: LightWaveConfig) {}
 
@@ -40,11 +49,16 @@ export class LightWaveMotor {
     this.blocked = false;
     this.blockedMs = 0;
     this.hits.clear();
+    this.reachActive = true;
+    this.reachX = x;
+    this.reachTraveled = 0;
+    this.shot++;
     return true;
   }
 
   /** Avanza; si el borde delantero entra en el terreno, se detiene y se desvanece. */
   step(dtMs: number, isSolid?: SolidProbe): void {
+    this.stepReach(dtMs);
     if (!this.active) return;
     if (this.blocked) {
       this.blockedMs += dtMs;
@@ -70,6 +84,15 @@ export class LightWaveMotor {
       }
     }
     if (this.traveled >= this.cfg.rangePx) this.stop();
+  }
+
+  /** La luz sigue derecho a la velocidad de la onda, sin chocar, hasta el alcance. */
+  private stepReach(dtMs: number): void {
+    if (!this.reachActive) return;
+    const dx = Math.min(this.cfg.speed * (dtMs / 1000), this.cfg.rangePx - this.reachTraveled);
+    this.reachX += this.dir * dx;
+    this.reachTraveled += dx;
+    if (this.reachTraveled >= this.cfg.rangePx) this.reachActive = false;
   }
 
   stop(): void {

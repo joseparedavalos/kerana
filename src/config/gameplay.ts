@@ -443,6 +443,58 @@ export const GAMEPLAY = {
     turnPauseMs: 1200,
   },
 
+  // ── S18: piezas de motor (plataformas móviles, disparadores, variantes de hongo) ──────────────
+  // Valores nuevos; ninguno cambia un valor anterior. Los mapas pueden pisarlos por objeto.
+
+  /** Plataforma móvil (`Mover`): va y viene entre su origen y `dx`/`dy` tiles. */
+  mover: {
+    /** Velocidad por defecto (px/s) si el mapa no trae `speed`. */
+    speed: 40,
+    /** Espera en cada extremo por defecto (ms) si el mapa no trae `waitMs`. */
+    waitMs: 600,
+    /** Alto del cuerpo (px): una plataforma de una fila ocupa la parte de arriba del tile, como el `=`. */
+    thickness: 8,
+    /** Tolerancia (px) entre los pies y la cara de arriba para contar que algo viaja encima. */
+    rideTolerancePx: 3,
+    color: 0x8a6a48,
+    edgeColor: 0xc9a67a,
+  },
+
+  /** Disparador (`Switch`): piedra que se enciende con el sable o con la onda de luz. */
+  switches: {
+    /** Tamaño de la piedra (px), dentro de su tile. */
+    size: 10,
+    /** Temporizado: últimos ms en que avisa que se va a apagar (parpadeo). */
+    warnMs: 1500,
+    /** Parpadeo del aviso (Hz). */
+    warnBlinkHz: 6,
+    /**
+     * La luz de la onda sigue hasta su alcance aunque la onda choque con una pared (Ground):
+     * enciende un Switch del otro lado, pero no daña nada más allá (enemigos y jefes, como antes).
+     */
+    waveThroughWalls: true,
+    colorOff: 0x4a5a6e,
+    colorOn: 0xf2c14e,
+  },
+
+  /** Reja que abre un Switch (`Gate`). */
+  gate: {
+    /** Lo que tarda en subir o bajar (ms). */
+    moveMs: 300,
+    /** Abierta, los barrotes quedan recogidos arriba a esta fracción del alto. */
+    openScale: 0.12,
+    color: 0x3a3a48,
+  },
+
+  /** Variantes del hongo (`Bouncer kind=once|sleep`); el rebote es el mismo (`jungle.bounceVelocity`). */
+  bouncerVariants: {
+    /** De un solo uso: tiempo desinflado antes de volver (ms). */
+    onceRespawnMs: 3000,
+    /** Colores del sombrero desinflado y del dormido. */
+    deflatedColor: 0x8a6a5a,
+    asleepColor: 0x6a6a8a,
+  },
+
   /** Oscuridad (GDD §4.8, §6.7): iluminación de Phaser 4. Colores de ambiente en 0xRRGGBB. */
   darkness: {
     /** Noche con luna entre nubes (el nivel entero). */

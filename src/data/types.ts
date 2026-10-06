@@ -1,5 +1,5 @@
 // Esquemas de datos (GDD §11.6).
-export type LevelId = 'test' | 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6' | 'l7' | 'yvaga';
+export type LevelId = 'test' | 'vitrina' | 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6' | 'l7' | 'yvaga';
 export type BossId = 'teju_jagua' | 'mboi_tui' | 'monai' | 'jasy_jatere' | 'kurupi' | 'ao_ao' | 'luison' | 'tau';
 export type GiftId = 'charged_slash' | 'double_jump' | 'dash' | 'heart_up';
 export type Biome = 'cerro' | 'estero' | 'campo' | 'pueblo' | 'selva' | 'montana' | 'ciudad' | 'cielo';

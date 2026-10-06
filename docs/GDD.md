@@ -1140,8 +1140,38 @@ point FallingHazard x=150 y=5 delayMs=800
 | `F` | Pluma (índice según el orden de aparición: 0, 1, 2) |
 | `1`–`9` | Cartel (`Sign`) según la línea `sign` |
 | `a`–`z` | Enemigos según la línea `enemy` |
+| `S` | Camalote sobre el agua (objeto `Sinking`; los seguidos de una fila son uno) |
+| `M` | Hongo que rebota (objeto `Bouncer`; los seguidos de una fila son uno) |
+| `R` | Rama que se quiebra (objeto `Crumble`; los seguidos de una fila son uno) |
+| `H` | Tile delante de Kerana, sin choque (capa `Foreground`) |
+| `-` | Plataforma móvil de un solo sentido (objeto `Mover`; los seguidos de una fila son una) |
+| `+` | Plataforma móvil sólida (objeto `Mover` con `solid=true`) |
+| `:` | Recorrido de una plataforma móvil (vacío) |
+| `\|` | Reja (objeto `Gate`; los seguidos de una columna son una). La abre un `Switch` |
+| `*` | Disparador (objeto `Switch`, 1 tile): se enciende con el sable o con la onda de luz |
 
 Los objetos rectangulares (zonas de viento, niebla, oscuridad, arena, pindó, camalotes…) se declaran con `rect` en la cabecera, y los puntuales sin carácter propio (estalactitas, faroles…) con `point`; ambos en unidades de tile. El script `npm run maps` genera `public/assets/maps/<id>.json`.
+
+**Piezas de motor (S18).**
+
+- **Plataforma móvil:** se dibuja en su punto de origen (`---` o `+++`) y su recorrido con `:` pegados a ella, a la derecha o a la izquierda (horizontal) o arriba o abajo de su primer tile (vertical). `---:::::` va 5 tiles a la derecha, espera y vuelve. Sin `:` o con `:` en dos lados, `npm run maps` da error. Velocidad (`GAMEPLAY.mover.speed`) y espera en cada extremo (`waitMs`) por defecto; lleva a Kerana y a los enemigos que caminan encima.
+- **Propiedades por objeto:** la línea de cabecera `at X,Y clave=valor…` agrega propiedades al objeto de la grilla que ocupa el tile (X, Y) (cualquiera de sus tiles). Si no hay objeto ahí, error.
+
+| Objeto | Propiedades con `at` |
+|---|---|
+| `Mover` (`-`, `+`) | `id` (para los Switch) · `speed` (px/s) · `waitMs` · `solid=true\|false` · `mode=loop` (va y viene siempre, por defecto) · `mode=run` (quieta hasta que un Switch la enciende; apagado, vuelve al origen) · `mode=toggle` (encendido va al otro extremo y se queda; apagado, vuelve) |
+| `Gate` (`\|`) | `id` |
+| `Switch` (`*`) | `target=<id>` (obligatorio: una reja o un Mover; varios Switch pueden nombrar el mismo) · `ms` (0 o nada = permanente; si no, se apaga solo a los `ms`, parpadeando antes) |
+| `Bouncer` (`M`) | `kind=once` (se desinfla al rebotar y vuelve a los 3 s) · `kind=sleep` (no rebota hasta un tajo cargado o la onda; después queda activo) |
+
+```
+at 30,20 id=reja
+at 24,22 target=reja ms=4000
+at 40,18 id=ascensor mode=toggle speed=60
+at 52,21 kind=sleep
+```
+
+La luz de la onda del tajo cargado enciende un Switch hasta 6 tiles adelante aunque haya una pared en medio (la onda se apaga en la pared y no daña nada del otro lado; `GAMEPLAY.switches.waveThroughWalls`). Vitrina con todas las piezas: `?debug=1&level=vitrina&gifts=all` (`tools/levels/vitrina.txt`, fuera de la campaña).
 
 **Regla:** cuando el autor edita un mapa en Tiled, ese JSON pasa a ser la fuente (`mapSource: 'tiled'` en `levels.ts`) y ya no se regenera desde el ASCII.
 

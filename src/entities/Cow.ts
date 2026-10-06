@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
 import { skinIfAvailable } from '../systems/SpriteSkin';
+import { carryRiders, collectRiders, placeKinematic } from './Mover';
+import { MoverMotor } from './MoverMotor';
 
 const CFG = GAMEPLAY.cow;
 const TEXTURE = 'vaca_placeholder';
@@ -23,14 +25,15 @@ function ensureTexture(scene: Phaser.Scene): void {
 }
 
 // Vaca suelta de Capiatá: camina despacio de un lado a otro, muge de vez en cuando, no hace daño
-// y se puede usar de plataforma (se salta sobre su lomo).
+// y se puede usar de plataforma (se salta sobre su lomo). Desde S18 la patrulla es un `MoverMotor`
+// (ida y vuelta de ± `patrolDistance` que empieza en el medio, con pausa en cada punta) y lleva a
+// quien está encima con el mismo código que las plataformas móviles.
 export class Cow extends Phaser.Physics.Arcade.Image {
   declare body: Phaser.Physics.Arcade.Body;
-  private facing: 1 | -1;
-  private pauseMs = 0;
+  readonly motor: MoverMotor;
   private mooMs: number;
-  private readonly minX: number;
-  private readonly maxX: number;
+  private readonly patrolOriginX: number;
+  private readonly riders: Phaser.Physics.Arcade.Body[] = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -41,41 +44,47 @@ export class Cow extends Phaser.Physics.Arcade.Image {
   ) {
     ensureTexture(scene);
     super(scene, x, feetY, TEXTURE);
-    this.facing = facing;
-    this.minX = x - CFG.patrolDistance;
-    this.maxX = x + CFG.patrolDistance;
+    this.patrolOriginX = x - CFG.patrolDistance;
+    this.motor = new MoverMotor({
+      dx: CFG.patrolDistance * 2,
+      dy: 0,
+      speed: CFG.speed,
+      waitMs: CFG.turnPauseMs,
+      startPos: CFG.patrolDistance,
+      startDir: facing,
+    });
     this.mooMs = Phaser.Math.Between(CFG.mooMinMs, CFG.mooMaxMs);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(4);
     this.body.setSize(CFG.width, CFG.height - 4).setOffset(0, 4);
-    this.body.setAllowGravity(false).setImmovable(true);
-    // Solo se choca desde arriba: es una plataforma que camina (lleva a quien está encima).
-    this.body.checkCollision.down = false;
-    this.body.checkCollision.left = false;
-    this.body.checkCollision.right = false;
+    Cow.setupBody(this.body);
     // Sprite real (S13c): el placeholder mira a la derecha sin voltear; quieta, el cuadro 0.
     skinIfAvailable(scene, this, 'vaca', { anim: 'vaca_walk', sourceFacesRight: true, stillFrame: true });
   }
 
-  tick(deltaMs: number): void {
+  /** Plataforma que camina: sin gravedad, la mueve el código y solo se choca desde arriba. */
+  static setupBody(body: Phaser.Physics.Arcade.Body): void {
+    body.setAllowGravity(false).setImmovable(true);
+    body.moves = false;
+    body.checkCollision.down = false;
+    body.checkCollision.left = false;
+    body.checkCollision.right = false;
+  }
+
+  /** Avanza la patrulla y lleva a los cuerpos de `bodies` que están sobre el lomo. */
+  tick(deltaMs: number, bodies: readonly Phaser.Physics.Arcade.Body[]): void {
     this.mooMs -= deltaMs;
     if (this.mooMs <= 0) {
       this.mooMs = Phaser.Math.Between(CFG.mooMinMs, CFG.mooMaxMs);
       this.onMoo(this);
     }
-    if (this.pauseMs > 0) {
-      this.pauseMs -= deltaMs;
-      this.body.setVelocityX(0);
-      return;
-    }
-    if ((this.facing > 0 && this.x >= this.maxX) || (this.facing < 0 && this.x <= this.minX)) {
-      this.facing = this.facing > 0 ? -1 : 1;
-      this.pauseMs = CFG.turnPauseMs;
-      this.body.setVelocityX(0);
-    } else {
-      this.body.setVelocityX(this.facing * CFG.speed);
-    }
-    this.setFlipX(this.facing < 0);
+    collectRiders(bodies, this.body.top, this.body.left, this.body.right, this.riders);
+    const d = this.motor.step(deltaMs);
+    // Mira hacia donde va (en la pausa de cada punta ya mira para el otro lado, como antes).
+    this.setFlipX(this.motor.dir < 0);
+    if (d.dx === 0) return;
+    placeKinematic(this, this.body, this.patrolOriginX + this.motor.offsetX, this.y);
+    carryRiders(this.riders, d);
   }
 }

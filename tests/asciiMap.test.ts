@@ -150,3 +150,55 @@ describe('buildTiledMap', () => {
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\nP?\n'))).toThrow(/desconocido/);
   });
 });
+
+describe('objetos de motor (S18)', () => {
+  const build = (header: string, grid: string) => {
+    const parsed = parseAscii(`${header}\n---\n${grid}`);
+    const map = buildTiledMap(parsed);
+    const objects = (map.layers.at(-1) as unknown as { objects: Obj[] }).objects;
+    return { parsed, objects, of: (cls: string) => objects.filter((o) => o.type === cls) };
+  };
+
+  it('Mover: los "-" seguidos y su recorrido de ":" (derecha, izquierda, abajo, arriba)', () => {
+    const { of } = build(
+      'size 12x8',
+      ['P...........', '---:::......', '......::+++.', '.-..........', '.:..........', '.:.......:..', '.........-..', '############'].join('\n'),
+    );
+    const movers = of('Mover');
+    expect(movers.map((m) => [m.x / 16, m.y / 16, m.width / 16, props(m)])).toEqual([
+      [0, 1, 3, { dx: 3, dy: 0 }],
+      [8, 2, 3, { dx: -2, dy: 0, solid: true }],
+      [1, 3, 1, { dx: 0, dy: 2 }],
+      [9, 6, 1, { dx: 0, dy: -1 }],
+    ]);
+  });
+
+  it('Mover sin recorrido o con ":" en dos lados: error', () => {
+    expect(() => build('size 4x2', 'P---\n####')).toThrow(/sin recorrido/);
+    expect(() => build('size 6x3', 'P.....\n:--:..\n######')).toThrow(/más de un lado/);
+  });
+
+  it('reja (|), Switch (*) y propiedades con "at"', () => {
+    const { of, parsed } = build(
+      ['size 8x4', 'at 5,0 id=reja', 'at 2,2 target=reja ms=4000', 'at 3,2 kind=once', 'at 0,1 id=m1 speed=60 mode=run'].join('\n'),
+      ['.....|..', '--::.|..', 'P.*M.|..', '########'].join('\n'),
+    );
+    const [gate] = of('Gate');
+    expect([gate.x / 16, gate.y / 16, gate.width / 16, gate.height / 16, props(gate)]).toEqual([5, 0, 1, 3, { id: 'reja' }]);
+    expect(props(of('Switch')[0])).toEqual({ target: 'reja', ms: 4000 });
+    expect(props(of('Bouncer')[0])).toEqual({ kind: 'once' });
+    expect(props(of('Mover')[0])).toEqual({ dx: 2, dy: 0, id: 'm1', speed: 60, mode: 'run' });
+    expect(parsed.warnings).toEqual([]);
+  });
+
+  it('el Switch tiene que nombrar un objetivo que exista', () => {
+    expect(() => build('size 4x2', 'P*..\n####')).toThrow(/sin "target"/);
+    expect(() => build('size 4x2\nat 1,0 target=nada', 'P*..\n####')).toThrow(/id "nada"/);
+    expect(() => build('size 4x2\nat 3,0 x=1', 'P...\n####')).toThrow(/ningún objeto/);
+  });
+
+  it('una reja sin Switch avisa', () => {
+    const { parsed } = build('size 4x2', 'P.|.\n####');
+    expect(parsed.warnings.some((w: string) => /sin ningún Switch/.test(w))).toBe(true);
+  });
+});

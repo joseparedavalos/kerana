@@ -11,6 +11,7 @@ export const es = {
   'key.space': 'Espacio',
 
   'level.test.name': 'Nivel de prueba',
+  'level.vitrina.name': 'Vitrina de piezas',
   'level.l1.name': 'Paraguarí',
   'level.l1.subtitle': "Ybyty: los cerros dormidos",
   'level.l2.name': 'Ñeembucú',
@@ -70,6 +71,9 @@ export const es = {
   'hint.l7.antesala': 'Luisón apaga los faroles: volvé a encenderlos',
   'hint.l5.antesala': 'Kurupi: pies al revés. Seguí sus huellas',
   'status.zzz': 'Zzz',
+  'hint.vitrina.gate': 'Golpeá la piedra y la reja se abre. Esta se apaga sola: ¡apurate!',
+  'hint.vitrina.wave': 'Hay una piedra encerrada en la pared: solo la luz del tajo cargado llega hasta ella.',
+  'hint.vitrina.mushrooms': 'El primer hongo se desinfla al usarlo. El segundo duerme: despertalo con un tajo cargado.',
   'hint.test.water': 'El agua honda y los pozos te devuelven al último suelo firme.',
 
   'debug.state': 'Estado: {state}',

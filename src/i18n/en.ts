@@ -13,6 +13,7 @@ export const en: Record<TextKey, string> = {
   'key.space': 'Space',
 
   'level.test.name': 'Test level',
+  'level.vitrina.name': 'Parts showcase',
   'level.l1.name': 'Paraguarí',
   'level.l1.subtitle': 'Ybyty: the sleeping hills',
   'level.l2.name': 'Ñeembucú',
@@ -72,6 +73,9 @@ export const en: Record<TextKey, string> = {
   'hint.l7.antesala': 'Luisón puts out the lanterns: light them again',
   'hint.l5.antesala': 'Kurupi: backward feet. Follow his footprints',
   'status.zzz': 'Zzz',
+  'hint.vitrina.gate': 'Strike the stone and the gate opens. This one goes out by itself: hurry!',
+  'hint.vitrina.wave': 'A stone is sealed inside the wall: only the light of the charged slash can reach it.',
+  'hint.vitrina.mushrooms': 'The first mushroom deflates when used. The second is asleep: wake it with a charged slash.',
   'hint.test.water': 'Deep water and pits send you back to the last solid ground.',
 
   'debug.state': 'State: {state}',
