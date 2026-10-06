@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 
-// Dibujo por código de Teju Jagua (S13d): lomo de lagarto, cola y escamas de los cuellos; S20: onda del coletazo.
+// Dibujo por código de Teju Jagua (S13d): lomo de lagarto, cola y escamas de los cuellos; S20: onda del coletazo; S21: llamarada.
 // Las texturas se generan una vez, al doble de detalle (ART_K), y se dibujan a escala 1/ART_K.
 // Cuerpo, patas y cola se dibujan ya achicados por `bodySize` (S20): con pixelArt, escalar la imagen ensuciaría el dibujo.
 const CFG = GAMEPLAY.tejuJagua;
@@ -282,4 +282,195 @@ function makeWave(scene: Phaser.Scene): void {
 
   g.generateTexture(WAVE_TEXTURE, Math.ceil(w * k), Math.ceil(h * k));
   g.destroy();
+}
+
+// ── Llamarada (S21) ─────────────────────────────────────────────────────────
+
+/** Colores del fuego: núcleo casi blanco, chorro amarillo, cuerpo naranja (la zona de daño) y desborde rojizo. */
+const FLAME_WHITE = 0xfff4c4;
+const FLAME_YELLOW = 0xffd23c;
+const FLAME_ORANGE = 0xf08a30;
+const FLAME_RED = 0xd8441c;
+const HAZE_COLOR = 0xfff0d8;
+/** Tramos de los bordes de la llama y de las hebras de calor. */
+const FLAME_STEPS = 20;
+const HAZE_STEPS = 10;
+/** Hebras de aire que tiembla a cada costado de la llama. */
+const HAZE_STRANDS = 3;
+/** Lenguas claras que bajan por el cuerpo de la llama. */
+const FLAME_TONGUES = 9;
+
+/** Ruido suave (0..1) que se mueve con el tiempo: agita los bordes. */
+function flicker(y: number, t: number, seed: number): number {
+  return 0.5 + 0.3 * Math.sin(y * 0.09 + t * 6.3 + seed) + 0.2 * Math.sin(y * 0.23 - t * 10.1 + seed * 2.7);
+}
+
+/** Contornos de la llama: desborde (hacia afuera), cuerpo (= zona, hacia adentro) y banda clara interior. */
+const OUTLINE_SPILL = 0;
+const OUTLINE_CORE = 1;
+const OUTLINE_BAND = 2;
+
+/** Cuánto sale el borde de la zona (negativo: entra), a la altura `y` (`v` = 0 arriba, 1 en el suelo). */
+function edgeOffset(zone: Phaser.Geom.Rectangle, mode: number, v: number, y: number, t: number, side: number): number {
+  if (mode === OUTLINE_SPILL) return CFG.fireSpill * (0.35 + 0.65 * v) * (0.45 + 0.55 * flicker(y, t, side * 3.1));
+  if (mode === OUTLINE_CORE) return -CFG.fireCoreJitter * flicker(y, t, side * 5.7);
+  return -(CFG.fireCoreJitter + zone.width * 0.12 * (1 - 0.5 * v) * (0.6 + 0.4 * flicker(y, t, side * 1.9)));
+}
+
+function pointPool(n: number): Phaser.Math.Vector2[] {
+  const out: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i < n; i++) out.push(new Phaser.Math.Vector2());
+  return out;
+}
+
+/**
+ * Dibuja el aliento de fuego y su aviso en un Graphics, cada frame, con puntos preasignados (sin objetos nuevos).
+ * El cuerpo naranja ocupa exactamente la zona de daño; lo que desborda (lenguas, suelo iluminado, calor) es tenue.
+ */
+export class FlameArt {
+  private readonly edge = pointPool(2 * FLAME_STEPS + 2);
+  private readonly haze = pointPool(HAZE_STEPS + 1);
+
+  constructor(private readonly g: Phaser.GameObjects.Graphics) {}
+
+  clear(): void {
+    this.g.clear();
+  }
+
+  /**
+   * Llamarada sobre `zone` (la hitbox). `mouths`: hocicos de las cabezas, de a pares (x, y). `timeMs`: reloj del fuego.
+   * Capas, de atrás hacia adelante: suelo iluminado, desborde tenue, cuerpo (= zona), chorros amarillos y núcleo.
+   */
+  drawFlame(zone: Phaser.Geom.Rectangle, mouths: readonly number[], timeMs: number): void {
+    const g = this.g.clear();
+    const t = (timeMs / CFG.fireFlickerMs) * 0.5;
+    const top = zone.y;
+    const bottom = zone.bottom;
+    const jitter = CFG.fireCoreJitter;
+
+    // Suelo iluminado: tenue fuera de la zona, más fuerte adentro.
+    g.fillStyle(FLAME_ORANGE, CFG.fireFloorGlowAlpha * (0.8 + 0.2 * Math.sin(t * 7)));
+    g.fillEllipse(zone.centerX, bottom, zone.width + 2 * CFG.fireFloorGlow, 12);
+    this.hazeStrands(zone, t);
+
+    // Desborde: lenguas rojizas que se agitan y se abren al llegar al suelo.
+    this.outline(zone, OUTLINE_SPILL, t);
+    g.fillStyle(FLAME_RED, CFG.fireSpillAlpha * (0.85 + 0.15 * Math.sin(t * 11))).fillPoints(this.edge, true, true);
+
+    // Cuerpo: la zona de daño; los bordes se agitan solo hacia adentro.
+    this.outline(zone, OUTLINE_CORE, t);
+    g.fillStyle(FLAME_ORANGE, CFG.fireCoreAlpha).fillPoints(this.edge, true, true);
+    // Banda más clara adentro: el naranja del borde va hacia el amarillo.
+    this.outline(zone, OUTLINE_BAND, t);
+    g.fillStyle(0xf8a83a, 0.55).fillPoints(this.edge, true, true);
+
+    // Chorros desde cada hocico: se ensanchan al bajar; nunca salen de la zona.
+    for (let i = 0; i + 1 < mouths.length; i += 2) {
+      const mx = Phaser.Math.Clamp(mouths[i], zone.x + jitter, zone.right - jitter);
+      const my = mouths[i + 1];
+      const wide = zone.width * CFG.fireJetSpread;
+      // Cuello corto entre el hocico y el borde de arriba de la zona (pegado a la cabeza): tenue, como el desborde.
+      if (my < top) {
+        g.fillStyle(FLAME_YELLOW, CFG.fireSpillAlpha + 0.25);
+        g.fillTriangle(mx - 3, my, mx + 3, my, mx + 5, top + 1).fillTriangle(mx - 3, my, mx - 5, top + 1, mx + 5, top + 1);
+      }
+      this.jet(zone, mx, top, wide, t, i);
+      g.fillStyle(FLAME_YELLOW, 0.9).fillPoints(this.edge, true, true);
+      this.jet(zone, mx, top, wide * 0.3, t, i + 7);
+      g.fillStyle(FLAME_WHITE, 0.8).fillPoints(this.edge, true, true);
+    }
+    // Lenguas que bajan por el cuerpo: el fuego fluye de los hocicos al suelo.
+    for (let k = 0; k < FLAME_TONGUES; k++) {
+      const phase = (t * 0.9 + k / FLAME_TONGUES) % 1;
+      const x = zone.x + jitter + (zone.width - 2 * jitter) * ((k * 0.618 + 0.13) % 1);
+      const y = top + zone.height * phase;
+      const len = 26 + 14 * Math.sin(k * 1.7);
+      const w = 3 + 2 * (1 - phase);
+      const tip = Math.min(bottom, y + len);
+      g.fillStyle(k % 2 === 0 ? FLAME_YELLOW : FLAME_WHITE, 0.55 * (1 - phase * 0.6));
+      g.fillTriangle(x - w, y, x + w, y, x + Math.sin(t * 8 + k) * 2, tip);
+    }
+    // Suelo de la zona al rojo blanco donde pega la llama.
+    g.fillStyle(FLAME_YELLOW, 0.7).fillRect(zone.x + jitter, bottom - 3, zone.width - 2 * jitter, 3);
+  }
+
+  /**
+   * Aviso: el suelo de la zona se tiñe desde abajo de las cabezas (`centerX`) hasta los bordes, el aire de la zona
+   * brilla y los bordes se marcan. `p`: avance del aviso (0..1).
+   */
+  drawWarning(zone: Phaser.Geom.Rectangle, centerX: number, p: number, timeMs: number): void {
+    const g = this.g.clear();
+    const t = timeMs / 1000;
+    const sweep = Phaser.Math.Clamp(p / CFG.fireWarnSweep, 0, 1);
+    const pulse = 0.85 + 0.15 * Math.sin(t * 22);
+    // Columna de aire caliente: crece con el aviso, más intensa abajo.
+    const bands = 6;
+    for (let i = 0; i < bands; i++) {
+      const v = i / bands;
+      g.fillStyle(FLAME_ORANGE, CFG.fireWarnColumnAlpha * p * (0.35 + 0.65 * v) * pulse);
+      g.fillRect(zone.x, zone.y + zone.height * v, zone.width, zone.height / bands);
+    }
+    // Bordes de la zona: dos líneas finas de calor, cada vez más claras.
+    g.fillStyle(FLAME_YELLOW, 0.7 * p * pulse);
+    g.fillRect(zone.x, zone.y, 1, zone.height).fillRect(zone.right - 1, zone.y, 1, zone.height);
+    // Suelo que se tiñe: brasa que se extiende desde abajo de las cabezas hasta los dos bordes.
+    const left = Phaser.Math.Linear(centerX, zone.x, sweep);
+    const right = Phaser.Math.Linear(centerX, zone.right, sweep);
+    const glow = CFG.fireWarnGlow * (0.5 + 0.5 * p);
+    for (let i = 0; i < 4; i++) {
+      const f = 1 - i / 4;
+      g.fillStyle(FLAME_ORANGE, CFG.fireWarnFloorAlpha * 0.25 * p * pulse).fillRect(left, zone.bottom - glow * f, right - left, glow * f);
+    }
+    g.fillStyle(FLAME_RED, CFG.fireWarnFloorAlpha * (0.4 + 0.6 * p) * pulse).fillRect(left, zone.bottom - 4, right - left, 4);
+    g.fillStyle(FLAME_YELLOW, CFG.fireWarnFloorAlpha * p * pulse).fillRect(left, zone.bottom - 2, right - left, 2);
+  }
+
+  /** Contorno de la zona en `edge`: lado izquierdo de arriba abajo y derecho de abajo arriba. */
+  private outline(zone: Phaser.Geom.Rectangle, mode: number, t: number): void {
+    const e = this.edge;
+    const n = FLAME_STEPS;
+    for (let i = 0; i <= n; i++) {
+      const v = i / n;
+      const y = zone.y + zone.height * v;
+      e[i].set(zone.x - edgeOffset(zone, mode, v, y, t, -1), y);
+      e[2 * n + 1 - i].set(zone.right + edgeOffset(zone, mode, v, y, t, 1), y);
+    }
+  }
+
+  /** Cono de un chorro en `edge`: de `startW` en el hocico a `endW` en el suelo, recortado a la zona. */
+  private jet(zone: Phaser.Geom.Rectangle, cx: number, top: number, endW: number, t: number, seed: number): void {
+    const e = this.edge;
+    const n = FLAME_STEPS;
+    const bottom = zone.bottom;
+    const lo = zone.x + CFG.fireCoreJitter;
+    const hi = zone.right - CFG.fireCoreJitter;
+    for (let i = 0; i <= n; i++) {
+      const v = i / n;
+      const y = top + (bottom - top) * v;
+      const half = (6 + (endW - 6) * Math.pow(v, 0.8)) / 2;
+      const l = half * (0.8 + 0.35 * flicker(y, t, seed));
+      const r = half * (0.8 + 0.35 * flicker(y, t, seed + 4.2));
+      e[i].set(Phaser.Math.Clamp(cx - l, lo, hi), y);
+      e[2 * n + 1 - i].set(Phaser.Math.Clamp(cx + r, lo, hi), y);
+    }
+  }
+
+  /** Aire que tiembla: hebras finas y onduladas que suben a los costados de la llama. */
+  private hazeStrands(zone: Phaser.Geom.Rectangle, t: number): void {
+    if (CFG.fireHazeAlpha <= 0) return;
+    const g = this.g;
+    const pts = this.haze;
+    const height = zone.height * 0.75;
+    for (let side = -1; side <= 1; side += 2) {
+      for (let s = 0; s < HAZE_STRANDS; s++) {
+        const baseX = side < 0 ? zone.x - CFG.fireSpill - 4 - s * 7 : zone.right + CFG.fireSpill + 4 + s * 7;
+        for (let i = 0; i <= HAZE_STEPS; i++) {
+          const v = i / HAZE_STEPS;
+          const y = zone.bottom - height * v;
+          pts[i].set(baseX + 2.5 * Math.sin(y * 0.12 + t * 9 + s * 2.1), y);
+        }
+        g.lineStyle(1, HAZE_COLOR, CFG.fireHazeAlpha * (1 - 0.3 * s)).strokePoints(pts, false, false);
+      }
+    }
+  }
 }
