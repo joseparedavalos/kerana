@@ -1,4 +1,17 @@
 // Parser de mapas ASCII → Tiled JSON (GDD §11.7). Lógica pura, sin E/S.
+//
+// Objetos de motor (S18), además de la tabla de GDD §11.7.1:
+//   -  plataforma móvil de un solo sentido (Mover)   +  plataforma móvil sólida (Mover solid=true)
+//      Los - (o +) seguidos de una fila son una plataforma; su recorrido se dibuja con ":" pegados a ella,
+//      a la derecha o a la izquierda (horizontal) o arriba o abajo de su primer tile (vertical):
+//      "---:::::" va 5 tiles a la derecha y vuelve. Va y viene sola salvo que diga mode=run|toggle.
+//   |  reja (Gate): los | seguidos de una columna son una reja; la abre un Switch.
+//   *  disparador (Switch): piedra de 1 tile que se enciende con el sable o con la onda de luz.
+//   Propiedades por objeto con la línea de cabecera "at X,Y clave=valor…" (X, Y: cualquier tile del objeto):
+//     Mover:   id=… speed=px/s waitMs=… mode=loop|run|toggle solid=true|false
+//     Gate:    id=…
+//     Switch:  target=<id de una reja o un Mover> (obligatorio) ms=<0 permanente | ms encendido>
+//     Bouncer: kind=once (un solo uso) | kind=sleep (dormido hasta un tajo cargado)
 import { TILE, TILESET_COLUMNS, TILESET_ROWS, TILES } from './tileset-layout.mjs';
 
 const TILED_VERSION = '1.10.2';
@@ -29,7 +42,7 @@ export function parseAscii(text) {
   const sep = lines.findIndex((l) => l.trim() === '---');
   if (sep < 0) throw new Error('Falta la línea "---" que separa la cabecera de la grilla.');
 
-  const result = { name: '', width: 0, height: 0, biome: 'cerro', enemies: {}, signs: {}, rects: [], points: [], grid: [], warnings: [] };
+  const result = { name: '', width: 0, height: 0, biome: 'cerro', enemies: {}, signs: {}, rects: [], points: [], ats: [], grid: [], warnings: [] };
 
   for (const rawLine of lines.slice(0, sep)) {
     const line = rawLine.trim();
@@ -78,6 +91,14 @@ export function parseAscii(text) {
         (cmd === 'rect' ? result.rects : result.points).push({ cls, ...geom, props: extra });
         break;
       }
+      case 'at': {
+        // Propiedades para el objeto de la grilla que ocupa el tile (x, y).
+        const m = /^(\d+),(\d+)$/.exec(rest[0] ?? '');
+        if (!m) throw new Error(`"at" inválido (se espera "at X,Y clave=valor"): ${line}`);
+        const props = Object.fromEntries(Object.entries(parsePairs(rest.slice(1))).map(([k, v]) => [k, parseValue(v)]));
+        result.ats.push({ x: Number(m[1]), y: Number(m[2]), props });
+        break;
+      }
       default:
         throw new Error(`Cabecera desconocida: "${cmd}"`);
     }
@@ -104,6 +125,63 @@ export function groundMask(grid, x, y, isGround = (c) => c === '#') {
   const w = grid[0]?.length ?? 0;
   const at = (cx, cy) => (cx < 0 || cy < 0 || cx >= w || cy >= h ? true : isGround(grid[cy][cx]));
   return (at(x, y - 1) ? 1 : 0) | (at(x + 1, y) ? 2 : 0) | (at(x, y + 1) ? 4 : 0) | (at(x - 1, y) ? 8 : 0);
+}
+
+/**
+ * Recorrido de una plataforma móvil de `len` tiles que empieza en (x, y): los ":" pegados a la derecha,
+ * a la izquierda, abajo o arriba de su primer tile. Devuelve el desplazamiento en tiles (uno de los dos es 0).
+ */
+export function moverTrack(grid, x, y, len) {
+  const at = (cx, cy) => grid[cy]?.[cx];
+  const run = (cx, cy, sx, sy) => {
+    let n = 0;
+    while (at(cx + sx * (n + 1), cy + sy * (n + 1)) === ':') n++;
+    return n;
+  };
+  const tracks = [
+    { dx: run(x + len - 1, y, 1, 0), dy: 0 },
+    { dx: -run(x, y, -1, 0), dy: 0 },
+    { dx: 0, dy: run(x, y, 0, 1) },
+    { dx: 0, dy: -run(x, y, 0, -1) },
+  ].filter((t) => t.dx !== 0 || t.dy !== 0);
+  if (tracks.length === 0) throw new Error(`Plataforma móvil en (${x}, ${y}) sin recorrido: dibujalo con ":" pegados a ella.`);
+  if (tracks.length > 1) throw new Error(`Plataforma móvil en (${x}, ${y}) con ":" en más de un lado.`);
+  // -0 → 0 (para que el JSON y los tests no vean "-0").
+  return { dx: tracks[0].dx || 0, dy: tracks[0].dy || 0 };
+}
+
+/** Líneas "at X,Y …": suman (o pisan) propiedades del objeto de la grilla que ocupa ese tile. */
+function applyAts(objects, ats, prop) {
+  for (const a of ats) {
+    const cx = a.x * TILE + TILE / 2;
+    const cy = a.y * TILE + TILE / 2;
+    const obj = objects.find((o) => !o.point && cx >= o.x && cx < o.x + o.width && cy >= o.y && cy < o.y + o.height);
+    if (!obj) throw new Error(`"at ${a.x},${a.y}": no hay ningún objeto de la grilla en ese tile.`);
+    const list = obj.properties ?? [];
+    for (const [k, v] of Object.entries(a.props)) {
+      const i = list.findIndex((p) => p.name === k);
+      if (i >= 0) list[i] = prop(k, v);
+      else list.push(prop(k, v));
+    }
+    obj.properties = list;
+  }
+}
+
+/** Cada Switch nombra un objetivo (`target`) que tiene que existir como `id` de una reja o un Mover. */
+function checkSwitchLinks(objects, warnings) {
+  const val = (o, k) => o.properties?.find((p) => p.name === k)?.value;
+  const ids = new Set(objects.filter((o) => o.type === 'Gate' || o.type === 'Mover').map((o) => val(o, 'id')).filter((v) => v !== undefined).map(String));
+  const used = new Set();
+  for (const o of objects.filter((o) => o.type === 'Switch')) {
+    const target = val(o, 'target');
+    const where = `(${o.x / TILE}, ${o.y / TILE})`;
+    if (target === undefined) throw new Error(`Switch en ${where} sin "target": agregá "at ${o.x / TILE},${o.y / TILE} target=<id>".`);
+    if (!ids.has(String(target))) throw new Error(`Switch en ${where}: no hay reja ni Mover con id "${target}".`);
+    used.add(String(target));
+  }
+  for (const o of objects.filter((o) => o.type === 'Gate' && !used.has(String(val(o, 'id'))))) {
+    warnings.push(`Reja en (${o.x / TILE}, ${o.y / TILE}) sin ningún Switch: queda cerrada.`);
+  }
 }
 
 /**
@@ -176,6 +254,30 @@ export function buildTiledMap(parsed, options = {}) {
           addObject(c === 'M' ? 'Bouncer' : 'Crumble', x * TILE, y * TILE, len * TILE, TILE);
           break;
         }
+        case '-':
+        case '+': {
+          // Plataforma móvil: los seguidos de una fila forman una; el recorrido son los ":" pegados.
+          if (grid[y][x - 1] === c) break;
+          let len = 1;
+          while (grid[y][x + len] === c) len++;
+          const { dx, dy } = moverTrack(grid, x, y, len);
+          addObject('Mover', x * TILE, y * TILE, len * TILE, TILE, c === '+' ? { dx, dy, solid: true } : { dx, dy });
+          break;
+        }
+        case ':':
+          // Recorrido de una plataforma móvil: vacío.
+          break;
+        case '|': {
+          // Reja: los | seguidos de una columna forman una.
+          if (y > 0 && grid[y - 1][x] === '|') break;
+          let len = 1;
+          while (y + len < height && grid[y + len][x] === '|') len++;
+          addObject('Gate', x * TILE, y * TILE, TILE, len * TILE);
+          break;
+        }
+        case '*':
+          addObject('Switch', x * TILE, y * TILE, TILE, TILE);
+          break;
         case 'H':
           // Capa Foreground: se dibuja delante de Kerana y no choca (patios escondidos, GDD §6.4).
           data.Foreground[i] = gid(TILES.groundBase + 15);
@@ -218,8 +320,10 @@ export function buildTiledMap(parsed, options = {}) {
   if (spawns !== 1) throw new Error(`El mapa debe tener exactamente un "P" (tiene ${spawns}).`);
   if (feathers > 3) throw new Error(`Hay ${feathers} plumas; el máximo es 3.`);
 
+  applyAts(objects, parsed.ats ?? [], prop);
   for (const r of parsed.rects) addObject(r.cls, r.x * TILE, r.y * TILE, r.w * TILE, r.h * TILE, r.props);
   for (const p of parsed.points) addObject(p.cls, px(p.x), py(p.y), 0, 0, p.props, true);
+  checkSwitchLinks(objects, parsed.warnings);
 
   let layerId = 1;
   const tileLayer = (name) => ({ id: layerId++, name, type: 'tilelayer', x: 0, y: 0, width, height, opacity: 1, visible: true, data: data[name] });
