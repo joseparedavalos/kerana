@@ -155,6 +155,8 @@ Todos **miran a la izquierda**. Agrega a Notes: `Spooky but not gory: no blood.`
 | Luisón | `raw/luison/` | `A gaunt dog-headed night creature with a long row of sharp teeth, small ears, a dry emaciated body, limbs half human and half claws, pale glowing eyes, hunched posture, side view facing left, 2D final boss sprite, 16-bit pixel art` | Idle · Run · Attack (lanzar) · Hurt | Pose extra "aullando sobre una lápida" |
 | Tau (jefe final) | `raw/tau/disguise/` y `raw/tau/true/` | Disfraz: `A handsome young man with long dark hair holding a wooden flute, elegant but sinister smile, side view facing left, 2D boss sprite, 16-bit pixel art` · Forma real: `A shadowy evil spirit made of dark violet smoke with glowing red eyes and long smoky claws, side view facing left, large 2D boss, 16-bit pixel art` | Idle · Attack (flauta / garras de humo) · Hurt | Dos carpetas: `raw/tau/disguise/` (el joven de la flauta, fases 1 y 2, detail 2) y `raw/tau/true/` (humo violeta con ojos rojos, fase 3, detail 2). Hasta que existan, placeholder por código en `Tau.ts` |
 
+**Teju Jagua por código (S13d, S20):** el lomo, las patas, la cola y los cuellos se dibujan en `tejuJaguaArt.ts`. S20: el cuerpo se dibuja a `bodySize` (0,65) del tamaño de S13d, ya achicado en la textura (con `pixelArt` no se escala la imagen); cuellos de 18 de grosor; las cabezas dormidas se apoyan sobre el lomo. La onda del coletazo es una textura de tierra (cresta del tamaño de la hitbox con piedritas y polvo, estela de lomitas detrás) con polvo y piedritas en partículas; el aviso levanta polvo y abre una grieta que tiembla por el recorrido de la onda. Cabeza expuesta: halo dorado que late detrás y tres estrellitas de mareo encima (texturas `teju_jagua_halo` y `teju_jagua_star`, por código).
+
 ### 3.5 Enemigos
 Agrega al final de cada prompt:
 
@@ -305,7 +307,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Retratos (13) | Núcleo | S13 | ☐ |
 | Logo y mapa del mundo | Núcleo | S13 | ☐ |
 | Iconos y props de interfaz | Núcleo | S13 | ◐ (S13d: corazones, plumas, guavirá, Luz de Arasy, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
-| Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas) |
+| Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas; S20: cuerpo más chico, onda del coletazo y señal de cabeza expuesta) |
 | Música de niveles (7), liberación y final | Núcleo | S13 | ☐ |
 | Tau (disfraz y forma real) + `yvaga_far.png` y `final.png` | MVP | S12c | ☐ |
 

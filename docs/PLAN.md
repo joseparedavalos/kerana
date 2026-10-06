@@ -162,6 +162,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S17 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S18 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S19 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S20 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -237,6 +238,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S17 | Hecha | rama `claude/s17-plumas-modo-asistido-93n2i6` | Arreglos confirmados de REVIEW (fuera del plan, plan Pro): plumas guardadas al tocarlas con su índice del ASCII, acumulativas, sin reaparecer y con migración del conteo viejo; modo asistido completo (avisos de jefe × 1,3 en `BossBrain` y Luz de Arasy en cada arena, en caliente al volver de la pausa); guavirá de l4 dentro de la antesala. Build, tests y smoke OK |
 | S18 | Hecha | rama `claude/friendly-cori-6jj1cy` | Piezas de motor (fuera del plan, plan Pro): plataforma móvil `Mover` (`-`/`+` con recorrido `:`, velocidad, espera, sólida o de un solo sentido, lleva a Kerana y a los enemigos en x e y; la vaca usa su lógica), disparador `Switch` (`*`, sable u onda tras una pared, permanente o temporizado con aviso) sobre rejas `Gate` (`\|`) y Mover, hongos `kind=once` y `kind=sleep`, línea `at X,Y` para propiedades, vitrina `?debug=1&level=vitrina&gifts=all`, rebote del smoke medido dentro del juego. Build, tests y smoke (10 seguidos) OK |
 | S19 | Hecha | rama `claude/charming-meitner-icvphs` | Rediseño de l1 (fuera del plan, plan Pro): 314 × 34, 3 pozos con su pareja segura, 3 plataformas móviles de un solo sentido (foso, balsa con piedra sobre el pozo 2, vertical sobre un pozo), 4 piedras (reja obligatoria, balsa, temporizada de la pluma A, encerrada de la pluma C), hongos de un uso y dormido, ruta alta/baja de 42 tiles, cueva en zigzag, 3 fuegos; plumas con tres verbos; `docs/RECETA-NIVEL.md`; piloto del smoke (`tools/lib/pilot.mjs`) que cruza l1 entero: 43,7 s de juego (antes 22,2). Build, tests, maps y smoke (3 seguidos) OK |
+| S20 | Hecha | rama `claude/tender-cerf-oxg0r8` | Legibilidad de Teju Jagua (fuera del plan, plan Pro): cuerpo a 0,65 (`bodySize`) con cuellos, cola, patas, cabezas en reposo y dormidas recalculadas; cuellos de 14 a 18; onda del coletazo dibujada (cresta de tierra, estela, polvo) y aviso de 0,7 s con polvo, piedritas y grieta por el recorrido; halo y estrellitas en la cabeza expuesta (fuego y mordida). Sin cambios de vida ni tiempos. Build, tests y smoke ×3 OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -800,6 +802,26 @@ Sesión de rediseño de un solo nivel: l1 (Paraguarí). No toca l2 a l7 ni yvaga
 - **Sin verificar a mano:** la carrera de la pluma A (5 s; calculada en ≈ 3 s) y que la pluma C se alcance con el hongo dormido (calculado: el rebote deja los pies 2,6 filas sobre la repisa). El smoke prueba que la piedra temporizada se enciende y que la cámara se abre, no la carrera ni el rebote.
 - **Arte:** el arco de piedra de x 94–99 es un bloque que cuelga desde la fila 0 (queda para decorar en Tiled); siguen faltando los sprites de piedra, reja, plataforma y hongo desinflado/dormido (S18).
 - **Pendiente:** rediseñar l2 a l7 con la receta; mirar el posible bug de `touching.down`.
+
+### S20: Legibilidad de Teju Jagua (fuera del plan original; plan Pro)
+Sesión de legibilidad de un solo jefe: Teju Jagua. No toca otros jefes, ningún mapa ni el balance (vida, tiempos de aviso y ventanas quedan como están). Jose jugó la pelea: funciona, pero el jugador no entiende lo que ve.
+
+**Lee:** `src/entities/bosses/TejuJagua.ts`, `src/entities/bosses/tejuJaguaArt.ts`, la sección `tejuJagua` de `gameplay.ts`, GDD §6.1.
+
+1. **Proporciones:** achicar el cuerpo de forma notoria (devuelve suelo para esquivar) y engrosar un poco los cuellos (muy gruesos tapan la arena). Los dos valores expuestos y comentados en `gameplay.ts`. Los anclajes de los siete cuellos, la base de la cola y las patas siguen donde corresponde; las cabezas dormidas no quedan flotando.
+2. **El coletazo se lee:** la onda deja de ser un `Rectangle` de color plano: forma de onda que recorre el suelo, dibujada por código. El aviso ocurre donde va a pasar la cosa: además de levantar la cola, polvo o suelo que se agita por el recorrido de la onda. Mismos 0,7 s de aviso. Vale también para `tail_stalactites`.
+3. **La ventana del fuego se nota:** una cabeza expuesta se distingue de una que no lo está, con una señal propia que se apaga al cerrarse la ventana; sirve también para la ventana de la mordida (mismo campo `exposed`). Sin cambiar la duración de ninguna ventana.
+
+**Criterios:** sin cambios en la vida del jefe ni en `telegraphMs`, `activeMs` o `recoverMs` de `bosses.ts` · el fuego (`FIRE_COLOR`) se dibuja como antes · `npm run build`, `npm test` y `npm run smoke` pasan (smoke tres veces) · capturas antes y después · PR · S20 registrada en §6.3, §7 y §8; ASSETS §3.4 si cambió el arte.
+
+**Notas para la próxima sesión (S20 → la que siga):**
+- **Proporciones:** `bodySize: 0.65` escala lomo, patas y cola. Se dibujan ya achicados en la textura (`BK = ART_K × bodySize` en `tejuJaguaArt.ts`): con `pixelArt: true`, escalar la imagen ensuciaba las escamas. El cuerpo pasó de ≈ 368 a ≈ 240 unidades de ancho (arena ≈ 608) y de 165 a ≈ 107 de alto. Los cuellos nacen sobre la superficie real del óvalo del lomo (`moundTopY`, `neckRootInset`), separados `neckSpacing × bodySize`; la cola, en `TAIL_BASE_X/LIFT × bodySize`. Cabezas en reposo: las de las puntas `fanLift` (25) sobre la cima del lomo, cada lugar hacia el centro `fanRise` más (antes la altura era relativa al centro del cuerpo, fija). `neckWidth` de 14 a 18.
+- **Cabezas dormidas:** ya no suben al lugar del abanico + 20: se apoyan sobre el lomo, repartidas `sleepSpread` × semiancho y hundidas `sleepSink` × su alto. Se ven como cabezas apoyadas en la cima, oscuras.
+- **Coletazo:** la onda es una `Image` (`teju_jagua_wave`): cresta de tierra del mismo ancho y alto que la hitbox (26 × 12, sin cambios), empinada adelante, con piedritas y polvo; detrás, una estela de lomitas (`tailWaveTrail`, solo dibujo). Se voltea según la dirección, ondula (`tailWaveWobble`) y suelta polvo y piedritas en partículas. **Aviso:** la dirección ahora se decide al empezar el aviso (antes, al lanzar la onda, 0,7 s después), para avisar el recorrido real; la regla es la misma (hacia el lado de Kerana). Durante el aviso un frente de polvo sale del borde donde nace la onda y barre el suelo hasta el otro borde en el 70 % del aviso (`tailWarnSweep`); detrás del frente el suelo suelta polvo y piedritas y una grieta oscura tiembla al ras del suelo; la cámara se sacude suave (`tailWarnShake`, 0 la apaga). La cola sigue levantándose. Lo mismo en `tail_stalactites`.
+- **Cabeza expuesta:** halo dorado (`teju_jagua_halo`, detrás de la cabeza, delante de los cuellos) que late (`exposedPulseMs`) y tres estrellitas de mareo que giran encima. Se muestra mientras `head.exposed && !asleep && brain.vulnerable`, así que se apaga sola cuando termina el `recover` o la cabeza se duerme. Vale para el fuego (dos cabezas) y la mordida (una).
+- **Capturas** (script de capturas en `tmp/`, fuera del repo; fuerza la cola de ataques `tail`, `fire`, `bite`, `tail_stalactites`): ver la descripción del PR. No se agregaron pasos al smoke.
+- **Para ajustar jugando:** `bodySize`, `neckWidth`, `fanLift`, `sleepSpread`/`sleepSink`, `tailWarnShake`, `exposedHalo*` en `gameplay.ts`. Si el cuerpo vuelve a 1, todo se recoloca solo.
+- **Sin tocar:** la vida, los tiempos de `bosses.ts`, el fuego, la hitbox de la onda y de las cabezas.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
