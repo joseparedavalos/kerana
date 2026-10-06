@@ -802,7 +802,6 @@ export class LevelScene extends Phaser.Scene {
     for (const sw of waveStrikes(this.switches, this.lightWave, lw.width, lw.height, GAMEPLAY.switches.waveThroughWalls, this.struck)) this.hitSwitch(sw);
   }
 
-
   /** La vaca embrujada purificada queda como una vaca tranquila más. */
   private cowFromEnemy(enemy: EnemyBase): void {
     const cow = this.makeCow(enemy.x, enemy.y, enemy.facing);
