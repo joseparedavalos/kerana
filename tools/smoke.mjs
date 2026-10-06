@@ -90,9 +90,16 @@ async function main() {
     // 1) Título → Nueva partida → Prólogo (salteado) → Mapa → nivel 1 → LevelExit → Nivel completado → Mapa.
     // (?debug=1, sin `level`, para poder teletransportar a Kerana sin cambiar el flujo Título → Mapa.)
     const title = await open('/?debug=1');
-    await sleep(1500);
+    // Por estado: con 1500 ms fijos, si la carga iba lenta el Enter se perdía (falló una vez en S18).
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Title') ?? false, { timeout: 20000 });
+    await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'title.png') });
-    await title.keyboard.press('Enter'); // "Nueva partida" (primer ítem del menú)
+    const inStory = () => title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false);
+    // "Nueva partida" (primer ítem del menú); se repite si el menú todavía no escuchaba.
+    for (let t = 0; t < 10000 && !(await inStory()); t += 1000) {
+      await title.keyboard.press('Enter');
+      for (let w = 0; w < 1000 && !(await inStory()); w += 100) await sleep(100);
+    }
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
     check(true, 'Título → Nueva partida → Prólogo');
     // Mantener Pausa salta el prólogo entero: se mantiene hasta que aparece el mapa (con 700 ms fijos fallaba en máquinas lentas).
