@@ -1,15 +1,26 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 
-// Dibujo por código de Teju Jagua (S13d): lomo de lagarto, cola y escamas de los cuellos.
+// Dibujo por código de Teju Jagua (S13d): lomo de lagarto, cola y escamas de los cuellos; S20: onda del coletazo.
 // Las texturas se generan una vez, al doble de detalle (ART_K), y se dibujan a escala 1/ART_K.
+// Cuerpo, patas y cola se dibujan ya achicados por `bodySize` (S20): con pixelArt, escalar la imagen ensuciaría el dibujo.
 const CFG = GAMEPLAY.tejuJagua;
 
 export const BODY_TEXTURE = 'teju_jagua_body';
 export const TAIL_TEXTURE = 'teju_jagua_tail';
 export const NECK_SCALE_TEXTURE = 'teju_jagua_neck_scale';
+export const WAVE_TEXTURE = 'teju_jagua_wave';
 /** Píxeles de textura por unidad del mundo. */
 export const ART_K = 2;
+/** Píxeles de textura por unidad del cuerpo a tamaño 1 (cuerpo, patas y cola): incluye `bodySize`. */
+const BK = ART_K * CFG.bodySize;
+/** Colores de la onda del coletazo: tierra, sombra, borde claro y piedritas. */
+const WAVE_COLOR = 0xc9a66b;
+const WAVE_DARK = 0x6e5434;
+const WAVE_LIGHT = 0xecd8a8;
+const WAVE_ROCK = 0x4a3a28;
+/** Polvo que levanta la onda por encima de la cresta (unidades). */
+const WAVE_SPRAY = 7;
 /** Lado de la textura de una escama del cuello (px); se escala al grosor del cuello. */
 export const NECK_SCALE_PX = 16;
 /** Las patas salen un poco por fuera del montículo (unidades a cada lado). */
@@ -31,6 +42,7 @@ export function ensureTejuJaguaArt(scene: Phaser.Scene, floorOffset: number): vo
   if (!scene.textures.exists(NECK_SCALE_TEXTURE)) makeNeckScale(scene);
   if (!scene.textures.exists(BODY_TEXTURE)) makeBody(scene, floorOffset);
   if (!scene.textures.exists(TAIL_TEXTURE)) makeTail(scene);
+  if (!scene.textures.exists(WAVE_TEXTURE)) makeWave(scene);
 }
 
 /** Escama redonda: borde oscuro, cuerpo gris (el tinte le da el color de la cabeza) y un brillo blanco arriba. */
@@ -53,7 +65,7 @@ function hash(a: number, b: number): number {
 
 /** Una escama del lomo: borde oscuro, cuerpo con leve variación y, a veces, un reflejo dorado. */
 function bodyScale(g: Phaser.GameObjects.Graphics, x: number, y: number, size: number, seedA: number, seedB: number, goldBoost: number): void {
-  const k = ART_K;
+  const k = BK;
   const sw = size * k;
   const sh = size * 0.8 * k;
   const base = Phaser.Display.Color.IntegerToColor(CFG.bodyColor);
@@ -66,7 +78,7 @@ function bodyScale(g: Phaser.GameObjects.Graphics, x: number, y: number, size: n
 }
 
 function makeBody(scene: Phaser.Scene, floorOffset: number): void {
-  const k = ART_K;
+  const k = BK;
   const a = CFG.bodyWidth / 2;
   const b = CFG.bodyDepth;
   const w = CFG.bodyWidth + 2 * LEG_OUT;
@@ -124,12 +136,12 @@ function makeBody(scene: Phaser.Scene, floorOffset: number): void {
   // Patas delanteras a los lados, con garras hacia afuera.
   for (const side of [-1, 1]) drawLeg(g, cx + side * (a - 14), cy + 4, h, side);
 
-  g.generateTexture(BODY_TEXTURE, w * k, h * k);
+  g.generateTexture(BODY_TEXTURE, Math.ceil(w * k), Math.ceil(h * k));
   g.destroy();
 }
 
 function drawLeg(g: Phaser.GameObjects.Graphics, sx: number, sy: number, floorY: number, side: number): void {
-  const k = ART_K;
+  const k = BK;
   const fx = sx + side * 12;
   const fy = floorY - 6;
   const shapes = (grow: number, color: number): void => {
@@ -158,7 +170,7 @@ function drawLeg(g: Phaser.GameObjects.Graphics, sx: number, sy: number, floorY:
 
 /** Cola gruesa que sale de un costado, se curva hacia afuera y levanta la punta. */
 function makeTail(scene: Phaser.Scene): void {
-  const k = ART_K;
+  const k = BK;
   const { w, h } = tailSize();
   const bw = CFG.tailBaseWidth;
   const x0 = bw / 2;
@@ -195,6 +207,79 @@ function makeTail(scene: Phaser.Scene): void {
     const c = centers[i];
     bodyScale(g, c.x, c.y - c.width * 0.12, Math.max(3, c.width * 0.55), i, 42, 0.5);
   }
-  g.generateTexture(TAIL_TEXTURE, w * k, h * k);
+  g.generateTexture(TAIL_TEXTURE, Math.ceil(w * k), Math.ceil(h * k));
+  g.destroy();
+}
+
+/** Medidas de la textura de la onda (unidades): estela baja detrás, cresta del tamaño de la hitbox y polvo arriba. */
+function waveSize(): { w: number; h: number; crestX: number } {
+  const trail = CFG.tailWaveTrail;
+  return { w: trail + CFG.tailWaveWidth + 6, h: CFG.tailWaveHeight + WAVE_SPRAY, crestX: trail + CFG.tailWaveWidth / 2 };
+}
+
+/** Origen de la onda (fracciones): centro de la cresta, al ras del suelo. Volteada, el centro se refleja. */
+export function waveOrigin(flipped: boolean): [number, number] {
+  const { w, crestX } = waveSize();
+  const ox = crestX / w;
+  return [flipped ? 1 - ox : ox, 1];
+}
+
+/**
+ * Onda de tierra que avanza hacia la derecha (se voltea para ir a la izquierda): una cresta empinada adelante, del
+ * mismo ancho y alto que la hitbox, con piedritas y polvo encima; detrás, una estela de lomitas cada vez más bajas.
+ */
+function makeWave(scene: Phaser.Scene): void {
+  const k = ART_K;
+  const { w, h } = waveSize();
+  const trail = CFG.tailWaveTrail;
+  const cw = CFG.tailWaveWidth;
+  const ch = CFG.tailWaveHeight;
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  const pts: Phaser.Math.Vector2[] = [];
+  const steps = 24;
+
+  // Estela: lomitas que se achican hacia atrás (el suelo todavía se mueve por donde pasó).
+  pts.push(new Phaser.Math.Vector2(0, h * k));
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    const bump = Math.abs(Math.sin(u * Math.PI * 3)) * (0.15 + 0.35 * u);
+    pts.push(new Phaser.Math.Vector2(u * trail * k, (h - ch * bump) * k));
+  }
+  pts.push(new Phaser.Math.Vector2(trail * k, h * k));
+  g.fillStyle(WAVE_DARK, 0.85).fillPoints(pts, true, true);
+
+  // Cresta: sube suave desde atrás y cae empinada adelante (se ve que avanza hacia la derecha).
+  const crest = (u: number): number => ch * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.7)), 0.9);
+  const top: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    top.push(new Phaser.Math.Vector2((trail + u * cw) * k, (h - crest(u)) * k));
+  }
+  const body = [new Phaser.Math.Vector2(trail * k, h * k), ...top, new Phaser.Math.Vector2((trail + cw) * k, h * k)];
+  g.fillStyle(WAVE_DARK).fillPoints(body, true, true);
+  // Relleno un poco más adentro, para que quede un borde oscuro.
+  const inner = body.map((p) => new Phaser.Math.Vector2(p.x, Math.min(h * k, p.y + 1.2 * k)));
+  g.fillStyle(WAVE_COLOR).fillPoints(inner, true, true);
+  // Borde claro arriba: la luz pega en la cresta.
+  g.lineStyle(1.2 * k, WAVE_LIGHT).strokePoints(top.slice(2, steps - 3), false, false);
+  // Piedritas metidas en la tierra.
+  for (let i = 0; i < 6; i++) {
+    const u = 0.15 + 0.12 * i;
+    const x = trail + u * cw;
+    const y = h - crest(u) * (0.25 + 0.4 * ((i * 37) % 10) / 10);
+    g.fillStyle(WAVE_ROCK).fillEllipse(x * k, y * k, 2.6 * k, 1.8 * k);
+  }
+  // Polvo sobre la cresta y piedritas que saltan hacia adelante.
+  g.fillStyle(WAVE_LIGHT, 0.55);
+  for (let i = 0; i < 4; i++) {
+    const u = 0.3 + 0.15 * i;
+    g.fillCircle((trail + u * cw) * k, (h - crest(u) - 2 - (i % 2) * 2) * k, (2.2 - i * 0.3) * k);
+  }
+  g.fillStyle(WAVE_ROCK);
+  g.fillCircle((trail + cw + 2) * k, (h - ch * 0.75) * k, 1 * k);
+  g.fillCircle((trail + cw + 4.5) * k, (h - ch * 0.45) * k, 0.8 * k);
+  g.fillCircle((trail + cw * 0.85) * k, (h - ch - 4) * k, 0.9 * k);
+
+  g.generateTexture(WAVE_TEXTURE, Math.ceil(w * k), Math.ceil(h * k));
   g.destroy();
 }
