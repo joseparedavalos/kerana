@@ -163,6 +163,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S18 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S19 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S20 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S21 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -239,6 +240,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S18 | Hecha | rama `claude/friendly-cori-6jj1cy` | Piezas de motor (fuera del plan, plan Pro): plataforma móvil `Mover` (`-`/`+` con recorrido `:`, velocidad, espera, sólida o de un solo sentido, lleva a Kerana y a los enemigos en x e y; la vaca usa su lógica), disparador `Switch` (`*`, sable u onda tras una pared, permanente o temporizado con aviso) sobre rejas `Gate` (`\|`) y Mover, hongos `kind=once` y `kind=sleep`, línea `at X,Y` para propiedades, vitrina `?debug=1&level=vitrina&gifts=all`, rebote del smoke medido dentro del juego. Build, tests y smoke (10 seguidos) OK |
 | S19 | Hecha | rama `claude/charming-meitner-icvphs` | Rediseño de l1 (fuera del plan, plan Pro): 314 × 34, 3 pozos con su pareja segura, 3 plataformas móviles de un solo sentido (foso, balsa con piedra sobre el pozo 2, vertical sobre un pozo), 4 piedras (reja obligatoria, balsa, temporizada de la pluma A, encerrada de la pluma C), hongos de un uso y dormido, ruta alta/baja de 42 tiles, cueva en zigzag, 3 fuegos; plumas con tres verbos; `docs/RECETA-NIVEL.md`; piloto del smoke (`tools/lib/pilot.mjs`) que cruza l1 entero: 43,7 s de juego (antes 22,2). Build, tests, maps y smoke (3 seguidos) OK |
 | S20 | Hecha | rama `claude/tender-cerf-oxg0r8` | Legibilidad de Teju Jagua (fuera del plan, plan Pro): cuerpo a 0,65 (`bodySize`) con cuellos, cola, patas, cabezas en reposo y dormidas recalculadas; cuellos de 14 a 18; onda del coletazo dibujada (cresta de tierra, estela, polvo) y aviso de 0,7 s con polvo, piedritas y grieta por el recorrido; halo y estrellitas en la cabeza expuesta (fuego y mordida). Sin cambios de vida ni tiempos. Build, tests y smoke ×3 OK |
+| S21 | Hecha | rama `claude/trusting-keller-lnw35o` | Aliento de fuego de Teju Jagua (fuera del plan, plan Pro): llamarada por código (cuerpo naranja = zona de daño exacta, chorros amarillos desde los hocicos, desborde tenue, lenguas, aire que tiembla, suelo iluminado, pavesas) y aviso en la zona (suelo que se tiñe, aire que brilla con bordes marcados, calor que sube) además del humo; Kerana se ve dentro del fuego; las cabezas expuestas quedan libres. Sin cambios de vida, tiempos ni zona de daño. Build, tests y smoke ×3 OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -822,6 +824,29 @@ Sesión de legibilidad de un solo jefe: Teju Jagua. No toca otros jefes, ningún
 - **Capturas** (script de capturas en `tmp/`, fuera del repo; fuerza la cola de ataques `tail`, `fire`, `bite`, `tail_stalactites`): ver la descripción del PR. No se agregaron pasos al smoke.
 - **Para ajustar jugando:** `bodySize`, `neckWidth`, `fanLift`, `sleepSpread`/`sleepSink`, `tailWarnShake`, `exposedHalo*` en `gameplay.ts`. Si el cuerpo vuelve a 1, todo se recoloca solo.
 - **Sin tocar:** la vida, los tiempos de `bosses.ts`, el fuego, la hitbox de la onda y de las cabezas.
+
+### S21: El aliento de fuego de Teju Jagua (fuera del plan original; plan Pro)
+Continuación de S20: el último placeholder grande de Teju Jagua. No toca otros jefes, ningún mapa ni el balance.
+
+**Lee:** `src/entities/bosses/TejuJagua.ts` (`breatheFire`, `endFire`, `fire`), `src/entities/bosses/tejuJaguaArt.ts`, la sección `tejuJagua` de `gameplay.ts`, las notas de S20, GDD §6.1.
+
+1. **La llamarada:** el `Rectangle` naranja se reemplaza por una llamarada dibujada por código que sale de los hocicos de las dos cabezas y se ensancha al alejarse (mismo alcance: un tercio de la arena), con el borde que se agita, chispas o pavesas que suben, calor (aire que tiembla, suelo iluminado) y más de un tono (amarillo en el núcleo, naranja en el borde). La zona de daño mide exactamente lo mismo; si el arte la desborda, el núcleo brillante coincide con la zona y lo que sobra es visiblemente más tenue.
+2. **El aviso donde va a caer el fuego:** se mantiene el humo en los hocicos y se agrega una señal en el suelo o en el aire por donde va a pasar la llama (sin polvo: es fuego). Mismo tiempo de aviso de `bosses.ts`.
+3. **Coherencia con S20:** el halo y las estrellitas de la cabeza expuesta tras el fuego no quedan tapados. Una sacudida de cámara nueva tiene su propio valor en `gameplay.ts` y 0 la apaga.
+
+**Criterios:** sin cambios en la vida ni en `telegraphMs`, `activeMs` o `recoverMs` de `bosses.ts` · mismo alcance y zona de daño del fuego · valores nuevos comentados en `gameplay.ts` → `tejuJagua` · `npm run build`, `npm test` y `npm run smoke` pasan (smoke tres veces) · capturas antes y después · PR · S21 registrada en §6.3, §7 y §8; ASSETS §3.4.
+
+**Notas para la próxima sesión (S21 → la que siga):**
+- **Zona de daño intacta:** sigue siendo `fireRect` (tercio de la arena donde está Kerana, de `arena.top + 90` al suelo), calculada igual en `telegraphFire`. Lo que cambió es el dibujo y la bandera: `hurtsPlayer` mira `fireOn` (antes `fire.visible`), que se prende en `breatheFire` y se apaga en `endFire`, igual que antes.
+- **Cómo se distingue lo que quema:** el cuerpo naranja (alfa `fireCoreAlpha` 0,85) mide exactamente la zona; sus bordes se agitan **solo hacia adentro** (hasta `fireCoreJitter`, 3 unidades), así que nunca hay naranja fuerte fuera de la hitbox (en el borde puede haber hasta 3 unidades que queman y se ven del desborde). Los chorros amarillos y el núcleo casi blanco se recortan a la zona. Lo que desborda es tenue: lenguas rojizas de hasta `fireSpill` (12) unidades a cada lado con alfa `fireSpillAlpha` (0,28), el suelo iluminado (`fireFloorGlow`, alfa 0,3) y las hebras de calor. Única excepción: el chorro corto entre el hocico y el borde de arriba de la zona (≈ 10 unidades, pegado a la cabeza) se dibuja amarillo a media transparencia; ahí no quema (como antes).
+- **Forma:** la zona es un rectángulo alto (las cabezas soplan hacia abajo), así que el cono se ve en los dos chorros amarillos, que nacen de cada hocico (`fireMouthX/Y`) y se abren hasta `fireJetSpread` (0,5) del ancho de la zona al llegar al suelo; el cuerpo naranja rellena el resto de la zona para que se vea todo lo que quema. Lenguas claras bajan por el cuerpo.
+- **Profundidad:** la llamarada se dibuja en depth −0,5: delante de cabezas y cuellos, **detrás de Kerana** (antes, depth 6, la tapaba). Pavesas delante (6,5).
+- **Aviso:** además del humo, el suelo de la zona se tiñe (brasa roja y amarilla con un resplandor que sube `fireWarnGlow` unidades) desde abajo de las cabezas hasta los dos bordes en el 60 % del aviso (`fireWarnSweep`); el aire de la zona brilla cada vez más (`fireWarnColumnAlpha`) con los dos bordes marcados por una línea fina, y sube calor en partículas. En la fase 3 el aviso dura 0,5 s y todo escala con el avance.
+- **Cabezas expuestas:** `endFire` (y `returnHeads`/`resetVisuals`) borra la llamarada y mata las pavesas y el calor que quedaban: el halo y las estrellitas de S20 se ven limpios (captura `despues-5`).
+- **Cámara:** `fireShake` (0,0015) durante `activeMs`; en 0 se apaga.
+- **Capturas:** script fuera del repo (scratchpad): fuerza la cola a `fire` y congela el juego con `game.loop.sleep()` en momentos fijos por `brain.msLeft` (aviso a 600 y 80 ms del final, fuego a 800 y 300 ms, expuestas a 650 ms del recover), así el antes y el después son comparables. No se agregaron pasos al smoke.
+- **Para ajustar jugando:** `fireCoreAlpha`, `fireSpill`/`fireSpillAlpha`, `fireJetSpread`, `fireFlickerMs`, `fireEmberMs`, `fireHazeAlpha`, `fireFloorGlow*`, `fireShake`, `fireWarn*`.
+- **Sin tocar:** la vida, los tiempos de `bosses.ts`, la zona de daño, la posición de las cabezas, la mordida y el coletazo.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
