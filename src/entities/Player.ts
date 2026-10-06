@@ -5,6 +5,7 @@ import type { InputManager } from '../systems/InputManager';
 import { Health } from '../systems/Health';
 import { StatusEffects, type SleepEvent } from '../systems/StatusEffects';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
+import { BounceMeter } from './hazards/BounceMeter';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
 const FX = GAMEPLAY.playerFx;
@@ -69,6 +70,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     dashPressed: false,
   };
   private readonly motorBody: MotorBody = { onGround: false, vx: 0, vy: 0 };
+  /** Altura de los rebotes de hongo, medida en cada paso (la lee la prueba de humo). */
+  readonly bounceMeter = new BounceMeter();
 
   private glow?: Phaser.Filters.Glow;
   private luzArasyMsLeft = 0;
@@ -166,6 +169,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.status.step(deltaMs);
     this.status.applyTo(mi);
 
+    this.bounceMeter.sample(this.y, this.body.velocity.y);
     const b = this.motorBody;
     b.onGround = this.body.blocked.down || this.body.touching.down;
     b.vx = this.body.velocity.x;
@@ -182,6 +186,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateAnimation(deltaMs);
     this.updateHurtFlash(deltaMs);
     this.setChargeGlow(this.motor.chargeFraction);
+  }
+
+  /** Rebote de un hongo (se aplica en el próximo paso del motor) y empieza a medir su altura. */
+  bounce(vy: number): void {
+    this.motor.bounce(vy);
+    this.bounceMeter.start(this.y);
   }
 
   /** Daño del tajo en curso (el cargado pega más, GDD §3.7). */

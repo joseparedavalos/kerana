@@ -358,15 +358,12 @@ async function main() {
       d.player.body.reset(11 * 16 + 8, d.player.y);
     });
     await sleep(500);
-    const l5y0 = await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y);
-    let l5top = l5y0;
+    // La altura la mide el juego (BounceMeter de Kerana, en cada paso): muestrear desde afuera perdía el pico
+    // y una ventana fija de tiempo real se quedaba corta cuando el headless va lento. Espera por estado (tope 15 s).
     await l5aPage.keyboard.down('ArrowRight');
-    for (let i = 0; i < 60; i++) {
-      await sleep(50);
-      l5top = Math.min(l5top, await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.y));
-    }
+    for (let t = 0; t < 15000 && (await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.count)) < 1; t += 50) await sleep(50);
     await l5aPage.keyboard.up('ArrowRight');
-    const l5bounce = Math.round(l5y0 - l5top);
+    const l5bounce = Math.round(await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.lastHeight));
     check(l5bounce > 90, `nivel 5: el hongo hace rebotar a Kerana (${l5bounce} px)`);
     await l5aPage.close();
 

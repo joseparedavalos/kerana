@@ -955,7 +955,7 @@ export class LevelScene extends Phaser.Scene {
   private updateJungle(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
     for (const b of this.bouncers) {
       if (!b.isStoodOn(body)) continue;
-      this.player.motor.bounce(GAMEPLAY.jungle.bounceVelocity);
+      this.player.bounce(GAMEPLAY.jungle.bounceVelocity);
       b.squash();
       AudioManager.play('bounce');
     }
