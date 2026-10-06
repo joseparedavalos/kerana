@@ -123,6 +123,8 @@ export const GAMEPLAY = {
     giftBannerMs: 2200,
     /** Avisos más largos en modo asistido (GDD §4.7). */
     assistTelegraphScale: 1.3,
+    /** Luz de Arasy de la arena en modo asistido (GDD §4.7): tiles desde el borde izquierdo de la arena. */
+    assistLuzOffsetTiles: 4,
     /** Parpadeo del jefe al recibir un golpe (ms). */
     hitFlashMs: 80,
     /** Sacudida al cerrar la arena. */

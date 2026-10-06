@@ -56,6 +56,11 @@ export interface BossHitResult {
 
 const NO_HIT: BossHitResult = { hit: false, defeated: false };
 
+/** Escala de los avisos de jefe según el modo asistido (GDD §4.7): un solo lugar para los ocho jefes. */
+export function assistTelegraphScale(assist: boolean): number {
+  return assist ? GAMEPLAY.boss.assistTelegraphScale : 1;
+}
+
 // Base de todos los jefes: cerebro (BossBrain), barra de vida por EventBus y ganchos para cada jefe.
 export abstract class Boss {
   readonly brain: BossBrain;
@@ -68,7 +73,12 @@ export abstract class Boss {
     readonly def: BossDef,
     protected readonly ctx: BossContext,
   ) {
-    this.brain = new BossBrain(def, { telegraphScale: ctx.assist ? GAMEPLAY.boss.assistTelegraphScale : 1 });
+    this.brain = new BossBrain(def, { telegraphScale: assistTelegraphScale(ctx.assist) });
+  }
+
+  /** Modo asistido cambiado en plena partida: vale desde el próximo aviso. */
+  setAssist(on: boolean): void {
+    this.brain.telegraphScale = assistTelegraphScale(on);
   }
 
   /** Presentación y comienzo de la pelea. */

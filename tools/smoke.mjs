@@ -126,6 +126,47 @@ async function main() {
     check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
     await title.screenshot({ path: join(SHOTS, 'bg-l1-ladera.png') });
 
+    // Plumas (S17): se guardan al tocarlas, no reaparecen al volver a entrar y el conteo no baja.
+    const featherState = (page) =>
+      page.evaluate(() => {
+        const scene = window.__KERANA_DEBUG__.scene;
+        const save = JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}');
+        return {
+          hud: scene.feathers,
+          onMap: scene.pickups.filter((p) => p.kind === 'pluma' && p.active).map((p) => p.index),
+          saved: save.feathers?.l1 ?? null,
+        };
+      });
+    const before = await featherState(title);
+    check(before.hud === 0 && before.onMap.join() === '0,1,2', `nivel 1: 3 plumas en el mapa y 0 en el HUD (${JSON.stringify(before)})`);
+    // Pluma 0: x 46, fila 4 (sobre la salida de la cueva). Kerana aparece encima y cae a través de ella.
+    await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(46 * 16 + 8, 5 * 16));
+    await sleep(800);
+    const got = await featherState(title);
+    check(got.hud === 1 && got.saved?.join() === 'true,false,false', `nivel 1: la pluma 0 se guarda al tocarla (${JSON.stringify(got)})`);
+    // Pausa → Salir al mapa (4.º ítem) → volver a entrar al nodo 1.
+    const tap = async (key) => {
+      await title.keyboard.down(key);
+      await sleep(120);
+      await title.keyboard.up(key);
+      await sleep(120);
+    };
+    await tap('Escape');
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Pause') ?? false, { timeout: 5000 });
+    for (let i = 0; i < 3; i++) await tap('ArrowDown');
+    await tap('Enter');
+    await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
+    await title.evaluate(() => (window.__KERANA_READY__ = false));
+    await sleep(500);
+    await tap('Enter');
+    await title.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(300);
+    const again = await featherState(title);
+    check(
+      again.hud === 1 && again.onMap.join() === '1,2' && again.saved?.join() === 'true,false,false',
+      `nivel 1 otra vez: la pluma 0 no reaparece y el conteo no bajó (${JSON.stringify(again)})`,
+    );
+
     // Liberación de Teju Jagua (atajo de depuración): cámara lenta, marca, diálogo, ascenso, don → Nivel completado.
     const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
     await title.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
@@ -142,6 +183,7 @@ async function main() {
     check(true, 'Nivel completado → Mapa');
     const freed = await title.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(freed.freed?.includes('teju_jagua') && freed.gifts?.includes('charged_slash'), 'guardado: Teju Jagua liberado y tajo cargado');
+    check(freed.feathers?.l1?.join() === 'true,false,false', `guardado: vencer al jefe no pisa las plumas (${JSON.stringify(freed.feathers?.l1)})`);
     await title.close();
 
     // 1b) ?level=1&boss=1: empieza en la antesala; al entrar a la arena empieza la pelea.

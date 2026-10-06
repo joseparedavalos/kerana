@@ -118,8 +118,8 @@ export class Monai extends Boss {
     const id = t.attack?.id ?? '';
     switch (t.state) {
       case 'telegraph':
-        if (id === 'descent') this.telegraphDescent(t.attack!.telegraphMs);
-        else if (id === 'pulse') this.telegraphPulse(t.attack!.telegraphMs);
+        if (id === 'descent') this.telegraphDescent(t.ms);
+        else if (id === 'pulse') this.telegraphPulse(t.ms);
         else this.telegraphSteal();
         break;
       case 'active':

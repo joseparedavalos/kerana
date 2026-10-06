@@ -45,6 +45,29 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
 
+const FEATHERS_PER_LEVEL = GAMEPLAY.hud.featherMax;
+
+/**
+ * Plumas de un nivel como arreglo de 3 booleanos por índice. Migra guardados viejos: antes de S17
+ * se guardaba solo cuántas (`setFeatherCount`, también como número suelto); ese n pasa a ser los
+ * primeros n índices. Un arreglo viejo ya tenía esa forma, así que se conserva tal cual.
+ */
+export function normalizeFeathers(raw: unknown): boolean[] {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    const n = Math.max(0, Math.min(FEATHERS_PER_LEVEL, Math.floor(raw)));
+    return Array.from({ length: FEATHERS_PER_LEVEL }, (_, i) => i < n);
+  }
+  const arr = Array.isArray(raw) ? raw : [];
+  return Array.from({ length: FEATHERS_PER_LEVEL }, (_, i) => arr[i] === true);
+}
+
+function sanitizeFeathers(raw: unknown): Record<string, boolean[]> {
+  if (!isRecord(raw)) return {};
+  const out: Record<string, boolean[]> = {};
+  for (const [levelId, value] of Object.entries(raw)) out[levelId] = normalizeFeathers(value);
+  return out;
+}
+
 export function defaultSave(): SaveData {
   return {
     version: VERSION,
@@ -70,7 +93,7 @@ function sanitize(raw: unknown): SaveData {
     freed: Array.isArray(raw.freed) ? (raw.freed as BossId[]) : def.freed,
     gifts: Array.isArray(raw.gifts) ? (raw.gifts as GiftId[]) : def.gifts,
     maxHearts: typeof raw.maxHearts === 'number' ? raw.maxHearts : def.maxHearts,
-    feathers: isRecord(raw.feathers) ? (raw.feathers as Record<string, boolean[]>) : def.feathers,
+    feathers: sanitizeFeathers(raw.feathers),
     bestTimes: isRecord(raw.bestTimes) ? (raw.bestTimes as Record<string, number>) : def.bestTimes,
     playTimeMs: typeof raw.playTimeMs === 'number' && raw.playTimeMs >= 0 ? raw.playTimeMs : def.playTimeMs,
     settings: settings as SaveSettings,
@@ -144,24 +167,28 @@ export class SaveManager {
   }
 
   static getFeathers(levelId: string): boolean[] {
-    return this._current.feathers[levelId] ?? [false, false, false];
+    return this._current.feathers[levelId] ?? normalizeFeathers(null);
   }
 
-  static collectFeather(levelId: string, index: number): void {
-    const current = this.getFeathers(levelId).slice();
-    current[index] = true;
-    this._current = { ...this._current, feathers: { ...this._current.feathers, [levelId]: current } };
-    this.persist();
+  static hasFeather(levelId: string, index: number): boolean {
+    return this.getFeathers(levelId)[index] === true;
+  }
+
+  /** Cuántas plumas de este nivel hay guardadas (panel del mapa y HUD). */
+  static featherCount(levelId: string): number {
+    return this.getFeathers(levelId).filter(Boolean).length;
   }
 
   /**
-   * Guarda cuántas plumas se llevan de un nivel como un conteo simple (sin distinguir cuáles).
-   * Hasta que los niveles reales (S6+) marquen cada pluma con su índice en el ASCII, es la única
-   * forma de que el panel del mapa muestre progreso real.
+   * Marca la pluma `index` (0–2) como recogida y guarda en el momento (GDD §4.6). Es acumulativo:
+   * nunca desmarca, y una pluma ya guardada no cuenta dos veces.
    */
-  static setFeatherCount(levelId: string, count: number): void {
-    const arr = [false, false, false].map((_, i) => i < count);
-    this._current = { ...this._current, feathers: { ...this._current.feathers, [levelId]: arr } };
+  static collectFeather(levelId: string, index: number): void {
+    if (!Number.isInteger(index) || index < 0 || index >= FEATHERS_PER_LEVEL) return;
+    if (this.hasFeather(levelId, index)) return;
+    const current = this.getFeathers(levelId).slice();
+    current[index] = true;
+    this._current = { ...this._current, feathers: { ...this._current.feathers, [levelId]: current } };
     this.persist();
   }
 

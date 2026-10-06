@@ -118,7 +118,7 @@ export class Luison extends Boss {
     const id = t.attack?.id ?? '';
     switch (t.state) {
       case 'telegraph':
-        this.telegraph(id, t.attack!.telegraphMs);
+        this.telegraph(id, t.ms);
         break;
       case 'active':
         this.activate(id, t.attack!.activeMs);

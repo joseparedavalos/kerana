@@ -160,7 +160,7 @@ export class JasyJatere extends Boss {
         this.faceKerana();
         if (id === 'sparks') this.staffRaised = true;
         else if (id === 'ambush') {
-          this.staffFlashMs = t.attack!.telegraphMs;
+          this.staffFlashMs = t.ms;
           this.ctx.sfxAt('staffFlash', this.body.x);
         } else this.ctx.sfxAt('buzz', this.body.x);
         break;

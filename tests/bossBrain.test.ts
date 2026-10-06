@@ -127,6 +127,25 @@ describe('BossBrain: ciclo aviso → activo → recuperación', () => {
     expect(brain.msLeft).toBeCloseTo(t!.attack!.telegraphMs * 1.3);
   });
 
+  it('el modo asistido se puede cambiar en plena pelea y la transición trae el aviso escalado', () => {
+    const brain = new BossBrain(TEJU, { rng: seq(0) });
+    brain.start();
+    let t = brain.step(10_000)!;
+    expect(t.state).toBe('telegraph');
+    expect(t.ms).toBe(t.attack!.telegraphMs);
+    // Se activa a mitad del ataque: vale desde el próximo aviso, sin tocar el que corre.
+    brain.telegraphScale = 1.3;
+    expect(brain.msLeft).toBe(t.attack!.telegraphMs);
+    do t = brain.step(10_000)!;
+    while (t.state !== 'telegraph');
+    expect(t.ms).toBeCloseTo(t.attack!.telegraphMs * 1.3);
+    expect(brain.msLeft).toBeCloseTo(t.attack!.telegraphMs * 1.3);
+    brain.telegraphScale = 1;
+    do t = brain.step(10_000)!;
+    while (t.state !== 'telegraph');
+    expect(t.ms).toBe(t.attack!.telegraphMs);
+  });
+
   it('todos los ataques tienen aviso de al menos 0,4 s (se pueden evitar)', () => {
     // El más corto es el destello del bastón de Jasy Jatere (0,4 s, GDD §6.4); el resto, 0,5 s o más.
     for (const def of Object.values(BOSSES)) {

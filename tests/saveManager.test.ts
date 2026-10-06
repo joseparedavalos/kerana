@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { defaultSave, formatPlayTime, SaveManager } from '../src/systems/SaveManager';
+import { defaultSave, formatPlayTime, normalizeFeathers, SaveManager } from '../src/systems/SaveManager';
 import type { LevelDef } from '../src/data/types';
 
 // vitest corre en entorno 'node': no hay localStorage real, se simula uno en memoria.
@@ -47,6 +47,51 @@ describe('SaveManager', () => {
     SaveManager.collectFeather('l1', 0);
     const reloaded = SaveManager.load();
     expect(reloaded.feathers.l1).toEqual([true, false, false]);
+  });
+
+  it('las plumas se acumulan entre partidas y el conteo nunca baja', () => {
+    SaveManager.startNewGame();
+    // Primera partida: la pluma 0; se sale al mapa (recarga).
+    SaveManager.collectFeather('l1', 0);
+    SaveManager.load();
+    // Segunda partida: la 0 ya no aparece; se junta la 2.
+    SaveManager.collectFeather('l1', 2);
+    expect(SaveManager.load().feathers.l1).toEqual([true, false, true]);
+    expect(SaveManager.featherCount('l1')).toBe(2);
+    // Una partida sin plumas (o completar el nivel) no baja nada.
+    SaveManager.completeLevel(LEVEL_1);
+    expect(SaveManager.load().feathers.l1).toEqual([true, false, true]);
+    expect(SaveManager.featherCount('l2')).toBe(0);
+  });
+
+  it('la misma pluma no cuenta dos veces; índices inválidos se ignoran', () => {
+    SaveManager.startNewGame();
+    SaveManager.collectFeather('l1', 1);
+    SaveManager.collectFeather('l1', 1);
+    SaveManager.collectFeather('l1', 3);
+    SaveManager.collectFeather('l1', -1);
+    expect(SaveManager.featherCount('l1')).toBe(1);
+    expect(SaveManager.hasFeather('l1', 1)).toBe(true);
+    expect(SaveManager.hasFeather('l1', 0)).toBe(false);
+  });
+
+  it('migra el conteo viejo (setFeatherCount) a los primeros n índices', () => {
+    const old = { ...defaultSave(), feathers: { l1: [true, true, false], l2: 1, l3: [true], l4: 7, l5: 'x' } };
+    globalThis.localStorage.setItem('kerana.save.v1', JSON.stringify(old));
+    const save = SaveManager.load();
+    expect(save.feathers).toEqual({
+      l1: [true, true, false],
+      l2: [true, false, false],
+      l3: [true, false, false],
+      l4: [true, true, true],
+      l5: [false, false, false],
+    });
+    // Después de migrar, juntar la que faltaba suma y no pisa las viejas.
+    SaveManager.collectFeather('l1', 2);
+    SaveManager.collectFeather('l2', 0);
+    expect(SaveManager.load().feathers.l1).toEqual([true, true, true]);
+    expect(SaveManager.current.feathers.l2).toEqual([true, false, false]);
+    expect(normalizeFeathers(0)).toEqual([false, false, false]);
   });
 
   it('datos corruptos devuelven una partida por defecto en vez de romper el juego', () => {
