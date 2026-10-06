@@ -158,6 +158,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12d | 2026-10-01 | Opus 5.5 | 5 | 3 | 2 | 97 | Amarillo |
 | S13c | 2026-10-05 | Opus 5.5 | 3 | 0 | 3 | 100 | Amarillo |
 | S13d | 2026-10-05 | Opus 5.5 | 0 | 0 | plan Pro | 100 | — |
+| S16 | 2026-10-06 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -229,6 +230,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S12d | Hecha | rama `claude/admiring-mccarthy-qwoulz` | Inglés y ajustes de arte (fuera del plan): `en.ts` completo y tipado, `t()` según `settings.lang` con caída al español, `?lang=` que siempre gana y se guarda, idioma del navegador sin partida, Nueva partida/Borrar partida conservan los ajustes, "Espacio" con `t()`, smoke por estado (arena de l2 y tajo cargado), cabezas de Teju Jagua al doble, Mainumby aletea y se inclina. Build, tests y smoke OK |
 | S13c | Hecha | rama `claude/modest-wright-o3kjs8` | Sprites de los enemigos, la vaca y el aleteo de Mainumby (fuera del plan): pipeline con `greenEdge` por pasadas, `align` ('top', 'cell') y `cropBottom`; 16 enemigos y la vaca con detail 2 (`ENEMY_SPRITES`), temblor en el aviso, cuadro 0 quietos, skin destruido al purificar; póra translúcido y anclado arriba, mbói colgante desde la rama, jakare recortado en el agua, mbopi aplastado, ojos del jagua hũ y de Teju Jagua; vaca más alta (plataforma); Mainumby con `mainumby_fly` y brillo en degradado; 3 textos en inglés. Build, tests y smoke OK |
 | S13d | Hecha | rama `claude/pensive-meitner-921wb5` | Cuellos, cuerpo, cueva y props (fuera del plan, plan Pro): cuellos de Teju Jagua como cadena de escamas sobre una Bézier (gruesa en la base, fina en la cabeza), lomo de lagarto por código (escamas en arco con reflejos dorados, patas con garras, cola curvada, respiración); l1 con techo de A en la fila 0 y boca de la cueva más alta; roca oscura en las zonas `Cave`; pipeline de props (`raw/props`, borde celeste) e íconos (`raw/hud`, JPG con magenta); corazones, pluma del contador, cartel, fogata con parpadeo, faroles y pickups con arte; vaca sin puntitos verdes. Build, tests y smoke OK |
+| S16 | Hecha | rama `claude/jolly-tesla-rh3p49` | Auditoría del diseño de niveles (fuera del plan, plan Pro): `docs/REVIEW.md` con vocabulario, una ficha por nivel (medidas, grupos de ritmo, tramos vacíos, cinco componentes, verbos, celdas y portales, plumas), duración, huecos globales, verificaciones y los diez huecos principales. Sin cambios de código; GDD §12.2 punto 4 corregido |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -666,6 +668,33 @@ Kerana se dibuja con el doble de detalle sin tocar la jugabilidad: el mundo sigu
 - **Cueva de l1:** solo se subió el techo en x 118 a 130 (la boca: pasillo de 5 → 7 de alto). En x 131 a 239 el pasillo ya es alto (9 a 20 filas) y ahí cuelgan las estalactitas: no se tocó. El tinte de la roca va solo en la capa `Ground` dentro de los `rect Cave` (la pared de la boca, x 116 y 117, queda clara a propósito).
 - **Pipeline:** `processIcon` (recorta al dibujo, escala por moda a `size × detail`, `coverage` más baja para que los contornos finos en diagonal no se corten: corazón vacío), `removeColorEdge` con `EDGE_COLORS` (green, cyan, magenta), `removeBackground(img, tolerance)`, `greenEdgeMargin`. Los faroles: la luz sigue donde estaba (`postHeight` 34 sobre el suelo, es lógica: el póra), el arte mide 32.
 - **Assets faltantes:** `yvoty` (pickup), marco de diálogo, barra del jefe, marca de Tau, logo y mapa del mundo; poses de ataque y daño de jefes y enemigos.
+
+### S16: Auditoría del diseño de niveles (fuera del plan original; plan Pro)
+Sesión de auditoría: no cambia una sola línea de código. Entregable: `docs/REVIEW.md`, un diagnóstico en español del diseño de niveles tal como está (sin propuestas de implementación ni código).
+
+**Lee:** `tools/levels/l1.txt` a `l7.txt` y `yvaga.txt` · `src/config/gameplay.ts` · `src/data/levels.ts`, `enemies.ts` y `bosses.ts` · GDD §3.4, §3.7, §4 y §6 · PLAN §7 y las "Notas para la próxima sesión" de cada sesión.
+
+**No toca:** `src/`, `tools/levels/`, `public/`, assets ni `gameplay.ts`. No corre `npm run build` ni `npm run smoke`. Escribe solo `docs/REVIEW.md` y `docs/PLAN.md` (más la línea 4 de GDD §12.2 si está desactualizada).
+
+**Tareas:**
+
+1. Vocabulario (Anthropy; Smith, Cha y Whitehead) como primera sección: verbo, los cinco componentes (plataformas, obstáculos, ayudas de movimiento, coleccionables, disparadores), grupo de ritmo y cadencia, celda y portal.
+2. Una ficha por nivel (l1 a l7 y yvaga): medidas del `.txt` y rangos de cada sección; grupos de ritmo con su cadencia; tramos de más de 20 tiles sin desafío ni descanso; inventario de los cinco componentes (y cuál falta); auditoría de los seis verbos (exige / acepta / nunca); celdas, portales de hoy (incluido el secreto de S12b) y 2 o 3 lugares donde cabría uno; las 3 plumas (dónde, qué verbo piden, si guían o compensan riesgo).
+3. Duración: carrera pura por nivel con los valores de `gameplay.ts`, costo de los tramos verticales y total del juego contra los "4 a 7 minutos" del GDD §6.0.
+4. Huecos globales: plataformas móviles (`Cow.ts`), disparadores (faroles de l7), hongos (`Bouncer`) y colchones de dificultad (pozos, dash, onda de luz, Luz de Arasy).
+5. Verificaciones: fases reales de los jefes 3 a 6 (corregir GDD §12.2 punto 4 si hace falta), `ChaseZone` y guardado de las plumas.
+6. Los diez huecos más importantes, por impacto, con costo (bajo / medio / alto).
+
+**Criterios:** `docs/REVIEW.md` completo con las cinco partes · números y rangos de tiles, no adjetivos · sin código · S16 registrada en §6.3, §7 y §8.
+
+**Notas para la próxima sesión (S16 → la que siga):**
+- **Dónde está todo:** `docs/REVIEW.md`. Usar su vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes) al especificar sesiones de niveles.
+- **Hallazgos que cambian decisiones:** (1) cada nivel dura 25–34 s de carrera pura (≈ 3 min 20 s los 7, sin jefes) contra 4–7 min por nivel del GDD §6.0; (2) ningún don de habilidad se exige en el camino principal; (3) no hay plataformas móviles ni disparadores; (4) solo l4 tiene una ruta paralela real.
+- **Bug encontrado (no arreglado):** las plumas se guardan con `setFeatherCount` al vencer al jefe y reaparecen siempre: rejugar un nivel y recoger menos baja el conteo, y las 21 piden las 3 de cada nivel en una misma partida. `collectFeather(levelId, index)` existe sin usar.
+- **Notas de sesión corregidas en REVIEW:** la pluma 3 de l2 también se alcanza con salto doble (no solo dash); la pluma 2 de l6 exige salto doble (el viento no da altura).
+- **GDD §12.2 punto 4** corregido: los jefes 3 a 6 tienen 3 fases.
+- **Pendientes que no son de diseño:** antesala de l4 sin guavirá (el de x 206 queda 4 tiles antes); Luz de Arasy en las arenas del modo asistido (GDD §4.7) sin hacer.
+- **Sin verificar:** las duraciones son cálculo, no medición; `SaveData.playTimeMs` puede dar el tiempo real si Jose juega y lo anota en "Notas de juego".
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.

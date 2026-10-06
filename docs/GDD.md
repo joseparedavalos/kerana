@@ -1267,7 +1267,7 @@ Si el gasto supera la meta (ver el semáforo en `docs/PLAN.md`), se recorta en e
 1. ~~Jefe secreto Tau.~~ **[Recortado en S4; vuelve en S12c como jefe final para todos, §7]**
 2. ~~Traducción al inglés.~~ **[Recortado en S4; vuelve en S12d: el juego está completo en inglés (`src/i18n/en.ts`)]**
 3. Persecución del Ao Ao (queda solo la arena). **[RECORTADO desde S4: idem]**
-4. Tercera fase de los jefes 3 a 6. **[RECORTADO desde S3: semáforo rojo tras S4, ver docs/PLAN.md §6.3]**
+4. ~~Tercera fase de los jefes 3 a 6.~~ **[Marcado como recortado en S4, pero no se aplicó: Moñái, Jasy Jatere, Kurupi y Ao Ao tienen 3 fases (S8–S11; revisado en S16, docs/REVIEW.md)]**
 5. Controles táctiles. **[RECORTADO desde S3: idem]**
 6. Parallax de 3 capas (queda 1). **[RECORTADO desde S3: idem]**
 7. Mainumby visible (quedan solo los carteles de texto).
