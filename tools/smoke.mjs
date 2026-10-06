@@ -29,6 +29,9 @@ function findBrowser() {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Pulsaciones (cada 300 ms) para pasar la liberación hasta "Nivel completado": el bucle corta apenas llega.
+// Con 60 (≈ 18 s) a veces no alcanzaba cuando el headless iba lento (falló una vez en l7, S18).
+const PRESS_MAX = 150;
 
 async function main() {
   const executablePath = findBrowser();
@@ -260,7 +263,7 @@ async function main() {
     await l3Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l3Done = () => l3Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l3Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l3Done()); i++) {
       await l3Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -304,7 +307,7 @@ async function main() {
     check(l4race.started && l4race.defeated, `carrera por el bastón: Kerana lo toca y gana (${JSON.stringify(l4race)})`);
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l4Done = () => l4Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l4Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l4Done()); i++) {
       await l4Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -340,7 +343,7 @@ async function main() {
     await l5Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l5Done = () => l5Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l5Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l5Done()); i++) {
       await l5Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -403,7 +406,7 @@ async function main() {
     check(l6phase.phase === 2 && !l6phase.circling, `Ao Ao fase 3 (${JSON.stringify(l6phase)})`);
     await l6Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l6Done = () => l6Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 60 && !(await l6Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l6Done()); i++) {
       await l6Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -494,7 +497,7 @@ async function main() {
     await sleep(1500);
     check(await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.darkness.candles), 'Luisón liberado: las velas se encienden');
     await l7Page.screenshot({ path: join(SHOTS, 'l7-candles.png') });
-    for (let i = 0; i < 60 && !(await l7Active('LevelComplete')); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l7Active('LevelComplete')); i++) {
       await l7Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -555,7 +558,7 @@ async function main() {
     await tauPage.screenshot({ path: join(SHOTS, 'tau-3.png') });
     await tauPage.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const tauActive = (key) => tauPage.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
-    for (let i = 0; i < 60 && !(await tauActive('Story')); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await tauActive('Story')); i++) {
       await tauPage.keyboard.press('Space');
       await sleep(300);
     }
