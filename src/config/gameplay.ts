@@ -139,11 +139,32 @@ export const GAMEPLAY = {
     /** Cabeza (hitbox y placeholder, en unidades). S12d: el doble que antes (30 × 18). */
     headWidth: 60,
     headHeight: 36,
-    neckWidth: 14,
-    /** Abanico de cabezas en reposo: separación horizontal, subida hacia el centro y separación de los cuellos en el cuerpo. */
+    /**
+     * Grosor del cuello en la base (unidades; junto a la cabeza es `neckTipScale` × esto). S20: de 14 a 18 para que no
+     * se vean como hilos al lado de la cabeza. Si se engrosan mucho tapan la arena y a Kerana: probar de a 2.
+     */
+    neckWidth: 18,
+    /**
+     * Tamaño del cuerpo (lomo, patas y cola) respecto del dibujo de S13d (1 = como era). S20: 0,65 devuelve suelo para
+     * esquivar. Los anclajes de los cuellos, la cola y las cabezas en reposo y dormidas se recalculan solos.
+     */
+    bodySize: 0.65,
+    /**
+     * Abanico de cabezas en reposo: separación horizontal, subida hacia el centro, altura de las cabezas de las puntas
+     * sobre la cima del lomo y separación de los cuellos en el lomo (esta, a tamaño 1: se multiplica por `bodySize`).
+     */
     fanSpacing: 72,
     fanRise: 12,
+    fanLift: 25,
     neckSpacing: 36,
+    /** Los cuellos nacen tantas unidades por debajo de la superficie del lomo (a tamaño 1). */
+    neckRootInset: 6,
+    /**
+     * Cabezas dormidas: se apoyan sobre el lomo, repartidas en `sleepSpread` × el semiancho del lomo por cada lugar del
+     * abanico, y hundidas `sleepSink` × su alto (que no queden flotando).
+     */
+    sleepSpread: 0.28,
+    sleepSink: 0.3,
     /** Dónde se engancha el cuello: unidades detrás del centro de la cabeza (el dibujo es más angosto que la hitbox). */
     neckAttachX: 10,
     /** Ojos que brillan: posición respecto del centro de la cabeza (hacia el hocico) y escala. */
@@ -152,15 +173,45 @@ export const GAMEPLAY = {
     eyeScale: 1,
     /** Distancia que recorre la mordida (fracción del ancho de la arena). */
     biteReach: 0.62,
-    /** Velocidad del coletazo por el suelo (px/s) y tamaño de la onda. */
+    /** Velocidad del coletazo por el suelo (px/s) y tamaño de la onda (la hitbox; la cresta dibujada mide lo mismo). */
     tailWaveSpeed: 260,
     tailWaveWidth: 26,
     tailWaveHeight: 12,
+    /**
+     * Dibujo del coletazo (S20, sin tocar la hitbox): estela de tierra detrás de la cresta (unidades), polvo que va
+     * soltando (cada tantos ms) y cuánto se ondula la cresta (fracción del alto, ciclo en ms).
+     */
+    tailWaveTrail: 34,
+    tailWaveDustMs: 45,
+    tailWaveWobble: 0.12,
+    tailWaveWobbleMs: 260,
+    /**
+     * Aviso del coletazo (S20; el tiempo sigue en bosses.ts): el suelo tiembla por el recorrido de la onda. Un frente de
+     * polvo y piedritas sale del borde donde nace la onda y llega al otro borde en `tailWarnSweep` del aviso; suelta
+     * polvo cada `tailWarnDustMs`. Grieta del suelo: alto y temblor (unidades). Sacudida de cámara suave.
+     */
+    tailWarnSweep: 0.7,
+    tailWarnDustMs: 40,
+    tailWarnCrackHeight: 2,
+    tailWarnCrackJitter: 1.5,
+    tailWarnShake: 0.0025,
     /** Estalactitas que caen después de cada coletazo en la fase 2 (mínimo y máximo). */
     stalactitesMin: 3,
     stalactitesMax: 4,
     /** Altura (px sobre el suelo) de las cabezas vulnerables tras el fuego. */
     fireRecoverHeadHeight: 36,
+    /**
+     * Cabeza expuesta (S20; ventana del fuego y de la mordida, sin cambiar su duración): halo dorado detrás que late y
+     * estrellitas de mareo que giran encima. Se apaga sola cuando se cierra la ventana. Halo: margen alrededor de la
+     * cabeza (unidades), latido (ms) y alfa mínimo/máximo. Estrellas: cantidad, radio de la órbita y vuelta (ms).
+     */
+    exposedHaloMargin: 10,
+    exposedPulseMs: 450,
+    exposedHaloAlphaMin: 0.35,
+    exposedHaloAlphaMax: 0.85,
+    exposedStars: 3,
+    exposedStarOrbit: 15,
+    exposedStarSpinMs: 900,
     /**
      * Cuellos (S13d, solo dibujo): cadena de escamas redondas sobre una Bézier cuadrática del lomo a la cabeza.
      * Grosor `neckWidth` en la base y `neckTipScale` × eso junto a la cabeza; una escama cada `neckScaleSpacing`

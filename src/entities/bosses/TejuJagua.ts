@@ -4,19 +4,37 @@ import { TEJU_JAGUA_COLORS, TEJU_JAGUA_HEADS, TEJU_JAGUA_HITS_PER_HEAD, getBossD
 import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
-import { ART_K, BODY_TEXTURE, ensureTejuJaguaArt, NECK_SCALE_PX, NECK_SCALE_TEXTURE, TAIL_TEXTURE, tailOrigin } from './tejuJaguaArt';
+import {
+  ART_K,
+  BODY_TEXTURE,
+  ensureTejuJaguaArt,
+  NECK_SCALE_PX,
+  NECK_SCALE_TEXTURE,
+  TAIL_TEXTURE,
+  tailOrigin,
+  WAVE_TEXTURE,
+  waveOrigin,
+} from './tejuJaguaArt';
 
 const CFG = GAMEPLAY.tejuJagua;
 /** Sprite real (npm run sprites → raw/teju_jagua/head/) o placeholder. */
 const HEAD_SPRITE = 'teju_jagua_head';
 const HEAD_PLACEHOLDER = 'teju_jagua_head_placeholder';
 const EYES_TEXTURE = 'teju_jagua_eyes';
+const HALO_TEXTURE = 'teju_jagua_halo';
+const STAR_TEXTURE = 'teju_jagua_star';
 const SLEEP_TINT = 0x2a2838;
 const FIRE_COLOR = 0xf08a30;
-const WAVE_COLOR = 0xc9a66b;
-/** Centro del cuerpo sobre el suelo (unidades). */
+/** Polvo y piedritas del coletazo; grieta del aviso; halo y estrellas de la cabeza expuesta. */
+const DUST_COLOR = 0xc2a473;
+const PEBBLE_COLOR = 0x4a3a28;
+const CRACK_COLOR = 0x1e160e;
+const EXPOSED_COLOR = 0xffe27a;
+/** Centro del cuerpo sobre el suelo (unidades, a tamaño 1: se multiplica por `bodySize`). */
 const BODY_FLOOR_OFFSET = 110;
-/** Base de la cola: hacia el costado derecho del lomo (fracción del ancho) y sobre el suelo (unidades). */
+/** Tamaño del cuerpo (gameplay.ts): escala las medidas de esta sección y las del lomo. */
+const S = CFG.bodySize;
+/** Base de la cola: hacia el costado derecho del lomo (fracción del ancho) y sobre el suelo (unidades, a tamaño 1). */
 const TAIL_BASE_X = 0.38;
 const TAIL_BASE_LIFT = 16;
 /** Cola levantada en el aviso del coletazo (escala vertical relativa). */
@@ -26,6 +44,9 @@ interface Head {
   index: number;
   img: Phaser.GameObjects.Image;
   eyes: Phaser.GameObjects.Image;
+  /** Señal de cabeza expuesta: halo detrás y estrellitas de mareo encima. */
+  halo: Phaser.GameObjects.Image;
+  stars: Phaser.GameObjects.Image[];
   color: number;
   hp: number;
   asleep: boolean;
@@ -35,6 +56,9 @@ interface Head {
   exposed: boolean;
   anchorX: number;
   anchorY: number;
+  /** Dónde se apoya dormida, sobre el lomo. */
+  sleepX: number;
+  sleepY: number;
   neckX: number;
   neckY: number;
 }
@@ -55,6 +79,30 @@ function ensureTextures(scene: Phaser.Scene): void {
     g.generateTexture(HEAD_PLACEHOLDER, w, h);
     g.destroy();
   }
+  if (!scene.textures.exists(HALO_TEXTURE)) {
+    // Halo blando: óvalos concéntricos, más opacos al centro (blanco: el tinte le da el color).
+    const k = ART_K;
+    const hw = (w / 2 + CFG.exposedHaloMargin) * k;
+    const hh = (h / 2 + CFG.exposedHaloMargin) * k;
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    const rings = 6;
+    for (let i = 0; i < rings; i++) {
+      const f = 1 - i / rings;
+      g.fillStyle(0xffffff, 0.12 + 0.1 * i).fillEllipse(hw, hh, 2 * hw * f, 2 * hh * f);
+    }
+    g.generateTexture(HALO_TEXTURE, Math.ceil(2 * hw), Math.ceil(2 * hh));
+    g.destroy();
+  }
+  if (!scene.textures.exists(STAR_TEXTURE)) {
+    // Estrellita de cuatro puntas (7 × 7) con centro blanco.
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(EXPOSED_COLOR);
+    g.fillTriangle(3.5, 0, 2.3, 3.5, 4.7, 3.5).fillTriangle(3.5, 7, 2.3, 3.5, 4.7, 3.5);
+    g.fillTriangle(0, 3.5, 3.5, 2.3, 3.5, 4.7).fillTriangle(7, 3.5, 3.5, 2.3, 3.5, 4.7);
+    g.fillStyle(0xffffff).fillRect(3, 3, 1, 1);
+    g.generateTexture(STAR_TEXTURE, 7, 7);
+    g.destroy();
+  }
   if (!scene.textures.exists(EYES_TEXTURE)) {
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
     g.fillStyle(0xff5a1f).fillRect(0, 0, 3, 3);
@@ -73,9 +121,13 @@ export class TejuJagua extends Boss {
   private readonly neckScales: Phaser.GameObjects.Image[][] = [];
   private readonly body: Phaser.GameObjects.Image;
   private readonly tail: Phaser.GameObjects.Image;
-  private readonly wave: Phaser.GameObjects.Rectangle;
+  private readonly wave: Phaser.GameObjects.Image;
   private readonly fire: Phaser.GameObjects.Rectangle;
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** Polvo y piedritas del coletazo (aviso y onda) y grieta del suelo durante el aviso. */
+  private readonly dust: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly pebbles: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly crack: Phaser.GameObjects.Graphics;
   private readonly waveRect = new Phaser.Geom.Rectangle();
   private readonly fireRect = new Phaser.Geom.Rectangle();
   private readonly headRect = new Phaser.Geom.Rectangle();
@@ -84,6 +136,11 @@ export class TejuJagua extends Boss {
   private lastHit?: Head;
   private waveDir: 1 | -1 = -1;
   private smokeMs = 0;
+  private dustMs = 0;
+  /** Aviso del coletazo: tiempo transcurrido y total (ms). */
+  private warnElapsed = 0;
+  private warnMs = 1;
+  private waveClock = 0;
   private readonly introTimers: Phaser.Time.TimerEvent[] = [];
   private readonly bodyX: number;
   private readonly bodyY: number;
@@ -93,7 +150,7 @@ export class TejuJagua extends Boss {
     ensureTextures(scene);
     const arena = ctx.arena;
     this.bodyX = arena.centerX;
-    this.bodyY = ctx.floorY - BODY_FLOOR_OFFSET;
+    this.bodyY = ctx.floorY - BODY_FLOOR_OFFSET * S;
 
     // Lomo de lagarto por código (tejuJaguaArt.ts), con patas a los lados y la cola hacia un costado; respira lento.
     ensureTejuJaguaArt(scene, BODY_FLOOR_OFFSET);
@@ -109,12 +166,36 @@ export class TejuJagua extends Boss {
     });
     const [tox, toy] = tailOrigin();
     this.tail = scene.add
-      .image(this.bodyX + CFG.bodyWidth * TAIL_BASE_X, ctx.floorY - TAIL_BASE_LIFT, TAIL_TEXTURE)
+      .image(this.bodyX + CFG.bodyWidth * S * TAIL_BASE_X, ctx.floorY - TAIL_BASE_LIFT * S, TAIL_TEXTURE)
       .setOrigin(tox, toy)
       .setScale(1 / ART_K)
       .setDepth(-6);
     this.necks = scene.add.container(0, 0).setDepth(-3);
-    this.wave = scene.add.rectangle(0, 0, CFG.tailWaveWidth, CFG.tailWaveHeight, WAVE_COLOR).setOrigin(0.5, 1).setDepth(6).setVisible(false);
+    this.wave = scene.add.image(0, 0, WAVE_TEXTURE).setScale(1 / ART_K).setDepth(6).setVisible(false);
+    this.crack = scene.add.graphics().setDepth(5);
+    this.dust = scene.add
+      .particles(0, 0, 'fx_particle', {
+        speedY: { min: -50, max: -12 },
+        speedX: { min: -18, max: 18 },
+        gravityY: 60,
+        lifespan: 550,
+        alpha: { start: 0.75, end: 0 },
+        scale: { start: 1, end: 2.6 },
+        tint: DUST_COLOR,
+        emitting: false,
+      })
+      .setDepth(5);
+    this.pebbles = scene.add
+      .particles(0, 0, 'fx_particle', {
+        speedY: { min: -110, max: -55 },
+        speedX: { min: -25, max: 25 },
+        gravityY: 520,
+        lifespan: 420,
+        scale: 0.7,
+        tint: PEBBLE_COLOR,
+        emitting: false,
+      })
+      .setDepth(5);
     this.fire = scene.add.rectangle(0, 0, 1, 1, FIRE_COLOR, 0.7).setOrigin(0, 0).setDepth(6).setVisible(false);
     this.smoke = scene.add
       .particles(0, 0, 'fx_particle', {
@@ -130,13 +211,21 @@ export class TejuJagua extends Boss {
 
     // La cabeza gris del sprite sirve para las siete: cada una se tiñe con su color (como el placeholder).
     const texture = HEAD_PLACEHOLDER;
+    const bodyTopY = this.bodyY - CFG.bodyTop * S;
+    const half = (TEJU_JAGUA_HEADS - 1) / 2;
     for (let i = 0; i < TEJU_JAGUA_HEADS; i++) {
-      const offset = i - (TEJU_JAGUA_HEADS - 1) / 2;
+      const offset = i - half;
       const anchorX = this.bodyX + offset * CFG.fanSpacing;
-      const anchorY = this.bodyY - 50 - (3 - Math.abs(offset)) * CFG.fanRise;
+      // Las de las puntas quedan `fanLift` sobre la cima del lomo; cada lugar hacia el centro sube `fanRise`.
+      const anchorY = bodyTopY - CFG.fanLift - (half - Math.abs(offset)) * CFG.fanRise;
+      const neckX = this.bodyX + offset * CFG.neckSpacing * S;
+      const sleepX = this.bodyX + offset * CFG.sleepSpread * (CFG.bodyWidth / 2) * S;
+      const halo = scene.add.image(anchorX, anchorY, HALO_TEXTURE).setDepth(-2.5).setScale(1 / ART_K).setTint(EXPOSED_COLOR).setVisible(false);
       const img = scene.add.image(anchorX, anchorY, texture).setDepth(-2);
       skinIfAvailable(scene, img, HEAD_SPRITE, { origin: GAMEPLAY.sprites.tejuHead.origin });
       const eyes = scene.add.image(anchorX, anchorY, EYES_TEXTURE).setDepth(-1).setScale(CFG.eyeScale);
+      const stars: Phaser.GameObjects.Image[] = [];
+      for (let k = 0; k < CFG.exposedStars; k++) stars.push(scene.add.image(anchorX, anchorY, STAR_TEXTURE).setDepth(0).setVisible(false));
       const scales: Phaser.GameObjects.Image[] = [];
       for (let k = 0; k < CFG.neckMaxScales; k++) scales.push(scene.add.image(0, 0, NECK_SCALE_TEXTURE).setVisible(false));
       this.necks.add(scales);
@@ -146,6 +235,8 @@ export class TejuJagua extends Boss {
         index: i,
         img,
         eyes,
+        halo,
+        stars,
         color,
         hp: TEJU_JAGUA_HITS_PER_HEAD,
         asleep: false,
@@ -153,8 +244,10 @@ export class TejuJagua extends Boss {
         exposed: false,
         anchorX,
         anchorY,
-        neckX: this.bodyX + offset * CFG.neckSpacing,
-        neckY: this.bodyY - 30,
+        sleepX,
+        sleepY: this.moundTopY(sleepX) - CFG.headHeight / 2 + CFG.headHeight * CFG.sleepSink,
+        neckX,
+        neckY: this.moundTopY(neckX) + CFG.neckRootInset * S,
       });
     }
     this.resetVisuals();
@@ -190,7 +283,7 @@ export class TejuJagua extends Boss {
       case 'telegraph':
         if (id === 'bite') this.telegraphBite(t.ms);
         else if (id === 'fire') this.telegraphFire();
-        else this.telegraphTail();
+        else this.telegraphTail(t.ms);
         break;
       case 'active':
         if (id === 'bite') this.lungeBite(t.attack!.activeMs);
@@ -250,19 +343,34 @@ export class TejuJagua extends Boss {
     this.ctx.shake(80, 0.004);
   }
 
-  /** Coletazo: la cola se levanta al fondo. */
-  private telegraphTail(): void {
+  /**
+   * Coletazo: la cola se levanta y el suelo tiembla por donde va a pasar la onda (polvo, piedritas y una grieta que
+   * avanza desde el borde donde nace; ver updateVisuals). La dirección se decide acá, para avisar el recorrido real.
+   */
+  private telegraphTail(telegraphMs: number): void {
     this.attackers = [];
+    this.waveDir = this.ctx.playerX() < this.ctx.arena.centerX ? -1 : 1;
+    this.warnElapsed = 0;
+    this.warnMs = Math.max(1, telegraphMs);
+    this.dustMs = 0;
     this.scene.tweens.add({ targets: this.tail, scaleY: TAIL_RAISE / ART_K, angle: -15, duration: 300, ease: 'Back.easeOut' });
+    this.ctx.shake(telegraphMs, CFG.tailWarnShake);
     this.ctx.sfx('growl');
+  }
+
+  /** Borde donde nace la onda (centro de la cresta). */
+  private waveStartX(): number {
+    const arena = this.ctx.arena;
+    return this.waveDir < 0 ? arena.right - CFG.tailWaveWidth : arena.left + CFG.tailWaveWidth;
   }
 
   /** Una onda recorre el suelo de lado a lado: hay que saltarla. */
   private launchWave(): void {
-    const arena = this.ctx.arena;
-    this.waveDir = this.ctx.playerX() < arena.centerX ? -1 : 1;
-    const startX = this.waveDir < 0 ? arena.right - CFG.tailWaveWidth : arena.left + CFG.tailWaveWidth;
-    this.wave.setPosition(startX, this.ctx.floorY).setVisible(true);
+    const flipped = this.waveDir < 0;
+    const [ox, oy] = waveOrigin(flipped);
+    this.crack.clear();
+    this.waveClock = 0;
+    this.wave.setOrigin(ox, oy).setFlipX(flipped).setScale(1 / ART_K).setPosition(this.waveStartX(), this.ctx.floorY).setVisible(true);
     this.scene.tweens.add({ targets: this.tail, scaleY: 1 / ART_K, angle: 0, duration: 200 });
     this.ctx.sfx('tailWave');
     this.ctx.shake(200, 0.006);
@@ -324,6 +432,7 @@ export class TejuJagua extends Boss {
     }
     this.attackers = [];
     this.wave.setVisible(false);
+    this.crack.clear();
     this.fire.setVisible(false);
   }
 
@@ -345,14 +454,14 @@ export class TejuJagua extends Boss {
     return 0;
   }
 
-  /** La cabeza vencida no muere: se duerme y se retira a la sombra. */
+  /** La cabeza vencida no muere: se duerme y se apoya sobre el lomo. */
   private sleep(head: Head): void {
     head.asleep = true;
     head.exposed = false;
     head.harmful = false;
     head.eyes.setVisible(false);
     head.img.setTint(SLEEP_TINT);
-    this.moveHead(head, head.anchorX, head.anchorY + 20, 600);
+    this.moveHead(head, head.sleepX, head.sleepY, 600);
     this.ctx.sfx('headSleep');
     // Si se durmieron todas las cabezas del ataque, el jefe pasa al siguiente.
     if (this.brain.hp > 0 && this.attackers.every((h) => h.asleep)) {
@@ -390,10 +499,14 @@ export class TejuJagua extends Boss {
   // ── Visual ────────────────────────────────────────────────────────────────
 
   protected updateVisuals(deltaMs: number): void {
+    const attackId = this.brain.attack?.id ?? '';
+    const isTail = attackId === 'tail' || attackId === 'tail_stalactites';
+    if (this.brain.state === 'telegraph' && isTail) this.updateTailWarning(deltaMs);
     if (this.wave.visible) {
       this.wave.x += this.waveDir * CFG.tailWaveSpeed * (deltaMs / 1000);
       const arena = this.ctx.arena;
       if (this.wave.x < arena.left || this.wave.x > arena.right) this.wave.setVisible(false);
+      else this.updateWave(deltaMs);
     }
     if (this.brain.state === 'telegraph' && this.brain.attack?.id === 'fire') {
       this.smokeMs -= deltaMs;
@@ -404,12 +517,90 @@ export class TejuJagua extends Boss {
     }
     if (this.fire.visible) this.fire.setAlpha(0.55 + Math.random() * 0.3);
 
-    // Cuellos: del lomo a cada cabeza. Los ojos siguen a la cabeza.
+    // Cuellos: del lomo a cada cabeza. Los ojos y la señal de expuesta siguen a la cabeza.
+    const now = this.scene.time.now;
     for (const head of this.heads) {
       const dir = head.img.flipX ? 1 : -1;
       head.eyes.setPosition(head.img.x + dir * CFG.eyeOffsetX, head.img.y + CFG.eyeOffsetY);
       head.eyes.setAlpha(head.img.alpha > 0 ? 1 : 0);
       this.drawNeck(head, dir);
+      this.updateExposed(head, now);
+    }
+  }
+
+  /** Superficie del lomo (y del mundo) en x: la mitad de arriba del óvalo del dibujo. Fuera del lomo, su borde. */
+  private moundTopY(x: number): number {
+    const a = (CFG.bodyWidth / 2) * S;
+    const b = CFG.bodyDepth * S;
+    const cy = this.bodyY + (CFG.bodyDepth - CFG.bodyTop) * S;
+    const dx = Phaser.Math.Clamp((x - this.bodyX) / a, -1, 1);
+    return cy - b * Math.sqrt(1 - dx * dx);
+  }
+
+  /**
+   * Aviso del coletazo, por el recorrido de la onda: un frente de polvo sale del borde donde nace y barre el suelo
+   * hasta el otro borde; detrás del frente, el suelo sigue soltando polvo y piedritas y una grieta tiembla.
+   */
+  private updateTailWarning(deltaMs: number): void {
+    this.warnElapsed += deltaMs;
+    const arena = this.ctx.arena;
+    const floorY = this.ctx.floorY;
+    const start = this.waveStartX();
+    const span = arena.width - 2 * CFG.tailWaveWidth;
+    const p = Phaser.Math.Clamp(this.warnElapsed / (this.warnMs * CFG.tailWarnSweep), 0, 1);
+    const reach = span * p;
+    const dir = this.waveDir;
+    this.dustMs -= deltaMs;
+    if (this.dustMs <= 0) {
+      this.dustMs = CFG.tailWarnDustMs;
+      this.dust.emitParticleAt(start, floorY, 2);
+      this.dust.emitParticleAt(start + dir * reach, floorY, 2);
+      this.dust.emitParticleAt(start + dir * Math.random() * reach, floorY, 1);
+      this.pebbles.emitParticleAt(start + dir * Math.random() * reach, floorY - 1, 1);
+    }
+    // Grieta: tramos cortos al ras del suelo, cada uno con su temblor.
+    const g = this.crack;
+    const h = CFG.tailWarnCrackHeight;
+    const jitter = CFG.tailWarnCrackJitter;
+    const step = 6;
+    g.clear().fillStyle(CRACK_COLOR, 0.55 + 0.25 * Math.random());
+    for (let d = 0; d <= reach; d += step) {
+      const x = dir > 0 ? start + d : start - d - step;
+      g.fillRect(x, floorY - h - Math.random() * jitter, step - 1, h);
+    }
+  }
+
+  /** La onda avanza ondulando y suelta polvo detrás. */
+  private updateWave(deltaMs: number): void {
+    this.waveClock += deltaMs;
+    const wobble = 1 + CFG.tailWaveWobble * Math.sin((this.waveClock / CFG.tailWaveWobbleMs) * Math.PI * 2);
+    this.wave.setScale(1 / ART_K, wobble / ART_K);
+    this.dustMs -= deltaMs;
+    if (this.dustMs <= 0) {
+      this.dustMs = CFG.tailWaveDustMs;
+      const back = this.wave.x - this.waveDir * CFG.tailWaveWidth * 0.6;
+      this.dust.emitParticleAt(back, this.ctx.floorY, 2);
+      this.pebbles.emitParticleAt(this.wave.x, this.ctx.floorY - CFG.tailWaveHeight, 1);
+    }
+  }
+
+  /** Cabeza expuesta (ventana del fuego o de la mordida): halo que late detrás y estrellitas que giran encima. */
+  private updateExposed(head: Head, now: number): void {
+    const on = head.exposed && !head.asleep && this.brain.vulnerable && head.img.alpha > 0;
+    if (head.halo.visible !== on) {
+      head.halo.setVisible(on);
+      for (const star of head.stars) star.setVisible(on);
+    }
+    if (!on) return;
+    const pulse = 0.5 + 0.5 * Math.sin((now / CFG.exposedPulseMs) * Math.PI * 2);
+    const alpha = CFG.exposedHaloAlphaMin + (CFG.exposedHaloAlphaMax - CFG.exposedHaloAlphaMin) * pulse;
+    head.halo.setPosition(head.img.x, head.img.y).setAlpha(alpha).setScale((1 + 0.08 * pulse) / ART_K);
+    const spin = (now / CFG.exposedStarSpinMs) * Math.PI * 2;
+    const cy = head.img.y - CFG.headHeight / 2 - 4;
+    const n = head.stars.length;
+    for (let i = 0; i < n; i++) {
+      const ang = spin + (i * Math.PI * 2) / n;
+      head.stars[i].setPosition(head.img.x + Math.cos(ang) * CFG.exposedStarOrbit, cy + Math.sin(ang) * CFG.exposedStarOrbit * 0.35);
     }
   }
 
@@ -454,6 +645,7 @@ export class TejuJagua extends Boss {
     this.attackers = [];
     this.lastHit = undefined;
     this.wave.setVisible(false);
+    this.crack.clear();
     this.fire.setVisible(false);
     this.tail.setScale(1 / ART_K).setAngle(0);
     this.body.setAlpha(1);
@@ -467,6 +659,8 @@ export class TejuJagua extends Boss {
       head.exposed = false;
       head.img.setPosition(head.anchorX, head.anchorY).setAlpha(0).setFlipX(false).setTint(head.color);
       head.eyes.setVisible(false).setScale(CFG.eyeScale);
+      head.halo.setVisible(false);
+      for (const star of head.stars) star.setVisible(false);
     }
   }
 
