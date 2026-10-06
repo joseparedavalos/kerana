@@ -31,6 +31,8 @@ export function pickWeighted(attacks: readonly AttackDef[], rng: () => number, a
 export interface BossTransition {
   state: BossState;
   attack: AttackDef | null;
+  /** Duración del estado al que entró (ms): el aviso ya viene escalado por el modo asistido. */
+  ms: number;
 }
 
 export interface BossBrainOptions {
@@ -49,8 +51,9 @@ export class BossBrain {
   msLeft = 0;
   private lastAttackId?: string;
   private readonly rng: () => number;
-  private readonly telegraphScale: number;
-  private readonly transition: BossTransition = { state: 'waiting', attack: null };
+  /** Escala de los avisos; se puede cambiar en plena pelea (modo asistido en caliente, GDD §4.7). */
+  telegraphScale: number;
+  private readonly transition: BossTransition = { state: 'waiting', attack: null, ms: 0 };
   /** Ataques que quedan en la cola (se rellena con una elección por pesos). */
   readonly queue: AttackDef[] = [];
 
@@ -151,6 +154,7 @@ export class BossBrain {
     this.msLeft = ms;
     this.transition.state = state;
     this.transition.attack = attack;
+    this.transition.ms = ms;
     return this.transition;
   }
 }

@@ -105,6 +105,19 @@ describe('buildTiledMap', () => {
     expect(new Set(objs.map((o: Obj & { id?: number }) => o.id)).size).toBe(objs.length);
   });
 
+  it('numera las plumas en orden de aparición en el texto (fila por fila, de izquierda a derecha)', () => {
+    const map = buildTiledMap(parseAscii('size 6x3\n---\n...F..\nPF..F.\n######\n')) as { layers: { name: string; objects?: Obj[] }[] };
+    const feathers = map.layers
+      .find((l) => l.name === 'Objects')!
+      .objects!.filter((o) => o.type === 'Pickup' && props(o).kind === 'pluma')
+      .map((o) => [o.x, props(o).index]);
+    expect(feathers).toEqual([
+      [56, 0],
+      [24, 1],
+      [72, 2],
+    ]);
+  });
+
   it('agrupa los camalotes "S" seguidos en un solo objeto Sinking sobre agua', () => {
     const map = buildTiledMap(parseAscii('size 6x2\n---\nP.SSS.\n######\n')) as { layers: { name: string; data?: number[]; objects?: Obj[] }[] };
     const objs = map.layers.find((l) => l.name === 'Objects')!.objects!.filter((o) => o.type === 'Sinking');

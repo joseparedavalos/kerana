@@ -117,6 +117,9 @@ export class LevelScene extends Phaser.Scene {
   private checkpoints: Checkpoint[] = [];
   private signs: Sign[] = [];
   private feathers = 0;
+  /** Luz de Arasy de la arena (solo en modo asistido, GDD §4.7) y si ya se usó en este intento. */
+  private arenaLuz?: Pickup;
+  private arenaLuzUsed = false;
   private lastPlayerState: PlayerStateName = 'idle';
   private wasImmune = false;
   private readonly safeGround = new Phaser.Math.Vector2();
@@ -189,7 +192,10 @@ export class LevelScene extends Phaser.Scene {
     this.signs = [];
     this.enemies = [];
     this.pickups = [];
-    this.feathers = 0;
+    // Las plumas ya guardadas cuentan desde el principio: las recogidas no vuelven a aparecer.
+    this.feathers = SaveManager.featherCount(this.def.id);
+    this.arenaLuz = undefined;
+    this.arenaLuzUsed = false;
     this.lastPlayerState = 'idle';
     this.levelExitZone = undefined;
     this.completing = false;
@@ -367,10 +373,13 @@ export class LevelScene extends Phaser.Scene {
       };
     }
     EventBus.on(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
+    // Al volver de la pausa (y de Opciones) se relee el modo asistido: se puede cambiar en cualquier momento.
+    this.events.on(Phaser.Scenes.Events.RESUME, this.applyAssist, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scene.stop('UI');
       SaveManager.persist();
       EventBus.off(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
+      this.events.off(Phaser.Scenes.Events.RESUME, this.applyAssist, this);
     });
 
     EventBus.emit(GameEvents.levelReady, this.def.id);
@@ -537,6 +546,40 @@ export class LevelScene extends Phaser.Scene {
     AudioManager.play('arenaLock');
     this.shake(GAMEPLAY.boss.lockShakeMs, GAMEPLAY.boss.lockShakeIntensity);
     this.boss!.begin();
+    this.syncArenaLuz();
+  }
+
+  /** Modo asistido en caliente (GDD §4.7): corazones, avisos de jefe y Luz de Arasy de la arena. */
+  private applyAssist(): void {
+    const assist = SaveManager.current.settings.assist;
+    this.player.setAssist(assist);
+    EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
+    this.boss?.setAssist(assist);
+    this.syncArenaLuz();
+  }
+
+  /** Una Luz de Arasy en la arena mientras dura la pelea, solo con el modo asistido; una por intento. */
+  private syncArenaLuz(): void {
+    const want = this.fighting && SaveManager.current.settings.assist && !this.arenaLuzUsed;
+    if (want && !this.arenaLuz && this.arenaRect) {
+      const tile = this.map.tileWidth;
+      const x = this.arenaRect.left + tile * (GAMEPLAY.boss.assistLuzOffsetTiles + 0.5);
+      const y = this.surfaceBelow(x, this.arenaRect.top) ?? this.arenaRect.bottom;
+      this.arenaLuz = new Pickup(this, x, y, 'luz_arasy');
+      this.pickups.push(this.arenaLuz);
+    } else if (!want && this.arenaLuz) {
+      this.removeArenaLuz();
+    }
+  }
+
+  private removeArenaLuz(): void {
+    const luz = this.arenaLuz;
+    if (!luz) return;
+    this.arenaLuz = undefined;
+    // En el lugar: el overlap guarda la referencia a este arreglo.
+    const i = this.pickups.indexOf(luz);
+    if (i >= 0) this.pickups.splice(i, 1);
+    if (luz.active && luz.body.enable) luz.destroy();
   }
 
   /** Kerana cayó durante la pelea: todo vuelve a empezar desde la antesala. */
@@ -548,6 +591,9 @@ export class LevelScene extends Phaser.Scene {
     this.clearOneShotHazards();
     this.clearFlowers();
     this.clearBossMinions();
+    // El próximo intento vuelve a tener su Luz de Arasy.
+    this.arenaLuzUsed = false;
+    this.removeArenaLuz();
   }
 
   private startLiberation(): void {
@@ -557,6 +603,7 @@ export class LevelScene extends Phaser.Scene {
     this.clearOneShotHazards();
     this.clearFlowers();
     this.clearBossMinions();
+    this.removeArenaLuz();
     EventBus.emit(GameEvents.bossBarHide);
     this.lightCandles();
     const gift = this.def.gift;
@@ -1047,7 +1094,6 @@ export class LevelScene extends Phaser.Scene {
       this.scene.start('Story', { slides, nextScene: 'Credits' });
       return;
     }
-    SaveManager.setFeatherCount(this.def.id, this.feathers);
     if (this.def.order > 0) SaveManager.completeLevel(this.def);
     this.scene.start('LevelComplete', { level: this.def });
   }
@@ -1087,6 +1133,7 @@ export class LevelScene extends Phaser.Scene {
   private buildObjects(): Phaser.Math.Vector2 {
     const spawn = new Phaser.Math.Vector2(32, 32);
     const objects = this.map.getObjectLayer('Objects')?.objects ?? [];
+    let featherOrder = 0;
     for (const obj of objects) {
       const x = obj.x ?? 0;
       const y = obj.y ?? 0;
@@ -1145,6 +1192,15 @@ export class LevelScene extends Phaser.Scene {
         }
         case 'Pickup': {
           const kind = String(objectProp(obj, 'kind') ?? 'guavira') as PickupKind;
+          if (kind === 'pluma') {
+            // Índice del ASCII; si falta (mapa editado a mano), el orden en que aparece.
+            const index = Number(objectProp(obj, 'index') ?? featherOrder);
+            featherOrder++;
+            // Ya guardada: no se crea (GDD §4.6, las plumas recogidas quedan guardadas).
+            if (SaveManager.hasFeather(this.def.id, index)) break;
+            this.pickups.push(new Pickup(this, x, y, kind, index));
+            break;
+          }
           this.pickups.push(new Pickup(this, x, y, kind));
           break;
         }
@@ -1344,11 +1400,17 @@ export class LevelScene extends Phaser.Scene {
         EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
         break;
       case 'luz_arasy':
+        if (pickup === this.arenaLuz) {
+          this.arenaLuzUsed = true;
+          this.arenaLuz = undefined;
+        }
         this.player.activateLuzArasy();
         AudioManager.play('luzArasy');
         break;
       case 'pluma':
-        this.feathers = Math.min(GAMEPLAY.hud.featherMax, this.feathers + 1);
+        // Se guarda al tocarla (GDD §4.6); el conteo sale del guardado, así nunca baja ni cuenta dos veces.
+        SaveManager.collectFeather(this.def.id, pickup.index);
+        this.feathers = SaveManager.featherCount(this.def.id);
         EventBus.emit(GameEvents.feathersChanged, this.feathers, GAMEPLAY.hud.featherMax);
         AudioManager.play('feather');
         break;

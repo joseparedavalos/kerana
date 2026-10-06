@@ -13,14 +13,17 @@ const ART: Partial<Record<PickupKind, ArtKey>> = { guavira: 'ui_guavira', luz_ar
 export class Pickup extends Phaser.Physics.Arcade.Sprite {
   declare body: Phaser.Physics.Arcade.Body;
   readonly kind: PickupKind;
+  /** Plumas: índice estable dentro del nivel (0–2, orden de aparición en el ASCII); -1 en lo demás. */
+  readonly index: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, kind: PickupKind) {
+  constructor(scene: Phaser.Scene, x: number, y: number, kind: PickupKind, index = -1) {
     const placeholder = `pickup_${kind}`;
     const art = ART[kind];
     const look = art ? artOrPlaceholder(scene, art, placeholder, SIZE, SIZE) : { key: placeholder, scale: 1 };
     if (!art) ensurePlaceholder(scene, placeholder, SIZE, SIZE);
     super(scene, x, y, look.key);
     this.kind = kind;
+    this.index = index;
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1).setScale(look.scale);

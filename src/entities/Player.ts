@@ -50,7 +50,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Corazones del guardado (4 a 7 con los dones de corazón), +3 con el modo asistido (GDD §4.7).
   readonly health: Health;
   declare body: Phaser.Physics.Arcade.Body;
-  private readonly assist: boolean;
+  private assist: boolean;
   private readonly god: boolean;
 
   private readonly attackHitbox: Phaser.GameObjects.Zone;
@@ -218,6 +218,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hurtFlashMsLeft = FX.hurtFlashMs;
     this.status.wake();
     return true;
+  }
+
+  /**
+   * Modo asistido cambiado en plena partida (GDD §4.7): suma o quita los corazones extra.
+   * Al activarlo también se llenan; al quitarlo, la vida no pasa del nuevo máximo.
+   */
+  setAssist(on: boolean): void {
+    if (on === this.assist) return;
+    this.assist = on;
+    const bonus = GAMEPLAY.hearts.assistBonus;
+    if (on) {
+      this.health.max += bonus;
+      this.health.current += bonus;
+    } else {
+      this.health.max -= bonus;
+      this.health.current = Math.min(this.health.current, this.health.max);
+    }
   }
 
   /** Guavirá o fuego encendido por primera vez: cura corazones. */

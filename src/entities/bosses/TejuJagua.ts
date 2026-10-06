@@ -188,7 +188,7 @@ export class TejuJagua extends Boss {
     const id = t.attack?.id ?? '';
     switch (t.state) {
       case 'telegraph':
-        if (id === 'bite') this.telegraphBite(t.attack!.telegraphMs);
+        if (id === 'bite') this.telegraphBite(t.ms);
         else if (id === 'fire') this.telegraphFire();
         else this.telegraphTail();
         break;
