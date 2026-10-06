@@ -457,22 +457,26 @@ Todo enemigo común quita 1 corazón al contacto.
 |---|---|
 | Lugar | Cerros de Paraguarí, "la ciudad de los cerros" (inspiración: Cerro Perõ y Cerro Hũ) |
 | Hora | Amanecer |
-| Tamaño | ≈ 240 × 34 tiles |
-| Idea nueva | Lo básico: correr, saltar, atacar, fuegos, curación y Luz de Arasy |
+| Tamaño | 314 × 34 tiles (S19) |
+| Idea nueva | Lo básico: correr, saltar, atacar, fuegos, curación y Luz de Arasy; pozos, plataformas móviles, piedras que abren rejas y hongos |
 | Enemigos | `teju_i`, `mbopi` |
 | Peligros | Espinas de karaguatá; estalactitas que caen (aviso: polvo) |
 | Música | Flauta suave y mbaraka; se oscurece al bajar a la caverna |
 | Jefe | Teju Jagua |
 | Don | Tajo cargado |
 
-**Recorrido**
+**Recorrido** (rediseño de S19; tabla de grupos de ritmo y método en `docs/RECETA-NIVEL.md`)
 
-- **A. El despertar (≈ 50 tiles).** Kerana despierta en una cueva alta. Mainumby: "¡Kerana! ¡Por fin!". Saltos cortos. Una liana tapa la salida: hay que atacar. Primer teju'i en terreno plano. *Pluma 1:* sobre la entrada de la cueva (salto alto con carrerilla).
-- **B. La ladera (≈ 70 tiles).** Rocas y un escalón alto que enseña el salto variable. Mbopi salen de las grietas. **Luz de Arasy** justo antes de un pasillo con cuatro teju'i: el jugador descubre que con la luz los purifica al tocarlos. *Pluma 2:* detrás de una roca agrietada (requiere el tajo cargado → volver después).
-- **Checkpoint 1.**
-- **C. El descenso (≈ 60 tiles, vertical).** Bajada por grietas hacia el corazón del cerro. Estalactitas con aviso; karaguatá en los bordes. *Pluma 3:* en una cornisa alta (requiere salto doble → volver después).
-- **Checkpoint 2 (antesala).** Una planta de guavirá. Mainumby: "Algo grande respira ahí abajo…".
-- **Arena: la caverna del tesoro.** Suelo plano, dos repisas laterales, cristales y oro al fondo. El cuerpo enorme de Teju Jagua es una silueta en la penumbra del fondo; solo las cabezas, sobre sus cuellos, salen a la luz.
+- **A. El despertar (x 0–44).** Kerana despierta en una cueva alta. Mainumby: "¡Kerana! ¡Por fin!". Saltos cortos y primer teju'i en terreno plano. Una liana tapa la salida: hay que atacar. *Pluma A (atacar):* en un nicho enrejado sobre la salida; una piedra en el piso de la cueva lo abre 5 s y hay que subir al bloque, saltar a la repisa y correr hasta la reja antes de que se cierre.
+- **B. La ladera (x 45–189).** Rocas y un escalón alto que enseña el salto variable; los mbopi salen de las grietas. En la meseta, una zanja con piso y enseguida un **pozo** del mismo ancho. Bajo un arco de piedra, una **reja**: se abre golpeando la **piedra** de al lado (cartel). **Fuego** (x 101). Un foso con piso y una **plataforma móvil** que lo cruza; después, otra piedra que arranca una balsa más ancha sobre el **pozo 2**. Al bajar de la meseta el camino se divide:
+  - *Ruta baja:* **Luz de Arasy** justo antes de un pasillo con cuatro teju'i (el jugador descubre que con la luz los purifica al tocarlos); al final, un **hongo de un solo uso** sube a la cima (la pared mide 5).
+  - *Ruta alta:* quien se deja caer al hoyo del hongo rebota a unas repisas en el cielo con un guavirá y un mbopi. *Pluma B (saltar):* en el arco del salto sobre el hueco más alto. Caerse deja en la ruta baja.
+  - **Fuego** en la cima (x 184).
+- **C. La cueva (x 190–249, vertical).** El camino entra al cerro y baja en zigzag: galería 1 hacia la derecha (estalactitas con aviso, karaguatá, teju'i) hasta un hueco por el que se cae a la galería 2, que vuelve hacia la izquierda; al final, una **plataforma vertical** sobre un **pozo** baja a la galería 3, que sale a la caverna. Secreto: un guavirá tras una liana al final de la galería 1 (luciérnagas). *Pluma C (tajo cargado, volver después):* en la pared de la galería 2 hay una piedra encerrada en la roca; la onda del tajo cargado la enciende y abre la cámara junto al pozo vertical, donde un **hongo dormido** (también con el tajo cargado) lleva a la repisa de la pluma.
+- **Checkpoint (antesala, x 250–273).** Una planta de guavirá. Mainumby: "Algo grande respira ahí abajo…".
+- **Arena: la caverna del tesoro (x 274–313).** Suelo plano, dos repisas laterales, cristales y oro al fondo. El cuerpo enorme de Teju Jagua es una silueta en la penumbra del fondo; solo las cabezas, sobre sus cuellos, salen a la luz.
+
+Tres fuegos (x 101, x 184 y la antesala): el nivel es un tercio más ancho que la estructura común. Cruzarlo sin explorar ni pelear lleva **≈ 44 s** de juego por cualquiera de las dos rutas (antes de S19, ≈ 22 s; medido con el piloto del smoke).
 
 **Jefe: Teju Jagua**. 7 cabezas × 2 golpes (14 golpes).
 
