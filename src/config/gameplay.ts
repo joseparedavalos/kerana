@@ -201,6 +201,42 @@ export const GAMEPLAY = {
     /** Altura (px sobre el suelo) de las cabezas vulnerables tras el fuego. */
     fireRecoverHeadHeight: 36,
     /**
+     * Llamarada (S21, solo dibujo: la zona de daño sigue siendo el tercio de la arena). El cuerpo naranja de la llama
+     * mide exactamente la zona (sus bordes se agitan hacia adentro hasta `fireCoreJitter` unidades, nunca hacia
+     * afuera); lo que desborda es tenue (`fireSpill` unidades a cada lado, alfa `fireSpillAlpha`). Dos chorros
+     * amarillos salen de los hocicos (`fireMouthX/Y` desde la punta del hocico) y se abren hasta `fireJetSpread` del
+     * ancho de la zona al llegar al suelo. `fireFlickerMs`: ciclo de las lenguas del borde.
+     */
+    fireMouthX: 8,
+    fireMouthY: 8,
+    fireJetSpread: 0.5,
+    fireCoreAlpha: 0.85,
+    fireCoreJitter: 3,
+    fireSpill: 12,
+    fireSpillAlpha: 0.28,
+    fireFlickerMs: 180,
+    /**
+     * Efectos de la llamarada: pavesas cada `fireEmberMs`; aire que tiembla a los costados (`fireHazeAlpha`; 0 lo
+     * apaga); suelo iluminado `fireFloorGlow` unidades más allá de la zona (alfa `fireFloorGlowAlpha`). Sacudida de
+     * cámara mientras sopla (`fireShake`, 0 la apaga).
+     */
+    fireEmberMs: 30,
+    fireHazeAlpha: 0.14,
+    fireFloorGlow: 18,
+    fireFloorGlowAlpha: 0.3,
+    fireShake: 0.0015,
+    /**
+     * Aviso del fuego (S21; el tiempo sigue en bosses.ts): además del humo en los hocicos, el suelo de la zona se tiñe
+     * desde abajo de las cabezas hasta los bordes en `fireWarnSweep` del aviso (alfa máx. `fireWarnFloorAlpha`), el
+     * aire de la zona brilla cada vez más (`fireWarnColumnAlpha`, con los bordes marcados), un resplandor de
+     * `fireWarnGlow` unidades sube del suelo teñido y sube calor cada `fireWarnHeatMs`.
+     */
+    fireWarnSweep: 0.6,
+    fireWarnFloorAlpha: 0.85,
+    fireWarnColumnAlpha: 0.3,
+    fireWarnGlow: 28,
+    fireWarnHeatMs: 45,
+    /**
      * Cabeza expuesta (S20; ventana del fuego y de la mordida, sin cambiar su duración): halo dorado detrás que late y
      * estrellitas de mareo que giran encima. Se apaga sola cuando se cierra la ventana. Halo: margen alrededor de la
      * cabeza (unidades), latido (ms) y alfa mínimo/máximo. Estrellas: cantidad, radio de la órbita y vuelta (ms).

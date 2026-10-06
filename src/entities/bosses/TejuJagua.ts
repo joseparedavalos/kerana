@@ -8,6 +8,7 @@ import {
   ART_K,
   BODY_TEXTURE,
   ensureTejuJaguaArt,
+  FlameArt,
   NECK_SCALE_PX,
   NECK_SCALE_TEXTURE,
   TAIL_TEXTURE,
@@ -24,12 +25,14 @@ const EYES_TEXTURE = 'teju_jagua_eyes';
 const HALO_TEXTURE = 'teju_jagua_halo';
 const STAR_TEXTURE = 'teju_jagua_star';
 const SLEEP_TINT = 0x2a2838;
-const FIRE_COLOR = 0xf08a30;
-/** Polvo y piedritas del coletazo; grieta del aviso; halo y estrellas de la cabeza expuesta. */
+/** Polvo y piedritas del coletazo; grieta del aviso; halo y estrellas de la cabeza expuesta; pavesas y calor del fuego. */
 const DUST_COLOR = 0xc2a473;
 const PEBBLE_COLOR = 0x4a3a28;
 const CRACK_COLOR = 0x1e160e;
 const EXPOSED_COLOR = 0xffe27a;
+const EMBER_COLORS: number[] = [0xfff4c4, 0xffd23c, 0xf08a30, 0xd8441c];
+const HEAT_COLOR = 0xffb070;
+const FIRE_DEPTH = -0.5;
 /** Centro del cuerpo sobre el suelo (unidades, a tamaño 1: se multiplica por `bodySize`). */
 const BODY_FLOOR_OFFSET = 110;
 /** Tamaño del cuerpo (gameplay.ts): escala las medidas de esta sección y las del lomo. */
@@ -122,7 +125,20 @@ export class TejuJagua extends Boss {
   private readonly body: Phaser.GameObjects.Image;
   private readonly tail: Phaser.GameObjects.Image;
   private readonly wave: Phaser.GameObjects.Image;
-  private readonly fire: Phaser.GameObjects.Rectangle;
+  /** Llamarada y su aviso, dibujados cada frame (tejuJaguaArt.ts); `fireOn`: el fuego quema (antes, `fire.visible`). */
+  private readonly fire: Phaser.GameObjects.Graphics;
+  private readonly flame: FlameArt;
+  private fireOn = false;
+  private fireClock = 0;
+  /** Aviso del fuego: tiempo transcurrido y total (ms). */
+  private fireWarnElapsed = 0;
+  private fireWarnMs = 1;
+  private heatMs = 0;
+  private emberMs = 0;
+  /** Hocicos de las cabezas que soplan, de a pares (x, y); se reusa cada frame. */
+  private readonly mouths: number[] = [];
+  private readonly embers: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly heat: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
   /** Polvo y piedritas del coletazo (aviso y onda) y grieta del suelo durante el aviso. */
   private readonly dust: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -196,7 +212,33 @@ export class TejuJagua extends Boss {
         emitting: false,
       })
       .setDepth(5);
-    this.fire = scene.add.rectangle(0, 0, 1, 1, FIRE_COLOR, 0.7).setOrigin(0, 0).setDepth(6).setVisible(false);
+    // Delante de cabezas y cuellos, detrás de Kerana (depth 0): se la ve dentro del fuego.
+    this.fire = scene.add.graphics().setDepth(FIRE_DEPTH);
+    this.flame = new FlameArt(this.fire);
+    // Pavesas que se desprenden de la llama y suben; calor que sube del suelo durante el aviso.
+    this.embers = scene.add
+      .particles(0, 0, 'fx_particle', {
+        speedY: { min: -95, max: -40 },
+        speedX: { min: -22, max: 22 },
+        gravityY: -20,
+        lifespan: { min: 350, max: 700 },
+        alpha: { start: 1, end: 0 },
+        scale: { start: 1, end: 0.2 },
+        tint: EMBER_COLORS,
+        emitting: false,
+      })
+      .setDepth(6.5);
+    this.heat = scene.add
+      .particles(0, 0, 'fx_particle', {
+        speedY: { min: -45, max: -20 },
+        speedX: { min: -6, max: 6 },
+        lifespan: 650,
+        alpha: { start: 0.6, end: 0 },
+        scale: { start: 1, end: 3 },
+        tint: HEAT_COLOR,
+        emitting: false,
+      })
+      .setDepth(5.5);
     this.smoke = scene.add
       .particles(0, 0, 'fx_particle', {
         speedY: { min: -30, max: -10 },
@@ -282,7 +324,7 @@ export class TejuJagua extends Boss {
     switch (t.state) {
       case 'telegraph':
         if (id === 'bite') this.telegraphBite(t.ms);
-        else if (id === 'fire') this.telegraphFire();
+        else if (id === 'fire') this.telegraphFire(t.ms);
         else this.telegraphTail(t.ms);
         break;
       case 'active':
@@ -389,8 +431,11 @@ export class TejuJagua extends Boss {
     }
   }
 
-  /** Aliento de fuego: dos cabezas sobre el tercio de la arena donde está Kerana; humo como aviso. */
-  private telegraphFire(): void {
+  /**
+   * Aliento de fuego: dos cabezas sobre el tercio de la arena donde está Kerana. Aviso: humo en los hocicos y, en la
+   * zona que va a quemar, el suelo que se tiñe, aire que brilla y calor que sube (ver updateFireWarning).
+   */
+  private telegraphFire(telegraphMs: number): void {
     const arena = this.ctx.arena;
     const third = arena.width / 3;
     const zone = Phaser.Math.Clamp(Math.floor((this.ctx.playerX() - arena.left) / third), 0, 2);
@@ -404,18 +449,32 @@ export class TejuJagua extends Boss {
       this.glowEyes(head, true);
     });
     this.smokeMs = 0;
+    this.heatMs = 0;
+    this.fireWarnElapsed = 0;
+    this.fireWarnMs = Math.max(1, telegraphMs);
     this.ctx.sfx('growl');
   }
 
+  /** La llamarada sale de los hocicos y cubre la zona (la hitbox no cambia: `fireRect`). */
   private breatheFire(): void {
-    const r = this.fireRect;
-    this.fire.setPosition(r.x, r.y).setSize(r.width, r.height).setVisible(true);
+    this.fireOn = true;
+    this.fireClock = 0;
+    this.emberMs = 0;
     this.ctx.sfx('fireBreath');
+    if (CFG.fireShake > 0) this.ctx.shake(this.brain.attack?.activeMs ?? 0, CFG.fireShake);
+  }
+
+  /** Apaga la llamarada y sus efectos: nada tapa el halo ni las estrellitas de las cabezas expuestas. */
+  private stopFire(): void {
+    this.fireOn = false;
+    this.flame.clear();
+    this.embers.killAll();
+    this.heat.killAll();
   }
 
   /** Después del fuego las cabezas bajan, cansadas: se pueden golpear. */
   private endFire(): void {
-    this.fire.setVisible(false);
+    this.stopFire();
     for (const head of this.attackers) {
       this.glowEyes(head, false);
       head.exposed = !head.asleep;
@@ -433,7 +492,7 @@ export class TejuJagua extends Boss {
     this.attackers = [];
     this.wave.setVisible(false);
     this.crack.clear();
-    this.fire.setVisible(false);
+    this.stopFire();
   }
 
   // ── Daño ──────────────────────────────────────────────────────────────────
@@ -483,7 +542,7 @@ export class TejuJagua extends Boss {
       this.waveRect.setTo(this.wave.x - CFG.tailWaveWidth / 2, this.wave.y - CFG.tailWaveHeight, CFG.tailWaveWidth, CFG.tailWaveHeight);
       if (Phaser.Geom.Rectangle.Overlaps(this.waveRect, playerRect)) return true;
     }
-    return this.fire.visible && Phaser.Geom.Rectangle.Overlaps(this.fireRect, playerRect);
+    return this.fireOn && Phaser.Geom.Rectangle.Overlaps(this.fireRect, playerRect);
   }
 
   markPosition(out: Phaser.Math.Vector2): Phaser.Math.Vector2 {
@@ -508,14 +567,15 @@ export class TejuJagua extends Boss {
       if (this.wave.x < arena.left || this.wave.x > arena.right) this.wave.setVisible(false);
       else this.updateWave(deltaMs);
     }
-    if (this.brain.state === 'telegraph' && this.brain.attack?.id === 'fire') {
+    if (this.brain.state === 'telegraph' && attackId === 'fire') {
       this.smokeMs -= deltaMs;
       if (this.smokeMs <= 0) {
         this.smokeMs = 90;
         for (const head of this.attackers) this.smoke.emitParticleAt(head.img.x - CFG.headWidth / 2, head.img.y + 4, 1);
       }
+      this.updateFireWarning(deltaMs);
     }
-    if (this.fire.visible) this.fire.setAlpha(0.55 + Math.random() * 0.3);
+    if (this.fireOn) this.updateFlame(deltaMs);
 
     // Cuellos: del lomo a cada cabeza. Los ojos y la señal de expuesta siguen a la cabeza.
     const now = this.scene.time.now;
@@ -568,6 +628,49 @@ export class TejuJagua extends Boss {
       const x = dir > 0 ? start + d : start - d - step;
       g.fillRect(x, floorY - h - Math.random() * jitter, step - 1, h);
     }
+  }
+
+  /** Aviso del fuego: dibujo en el suelo y el aire de la zona, y calor que sube del suelo ya teñido. */
+  private updateFireWarning(deltaMs: number): void {
+    this.fireWarnElapsed += deltaMs;
+    const r = this.fireRect;
+    const p = Phaser.Math.Clamp(this.fireWarnElapsed / this.fireWarnMs, 0, 1);
+    let cx = r.centerX;
+    if (this.attackers.length > 0) {
+      cx = 0;
+      for (const head of this.attackers) cx += this.mouthX(head);
+      cx = Phaser.Math.Clamp(cx / this.attackers.length, r.x, r.right);
+    }
+    this.flame.drawWarning(r, cx, p, this.scene.time.now);
+    this.heatMs -= deltaMs;
+    if (this.heatMs <= 0) {
+      this.heatMs = CFG.fireWarnHeatMs;
+      const sweep = Phaser.Math.Clamp(p / CFG.fireWarnSweep, 0, 1);
+      const left = Phaser.Math.Linear(cx, r.x, sweep);
+      const right = Phaser.Math.Linear(cx, r.right, sweep);
+      this.heat.emitParticleAt(Phaser.Math.FloatBetween(left, right), r.bottom - 2, 1);
+    }
+  }
+
+  /** La llamarada sigue a los hocicos, agita sus bordes y suelta pavesas desde adentro de la zona. */
+  private updateFlame(deltaMs: number): void {
+    this.fireClock += deltaMs;
+    const m = this.mouths;
+    m.length = 0;
+    for (const head of this.attackers) m.push(this.mouthX(head), head.img.y + CFG.fireMouthY);
+    const r = this.fireRect;
+    this.flame.drawFlame(r, m, this.fireClock);
+    this.emberMs -= deltaMs;
+    if (this.emberMs <= 0) {
+      this.emberMs = CFG.fireEmberMs;
+      this.embers.emitParticleAt(Phaser.Math.FloatBetween(r.x, r.right), Phaser.Math.FloatBetween(r.y + r.height * 0.3, r.bottom), 1);
+      this.embers.emitParticleAt(Phaser.Math.FloatBetween(r.x, r.right), r.bottom - 2, 1);
+    }
+  }
+
+  /** Hocico de una cabeza que mira a la izquierda (la del fuego). */
+  private mouthX(head: Head): number {
+    return head.img.x - CFG.headWidth / 2 + CFG.fireMouthX;
   }
 
   /** La onda avanza ondulando y suelta polvo detrás. */
@@ -646,7 +749,7 @@ export class TejuJagua extends Boss {
     this.lastHit = undefined;
     this.wave.setVisible(false);
     this.crack.clear();
-    this.fire.setVisible(false);
+    this.stopFire();
     this.tail.setScale(1 / ART_K).setAngle(0);
     this.body.setAlpha(1);
     this.tail.setAlpha(1);
