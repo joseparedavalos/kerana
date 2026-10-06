@@ -149,6 +149,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.hitThisSwing.has(target);
   }
 
+  /** Lo que ya golpeó el tajo en curso (se vacía al empezar otro). */
+  get swingHits(): Set<object> {
+    return this.hitThisSwing;
+  }
+
   markHitThisSwing(target: object): void {
     this.hitThisSwing.add(target);
   }

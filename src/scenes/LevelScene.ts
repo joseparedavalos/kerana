@@ -15,12 +15,18 @@ import { Cow } from '../entities/Cow';
 import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { Bouncer } from '../entities/hazards/Bouncer';
+import { parseBouncerKind } from '../entities/hazards/BouncerMotor';
 import { Crumble } from '../entities/hazards/Crumble';
 import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
 import { Lantern } from '../entities/Lantern';
 import { LightWaveMotor } from '../entities/LightWaveMotor';
+import { Gate } from '../entities/Gate';
+import { Mover } from '../entities/Mover';
+import type { MoverMode } from '../entities/MoverMotor';
+import { Switch } from '../entities/Switch';
+import { SwitchBoard, swordStrikes, waveStrikes } from '../entities/SwitchMotor';
 import { Player } from '../entities/Player';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
 import type { PlayerStateName } from '../entities/PlayerMotor';
@@ -160,6 +166,16 @@ export class LevelScene extends Phaser.Scene {
   /** Vacas sueltas de Capiatá: plataformas que caminan. */
   private cows: Cow[] = [];
   private cowGroup?: Phaser.Physics.Arcade.Group;
+  /** Plataformas móviles, rejas y disparadores (S18). */
+  private movers: Mover[] = [];
+  private gates: Gate[] = [];
+  private switches: Switch[] = [];
+  private switchBoard = new SwitchBoard();
+  /** Cuerpos que pueden viajar sobre una plataforma móvil o una vaca (se arma en cada frame, sin asignar). */
+  private readonly riderBodies: Phaser.Physics.Arcade.Body[] = [];
+  private readonly gateBlockers: Phaser.Geom.Rectangle[] = [];
+  /** Switch golpeados en este frame (arreglo reutilizado). */
+  private readonly struck: Switch[] = [];
   /** Oscuridad del nivel 7 (GDD §4.8): solo en los niveles con `dark`. */
   private darkness?: Darkness;
   private backdrop!: LevelBackdrop;
@@ -213,9 +229,14 @@ export class LevelScene extends Phaser.Scene {
     this.refuges = [];
     this.cows = [];
     this.cowGroup = undefined;
+    this.movers = [];
+    this.gates = [];
+    this.switches = [];
+    this.switchBoard = new SwitchBoard();
     this.darkness = undefined;
     this.lanterns = [];
     this.lightWave.stop();
+    this.lightWave.reachActive = false;
     this.lightWaveSprite = undefined;
     this.arenaRect = undefined;
     this.arenaBossId = undefined;
@@ -334,6 +355,16 @@ export class LevelScene extends Phaser.Scene {
       for (const cow of this.cows) this.addCowToGroup(cow);
       this.physics.add.collider(this.player, this.cowGroup);
     }
+    for (const m of this.movers) {
+      this.physics.add.collider(this.player, m.block);
+      this.physics.add.collider(this.enemies, m.block, undefined, (enemy) => isGroundedEnemy(enemy), this);
+    }
+    for (const g of this.gates) {
+      this.physics.add.collider(this.player, g.block);
+      this.physics.add.collider(this.enemies, g.block, undefined, (enemy) => isGroundedEnemy(enemy), this);
+    }
+    for (const id of this.switchBoard.missingTargets()) console.warn(`[SWITCH] no hay reja ni Mover con id "${id}".`);
+    this.switchBoard.update();
     const lw = GAMEPLAY.lightWave;
     this.lightWaveSprite = this.add.rectangle(0, 0, lw.width, lw.height, lw.color, 0.85).setDepth(12).setVisible(false);
     this.darkness?.glow(this.lightWaveSprite);
@@ -405,11 +436,12 @@ export class LevelScene extends Phaser.Scene {
     this.reportPlayerStateSfx();
     this.cameraCtl.update(this.player.motor.facing);
     this.updateEnemies(delta);
-    for (const cow of this.cows) cow.tick(delta);
+    this.updateCarriers(delta);
     this.updateMainumby(delta);
 
     const body = this.player.body;
     this.playerRect.setTo(body.x, body.y, body.width, body.height);
+    this.updateSwitches(delta);
 
     if (body.top > this.map.heightInPixels + GAMEPLAY.respawn.pitMargin) this.respawn('pit');
     else if (this.tileAt('Water', body.center.x, body.center.y)) this.respawn('water');
@@ -424,6 +456,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateSleep(body);
     this.updateFallingHazards(delta);
     this.updateBreakables();
+    this.updateStrikes();
     this.updateLightWave(delta);
     this.updateDarkness(delta);
     this.updateBoss(delta);
@@ -718,11 +751,57 @@ export class LevelScene extends Phaser.Scene {
   private addCowToGroup(cow: Cow): void {
     // El grupo pisa las propiedades del cuerpo: se vuelven a poner.
     this.cowGroup?.add(cow);
-    cow.body.setAllowGravity(false).setImmovable(true);
-    cow.body.checkCollision.down = false;
-    cow.body.checkCollision.left = false;
-    cow.body.checkCollision.right = false;
+    Cow.setupBody(cow.body);
   }
+
+  // ── Plataformas móviles, rejas y disparadores (S18) ──────────────────────
+
+  /** Vacas y plataformas móviles: se mueven y llevan a Kerana y a los enemigos que estén encima. */
+  private updateCarriers(deltaMs: number): void {
+    if (this.cows.length === 0 && this.movers.length === 0) return;
+    const riders = this.riderBodies;
+    riders.length = 0;
+    riders.push(this.player.body);
+    for (const enemy of this.enemies) if (enemy.active && !enemy.purified && isGroundedEnemy(enemy)) riders.push(enemy.body);
+    for (const cow of this.cows) cow.tick(deltaMs, riders);
+    for (const m of this.movers) m.update(deltaMs, riders);
+  }
+
+  /** Disparadores: tiempo de los temporizados, energía a sus objetivos y rejas que esperan para cerrarse. */
+  private updateSwitches(deltaMs: number): void {
+    if (this.switches.length === 0 && this.gates.length === 0) return;
+    for (const sw of this.switches) sw.update(deltaMs);
+    this.switchBoard.update();
+    const blockers = this.gateBlockers;
+    blockers.length = 0;
+    blockers.push(this.playerRect);
+    for (const g of this.gates) g.update(blockers);
+  }
+
+  private hitSwitch(sw: Switch): void {
+    if (sw.hit()) AudioManager.play('lantern');
+    this.switchBoard.update();
+  }
+
+  /** El sable enciende los Switch y despierta (solo cargado) a los hongos dormidos. */
+  private updateStrikes(): void {
+    if (!this.player.motor.attackHitboxActive) return;
+    const rect = this.player.attackRect;
+    for (const sw of swordStrikes(this.switches, rect, this.player.swingHits, this.struck)) this.hitSwitch(sw);
+    for (const b of this.bouncers) {
+      if (b.motor.state !== 'asleep' || this.player.hasHitThisSwing(b) || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
+      this.player.markHitThisSwing(b);
+      AudioManager.play(b.strike(this.player.motor.chargedSwing) ? 'bounce' : 'hit');
+    }
+  }
+
+  /** La luz de la onda enciende los Switch; con `waveThroughWalls`, también los que están tras una pared. */
+  private waveHitsSwitches(): void {
+    if (this.switches.length === 0) return;
+    const lw = GAMEPLAY.lightWave;
+    for (const sw of waveStrikes(this.switches, this.lightWave, lw.width, lw.height, GAMEPLAY.switches.waveThroughWalls, this.struck)) this.hitSwitch(sw);
+  }
+
 
   /** La vaca embrujada purificada queda como una vaca tranquila más. */
   private cowFromEnemy(enemy: EnemyBase): void {
@@ -748,6 +827,7 @@ export class LevelScene extends Phaser.Scene {
     const sprite = this.lightWaveSprite;
     if (!sprite) return;
     wave.step(deltaMs, this.waveProbe);
+    this.waveHitsSwitches();
     sprite.setVisible(wave.active);
     if (!wave.active) return;
     const lw = GAMEPLAY.lightWave;
@@ -766,6 +846,10 @@ export class LevelScene extends Phaser.Scene {
     for (const b of this.breakables) {
       if (b.broken || !b.needsCharge || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
       if (wave.tryHit(b)) this.breakBreakable(b);
+    }
+    for (const b of this.bouncers) {
+      if (b.motor.state !== 'asleep' || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
+      if (wave.tryHit(b) && b.strike(true)) AudioManager.play('bounce');
     }
     const boss = this.boss;
     if (boss && this.fighting && boss.brain.state !== 'defeated') {
@@ -954,9 +1038,10 @@ export class LevelScene extends Phaser.Scene {
   /** Hongos que rebotan al pisarlos; ramas que crujen y se quiebran. */
   private updateJungle(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
     for (const b of this.bouncers) {
-      if (!b.isStoodOn(body)) continue;
+      b.update(deltaMs);
+      if (!b.canBounce || !b.isStoodOn(body)) continue;
       this.player.bounce(GAMEPLAY.jungle.bounceVelocity);
-      b.squash();
+      b.bounced();
       AudioManager.play('bounce');
     }
     for (const c of this.crumbles) c.update(deltaMs, c.isStoodOn(body));
@@ -1250,9 +1335,48 @@ export class LevelScene extends Phaser.Scene {
           this.windZones.push(new WindZone(this, zone, dir, speed, offsetMs, (phase, z) => phase === 'gust' && this.onWindPhase(z)));
           break;
         }
-        case 'Bouncer':
-          this.bouncers.push(new Bouncer(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16))));
+        case 'Bouncer': {
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          this.bouncers.push(new Bouncer(this, zone, parseBouncerKind(objectProp(obj, 'kind'))));
           break;
+        }
+        case 'Mover': {
+          // dx/dy en tiles; velocidad, espera y modo por objeto o de GAMEPLAY.mover.
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          const tile = this.map.tileWidth;
+          const rawMode = objectProp(obj, 'mode');
+          const mode: MoverMode = rawMode === 'run' || rawMode === 'toggle' ? rawMode : 'loop';
+          const mover = new Mover(
+            this,
+            zone,
+            {
+              dx: Number(objectProp(obj, 'dx') ?? 0) * tile,
+              dy: Number(objectProp(obj, 'dy') ?? 0) * tile,
+              speed: Number(objectProp(obj, 'speed') ?? GAMEPLAY.mover.speed),
+              waitMs: Number(objectProp(obj, 'waitMs') ?? GAMEPLAY.mover.waitMs),
+              mode,
+            },
+            objectProp(obj, 'solid') === true,
+          );
+          this.movers.push(mover);
+          const id = objectProp(obj, 'id');
+          if (id !== undefined) this.switchBoard.addTarget(String(id), mover);
+          break;
+        }
+        case 'Gate': {
+          const gate = new Gate(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)));
+          this.gates.push(gate);
+          const id = objectProp(obj, 'id');
+          if (id !== undefined) this.switchBoard.addTarget(String(id), gate);
+          break;
+        }
+        case 'Switch': {
+          const target = String(objectProp(obj, 'target') ?? '');
+          const sw = new Switch(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)), target, Number(objectProp(obj, 'ms') ?? 0));
+          this.switches.push(sw);
+          this.switchBoard.addSwitch(target, sw.motor);
+          break;
+        }
         case 'Crumble': {
           const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
           this.crumbles.push(new Crumble(this, zone, (state) => state !== 'solid' && AudioManager.play(state === 'cracking' ? 'creak' : 'rockBreak')));
