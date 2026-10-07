@@ -85,8 +85,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l4',
     mapSource: 'ascii',
     biome: 'pueblo',
-    // Subido: las casas y el lapacho quedan sobre el suelo (centrado, la base quedaba ~45 u por debajo).
-    backgrounds: { far: 'bg_l4_far', shiftY: 100 },
+    // La calle pintada sube hasta los pies. El suelo de tiles no se dibuja: la tapaba.
+    backgrounds: { far: 'bg_l4_far', shiftY: 180 },
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',

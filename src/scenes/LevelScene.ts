@@ -1296,6 +1296,8 @@ export class LevelScene extends Phaser.Scene {
       if (layer) this.layers[name] = layer;
     }
     this.layers.Ground?.setCollisionByExclusion([-1]);
+    // Capiatá: el piso es la calle pintada. El tileset de pueblo es un muro beige y la tapa.
+    if (this.def.id === 'l4') this.layers.Ground?.setVisible(false);
     const platforms = this.layers.Platforms;
     if (platforms) {
       platforms.setCollisionByExclusion([-1]);
