@@ -65,6 +65,7 @@ export const es = {
   'hint.l5.ramas': 'Rama que cruje: ¡no te quedes encima!',
   'hint.l5.dosel': 'Doble {jump} y {dash} en el aire',
   'hint.l4.vacas': 'En Capiatá, las vacas tienen preferencia',
+  'hint.l4.mover': 'La balsa va y vuelve. Esta es de práctica: abajo hay suelo.',
   'hint.l6.taitetu': 'Taitetu en manada: saltalos o esperá arriba',
   'hint.l6.viento': 'Viento a favor: llegás más lejos',
   'hint.l6.pindo': 'Pindó: ahí arriba estás a salvo',
