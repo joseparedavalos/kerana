@@ -282,12 +282,6 @@ export function installPilot(plan) {
       }
       case 'ride': {
         move(0);
-        // S24: si la plataforma se fue sin ella (quedó en el piso), vuelve a esperarla en vez de bajar donde no llegó.
-        if (grounded() && !onBlock(m.block, b)) {
-          st.log.push(`la plataforma de x ${Math.round(m.zone.x / T)} se fue sin Kerana: la espera otra vez`);
-          st.phase = 'wait';
-          return false;
-        }
         const arrived = at === 'end' ? mm.pos <= 1 : mm.pos >= mm.length - 1;
         if (!arrived) return false;
         if (s.exit === 'none') return true;
