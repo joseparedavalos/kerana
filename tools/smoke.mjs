@@ -981,6 +981,104 @@ async function main() {
     check(asleep && (await bState(1)) === 'ready', 'vitrina: el hongo dormido despierta con el tajo cargado');
     await vPage.close();
 
+    // 1m2) Red de seguridad (S24) con lo que hace una persona encerrada: en el pozo F de la vitrina (pared de 7, con
+    // salto doble no se sale) Kerana no se queda quieta: corre de pared a pared, salta, usa el salto doble y ataca sin
+    // parar. La red la saca igual a los GAMEPLAY.trap.waitMs (4000) de juego, a la torre y con un corazón menos.
+    // (S23 lo probaba con Kerana quieta y sin salto doble; con salto doble el modelo daba por salida la pared de 7.)
+    const netPage = await open('/?debug=1&level=vitrina&gifts=all');
+    await netPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    // Primero en la torre (último suelo firme), después adentro del pozo.
+    await netPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(84.5 * 16, 14 * 16));
+    await sleep(600);
+    const net = await netPage.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const d = window.__KERANA_DEBUG__;
+          const s = d.scene;
+          const b = d.player.body;
+          const kb = s.input.keyboard;
+          const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), attack: kb.addKey(88) };
+          const set = (k, on) => {
+            if (k.isDown === on) return;
+            k.isDown = on;
+            k.isUp = !on;
+            k.emit(on ? 'down' : 'up', k);
+          };
+          const out = { hearts0: d.player.health.current, marked: !!s.trapCells, traps: 0, ms: 0, jumps: 0, doubles: 0, attacks: 0, topFeet: 99, x0: 99, x1: 0 };
+          const orig = s.respawn;
+          s.respawn = function (reason) {
+            if (reason === 'trap') out.traps++;
+            return orig.call(this, reason);
+          };
+          b.reset(88.5 * 16, 27 * 16);
+          let f = 0;
+          let after = -1;
+          let phase = 'ground';
+          const tick = (_time, delta) => {
+            f++;
+            if (out.traps > 0) {
+              for (const k of Object.values(keys)) set(k, false);
+              // Unos cuadros después de la red (reaparece un poco arriba y cae), para leer dónde quedó.
+              if (++after < 40) return;
+              s.events.off('preupdate', tick);
+              Object.assign(out, { x: +(b.center.x / 16).toFixed(1), feet: +(b.bottom / 16).toFixed(1), hearts: d.player.health.current });
+              resolve(out);
+              return;
+            }
+            out.ms += delta;
+            out.topFeet = Math.min(out.topFeet, +(b.bottom / 16).toFixed(2));
+            out.x0 = Math.min(out.x0, +(b.center.x / 16).toFixed(2));
+            out.x1 = Math.max(out.x1, +(b.center.x / 16).toFixed(2));
+            // De pared a pared, cambiando cada 25 cuadros.
+            const right = Math.floor(f / 25) % 2 === 0;
+            set(keys.right, right);
+            set(keys.left, !right);
+            // Salta apenas pisa; cerca del ápice suelta y vuelve a apretar (salto doble).
+            if (phase === 'ground' && b.blocked.down) {
+              set(keys.jump, true);
+              out.jumps++;
+              phase = 'rise';
+            } else if (phase === 'rise' && b.velocity.y > -60) {
+              set(keys.jump, false);
+              phase = 'double';
+            } else if (phase === 'double') {
+              set(keys.jump, true);
+              out.doubles++;
+              phase = 'fall';
+            } else if (phase === 'fall' && b.blocked.down) {
+              set(keys.jump, false);
+              phase = 'ground';
+            }
+            // Un tajo cada 23 cuadros.
+            if (f % 23 === 0) out.attacks++;
+            set(keys.attack, f % 23 === 0);
+            if (out.ms > 12000) {
+              s.events.off('preupdate', tick);
+              for (const k of Object.values(keys)) set(k, false);
+              resolve(out);
+            }
+          };
+          s.events.on('preupdate', tick);
+        }),
+    );
+    check(
+      net.marked &&
+        net.traps === 1 &&
+        net.ms >= 3900 &&
+        net.ms <= 4400 &&
+        net.jumps >= 4 &&
+        net.doubles >= 3 &&
+        net.attacks >= 5 &&
+        net.topFeet > 20 &&
+        net.x >= 71 &&
+        net.x <= 87 &&
+        Math.abs(net.feet - 14) < 0.2 &&
+        net.hearts === net.hearts0 - 1,
+      `red de seguridad: Kerana encerrada que corre, salta, usa el salto doble y ataca sale a los 4 s, a la torre y con un corazón menos (${JSON.stringify(net)})`,
+    );
+    await netPage.close();
+
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');
     await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
