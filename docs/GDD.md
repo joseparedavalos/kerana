@@ -603,7 +603,7 @@ Cuatro fuegos (x 74, x 198, x 307 y la antesala). Piezas: 22 plataformas móvile
 |---|---|
 | Lugar | Capiatá, conocida como "la ciudad de los mitos" y sede del Museo Mitológico Ramón Elías. Pueblo de casas con corredores y tejas, con una plaza y un lapacho (*tajy*) en flor |
 | Hora | La siesta, hacia las 13:00: sol vertical, calor que ondula el aire, calles vacías |
-| Tamaño | ≈ 260 × 30 tiles |
+| Tamaño | 450 × 32 tiles (el GDD pedía ≈ 260 × 30; jugado, eso se cruzaba caminando) |
 | Idea nueva | Techos y corredores (verticalidad urbana) y la niebla del sueño |
 | Enemigos | `jagua`, `abejas` |
 | Peligros | Niebla del sueño; tejas que se sueltan (aviso: crujido y polvo) |
@@ -613,12 +613,13 @@ Cuatro fuegos (x 74, x 198, x 307 y la antesala). Piezas: 22 plataformas móvile
 
 **Recorrido**
 
-- **A. La calle principal (≈ 70 tiles).** Perros embrujados que cargan; subida a corredores y techos. Guiño: un cartel de "Museo" en el fondo. *Pluma 1:* sobre el techo de la iglesia (salto doble).
-- **B. Los patios (≈ 70 tiles).** Niebla del sueño (§4.8), panales y enjambres; **Luz de Arasy**. *Pluma 2:* tras un paso estrecho (requiere dash, que se gana al final de este nivel → volver después).
-- **Checkpoint 1.**
-- **C. Los techos (≈ 70 tiles).** Carrera sobre techos con tejas que caen y enjambres. *Pluma 3:* en un patio interior escondido detrás de la capa `Foreground`.
-- **Checkpoint 2 (antesala).** Una abuela duerme la siesta en una silla [Extra: personaje decorativo].
-- **Arena: la plaza.** El lapacho al centro (sus ramas son plataformas), bancos y dos techos a los lados.
+- **A. La calle (0–89).** Balsa de práctica sobre suelo firme y la misma, más larga, sobre un pozo. Jagua en el aterrizaje. *Pluma 1:* campanario (salto doble), con ascensor secreto. Reja bajo la calle (guavirá). Cartel de museo.
+- **B. El mercado (90–169).** Vacas sueltas como suelo que camina; la vaca embrujada carga en el descanso. **Luz de Arasy**. Fuego 1.
+- **C. Los patios (170–259).** Niebla del sueño (§4.8) sobre un pozo: la balsa no perdona quedarse quieto. Enjambres. *Pluma 2:* túnel de espinas (pide el paso de la siesta, que se gana al final de este nivel → volver después). Fuego 2.
+- **D. Los techos (260–349).** Islas con tejas que caen y balsas que se miran. *Pluma 3:* detrás del frente (`Foreground`). Fuego 3.
+- **E. El callejón (350–389).** El pozo de balsa otra vez, con abejas y vaca embrujada. No es calle vacía.
+- **Antesala (390–409).** Una abuela duerme la siesta en una silla [Extra: personaje decorativo].
+- **Arena: la plaza (410–449).** El lapacho al centro (sus ramas son plataformas), bancos y dos techos a los lados. Niebla del sueño en la pelea.
 
 **Jefe: Jasy Jatere**. 9 golpes, más quitarle el bastón.
 
