@@ -13,6 +13,7 @@ import { onRefuge, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
 import { createEnemy } from '../entities/enemies';
+import { Diver } from '../entities/enemies/Diver';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { drawBreakables, needsChargedSlash, parseBreakableKind, type BreakableKind } from '../entities/BreakableLook';
 import { Bouncer } from '../entities/hazards/Bouncer';
@@ -1341,6 +1342,11 @@ export class LevelScene extends Phaser.Scene {
             break;
           }
           const enemy = createEnemy(this, kind, x, y, facing);
+          // El ñakurutu y el karakara solo pican con el camino libre (S24): les frena el suelo y las plataformas.
+          if (enemy instanceof Diver) {
+            enemy.solidAt = (px, py) => this.isSolidAt(px, py);
+            enemy.tileSize = this.map.tileWidth;
+          }
           this.glowEnemyParts(enemy);
           if (enemy.def.purifiesInto === 'vaca') enemy.onPurified = (e) => this.cowFromEnemy(e);
           this.enemies.push(enemy);

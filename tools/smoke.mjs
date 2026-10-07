@@ -539,6 +539,48 @@ async function main() {
     );
     await l2Hole.close();
 
+    // 1c6) Ñakurutu con tiro libre (S24): el del poste de C1 (x 204), con Kerana quieta en el piso a 4 tiles y el camino
+    // libre, avisa, se lanza y llega hasta ella. Con Kerana al pie del poste (el camino cruza el poste) espera en su lugar.
+    const l2Dive = await open('/?debug=1&level=2&god=1');
+    await l2Dive.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const diveAt = (kx, ms) =>
+      l2Dive.evaluate(
+        (kx, ms) =>
+          new Promise((resolve) => {
+            const d = window.__KERANA_DEBUG__;
+            const s = d.scene;
+            const n = s.enemies.find((e) => e.def.id === 'nakurutu' && Math.floor(e.spawnX / 16) === 204);
+            n.body.reset(n.spawnX, n.spawnY);
+            n.diveState = 'perch';
+            n.msLeft = 0;
+            d.player.body.reset(kx * 16, 33 * 16);
+            const out = { warned: false, dove: false, minDist: 99 };
+            let left = ms;
+            const tick = (_t, delta) => {
+              if (n.diveState === 'telegraph') out.warned = true;
+              if (n.diveState === 'dive') {
+                out.dove = true;
+                out.minDist = Math.min(out.minDist, +(Math.hypot(n.x - d.player.x, n.y - d.player.y) / 16).toFixed(2));
+              }
+              left -= delta;
+              if (left > 0 && !(out.dove && n.diveState === 'return')) return;
+              s.events.off('postupdate', tick);
+              resolve(out);
+            };
+            s.events.on('postupdate', tick);
+          }),
+        kx,
+        ms,
+      );
+    const diveFree = await diveAt(200.5, 4000);
+    const diveBlocked = await diveAt(203.4, 2500);
+    check(
+      diveFree.warned && diveFree.dove && diveFree.minDist < 1.5 && !diveBlocked.warned && !diveBlocked.dove,
+      `nivel 2: el ñakurutu del poste con tiro libre avisa y se lanza hasta Kerana; con el poste en el medio espera (${JSON.stringify({ diveFree, diveBlocked })})`,
+    );
+    await l2Dive.close();
+
     // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.
     const l3Page = await open('/?debug=1&level=3&boss=1&god=1');
     await l3Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
