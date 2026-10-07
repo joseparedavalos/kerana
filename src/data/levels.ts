@@ -86,7 +86,7 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapSource: 'ascii',
     biome: 'pueblo',
     // Fondo lejano (cerros, campanario, lapacho). La calle es el tileset, como en l3.
-    backgrounds: { far: 'bg_l4_far', shiftY: 40 },
+    backgrounds: { far: 'bg_l4_far', shiftY: 0 },
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',
