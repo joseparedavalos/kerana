@@ -12,12 +12,12 @@
 #    que cruza el hueco (x 182-184 / poste x 186) · ruta baja (fila 33): nido (x 161-162), junco, jakare y mbói en la llegada
 #    copa del palmar (camino oculto): tronco hueco (x 156-160) con ascensor tapado por el follaje (fila 14 -> 9), par de balsas
 #    (x 165-178), ñakurutu guasu (x 188, fila 4) y la pluma B en la repisa de abajo (x 194, fila 12) · fuego 2 (x 198)
-# C. Cae la noche (x 199-308): poste con ñakurutu (x 204) y par de balsas con jakare en el hueco (x 210-220) · ascenso 2 (fila 33 -> 12): hongo
-#    dormido (x 224, cargado), plataforma vertical (x 222) con mbói en la llegada, hueco del premio (x 234-238: Luz de Arasy y
-#    guavirá, se sale con la red de seguridad), hongo de un uso -> balsa alta (x 229-238) o atajo tras el fardo (x 239) con
-#    hongo en la chimenea (x 240-241), cima (x 239-252) · pluma C (x 265, fila 11: 12 de aire, salto doble + dash)
-#    Luz de Arasy (x 260) y la cadena más larga (x 263-304): camalote, balsa -> ascensor (x 280) -> poste alto con ñakurutu,
-#    par de balsas
+# C. Cae la noche (x 199-308): poste con ñakurutu (x 204) y par de balsas con jakare en el hueco (x 210-220)
+#    ascenso 2 (fila 33 -> 12): hongo dormido (x 224, cargado), plataforma vertical (x 222) con mbói en la llegada,
+#    hueco del premio (x 234-238: Luz de Arasy y guavirá, no tiene salida: saca la red de seguridad), hongo de un uso ->
+#    balsa alta (x 229-238) o atajo tras el fardo (x 239) con hongo en la chimenea (x 240-241), cima (x 239-252)
+#    pluma C (x 265, fila 11: 12 de aire, salto doble + dash) · orilla (x 253-263) con la Luz de Arasy (x 260) y la cadena
+#    más larga (x 264-304): camalote, balsa -> ascensor (x 280) -> poste alto con ñakurutu, par de balsas
 # Checkpoint 3 / antesala (x 309-328) · Arena de Mbói Tu'i (x 329-368): islotes con camalotes
 size 369x40
 biome estero

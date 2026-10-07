@@ -230,14 +230,6 @@ export function installPilot(plan) {
           seek(mid);
           return false;
         }
-        // S23: se alejó de la punta mientras Kerana llegaba (el tajo a la piedra la frena): a esperar que vuelva.
-        // Antes saltaba igual hacia la plataforma lejana y caía al pozo una y otra vez (smoke de l1, 1 de 4).
-        const away = at === 'end' ? mm.length - mm.pos : mm.pos;
-        if (away > 1.5 * T) {
-          move(0);
-          st.phase = 'wait';
-          return false;
-        }
         // Plataforma encima de la cabeza (S23: el ascensor del tronco baja hasta sobre Kerana): se sube saltando desde abajo.
         if (m.block.y + T / 2 < b.top) {
           seek(mid);
@@ -245,8 +237,18 @@ export function installPilot(plan) {
           return false;
         }
         const d = Math.abs(mid - b.center.x) < 4 ? s.dir : Math.sign(mid - b.center.x);
-        move(d);
         const front = b.center.x + d * (b.halfWidth + 4);
+        // S23: si se alejó de su punta mientras Kerana llegaba (el tajo a la piedra la frena), se frena antes del borde
+        // (a 14 px: no resbala) y la espera otra vez. Antes saltaba igual hacia la plataforma lejana y caía al pozo una
+        // y otra vez (smoke de l1).
+        const away = at === 'end' ? mm.length - mm.pos : mm.pos;
+        const near = d > 0 ? m.block.x : m.block.x + m.block.width;
+        if (!solid(front + d * 14, b.bottom + 4) && (away > 1.5 * T || d * (near - front) > 4 * T)) {
+          move(0);
+          st.phase = 'wait';
+          return false;
+        }
+        move(d);
         if (!solid(front + d * 2, b.bottom + 4)) startJump();
         return false;
       }
