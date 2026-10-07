@@ -283,3 +283,11 @@ Un tramo que se cruza leyendo el ritmo, no reaccionando:
 - **Un islote en el medio** (suelo firme, sin jakare): descanso y el lugar al que devuelve el agua. Un fuego 12 tiles antes del agua.
 - **Medidas:** el mapa pasa a 436 × 40 (la zona se insertó antes de la antesala, que se corrió 67 tiles). El piloto (que espera a que el jakare se hunda: opción `safe` del paso `mover`) cruza la zona en **≈ 21 s** dentro del recorrido de l2 (22-24 s desde la orilla, según la fase de la primera balsa). Sin salto doble ni dash.
 
+### 10.5 Errores de S24 y su corrección
+
+1. **Los tests de S23 pasaban con la red rota:** afirmaban el alcance de la fórmula (4 y 7 filas) en vez de compararlo con la física. Corrección: el test simula el salto paso a paso como Arcade y exige que el modelo no lo pase; con el modelo de S23 fallan 6 de 13.
+2. **Las celdas de la red quedaban de un nivel al siguiente** (la escena se reutiliza): se limpian al cargar.
+3. **El piloto de l1 quedaba arriba de la plataforma vertical** (2 de las 3 primeras corridas del smoke; el build de S23 falla igual con la CPU frenada ×3): con el juego lento el paso anterior terminaba tarde y Kerana frenaba con el centro sobre la plataforma pero parada en el borde del piso; el piloto la daba por subida y la plataforma bajaba sin ella. Corrección en el piloto: no cuenta como subida si pisa el suelo de al lado, y si la plataforma se va sin ella, la espera otra vez. Para reproducir fallos del smoke que no salen en corridas sueltas: `page.emulateCPUThrottling(3)` imita el headless lento.
+4. **Topes de reloj real en el smoke:** el farol de l7 tenía 4 s para que Kerana llegara caminando; con el headless a 12-17 fps a veces no alcanzaban. Los topes de reloj se ponen holgados y se corta por estado.
+5. **El cuerpo escalado de un enemigo no se actualiza mientras está deshabilitado** (el jakare bajo el agua): la primera medida de su caja, en el cuadro en que asoma, daba el tamaño sin escalar. Medir a mitad de la emersión.
+
