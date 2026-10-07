@@ -1,21 +1,36 @@
-// Piloto automático para la prueba de humo (S19). Corre DENTRO de la página (page.evaluate): no puede usar
-// nada de fuera de la función. Maneja a Kerana con las mismas teclas que el jugador (flechas, Espacio, X)
+// Piloto automático para la prueba de humo (S19, ampliado en S22). Corre DENTRO de la página (page.evaluate): no
+// puede usar nada de fuera de la función. Maneja a Kerana con las mismas teclas que el jugador (flechas, Espacio, X)
 // en cada paso del juego, así el recorrido no depende del reloj del headless. Mide el tiempo en el juego
 // (suma de los `delta` de la escena, como `playTimeMs`). El recorrido de cada nivel es un plan de datos
 // (tools/lib/pilot-plans.mjs); el estado queda en window.__KERANA_PILOT__ (done, timeMs, splits, respawns, log).
 //
-// Plan: { hitSwitches: [[x, y]…], noGapJump: [[x0, x1]…], splits: [[nombre, x]…], steps: [paso…] }, en tiles.
+// Plan: { hitSwitches: [[x, y]…], noGapJump: [[x0, x1]…], splits: [[nombre, x]…], aim?, steps: [paso…] }, en tiles.
+// `aim` (S22): al saltar un hueco busca dónde caer y frena en el aire para no pasarse (camalotes, juncos);
+// si el camalote de enfrente está hundido, espera en el borde.
 // Pasos:
 //   { run: 1 | -1, untilX?, untilTop?, untilFight? }  corre saltando paredes de hasta 3 tiles, huecos y espinas
-//                                                     y ataca lo que tenga delante; termina al pasar untilX
-//                                                     (en el sentido de la carrera), al tener la cabeza más abajo
-//                                                     de la fila untilTop o al empezar la pelea del jefe.
-//   { mover: [x, y], dir, power?, exit: 'jump' | 'walk', landX?, exitDir? }
-//                                                     plataforma móvil cuyo origen ocupa (x, y): golpea su piedra
-//                                                     si power, sube hacia dir cuando está en el origen (o recién
-//                                                     salida), viaja quieta hasta el otro extremo y baja hacia
-//                                                     exitDir (por defecto, dir) saltando (hasta pisar más allá
-//                                                     de landX) o caminando.
+//                                                     y ataca lo que tenga delante (enemigos, lianas, fardos);
+//                                                     termina al pasar untilX (en el sentido de la carrera), al
+//                                                     tener la cabeza más abajo de la fila untilTop o al empezar
+//                                                     la pelea del jefe.
+//   { mover: [x, y], dir, at?, power?, exit: 'jump' | 'walk' | 'none', landX?, exitDir? }
+//                                                     plataforma móvil cuyo origen ocupa (x, y): golpea su piedra si
+//                                                     power, espera a que esté en la punta `at` ('origin' o 'end'),
+//                                                     sube hacia dir (saltando si hay un hueco), viaja quieta hasta la
+//                                                     otra punta y baja hacia exitDir (por defecto, dir) saltando
+//                                                     (hasta pisar más allá de landX), caminando, o no baja ('none':
+//                                                     el paso siguiente salta a otra plataforma).
+//   { charge: 1 | -1 }                                tajo cargado mirando hacia ese lado (mantiene X hasta cargar).
+//   { jumpTo: [x, fila], hold? }                      salta a una repisa o una penca: se acerca, salta (manteniendo
+//                                                     Espacio `hold` ms, 340 por defecto) y en el aire va hacia x;
+//                                                     termina al pisar con los pies en esa fila.
+//   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
+//   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
+//   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
+//                                                     hongo que ocupa (x, y): si wait, espera a que esa plataforma
+//                                                     esté en esa punta; pisa el hongo y en el aire va hacia la
+//                                                     plataforma `onto` (termina al estar sobre ella) o hacia landX
+//                                                     (termina al pisar con los pies en la fila landTop o más arriba).
 export function installPilot(plan) {
   const T = 16;
   const scene = window.__KERANA_DEBUG__.scene;
@@ -39,7 +54,7 @@ export function installPilot(plan) {
   const splits = plan.splits ?? [];
   const steps = plan.steps;
 
-  const st = { done: false, timeMs: 0, splits: {}, respawns: 0, log: [], trace: [], step: 0, phase: 'start', jumpMs: 0, jumpCool: 0, attackCool: 0 };
+  const st = { done: false, timeMs: 0, splits: {}, respawns: 0, log: [], trace: [], step: 0, phase: 'start', jumpMs: 0, jumpCool: 0, attackCool: 0, aim: null, charging: false };
   window.__KERANA_PILOT__ = st;
   const origRespawn = scene.respawn;
   scene.respawn = function (reason) {
@@ -48,16 +63,26 @@ export function installPilot(plan) {
     return origRespawn.call(this, reason);
   };
 
-  const onMover = (b) => scene.movers.some((m) => Math.abs(m.block.y - b.bottom) <= 3 && b.right > m.block.x && b.left < m.block.x + m.block.width);
-  const solid = (x, y) => scene.isSolidAt(x, y) || scene.movers.some((m) => x >= m.block.x && x < m.block.x + m.block.width && y >= m.block.y && y < m.block.y + m.block.height);
+  const onBlock = (blk, b) => Math.abs(blk.y - b.bottom) <= 3 && b.right > blk.x && b.left < blk.x + blk.width;
+  const onMover = (b) => scene.movers.some((m) => onBlock(m.block, b));
+  // Camalotes (S22): sostienen mientras no se hundieron.
+  const onSinker = (b) => scene.sinkers.some((s) => s.isStoodOn(b));
+  const inRect = (r, x, y) => x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
+  const solid = (x, y) =>
+    scene.isSolidAt(x, y) || scene.movers.some((m) => inRect(m.block, x, y)) || scene.sinkers.some((s) => s.motor.solid && inRect(s.zone, x, y));
   const hazard = (x, y) => scene.tileAt('Hazards', x, y);
   const body = () => player.body;
   // touching.down también se enciende al pasar por un pickup o un enemigo (overlap): solo cuentan el mapa y las plataformas.
-  const grounded = () => body().blocked.down || onMover(body());
+  const grounded = () => body().blocked.down || onMover(body()) || onSinker(body());
 
   const move = (dir) => {
     set('right', dir > 0);
     set('left', dir < 0);
+  };
+  // Va hacia x y se queda quieta al llegar (también en el aire).
+  const seek = (x) => {
+    const dx = x - body().center.x;
+    move(Math.abs(dx) <= 3 ? 0 : Math.sign(dx));
   };
   const tapAttack = () => {
     if (st.attackCool > 0) return;
@@ -68,6 +93,30 @@ export function installPilot(plan) {
     if (st.jumpCool > 0 || st.jumpMs > 0) return;
     st.jumpMs = ms;
   };
+
+  /** Superficie (y) en la columna x entre 3 tiles arriba y 3 abajo de los pies, o null. */
+  const surfaceAt = (x, feet) => {
+    for (let dy = -3; dy <= 3; dy++) {
+      const y = feet + dy * T + 4;
+      if (solid(x, y) && !solid(x, y - T)) return Math.floor(y / T) * T;
+    }
+    return null;
+  };
+  /** Dónde caer al saltar un hueco hacia dir: un poco adentro del primer piso (o al medio si es corto). */
+  const landingAim = (dir, front, feet) => {
+    for (let k = 1; k <= 16; k++) {
+      const x = front + dir * k * (T / 2);
+      const top = surfaceAt(x, feet);
+      if (top === null) continue;
+      let len = 0;
+      while (len < 6 && surfaceAt(x + dir * (len + 1) * (T / 2), feet) === top) len++;
+      return x + dir * Math.min((len * T) / 4, T * 1.25);
+    }
+    return null;
+  };
+  // Un camalote hundido entre el borde y donde se cae: mejor esperar a que vuelva.
+  const sunkAhead = (dir, front) =>
+    scene.sinkers.some((s) => !s.motor.solid && dir * (s.zone.centerX - front) > 0 && dir * (s.zone.centerX - front) < 7 * T);
 
   const run = (dir) => {
     const b = body();
@@ -80,16 +129,23 @@ export function installPilot(plan) {
       tapAttack();
       return;
     }
+    // En el aire con un punto de caída: frena al llegar encima.
+    if (!grounded() && st.aim !== null) {
+      move(dir * (st.aim - cx) <= 2 ? 0 : dir);
+      return;
+    }
+    if (grounded() && st.jumpMs <= 0) st.aim = null;
     move(dir);
     for (const e of scene.enemies) {
       if (!e.active || e.purified) continue;
       const dx = dir * (e.x - cx);
       if (dx > 0 && dx < 40 && Math.abs(e.y - b.center.y) < 32) tapAttack();
     }
+    // Lianas y fardos (los que ceden al tajo normal) delante.
     for (const br of scene.breakables) {
-      if (br.broken || !br.block) continue;
+      if (br.broken || br.needsCharge) continue;
       const dx = dir * (br.zone.centerX - cx);
-      if (dx > 0 && dx < 30) tapAttack();
+      if (dx > 0 && dx < 30 && br.zone.bottom > b.top && br.zone.top < b.bottom) tapAttack();
     }
     if (!grounded() || st.jumpMs > 0) return;
     const tx = cx / T;
@@ -98,49 +154,98 @@ export function installPilot(plan) {
     const gapOk = !noGapJump.some(([a, z]) => tx >= a && tx <= z);
     const noFloor = gapOk && !solid(front + dir * 2, feet + 4);
     const spikes = hazard(cx + dir * 20, feet - 4) || hazard(cx + dir * 34, feet - 4);
+    if (noFloor && plan.aim && sunkAhead(dir, front)) {
+      move(0);
+      return;
+    }
     if (wall || noFloor || spikes) {
       if (st.jumpCool <= 0) st.log.push(`salto en x ${tx.toFixed(1)}${wall ? ' pared' : ''}${noFloor ? ' hueco' : ''}${spikes ? ' espinas' : ''}`);
+      if (plan.aim && noFloor && !wall) st.aim = landingAim(dir, front, feet);
       startJump();
     }
   };
+
+  const moverAt = ([x, y]) => scene.movers.find((mv) => inZone(mv.zone, [x, y]));
+  // La plataforma está en la punta pedida (o llegando, o recién salida).
+  const atEnd = (m, at) => {
+    const mm = m.motor;
+    if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1);
+    return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1);
+  };
+  const onThis = (m, b) => onBlock(m.block, b) && grounded();
 
   // Un paso del plan; devuelve true cuando terminó.
   const doStep = (s) => {
     const b = body();
     if (s.run !== undefined) {
+      if (st.phase === 'start' && s.wait) {
+        move(0);
+        const mm = moverAt(s.wait).motor;
+        const ready = (mm.dir === -1 && mm.pos < 1.5 * T) || (mm.pos < 1 && mm.waitLeftMs > 800);
+        if (!ready) return false;
+      }
+      st.phase = 'run';
+      if (s.untilMover && onThis(moverAt(s.untilMover), b)) {
+        move(0);
+        return true;
+      }
       run(s.run);
       if (s.untilX !== undefined && s.run * (b.center.x - s.untilX * T) >= 0 && grounded()) return true;
       if (s.untilTop !== undefined && b.top > s.untilTop * T) return true;
       if (s.untilFight && scene.fighting) return true;
       return false;
     }
-    const m = scene.movers.find((mv) => inZone(mv.zone, s.mover));
+    if (s.charge !== undefined) return doCharge(s);
+    if (s.jumpTo !== undefined) return doJumpTo(s, b);
+    if (s.bounce !== undefined) return doBounce(s, b);
+    const m = moverAt(s.mover);
     const mm = m.motor;
+    const at = s.at ?? 'origin';
     switch (st.phase) {
       case 'start':
       case 'wait':
         st.phase = 'wait';
+        if (onThis(m, b)) {
+          st.phase = 'ride';
+          return false;
+        }
         move(0);
         if (s.power && !mm.powered) tapAttack();
-        // Sale a 40-60 px/s: recién salida del origen se la alcanza caminando.
-        else if (mm.pos <= T && (mm.dir === 1 || mm.pos <= 1)) st.phase = 'board';
+        // Sale a 40-60 px/s: recién salida de la punta se la alcanza caminando.
+        else if (atEnd(m, at)) st.phase = 'board';
         return false;
       case 'board': {
-        move(s.dir);
         const mid = m.block.x + m.block.width / 2;
-        if (s.dir * (b.center.x - mid) >= -T / 2) st.phase = 'ride';
+        if (onThis(m, b)) {
+          move(0);
+          st.phase = 'ride';
+          return false;
+        }
+        if (!grounded()) {
+          seek(mid);
+          return false;
+        }
+        const d = Math.abs(mid - b.center.x) < 4 ? s.dir : Math.sign(mid - b.center.x);
+        move(d);
+        const front = b.center.x + d * (b.halfWidth + 4);
+        if (!solid(front + d * 2, b.bottom + 4)) startJump();
         return false;
       }
-      case 'ride':
+      case 'ride': {
         move(0);
-        if (mm.pos >= mm.length - 1) st.phase = 'exit';
+        const arrived = at === 'end' ? mm.pos <= 1 : mm.pos >= mm.length - 1;
+        if (!arrived) return false;
+        if (s.exit === 'none') return true;
+        st.phase = 'exit';
         return false;
+      }
       default: {
         const dir = s.exitDir ?? s.dir;
         move(dir);
         if (s.exit === 'jump') {
           const edge = dir > 0 ? m.block.x + m.block.width : m.block.x;
-          if (dir * (b.center.x - edge) >= -10) startJump();
+          if (!grounded() && st.jumpMs <= 0) seek(s.landX * T);
+          if (grounded() && dir * (b.center.x - edge) >= -10) startJump();
           return dir * (b.center.x - s.landX * T) >= 0 && grounded();
         }
         return !onMover(b) && grounded();
@@ -148,17 +253,100 @@ export function installPilot(plan) {
     }
   };
 
+  const doJumpTo = (s, b) => {
+    const [x, row] = s.jumpTo;
+    const tx = x * T;
+    if (grounded() && Math.abs(b.bottom - row * T) <= 3 && Math.abs(b.center.x - tx) < T) {
+      move(0);
+      return true;
+    }
+    if (!grounded() || st.jumpMs > 0) {
+      seek(tx);
+      return false;
+    }
+    // Se acerca hasta 2,5 tiles, o salta desde el borde si se acaba el piso antes.
+    const d = Math.sign(tx - b.center.x);
+    const edge = !solid(b.center.x + d * (b.halfWidth + 6), b.bottom + 4);
+    if (Math.abs(b.center.x - tx) > 2.5 * T && !edge) {
+      seek(tx);
+      return false;
+    }
+    startJump(s.hold);
+    seek(tx);
+    return false;
+  };
+
+  const doCharge = (s) => {
+    switch (st.phase) {
+      case 'start':
+        move(0);
+        if (!grounded()) return false;
+        player.motor.facing = s.charge;
+        st.charging = true;
+        set('attack', true);
+        st.phase = 'hold';
+        return false;
+      case 'hold':
+        if (player.motor.chargeFraction < 1) return false;
+        set('attack', false);
+        st.charging = false;
+        st.phase = 'release';
+        st.waitMs = 0;
+        return false;
+      default:
+        // Que termine el tajo y la onda recorra su camino.
+        st.waitMs += st.dt;
+        return player.motor.state !== 'attack' && st.waitMs > 450;
+    }
+  };
+
+  const doBounce = (s, b) => {
+    const cap = scene.bouncers.find((h) => inZone(h.zone, s.bounce));
+    const hx = cap.zone.centerX;
+    const target = s.onto ? moverAt(s.onto) : null;
+    switch (st.phase) {
+      case 'start': {
+        move(0);
+        if (s.wait && !atEnd(moverAt(s.wait.mover), s.wait.at ?? 'origin')) return false;
+        if (!cap.canBounce) return false;
+        st.phase = 'go';
+        return false;
+      }
+      case 'go':
+        seek(hx);
+        if (body().velocity.y < -300) st.phase = 'air';
+        return false;
+      default: {
+        if (target) {
+          if (onThis(target, b)) return true;
+          const mid = target.block.x + target.block.width / 2;
+          // Lejos: rebota en el lugar hasta que la plataforma pase por encima.
+          seek(Math.abs(mid - hx) < 3 * T ? mid : hx);
+        } else {
+          seek(s.landX * T);
+          if (grounded() && (s.landTop === undefined || b.bottom <= s.landTop * T + 2) && Math.abs(b.center.x - s.landX * T) < T) return true;
+        }
+        // Volvió al piso sin llegar (hongo de un uso desinflado): a esperar otra vez.
+        if (grounded() && body().velocity.y >= 0 && !cap.isStoodOn(b) && b.bottom > cap.zone.top + 4) st.phase = 'start';
+        return false;
+      }
+    }
+  };
+
   const onStep = (_time, d) => {
     if (st.done) return;
+    st.dt = d;
     st.timeMs += d;
     st.jumpCool = Math.max(0, st.jumpCool - d);
     st.attackCool = Math.max(0, st.attackCool - d);
-    if (held.attack) set('attack', false);
+    if (held.attack && !st.charging) set('attack', false);
     const tx = body().center.x / T;
     // Rastro (ms, x, pies) cada ≈ 100 ms, en tiles.
     if (st.trace.length === 0 || st.timeMs - st.trace[st.trace.length - 1][0] >= 100) st.trace.push([Math.round(st.timeMs), +tx.toFixed(1), +(body().bottom / T).toFixed(1)]);
     for (const [name, x] of splits) if (st.splits[name] === undefined && tx >= x) st.splits[name] = Math.round(st.timeMs);
     const finished = doStep(steps[st.step]);
+    // Un salto decidido justo cuando el paso termina en el piso no se hace: lo decide el paso siguiente.
+    if (finished && grounded() && held.jump === false) st.jumpMs = 0;
     if (st.jumpMs > 0) {
       set('jump', true);
       st.jumpMs -= d;
@@ -168,6 +356,7 @@ export function installPilot(plan) {
     st.log.push(`paso ${st.step} listo (x ${tx.toFixed(1)}, ${Math.round(st.timeMs)} ms)`);
     st.step++;
     st.phase = 'start';
+    st.aim = null;
     if (st.step >= steps.length) {
       st.done = true;
       for (const k of Object.keys(held)) set(k, false);
