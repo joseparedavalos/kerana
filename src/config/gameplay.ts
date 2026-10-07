@@ -879,6 +879,18 @@ export const GAMEPLAY = {
     pit: 1,
     /** Daño al caer al agua honda (GDD §3.6). */
     water: 1,
+    /** Daño al salir de un encierro con la red de seguridad (S23): como una caída a un pozo. */
+    trap: 1,
+  },
+
+  /**
+   * Red de seguridad contra encierros (S23, `src/systems/trapLogic.ts`). Al cargar el nivel se marcan los pisos
+   * de los que Kerana no puede salir con lo que tiene (sin salto doble, por ejemplo); si queda en uno, pasado este
+   * tiempo vuelve al último suelo firme y le cuesta `damage.trap`. No hace falta saber que existe: se dispara sola.
+   */
+  trap: {
+    /** Espera desde que Kerana pisa un encierro hasta que la red la saca (ms). Da para recoger el premio y probar a salir. */
+    waitMs: 4000,
   },
 
   pickups: {

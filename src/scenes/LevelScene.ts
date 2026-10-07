@@ -35,6 +35,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
+import { findTraps, riseRows, trapGridFromMap, type TrapObject } from '../systems/trapLogic';
 import { CameraController } from '../systems/CameraController';
 import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
@@ -50,7 +51,7 @@ import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
 
-type RespawnReason = 'pit' | 'water' | 'hazard';
+type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
 type TileLayerName = (typeof TILE_LAYERS)[number];
 
@@ -138,6 +139,10 @@ export class LevelScene extends Phaser.Scene {
   private lastPlayerState: PlayerStateName = 'idle';
   private wasImmune = false;
   private readonly safeGround = new Phaser.Math.Vector2();
+  /** Red de seguridad (S23): 1 = piso encerrado (celda de los pies); tiempo que lleva Kerana en uno. */
+  private trapCells?: Uint8Array;
+  private inTrap = false;
+  private trapMs = 0;
   private readonly checkpointPos = new Phaser.Math.Vector2();
   private readonly playerRect = new Phaser.Geom.Rectangle();
   private debugText?: Phaser.GameObjects.Text;
@@ -332,6 +337,7 @@ export class LevelScene extends Phaser.Scene {
     });
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
+    this.findTraps();
     this.mainumbyPos.set(spawn.x, spawn.y - 40);
     if (hasSprite(this, 'mainumby', 'mainumby_fly')) {
       // Sprite real (mira a la derecha) aleteando, con un brillo dorado suave por código detrás.
@@ -473,7 +479,10 @@ export class LevelScene extends Phaser.Scene {
     if (body.top > this.map.heightInPixels + GAMEPLAY.respawn.pitMargin) this.respawn('pit');
     else if (this.tileAt('Water', body.center.x, body.center.y)) this.respawn('water');
     else if (!this.player.isIntangible && this.touchesHazard(body)) this.respawn('hazard');
-    else this.trackSafeGround(body);
+    else {
+      this.updateTrap(delta, body);
+      this.trackSafeGround(body);
+    }
 
     this.updateWater(delta, body);
     this.updateJungle(delta, body);
@@ -1524,9 +1533,89 @@ export class LevelScene extends Phaser.Scene {
     );
   }
 
-  /** Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado. */
+  /**
+   * Red de seguridad (S23): marca los pisos de los que Kerana no puede salir con lo que tiene. Se calcula una vez,
+   * con la geometría del mapa y un modelo que exagera su alcance (ver `trapLogic.ts`).
+   */
+  private findTraps(): void {
+    const map = this.map;
+    const layer = (name: TileLayerName) => (x: number, y: number) => {
+      const tile = this.layers[name]?.getTileAt(x, y);
+      return !!tile && tile.index !== -1;
+    };
+    const objects: TrapObject[] = (map.getObjectLayer('Objects')?.objects ?? []).map((o) => ({
+      cls: objectClass(o),
+      x: o.x ?? 0,
+      y: o.y ?? 0,
+      width: o.width ?? 0,
+      height: o.height ?? 0,
+      props: Object.fromEntries(((o.properties ?? []) as { name: string; value: unknown }[]).map((p) => [p.name, p.value])),
+    }));
+    const grid = trapGridFromMap({
+      width: map.width,
+      height: map.height,
+      tile: map.tileWidth,
+      ground: layer('Ground'),
+      platforms: layer('Platforms'),
+      hazards: layer('Hazards'),
+      water: layer('Water'),
+      objects,
+      cowReachPx: GAMEPLAY.cow.patrolDistance + 2 * map.tileWidth,
+    });
+    const g = GAMEPLAY.gravity;
+    const p = GAMEPLAY.player;
+    const extra = this.player.motor.doubleJumpEnabled ? [p.doubleJumpVelocity] : [];
+    const result = findTraps(grid, {
+      jumpRows: riseRows([p.jumpVelocity, ...extra], g, map.tileHeight, 'floor'),
+      bounceRows: riseRows([GAMEPLAY.jungle.bounceVelocity, ...extra], g, map.tileHeight, 'ceil'),
+      bodyRows: Math.ceil(p.bodyHeight / map.tileHeight),
+    });
+    if (result.trappedSpans.length === 0) return;
+    this.trapCells = result.trapped;
+    if (!DEBUG.debug) return;
+    // Con ?debug=1, una raya roja sobre cada piso encerrado.
+    const gfx = this.add.graphics().setDepth(30);
+    gfx.lineStyle(2, 0xd94040, 0.9);
+    for (const n of result.trappedSpans) {
+      const sp = result.spans[n];
+      const y = (sp.y + 1) * map.tileHeight - 1;
+      gfx.lineBetween(sp.x0 * map.tileWidth, y, (sp.x1 + 1) * map.tileWidth, y);
+    }
+  }
+
+  /** Celda de los pies si es un piso encerrado (mira el centro y, si está sobre el vacío, cada pie). */
+  private trappedUnder(body: Phaser.Physics.Arcade.Body): boolean {
+    const cells = this.trapCells;
+    if (!cells) return false;
+    const tile = this.map.tileWidth;
+    const w = this.map.width;
+    const y = Math.floor((body.bottom - 1) / this.map.tileHeight);
+    if (y < 0 || y >= this.map.height) return false;
+    const at = (px: number) => cells[y * w + Phaser.Math.Clamp(Math.floor(px / tile), 0, w - 1)] === 1;
+    return at(body.center.x) || (at(body.left + 1) && at(body.right - 1));
+  }
+
+  /**
+   * Red de seguridad (S23): el tiempo corre desde que Kerana pisa un encierro y sigue mientras salta adentro;
+   * se corta apenas pisa un piso que no lo es. Al cumplirse `GAMEPLAY.trap.waitMs`, vuelve al último suelo firme.
+   */
+  private updateTrap(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
+    if (!this.trapCells) return;
+    if (body.blocked.down) this.inTrap = this.trappedUnder(body);
+    if (!this.inTrap) {
+      this.trapMs = 0;
+      return;
+    }
+    this.trapMs += deltaMs;
+    if (this.trapMs < GAMEPLAY.trap.waitMs) return;
+    this.trapMs = 0;
+    this.inTrap = false;
+    this.respawn('trap');
+  }
+
+  /** Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado (nunca en un encierro). */
   private trackSafeGround(body: Phaser.Physics.Arcade.Body): void {
-    if (!body.blocked.down) return;
+    if (!body.blocked.down || this.inTrap) return;
     const tile = this.map.tileWidth;
     const below = body.bottom + 1;
     const feetY = body.bottom - 2;
