@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_HIGH, L2_MAIN } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -358,20 +358,30 @@ async function main() {
         drawn: s.breakables.every((b) => b.look.length > 0),
         checkpoints: s.checkpoints.length,
         feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (un solo encierro: el hueco del premio).
+        enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
+        guardianScale: s.enemies.find((e) => e.def.id === 'nakurutu_guasu')?.scaleX,
+        traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
       };
     });
     check(
       l2Info.charge &&
-        l2Info.movers === 11 &&
-        l2Info.vertical === 2 &&
+        l2Info.movers === 16 &&
+        l2Info.vertical === 3 &&
         l2Info.switches === 1 &&
-        l2Info.bouncers === 'ready,ready,ready,asleep' &&
+        l2Info.bouncers === 'ready,ready,ready,ready,asleep' &&
         l2Info.rocks === 2 &&
-        l2Info.brittle === 3 &&
+        l2Info.brittle === 6 &&
         l2Info.drawn &&
         l2Info.checkpoints === 3 &&
-        l2Info.feathers === 3,
-      `nivel 2: 11 plataformas (2 verticales), 1 piedra, 4 hongos (normales, de un uso y dormido), 2 rocas y 3 fardos dibujados, 3 fuegos, 3 plumas (${JSON.stringify(l2Info)})`,
+        l2Info.feathers === 3 &&
+        l2Info.enemies.jakare === 3 &&
+        l2Info.enemies.nakurutu === 3 &&
+        l2Info.enemies.mboi === 4 &&
+        l2Info.enemies.nakurutu_guasu === 1 &&
+        l2Info.guardianScale > 2 &&
+        l2Info.traps === 5,
+      `nivel 2: 16 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 6 fardos dibujados, 3 fuegos, 3 plumas, enemigos con el ñakurutu guasu y un encierro de 5 tiles (${JSON.stringify(l2Info)})`,
     );
     // El tajo normal no rompe la roca agrietada del peñasco (x 14-16); el piloto la rompe después con el cargado.
     await l2Run.evaluate(() => {
@@ -418,7 +428,8 @@ async function main() {
     await l2High.evaluate(installPilot, L2_HIGH);
     for (let t = 0; t < 120000 && !(await pilot(l2High)).done; t += 500) await sleep(500);
     const high2 = await l2High.evaluate(() => ({ done: window.__KERANA_PILOT__.done, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16), timeMs: Math.round(window.__KERANA_PILOT__.timeMs) }));
-    check(high2.done && high2.hud === l2HighStart + 1 && high2.respawns === 0, `nivel 2: la ruta alta llega al fuego 2 con la pluma B (${JSON.stringify(high2)})`);
+    // S23: la pluma B se mudó a la copa (camino del ñakurutu guasu); desde la ruta alta no se alcanza.
+    check(high2.done && high2.hud === l2HighStart && high2.respawns === 0, `nivel 2: la ruta alta llega al fuego 2 (sin la pluma B, que está en la copa) (${JSON.stringify(high2)})`);
     const nest = await l2High.evaluate(async () => {
       const scene = window.__KERANA_DEBUG__.scene;
       const g = scene.pickups.find((p) => p.kind === 'guavira' && Math.floor(p.x / 16) === 161);
@@ -429,6 +440,95 @@ async function main() {
     });
     check(nest.before === 27 && nest.after === 33, `nivel 2: al romper el nido, la guavirá cae al suelo (${JSON.stringify(nest)})`);
     await l2High.close();
+
+    // 1c4) l2, copa del palmar (S23): el camino oculto del ñakurutu guasu. Desde la cima del albardón: muro de roca
+    // agrietada, ascensor del tronco hueco, par de balsas de la copa, rama del guardián (se lanza; god=1 no recibe daño)
+    // y la pluma B en la repisa de abajo.
+    const l2Copa = await open('/?debug=1&level=2&god=1');
+    await l2Copa.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    await l2Copa.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(155.5 * 16, 18 * 16);
+      // Registra si el guardián deja su rama (aviso y picada) mientras pasa Kerana.
+      const g = d.scene.enemies.find((e) => e.def.id === 'nakurutu_guasu');
+      window.__GUARD__ = { warned: false, dove: false, spawnY: g.spawnY };
+      d.scene.events.on('postupdate', () => {
+        if (g.warning) window.__GUARD__.warned = true;
+        if (g.y > g.spawnY + 24) window.__GUARD__.dove = true;
+      });
+    });
+    await sleep(300);
+    const copaStart = await l2Copa.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
+    await l2Copa.evaluate(installPilot, L2_COPA);
+    for (let t = 0; t < 150000 && !(await pilot(l2Copa)).done; t += 500) await sleep(500);
+    const copa = await l2Copa.evaluate(() => ({ done: window.__KERANA_PILOT__.done, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16), timeMs: Math.round(window.__KERANA_PILOT__.timeMs), ...window.__GUARD__ }));
+    check(
+      copa.done && copa.hud === copaStart + 1 && copa.respawns === 0 && copa.warned && copa.dove,
+      `nivel 2: el camino oculto de la copa pasa al ñakurutu guasu (avisa y se lanza) y llega a la pluma B (${JSON.stringify(copa)})`,
+    );
+    if (!copa.done) console.log((await l2Copa.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    console.log(`  l2 (copa del palmar): ${(copa.timeMs / 1000).toFixed(1)} s de juego desde la cima del albardón hasta el fuego 2`);
+    await l2Copa.close();
+
+    // 1c5) Red de seguridad (S23): en el hueco del premio (x 234-238, al pie del ascenso 2) no hay salida. Sin god:
+    // Kerana baja desde el pilar, recoge la Luz de Arasy y la guavirá y, pasado GAMEPLAY.trap.waitMs, vuelve al pilar
+    // (con la Luz no pierde corazón). La segunda vez, ya sin Luz, vuelve y le cuesta un corazón.
+    const l2Trap = await open('/?debug=1&level=2');
+    await l2Trap.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const trapState = () =>
+      l2Trap.evaluate(() => {
+        const d = window.__KERANA_DEBUG__;
+        return { x: +(d.player.body.center.x / 16).toFixed(1), feet: +(d.player.body.bottom / 16).toFixed(1), hearts: d.player.health.current, immune: d.player.isImmune, traps: window.__TRAPS__ };
+      });
+    await l2Trap.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      window.__TRAPS__ = 0;
+      const orig = d.scene.respawn;
+      d.scene.respawn = function (reason) {
+        if (reason === 'trap') window.__TRAPS__++;
+        return orig.call(this, reason);
+      };
+      d.player.body.reset(231.5 * 16, 26 * 16);
+    });
+    await sleep(500);
+    const intoHole = async () => {
+      await l2Trap.keyboard.down('ArrowRight');
+      for (let t = 0; t < 4000 && (await trapState()).x < 235.5; t += 100) await sleep(100);
+      await l2Trap.keyboard.up('ArrowRight');
+    };
+    const waitRescue = async (n) => {
+      for (let t = 0; t < 15000 && (await trapState()).traps < n; t += 200) await sleep(200);
+      await sleep(400);
+      return trapState();
+    };
+    const trapStart = await trapState();
+    await intoHole();
+    // Que aterrice en el fondo (fila 33) y recoja la Luz de Arasy.
+    for (let t = 0; t < 4000; t += 100) {
+      const st = await trapState();
+      if (st.feet === 33 && st.immune) break;
+      await sleep(100);
+    }
+    const inHole = await trapState();
+    await l2Trap.screenshot({ path: join(SHOTS, 'l2-hueco.png') });
+    const rescue1 = await waitRescue(1);
+    // El último suelo firme es el borde del pilar (x 227-233), desde donde cayó.
+    const onPillar = (st) => st.x >= 227 && st.x < 234 && st.feet === 26;
+    check(
+      inHole.feet === 33 && inHole.immune && rescue1.traps === 1 && onPillar(rescue1) && rescue1.hearts === trapStart.hearts,
+      `red de seguridad: del hueco del premio (Luz de Arasy) vuelve al pilar sin perder corazón (${JSON.stringify({ trapStart, inHole, rescue1 })})`,
+    );
+    // Que se apague la Luz (8 s) y bajar otra vez.
+    for (let t = 0; t < 12000 && (await trapState()).immune; t += 300) await sleep(300);
+    await intoHole();
+    const rescue2 = await waitRescue(2);
+    check(
+      rescue2.traps === 2 && onPillar(rescue2) && rescue2.hearts === trapStart.hearts - 1,
+      `red de seguridad: sin la Luz, vuelve al último suelo firme y le cuesta un corazón (${JSON.stringify(rescue2)})`,
+    );
+    await l2Trap.close();
 
     // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.
     const l3Page = await open('/?debug=1&level=3&boss=1&god=1');

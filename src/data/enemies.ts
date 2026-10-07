@@ -1,3 +1,4 @@
+import { GAMEPLAY } from '../config/gameplay';
 import type { SfxKey } from '../systems/sfxPresets';
 
 // Enemigos comunes (GDD §5.2). Los IDs con nombre real llegan con cada nivel (§5.3);
@@ -12,6 +13,12 @@ export interface EnemyDef {
   hp: number;
   width: number;
   height: number;
+  /** Sprite de otro enemigo que usa (el ñakurutu guasu dibuja el del ñakurutu). */
+  look?: string;
+  /** Escala del dibujo y del cuerpo (1 si falta). */
+  scale?: number;
+  /** Corazones que quita al tocarlo (si falta, `GAMEPLAY.damage.enemyContact`). */
+  contactDamage?: number;
 
   // Walker y Flyer: patrulla.
   speed?: number;
@@ -43,9 +50,10 @@ export interface EnemyDef {
   /** Lurker colgante (mbói en N5): cuelga de la rama que tiene encima en vez de salir del agua. */
   hangs?: boolean;
 
-  // Diver: velocidad de picada y de regreso a su poste (px/s).
+  // Diver: velocidad de picada y de regreso a su poste (px/s); `restMs`, quieto en el suelo tras la picada.
   diveSpeed?: number;
   returnSpeed?: number;
+  restMs?: number;
 
   // Swarm: tiempo persiguiendo y dispersándose (ms); `speed` es la velocidad de persecución.
   chaseMs?: number;
@@ -111,6 +119,25 @@ export const ENEMIES: Record<string, EnemyDef> = {
     cooldownMs: 900,
   },
   mboi: { id: 'mboi', archetype: 'walker', hp: 2, width: 22, height: 8, speed: 30, patrolDistance: 44 },
+  // Ñakurutu guasu (S23): guardián de un camino oculto de l2; valores en GAMEPLAY.guardian.
+  nakurutu_guasu: {
+    id: 'nakurutu_guasu',
+    archetype: 'diver',
+    look: 'nakurutu',
+    hp: GAMEPLAY.guardian.hp,
+    width: 12,
+    height: 14,
+    scale: GAMEPLAY.guardian.scale,
+    contactDamage: GAMEPLAY.guardian.contactDamage,
+    detectRadius: GAMEPLAY.guardian.detectRadius,
+    telegraphMs: GAMEPLAY.guardian.telegraphMs,
+    diveSpeed: GAMEPLAY.guardian.diveSpeed,
+    returnSpeed: GAMEPLAY.guardian.returnSpeed,
+    chargeMaxMs: GAMEPLAY.guardian.diveMaxMs,
+    restMs: GAMEPLAY.guardian.restMs,
+    cooldownMs: GAMEPLAY.guardian.cooldownMs,
+    warnSfx: 'hoot',
+  },
 
   // Nivel 3 (GDD §5.3): el ñandu corre en línea recta (se lo salta); el karakara pica como el ñakurutu.
   nandu: {

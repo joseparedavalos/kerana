@@ -879,6 +879,45 @@ export const GAMEPLAY = {
     pit: 1,
     /** Daño al caer al agua honda (GDD §3.6). */
     water: 1,
+    /** Daño al salir de un encierro con la red de seguridad (S23): como una caída a un pozo. */
+    trap: 1,
+  },
+
+  /**
+   * Red de seguridad contra encierros (S23, `src/systems/trapLogic.ts`). Al cargar el nivel se marcan los pisos
+   * de los que Kerana no puede salir con lo que tiene (sin salto doble, por ejemplo); si queda en uno, pasado este
+   * tiempo vuelve al último suelo firme y le cuesta `damage.trap`. No hace falta saber que existe: se dispara sola.
+   */
+  trap: {
+    /** Espera desde que Kerana pisa un encierro hasta que la red la saca (ms). Da para recoger el premio y probar a salir. */
+    waitMs: 4000,
+  },
+
+  /**
+   * Ñakurutu guasu (S23): el ñakurutu de siempre en grande, guardián de un camino oculto de l2. Es un encuentro, no un
+   * jefe: sin barra ni arena. Avisa largo (temblor, blanco y graznido), se lanza, queda aturdido en el suelo y vuelve
+   * despacio; se lo vence a golpes o se pasa por debajo mientras vuelve.
+   */
+  guardian: {
+    /** Golpes que aguanta (el tajo cargado cuenta `chargedSlash.damage`). */
+    hp: 5,
+    /** Corazones que quita al tocarla (el ñakurutu común quita `damage.enemyContact`). */
+    contactDamage: 2,
+    /** Tamaño respecto del ñakurutu común (dibujo y cuerpo). */
+    scale: 2.6,
+    /** Distancia (px) a la que se lanza si Kerana está más abajo. */
+    detectRadius: 128,
+    /** Aviso antes de lanzarse (ms): tiempo para alejarse o prepararse. El común avisa 500. */
+    telegraphMs: 1100,
+    /** Velocidad de la picada y de la vuelta a su rama (px/s). */
+    diveSpeed: 200,
+    returnSpeed: 55,
+    /** Tope de la picada (ms). */
+    diveMaxMs: 1400,
+    /** Aturdido en el suelo tras la picada (ms): la ventana para pegarle o pasar. */
+    restMs: 1000,
+    /** Espera en la rama antes de poder lanzarse otra vez (ms). */
+    cooldownMs: 1600,
   },
 
   pickups: {

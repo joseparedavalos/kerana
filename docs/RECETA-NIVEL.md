@@ -1,6 +1,6 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22 con l2)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22 y S23 con l2)
 
-El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú). Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 y marcado *(S22)* donde cambió una regla.
+El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22) y §9 (S23, huecos sin salida y enemigos en los saltos), y marcado *(S22)* o *(S23)* donde cambió una regla.
 
 ---
 
@@ -16,7 +16,8 @@ El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 par
 | Salto | 4,17 tiles de alto; 6,25 de largo a la misma altura | pared o escalón obligatorio: **≤ 3**. Algo que NO debe alcanzarse saltando: **≥ 5** arriba |
 | Hueco a la misma altura | el centro viaja ≈ 5,8 tiles; el cuerpo ya apoya con 1 px | un hueco de **N** tiles de aire pide **N − 1** de viaje. Para que algo quede fuera de alcance desde un borde, **≥ 8 tiles de aire** |
 | Hongo | 7,6 tiles (medido en el smoke: 126 px = 7,9) | repisa a la que solo se llega con el hongo: 5 a 7 tiles por encima del hongo. *(S22)* De costado, el rebote avanza ≈ 6 tiles hasta caer a 6 filas: una repisa que NO debe alcanzarse rebotando va a **≥ 8 tiles** del hongo |
-| Caída | sin daño | una caída de 10 tiles es un camino válido (se usó para pasar de la galería 1 a la 2). *(S22)* Quien camina por el borde a toda carrera avanza ≈ 6 tiles en una caída de 20 filas: abajo, **≥ 8 tiles** de piso antes del agua, y lo que se recoge (la Luz) donde se cae, no donde se salta |
+| Caída | sin daño | una caída de 10 tiles es un camino válido (se usó para pasar de la galería 1 a la 2). *(S23, corrige S22)* Quien sale corriendo de un borde avanza ≈ 5 tiles en una caída de 10 filas y **≈ 9,5 en una de 20** (medido: de la cima del ascenso 2 de l2, 21 filas, cayó en x 262,5 saliendo de x 253): abajo, **≥ 11 tiles** de piso antes del agua, y lo que se recoge (la Luz) donde se cae, no donde se salta |
+| Cabeza | 2,6 tiles sobre los pies | *(S23)* saltando, la cabeza llega ≈ 6,8 filas sobre el piso: un pickup a menos de 7 filas encima de un piso por el que se pasa se toca desde abajo si lo que lo sostiene es de un solo sentido. Para que no se alcance, que esté sobre roca (`#`) |
 | Onda del tajo cargado | la luz llega ≈ 6 tiles aunque haya pared | piedra encerrada a ≤ 6 tiles de donde se para Kerana, detrás de 1 tile de roca |
 
 **Piezas (S18):** `-` plataforma de un solo sentido (las sólidas `+` pueden trabar a Kerana contra un techo: no usarlas), `:` recorrido, `*` piedra (Switch), `|` reja, `M` hongo (`kind=once` o `kind=sleep`). Propiedades con `at X,Y …`. Un hongo **también rebota si se llega caminando**: cualquier hongo en el piso del camino lo pisa todo el que pasa (ver errores, §5).
@@ -124,6 +125,8 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] Tres plumas, tres verbos, cada una guía o paga; ninguna al alcance por otro lado.
 - [ ] Plan del piloto para la ruta principal (y la alta), tiempo medido antes y después; cada plan corrido dos veces.
 - [ ] *(S22)* Desde l2: el don anterior en el camino principal una vez por sección; cada cartel antes del primer encuentro con lo que explica; rompibles de las dos clases donde abren camino.
+- [ ] *(S23)* `tests/trap.test.ts` sin encierros nuevos: si uno es a propósito, con premio y anotado en el test (§9).
+- [ ] *(S23)* Enemigos en los saltos según §9: visibles desde el borde, con un ciclo que se lee antes de saltar y ninguno atado al reloj de una plataforma móvil de forma que el salto quede imposible.
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -173,3 +176,70 @@ l2 se hizo con esta receta sin cambiar el orden de trabajo. Lo que sirvió disti
 7. **El generador volvió a leer su propia salida** (error 1 de S19): después del primer commit, `git show HEAD:` ya era el l2 nuevo y la arena copiada traía la pluma C (`npm run maps`: "Hay 4 plumas"). Corrección: leer del commit base de la sesión.
 8. **El salto del ascensor al poste se pasaba a veces** (smoke 2 de 3): el piloto empezaba a apuntar recién al soltar el salto y el poste mide 2 tiles; al caer al agua, el paso quedaba caminando hacia el agua. Corrección: poste a 1 tile del ascensor y el piloto apunta desde que despega (y solo salta parado sobre la plataforma). Un salto a algo de 2 tiles necesita poco hueco.
 9. **`?level=2` no trae el tajo cargado** (sale del guardado): el nivel no se puede pasar sin él desde x 14. Para probar: jugar l1 antes o `gifts=all` (trae todos los dones).
+
+---
+
+## 9. Lo que agregó la segunda pasada de l2 (S23)
+
+Jose jugó l2 y encontró dos cosas que la receta no cubría: un hueco al que se entra y del que no se sale, y saltos vacíos con los enemigos en el suelo. La pasada siguió el mismo orden de trabajo (§1), con el generador partiendo del commit base de la sesión.
+
+### 9.1 Huecos sin salida (encierros)
+
+**Qué es.** Un piso al que se llega (cayendo o saltando) y del que no se sale con lo que Kerana tiene. El de Jose: el hueco entre el pilar del ascenso 2 y la pared del timbó (x 234-238, fila 33). Se entraba caminando desde el pilar y las paredes medían 7 y 21; solo se salía con salto doble. No era un fallo de colisiones.
+
+**Cómo se buscan.** `tests/trap.test.ts` corre `findTraps` (el mismo análisis que usa el juego, `src/systems/trapLogic.ts`) sobre el JSON de cada nivel, con los dones que se traen al llegar (salto doble desde l4), y falla si aparece un encierro que no está en su lista. El análisis exagera a propósito lo que Kerana puede hacer (en el aire se mueve sin límite, las plataformas móviles son piso en todo su recorrido, los rompibles no existen): lo que marca es seguro un encierro. En S23 se comprobó además con una simulación de saltos con la física de `gameplay.ts` (script del scratchpad, no está en el repo): en l2 de S22 y en el de S23 los dos encuentran el mismo y único hueco, y ningún otro aparece ni con un salto un 10 % más bajo. Los demás niveles no tienen ninguno.
+
+**Reglas al dibujar.**
+- Todo piso rodeado de paredes de **≥ 5** (de **≥ 8** desde l4, con salto doble) necesita una salida: un escalón de ≤ 4 (mejor ≤ 3), un hongo, una penca, una plataforma móvil o un rompible. El agua honda, las espinas y un pozo hasta el fondo también sirven: ya devuelven a Kerana a tierra firme.
+- Al dibujar un pilar o una pared de ≥ 5, mirar qué queda **al pie del otro lado**: ahí estaba el hueco de Jose.
+- Si el hueco es interesante (desde arriba se ve algo), no hace falta taparlo: se le da **premio** y la red de seguridad saca a Kerana. En l2: una Luz de Arasy y una guavirá, con luciérnagas. Con la Luz activa, la red no cuesta corazón (como un pozo con la Luz): el premio vale la pena aunque no falte vida.
+
+**La red de seguridad** (global, `GAMEPLAY.trap.waitMs`): si Kerana queda en un piso encerrado, pasado ese tiempo vuelve al último suelo firme (que nunca se toma dentro de un encierro) y le cuesta `damage.trap` (1). Con `?debug=1` los pisos encerrados llevan una raya roja.
+
+### 9.2 Enemigos en los saltos
+
+Tres reglas: el enemigo (o su aviso) se ve **desde el borde**, antes de saltar; su patrón se **lee desde ahí** para elegir el momento; y el salto **nunca queda imposible** por el ciclo del enemigo. Ninguno de los tres enemigos de l2 tiene azar.
+
+| Enemigo | Cómo funciona (`enemies.ts`) | Dónde va en un salto |
+|---|---|---|
+| Jakare (Lurker) | se activa con Kerana a ≤ 64 px en x y en y; mientras siga cerca repite: burbujas 0,9 s → afuera 1,8 s → abajo 1,4 s (4,1 s, de los que 2,3 s no muerde). Asoma 8 px sobre el agua y mide 30 px (≈ 2 tiles) | **bajo el camalote de llegada** (cadena 2, x 60), con el borde de despegue a ≤ 3 tiles para que el ciclo empiece mientras se espera en tierra; se cruza cuando se hunde. O **en el medio de un hueco de 3** (balsas de C1, x 215): un salto completo lo pasa, solo castiga el salto corto |
+| Ñakurutu (Diver) | se lanza si Kerana está **más abajo** y a ≤ 96 px (6 tiles); aviso 0,5 s, picada a 230 px/s hacia donde estaba, vuelve a 70 px/s y espera 0,9 s | en un **poste del otro lado del hueco, más alto que el borde** y a ≤ 5 tiles de él (ruta alta, x 186): se lanza mientras Kerana está parada en el borde, nunca a mitad del salto. Parado a la misma altura que Kerana no se lanza nunca (el de la ruta alta de S22 estaba así) |
+| Mbói (Walker) | va y viene ± 44 px a 30 px/s (≈ 6 s); **no gira en los bordes**, solo en paredes y en las puntas de su patrulla | en la **orilla de llegada**, con el centro de la patrulla a ≥ 3 tiles del agua (si no, se cae): se salta cuando se aleja o se la corta (2 golpes). Donde atraca una balsa (x 128) también: se la ataca desde la balsa |
+
+**Con plataformas móviles** el momento del salto lo fija la plataforma, no el jugador: el ciclo del enemigo no puede caer justo en esa ventana. Lo que se corrigió en S23:
+- La balsa de B1 pasaba **por encima** de un jakare: con la balsa a 50 px/s, cuando asomaba (0,9 s después de activarse) estaba a 19 px de Kerana, es decir, debajo de ella, siempre. Se sacó.
+- En el par de balsas final, el jakare del hueco (de 2 tiles, demasiado angosto para sus 30 px) asomaba bajo la punta de la balsa de llegada 0,7 s después de que las balsas se juntaban: solo se podía saltar en esa ventana o caer más lejos. Se sacó.
+- Lo que sí funciona con una plataforma: una mbói donde atraca (siempre se la puede atacar o saltar), un ñakurutu que se lanza durante el viaje (avisa y se lo corta) y un jakare **en el medio** de un hueco de 3.
+- No poner un ñakurutu cuyo radio llegue al fuego: se lanza cada vez que Kerana reaparece (por eso el poste de C1 quedó en x 204).
+
+**Ojo (S23):** hasta S23 el ñakurutu parado sobre un poste **no se lanzaba**: el primer paso de la picada lo apoyaba en el poste y la daba por terminada (temblaba y volvía a su lugar; por eso los saltos "estaban vacíos"). Ahora la picada no choca con el suelo en su primera mitad. Los karakara de l3 y l6 esperan en el aire y casi no cambian.
+
+El piloto juega con `god=1` (los enemigos no lo tocan): que un salto con enemigo sea justo se comprueba con estos números, no con el smoke. El smoke sí comprueba que el guardián avisa y se lanza.
+
+### 9.3 El guardián (encuentro, no jefe)
+
+El ñakurutu guasu (`nakurutu_guasu`, valores en `GAMEPLAY.guardian`) es el Diver de siempre, en grande: aviso de 1,1 s (tiembla, se pone blanco y grazna), picada, 1 s aturdido en el suelo y vuelta lenta; quita 2 corazones y aguanta 5 golpes. Cómo se arma el encuentro:
+- **Percha 4 filas sobre su rama**: se pasa por debajo. Radio de 128 px (≈ 7 tiles en x a esa altura): la llegada desde las balsas queda a 8 tiles, fuera del radio, para ver el aviso antes de entrar.
+- **Ventana para pasar**: tras cada picada, 1 s aturdido + ≈ 2 s de vuelta + 1,6 s en la rama: se lo golpea mientras está en el suelo o se corre por debajo hasta la recompensa.
+- **Recompensa fuera de su alcance** (la repisa de la pluma B, 8 filas bajo la percha) y **sobre roca**, para que no se toque desde la ruta alta saltando (§0, cabeza).
+- **Sin barra ni arena**: la rama tiene salida por los dos lados (las balsas y la caída a la ruta alta).
+
+### 9.4 Piezas nuevas y cómo se arman
+
+- **Camino oculto**: el pilar de roca sobre el muro agrietado es un tronco hueco con un **ascensor tapado por follaje** (`H`, capa Foreground: se dibuja delante y no choca). Como el recorrido va en celdas `H`, el ascensor se declara con `rect Mover x= y= w= h= dy=` (sin `:`). Se ve cuando baja hasta la fila 14, sobre el muro: es la pista (más las luciérnagas). Roto el muro, se sube saltando desde abajo (el piloto lo hace solo si la plataforma está sobre su cabeza).
+- **Atajo escondido**: un fardo en la pared del estante del ascenso 2 tapa una chimenea con un hongo que sube a la cima (como el atajo del palmar).
+- **Nidos que sueltan**: un fardo de 2 filas con una guavirá encima, en una orilla o en la ruta alta; al romperlo, la guavirá cae (`dropTo`).
+- **Par de balsas de 2 tiles**: con 11 tiles de agua, balsas de 2 que recorren 2 dejan 3 de hueco al cruzarse y 7 en las puntas (no se salta sin ellas).
+- **Después de un poste de 3, ≥ 5 tiles de orilla**: el salto que lo pasa avanza ≈ 5 tiles; con 3, caía en la balsa o en el agua.
+
+**Medidas de l2 (S23):** 369 × 40 (no creció). Ruta principal ≈ 80 s u ≈ 91 s con el piloto (S22: ≈ 80 s): el par de balsas de C1 suma ≈ 3 s y, según la fase con la que se llega al ascenso 2, la plataforma vertical y las balsas que siguen hacen esperar ≈ 11 s más (error 6). La copa (camino oculto) tarda ≈ 18 s desde la cima del albardón hasta el fuego 2, contra ≈ 5 s de la ruta baja.
+
+### 9.5 Errores de S23 y su corrección
+
+1. **La pluma de la copa se tocaba desde la ruta alta**, saltando al vacío al final de la ruta: la cabeza llega ≈ 6,8 filas sobre el piso y la repisa era de un solo sentido. Corrección: repisa de roca (§0, cabeza).
+2. **El salto sobre el poste de C1 caía en el agua**: con el par de balsas pegado al poste quedaban 3 tiles de orilla y el salto sobre un poste de 3 avanza ≈ 5. Corrección: el agua empieza 5 tiles después del poste. Acercar el poste al fuego tampoco sirve: su ñakurutu se lanzaría cada vez que Kerana reaparece en el fuego.
+3. **La caída desde la cima del ascenso 2 llegaba al borde de la orilla** (x 262,5 de 262): la orilla pasó a x 253-263 (§0, caída).
+4. **El ñakurutu no se lanzaba desde su poste** (§9.2).
+5. **El piloto de l1 fallaba en el smoke** (caía al pozo 2 una o muchas veces; en corridas sueltas no): con el juego más lento que en S22, el salto al bloque de la piedra caía sobre la balsa o golpeaba la piedra en el aire (la balsa `mode=run` salía antes de tiempo), y el salto de bajada apuntaba a 0,5 tiles del borde de la orilla: al frenar en el aire volvía al hueco. Correcciones en el piloto, no en el mapa: la piedra solo se golpea parada en el piso y, en un paso `mover` con `power`, antes que nada (aunque ya esté sobre la plataforma: se acerca, la mira y la golpea); si la plataforma se alejó de su punta mientras llegaba, se frena 14 px antes del borde y la espera otra vez; si ya se va de la punta de llegada, sigue viaje; después de cualquier caída el paso empieza de nuevo. Y en el plan de l1, un `jumpTo` al bloque de la piedra y `landX` 1,5 tiles adentro de la orilla. Con tres pilotos a la vez (juego muy lento) todavía puede fallar: el smoke corre de a uno.
+6. **El tiempo de l2 sale en dos valores** (≈ 80 s u ≈ 91 s): el par de balsas de C1 (ciclo de 3,6 s) deja al piloto al pie del ascenso 2 en una de dos fases de la plataforma vertical (ciclo de 7,4 s), y esa espera arrastra las de las balsas que siguen. Al medir, correr varias veces y dar los dos.
+

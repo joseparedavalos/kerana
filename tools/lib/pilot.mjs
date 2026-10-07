@@ -19,7 +19,8 @@
 //                                                     sube hacia dir (saltando si hay un hueco), viaja quieta hasta la
 //                                                     otra punta y baja hacia exitDir (por defecto, dir) saltando
 //                                                     (hasta pisar más allá de landX), caminando, o no baja ('none':
-//                                                     el paso siguiente salta a otra plataforma).
+//                                                     el paso siguiente salta a otra plataforma). Si la plataforma
+//                                                     queda encima de la cabeza (un ascensor), sube saltando desde abajo.
 //   { charge: 1 | -1 }                                tajo cargado mirando hacia ese lado (mantiene X hasta cargar).
 //   { jumpTo: [x, fila], hold? }                      salta a una repisa o una penca: se acerca, salta (manteniendo
 //                                                     Espacio `hold` ms, 340 por defecto) y en el aire va hacia x;
@@ -60,6 +61,9 @@ export function installPilot(plan) {
   scene.respawn = function (reason) {
     st.respawns++;
     st.log.push(`caída (${reason}) en x ${Math.round(player.body.center.x / T)}`);
+    // Tras una caída el paso empieza de nuevo (si no, una plataforma perdida se persigue para siempre).
+    st.phase = 'start';
+    st.aim = null;
     return origRespawn.call(this, reason);
   };
 
@@ -122,8 +126,9 @@ export function installPilot(plan) {
     const b = body();
     const cx = b.center.x;
     const feet = b.bottom;
-    // Piedra por golpear delante: se frena y ataca.
-    const sw = hitSwitches.find((s) => !s.motor.powered && dir * (s.zone.centerX - cx) > -4 && dir * (s.zone.centerX - cx) < 26);
+    // Piedra por golpear delante: se frena y ataca. Solo en el piso (S23): en el aire la golpeaba al pasar y la balsa de
+    // l1 salía antes de que Kerana llegara.
+    const sw = grounded() && hitSwitches.find((s) => !s.motor.powered && dir * (s.zone.centerX - cx) > -4 && dir * (s.zone.centerX - cx) < 26);
     if (sw) {
       move(0);
       tapAttack();
@@ -204,17 +209,31 @@ export function installPilot(plan) {
     const at = s.at ?? 'origin';
     switch (st.phase) {
       case 'start':
-      case 'wait':
+      case 'wait': {
         st.phase = 'wait';
+        // Primero la piedra (S23: aunque ya esté parada en la plataforma, como cuando el salto anterior la deja encima):
+        // se acerca, la mira y la golpea.
+        if (s.power && !mm.powered) {
+          const sw = hitSwitches.filter((h) => !h.motor.powered).sort((p, q) => Math.abs(p.zone.centerX - b.center.x) - Math.abs(q.zone.centerX - b.center.x))[0];
+          const dx = sw ? sw.zone.centerX - b.center.x : 0;
+          if (sw && Math.abs(dx) > 20) {
+            move(Math.sign(dx));
+            return false;
+          }
+          move(0);
+          if (sw && grounded()) player.motor.facing = dx < 0 ? -1 : 1;
+          tapAttack();
+          return false;
+        }
         if (onThis(m, b)) {
           st.phase = 'ride';
           return false;
         }
         move(0);
-        if (s.power && !mm.powered) tapAttack();
         // Sale a 40-60 px/s: recién salida de la punta se la alcanza caminando.
-        else if (atEnd(m, at)) st.phase = 'board';
+        if (atEnd(m, at)) st.phase = 'board';
         return false;
+      }
       case 'board': {
         const mid = m.block.x + m.block.width / 2;
         if (onThis(m, b)) {
@@ -226,9 +245,25 @@ export function installPilot(plan) {
           seek(mid);
           return false;
         }
+        // Plataforma encima de la cabeza (S23: el ascensor del tronco baja hasta sobre Kerana): se sube saltando desde abajo.
+        if (m.block.y + T / 2 < b.top) {
+          seek(mid);
+          if (Math.abs(mid - b.center.x) < m.block.width / 2 - 6) startJump();
+          return false;
+        }
         const d = Math.abs(mid - b.center.x) < 4 ? s.dir : Math.sign(mid - b.center.x);
-        move(d);
         const front = b.center.x + d * (b.halfWidth + 4);
+        // S23: si se alejó de su punta mientras Kerana llegaba (el tajo a la piedra la frena), se frena antes del borde
+        // (a 14 px: no resbala) y la espera otra vez. Antes saltaba igual hacia la plataforma lejana y caía al pozo una
+        // y otra vez (smoke de l1).
+        const away = at === 'end' ? mm.length - mm.pos : mm.pos;
+        const near = d > 0 ? m.block.x : m.block.x + m.block.width;
+        if (!solid(front + d * 14, b.bottom + 4) && (away > 1.5 * T || d * (near - front) > 4 * T)) {
+          move(0);
+          st.phase = 'wait';
+          return false;
+        }
+        move(d);
         if (!solid(front + d * 2, b.bottom + 4)) startJump();
         return false;
       }
@@ -242,6 +277,14 @@ export function installPilot(plan) {
       }
       default: {
         const dir = s.exitDir ?? s.dir;
+        // S23: si la plataforma ya se va de la punta de llegada antes de que Kerana baje, sigue viaje y lo intenta en la
+        // próxima llegada (con el juego lento, saltar desde una balsa que vuelve dejaba corto el salto).
+        const arrivedNow = at === 'end' ? mm.pos <= 1 : mm.pos >= mm.length - 1;
+        if (onThis(m, b) && !arrivedNow && st.jumpMs <= 0) {
+          move(0);
+          st.phase = 'ride';
+          return false;
+        }
         move(dir);
         if (s.exit === 'jump') {
           const edge = dir > 0 ? m.block.x + m.block.width : m.block.x;

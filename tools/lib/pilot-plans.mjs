@@ -22,8 +22,12 @@ const L1_COMMON = {
     ['antesala x 250', 250],
   ],
   steps: [
-    { run: 1, untilX: 116.2 },
-    { mover: [118, 9], dir: 1, power: true, exit: 'jump', landX: 130.5 },
+    // S23: el hueco antes del bloque de la piedra (x 112-113) con un salto que apunta al bloque: corriendo, con el juego
+    // lento, caía sobre la balsa o pasaba de largo la piedra.
+    { run: 1, untilX: 110 },
+    { jumpTo: [115.5, 9] },
+    // Cae 1,5 tiles adentro de la orilla (con 0,5, al frenar en el aire se volvía al hueco).
+    { mover: [118, 9], dir: 1, power: true, exit: 'jump', landX: 131.5 },
     { run: 1, untilTop: 16 },
     { run: -1, untilX: 205.4 },
     { mover: [200, 22], dir: -1, exit: 'walk', exitDir: 1 },
@@ -34,9 +38,10 @@ const L1_COMMON = {
 export const L1_LOW = L1_COMMON;
 export const L1_HIGH = { ...L1_COMMON, noGapJump: [...L1_COMMON.noGapJump, [143, 147]] };
 
-// l2 · Ñeembucú (S22). Ruta principal: roca agrietada, cadenas de camalotes, piedra encerrada y balsa, par de balsas,
-// hongo -> balsa alta, atajo del fardo con el hongo de la chimenea, pozo a la ruta baja, ascenso 2 (hongo dormido,
-// plataforma vertical, hongo de un uso -> balsa alta) y la cadena más larga. Ruta alta: pencas, muro y copas.
+// l2 · Ñeembucú (S22, segunda pasada en S23). Ruta principal: roca agrietada, cadenas de camalotes (jakare en la 2),
+// piedra encerrada y balsa, par de balsas (mbói en la llegada), hongo -> balsa alta, atajo del fardo con el hongo de la
+// chimenea, pozo a la ruta baja, poste del ñakurutu y par de balsas, ascenso 2 (hongo dormido, plataforma vertical,
+// hongo de un uso -> balsa alta) y la cadena más larga. Ruta alta: pencas, muro y ruta alta. Copa: el camino del ñakurutu guasu.
 export const L2_MAIN = {
   aim: true,
   // Bajar de la cima del albardón por el pozo y de la cima del ascenso 2 sin saltar.
@@ -66,7 +71,10 @@ export const L2_MAIN = {
     { run: 1, untilX: 146.6 },
     { bounce: [148, 25], landX: 149, landTop: 18 },
     { run: 1, untilTop: 25 },
-    { run: 1, untilX: 205 },
+    { run: 1, untilX: 207 },
+    // S23: par de balsas después del poste del ñakurutu (antes, camalotes).
+    { mover: [210, 33], dir: 1, exit: 'none' },
+    { mover: [219, 33], at: 'end', dir: 1, exit: 'walk' },
     { run: 1, untilX: 222 },
     { charge: 1 },
     { bounce: [224, 32], landX: 229, landTop: 26 },
@@ -86,7 +94,7 @@ export const L2_MAIN = {
 };
 
 // Ruta alta de l2, desde la repisa del ascenso 1 (x 143, fila 26): pencas en zigzag, muro de roca agrietada,
-// balsa sobre el hueco, pluma B y bajada al fuego 2.
+// balsa sobre el hueco, nido de fardo, hueco con el ñakurutu del poste y bajada al fuego 2.
 export const L2_HIGH = {
   aim: true,
   steps: [
@@ -97,6 +105,23 @@ export const L2_HIGH = {
     { charge: 1 },
     { run: 1, untilX: 164.5 },
     { mover: [166, 18], dir: 1, exit: 'walk' },
+    { run: 1, untilX: 199 },
+  ],
+};
+
+// Copa del palmar de l2 (S23), el camino oculto del ñakurutu guasu, desde la cima del albardón (x 155,5, fila 18):
+// muro de roca agrietada, ascensor del tronco hueco (se sube saltando desde abajo), par de balsas de la copa, rama del
+// guardián (pasa por debajo mientras se lanza y vuelve), rama baja con la pluma B y caída al fuego 2.
+export const L2_COPA = {
+  aim: true,
+  // Bajar de la rama del guardián a la rama baja, y de ahí al suelo, sin saltar.
+  noGapJump: [[189, 198]],
+  steps: [
+    { charge: 1 },
+    { run: 1, untilX: 158.5 },
+    { mover: [157, 14], dir: 1, exit: 'walk' },
+    { mover: [165, 9], dir: 1, exit: 'none' },
+    { mover: [176, 9], at: 'end', dir: 1, exit: 'walk' },
     { run: 1, untilX: 199 },
   ],
 };

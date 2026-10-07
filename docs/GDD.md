@@ -283,6 +283,7 @@ Transiciones principales:
 - **Corazones:** 4 al empezar. Los dones de Mbói Tu'i, Kurupi y Ao Ao suman 1 cada uno, hasta 7, el número del mito.
 - **Daño:** tocar un enemigo o un ataque de jefe quita 1 corazón, con invulnerabilidad y retroceso.
 - **Caídas:** caer a un pozo o a agua profunda quita 1 corazón y Kerana reaparece en el último suelo firme.
+- **Encierros (S23):** si queda en un sitio del que no puede salir con lo que tiene (un hueco entre paredes, sin salto doble), al rato (`GAMEPLAY.trap.waitMs`) vuelve al último suelo firme y le cuesta 1 corazón, como un pozo. Los pisos sin salida se calculan al cargar el nivel (`src/systems/trapLogic.ts`); el jugador no tiene que hacer nada.
 - **0 corazones:** "Kerana cae" (fundido a negro breve) y reaparece en el último checkpoint con todos los corazones. En una pelea de jefe, la pelea se reinicia desde la antesala.
 - No hay vidas ni "game over".
 
@@ -411,6 +412,7 @@ La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) m�
 | `mbopi` | Mbopi (murciélago) | Flyer | 1, 7 | 1 | Sale de grietas |
 | `jakare` | Jakare (yacaré) | Lurker | 2 | 3 | Burbujas antes de emerger |
 | `nakurutu` | Ñakurutu (búho) | Diver | 2, 7 | 1 | Espera en postes |
+| `nakurutu_guasu` | Ñakurutu guasu (búho gigante) | Diver | 2 | 5 | Guardián de un camino oculto (S23): el mismo búho en grande, aviso largo, quita 2 corazones, aturdido tras la picada. Valores en `GAMEPLAY.guardian` |
 | `mboi` | Mbói (serpiente) | Walker / Lurker colgante | 2, 5 | 2 | En N5 cuelga de las ramas |
 | `nandu` | Ñandu | Charger | 3 | 2 | Se puede saltar por encima |
 | `karakara` | Karakara | Diver | 3, 6 | 1 | |
@@ -423,7 +425,7 @@ La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) m�
 | `pora` | Póra (fantasma) | Flyer | 7 | 2 | Solo es vulnerable cuando está iluminado |
 | `jagua_hu` | Jagua hũ (perro negro) | Charger | 7 | 2 | Ojos brillantes como aviso en la oscuridad |
 
-Todo enemigo común quita 1 corazón al contacto.
+Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián y no enemigo común, quita 2).
 
 ---
 
@@ -508,28 +510,29 @@ Tres fuegos (x 101, x 184 y la antesala): el nivel es un tercio más ancho que l
 |---|---|
 | Lugar | Esteros y humedales de Ñeembucú |
 | Hora | Atardecer naranja que se vuelve noche |
-| Tamaño | 369 × 40 tiles (S22) |
-| Idea nueva | El agua: camalotes que se hunden, agua baja que frena y agua profunda que te devuelve a la orilla. Se exige lo de l1 desde el principio: balsas (de una a otra), hongos como acceso y el tajo cargado en el camino |
-| Enemigos | `jakare`, `nakurutu`, `mboi` |
+| Tamaño | 369 × 40 tiles (S22; segunda pasada en S23) |
+| Idea nueva | El agua: camalotes que se hunden, agua baja que frena y agua profunda que te devuelve a la orilla. Se exige lo de l1 desde el principio: balsas (de una a otra), hongos como acceso y el tajo cargado en el camino. Desde S23, los enemigos están en los saltos |
+| Enemigos | `jakare`, `nakurutu`, `mboi` y el guardián `nakurutu_guasu` (camino oculto) |
 | Peligros | Agua profunda; karaguatá |
 | Música | Percusión de agua, ranas y flauta grave |
 | Jefe | Mbói Tu'i |
 | Don | Corazón del estero (+1 corazón; 5 en total) |
 
-**Recorrido** (rediseño de S22 con la receta de `docs/RECETA-NIVEL.md`; el detalle con x está en la cabecera de `tools/levels/l2.txt`)
+**Recorrido** (rediseño de S22 con la receta de `docs/RECETA-NIVEL.md`, segunda pasada en S23 con lo que encontró Jose jugándolo; el detalle con x está en la cabecera de `tools/levels/l2.txt`)
 
-El suelo base está en la fila 33 y el mapa crece hacia arriba: dos ascensos reales sin salto doble (hongos, balsas altas, pencas y una plataforma vertical) y bajadas por caída libre. Kerana llega con el tajo cargado: l2 no lo enseña sin riesgo, lo pide una vez por sección.
+El suelo base está en la fila 33 y el mapa crece hacia arriba: dos ascensos reales sin salto doble (hongos, balsas altas, pencas y una plataforma vertical), la copa del palmar (camino oculto) y bajadas por caída libre. Kerana llega con el tajo cargado: l2 no lo enseña sin riesgo, lo pide una vez por sección. Los enemigos están en los saltos (S23): un jakare que asoma bajo el camalote o en el hueco, una mbói que patrulla donde se aterriza, un ñakurutu que se lanza a través del hueco; siempre a la vista desde el borde y con un ritmo que se lee antes de saltar.
 
-- **A. La orilla (x 0–70).** Al lado del inicio, un **fardo de totora** (se rompe con el tajo normal) esconde una guavirá; enseguida, un peñasco cuya base es **roca agrietada** de 3 × 4 cierra el paso: cartel del tajo cargado y primer uso obligatorio. Los dos rompibles se ven distintos del terreno y entre sí (paja clara contra piedra con grietas que brillan). Camalotes sobre agua baja (seguro), una mbói y dos cadenas de camalotes sobre agua honda. *Pluma A (saltar):* en el arco del salto largo (5 tiles de aire) desde el último camalote de la segunda cadena.
-- **B. Los juncales (x 71–197).** **Fuego** (x 74). Una **piedra encerrada** en una roca pegada a una balsa: solo la enciende la luz del tajo cargado y la balsa cruza el agua honda sobre un jakare. Un **par de balsas**: se salta de una a la otra cuando las dos llegan a sus puntas. **Ascenso 1, el palmar** (fila 33 → 18): un hongo lanza a una balsa alta que lleva a una repisa; de ahí, pencas en zigzag (izquierda y derecha, con una guavirá) o el **atajo** tras un fardo (luciérnagas), con un hongo en una chimenea. En la cima del albardón el camino se divide:
-  - *Ruta baja (fácil):* un pozo baja por dentro del albardón hasta el agua: un **nido de totora** que al romperlo deja caer una guavirá, un junco con jakare, una mbói y un camalote.
-  - *Ruta alta (rentable):* un **muro de roca agrietada** (tajo cargado) abre las copas: una balsa sobre el hueco, una guavirá, la *pluma B (tajo cargado)* y un ñakurutu. Caerse deja en la baja.
+- **A. La orilla (x 0–70).** Al lado del inicio, un **fardo de totora** (se rompe con el tajo normal) esconde una guavirá; enseguida, un peñasco cuya base es **roca agrietada** de 3 × 4 cierra el paso: cartel del tajo cargado y primer uso obligatorio. Los dos rompibles se ven distintos del terreno y entre sí (paja clara contra piedra con grietas que brillan). Camalotes sobre agua baja (seguro), una mbói en la orilla de llegada y dos cadenas de camalotes sobre agua honda; entre ellas, un nido de fardo con una guavirá encima. En la segunda cadena, un **jakare bajo el primer camalote**: desde la orilla se ve su ciclo (burbujas, asoma, se hunde) y se cruza cuando baja. *Pluma A (saltar):* en el arco del salto largo (5 tiles de aire) desde el último camalote de la segunda cadena.
+- **B. Los juncales (x 71–197).** **Fuego** (x 74). Una **piedra encerrada** en una roca pegada a una balsa: solo la enciende la luz del tajo cargado y la balsa cruza el agua honda. Un **par de balsas**: se salta de una a la otra cuando las dos llegan a sus puntas; donde atraca la segunda patrulla una mbói. **Ascenso 1, el palmar** (fila 33 → 18): un hongo lanza a una balsa alta que lleva a una repisa; de ahí, pencas en zigzag (izquierda y derecha, con una guavirá) o el **atajo** tras un fardo (luciérnagas), con un hongo en una chimenea. En la cima del albardón el camino se divide:
+  - *Ruta baja (fácil):* un pozo baja por dentro del albardón hasta el agua: un **nido de totora** que al romperlo deja caer una guavirá, un junco desde el que se ve un jakare en el hueco y una mbói en la orilla de llegada, y un camalote.
+  - *Ruta alta (rentable):* un **muro de roca agrietada** (tajo cargado) la abre: una balsa sobre el hueco, un nido de fardo con una guavirá y un hueco que cruza un **ñakurutu** desde su poste. Caerse deja en la baja.
+  - *La copa del palmar (camino oculto):* el pilar sobre el muro es un **tronco hueco**; roto el muro, un ascensor tapado por el follaje sube a la copa (luciérnagas en la base). Un par de balsas lleva a la rama del **ñakurutu guasu**, el guardián: un ñakurutu enorme que avisa largo (tiembla, se pone blanco y grazna), se lanza, queda aturdido y vuelve despacio. Quita 2 corazones pero no mata de un golpe; se lo vence a golpes (5) o se pasa por debajo mientras vuelve. Detrás, en una repisa fuera de su alcance, la *pluma B (vencer o esquivar al guardián)* y una guavirá. No es un jefe: no hay barra ni arena.
   - **Fuego** donde se juntan (x 198).
-- **C. Cae la noche (x 199–308).** Poste con ñakurutu y camalotes. **Ascenso 2, el timbó** (fila 33 → 12), en zigzag: un **hongo dormido** al pie de una pared de 7 (hay que despertarlo con el tajo cargado), una **plataforma vertical** hacia la izquierda y, arriba, un **hongo de un solo uso** que lanza a una balsa alta que llega a la cima. *Pluma C (salto doble + dash, volver después):* en una penca a 12 tiles de aire de la cima. Desde la cima se cae a la orilla, sobre la **Luz de Arasy**, justo antes de **la cadena más larga**: camalote, balsa, un ascensor que baja al agua y sube hasta un poste alto con ñakurutu, y otro par de balsas con un jakare entre ellas.
+- **C. Cae la noche (x 199–308).** Poste con ñakurutu y un **par de balsas** con un jakare en el hueco de cruce. **Ascenso 2, el timbó** (fila 33 → 12), en zigzag: un **hongo dormido** al pie de una pared de 7 (hay que despertarlo con el tajo cargado), una **plataforma vertical** hacia la izquierda con una mbói en la llegada y, arriba, un **hongo de un solo uso** que lanza a una balsa alta que llega a la cima, o el **atajo** tras un fardo en la pared, con un hongo en una chimenea. Al pie del timbó, el **hueco del premio**: se baja desde el pilar a buscar una Luz de Arasy y una guavirá (luciérnagas); no tiene salida a propósito, y de ahí saca a Kerana la red de seguridad (§3.6). *Pluma C (salto doble + dash, volver después):* en una penca a 12 tiles de aire de la cima. Desde la cima se cae a la orilla, sobre la **Luz de Arasy**, justo antes de **la cadena más larga**: camalote, balsa, un ascensor que baja al agua y sube hasta un poste alto con ñakurutu (se lanza sobre el ascensor), y otro par de balsas.
 - **Checkpoint 2 (antesala, x 309–328).** Las ranas croan… y de golpe se callan.
 - **Arena: la laguna central (x 329–368).** Tres islotes con camalotes entre ellos.
 
-Tres fuegos (x 74, x 198 y la antesala). Piezas: 11 plataformas móviles de un solo sentido (9 horizontales y 2 verticales; dos pares de balsa a balsa y una balsa que pasa a un ascensor), 4 hongos (dos normales, uno de un solo uso y uno dormido; dos lanzan a una balsa), 1 piedra encerrada, 2 rocas agrietadas y 3 fardos. Cruzarlo por el camino principal sin explorar ni pelear lleva **≈ 80 s** de juego (antes de S22, ≈ 35 s; medido con el piloto del smoke).
+Tres fuegos (x 74, x 198 y la antesala). Piezas: 16 plataformas móviles de un solo sentido (13 horizontales y 3 verticales; cuatro pares de balsa a balsa y una balsa que pasa a un ascensor), 5 hongos (tres normales, uno de un solo uso y uno dormido; dos lanzan a una balsa), 1 piedra encerrada, 2 rocas agrietadas y 6 fardos. Enemigos en nueve saltos, ocho en el camino principal (jakare, mbói y ñakurutu), y el guardián de la copa. Cruzarlo por el camino principal sin explorar ni pelear lleva **≈ 80 s u ≈ 91 s** de juego, según la fase con la que se llega al ascenso 2 (en S22, ≈ 80 s; el par de balsas nuevo suma ≈ 3 s); la copa suma ≈ 13 s a la ruta baja (medido con el piloto del smoke).
 
 **Jefe: Mbói Tu'i**. 12 golpes (3 fases de 4).
 

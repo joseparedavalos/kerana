@@ -15,7 +15,7 @@ const SHEETS = ['walk', 'run', 'idle', 'hang'] as const;
 /** Encuadre del sprite según el enemigo (S13c): anclado arriba, recortado en el agua o en la rama, aleteo. */
 function skinOptions(enemy: EnemyBase, sheet: (typeof SHEETS)[number]): SkinOptions {
   const def = enemy.def;
-  const opts: SkinOptions = { anim: `${def.id}_${sheet}`, sourceFacesRight: true, stillFrame: sheet === 'walk' || sheet === 'run' };
+  const opts: SkinOptions = { anim: `${def.look ?? def.id}_${sheet}`, sourceFacesRight: true, stillFrame: sheet === 'walk' || sheet === 'run' };
   // Colgante (mbói en N5): el lazo de la cola en la rama y la cabeza abajo; lo de arriba de la rama no se ve.
   if (def.hangs) return { ...opts, origin: [0.5, 0], offset: [0, -def.height], clipAboveY: () => enemy.spawnY - TILE };
   // Jakare: lo que queda bajo la superficie del agua no se ve.
@@ -101,9 +101,12 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.body.setSize(def.width, def.height);
-    if (def.id in ENEMY_SPRITES) {
-      const sheet = SHEETS.find((a) => scene.anims.exists(`${def.id}_${a}`));
-      if (sheet) this.skin = skinIfAvailable(scene, this, def.id, skinOptions(this, sheet));
+    // Escala del dibujo y del cuerpo (el ñakurutu guasu); al purificarse se achica al tamaño común.
+    if (def.scale) this.setScale(def.scale);
+    const look = def.look ?? def.id;
+    if (look in ENEMY_SPRITES) {
+      const sheet = SHEETS.find((a) => scene.anims.exists(`${look}_${a}`));
+      if (sheet) this.skin = skinIfAvailable(scene, this, look, skinOptions(this, sheet));
     }
   }
 
