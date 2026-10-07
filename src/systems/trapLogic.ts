@@ -1,17 +1,22 @@
-// Red de seguridad contra encierros (S23): lógica pura, sin Phaser.
+// Red de seguridad contra encierros (S23, corregida en S24): lógica pura, sin Phaser.
 //
 // Un "encierro" es un sitio del mapa al que se puede llegar y del que Kerana no puede salir con lo que tiene
-// (en l2, el hueco entre el pilar y la pared del ascenso 2: se entra cayendo y se sale solo con salto doble).
-// Se calcula UNA vez al cargar el nivel, mirando solo la geometría, con un modelo de movimiento que siempre
-// exagera lo que Kerana puede hacer:
-//   - salta `jumpRows` filas (el salto real da 4,17 tiles: 4 filas enteras), `bounceRows` desde un hongo;
+// (en el l2 de S23, el hueco entre el pilar de 7 y la pared del ascenso 2: se entraba cayendo y no se salía).
+// Se calcula UNA vez al cargar el nivel, mirando solo la geometría, con un modelo de movimiento que exagera lo que
+// Kerana puede hacer, pero nunca más allá de lo que permite la física del juego:
+//   - salta `jumpRows` filas y `bounceRows` desde un hongo, calculadas con la física real (`trapReach`): el salto
+//     perfecto sube 63,3 px (3 filas; 6 con salto doble) y el hongo 135,7 px (8; 11 con salto doble);
 //   - en el aire se mueve sin límite hacia los costados y hacia abajo (mucho más de lo que puede de verdad);
 //   - las plataformas móviles son piso en TODO su recorrido, los rompibles y las rejas no existen,
 //     y el viento, la arena del jefe, la salida y las vacas cuentan como salida.
 // Un piso queda "encerrado" solo si ni con ese modelo exagerado se llega desde él a una salida: el agua honda,
 // las espinas o el fondo del mapa (que ya devuelven a Kerana a tierra firme), la arena o la meta.
-// Como el modelo nunca se queda corto, un piso por el que se avanza o se pelea normalmente no puede quedar
-// marcado: desde ahí se llega a la arena. Solo los bolsillos sin salida real se marcan.
+// Un piso por el que se avanza o se pelea normalmente no puede quedar marcado: desde ahí se llega a la arena.
+//
+// Lo que corrigió S24: S23 sacaba el alcance de la fórmula continua v²/2g (4,17 tiles, 7,18 con salto doble) y lo
+// redondeaba a 4 y 7 filas. El juego integra a paso fijo y sube menos: una pared de 4 (o de 7 con salto doble) no se
+// trepa nunca, pero el modelo la daba por salida. Con `gifts=all` el hueco de l2 no quedaba marcado y la red no
+// actuaba, por más que Kerana saltara (lo que le pasó a Jose). Exagerar más allá de la física deja encierros sin red.
 
 /** Qué hay en cada tile para el análisis. */
 export const TrapCell = {
@@ -35,9 +40,9 @@ export interface TrapGrid {
 }
 
 export interface TrapReach {
-  /** Filas que suben los pies con el salto (con salto doble, la suma de los dos). */
+  /** Filas de pared que se trepan con el salto (con salto doble, el segundo en el ápice). Ver `trapReach`. */
   jumpRows: number;
-  /** Filas que suben los pies con el rebote de un hongo. */
+  /** Filas de pared que se trepan con el rebote de un hongo (medidas desde el piso del hongo). */
   bounceRows: number;
   /** Filas que ocupa el cuerpo (42 px = 3 filas). */
   bodyRows: number;
@@ -60,12 +65,92 @@ export interface TrapResult {
   spanAt: Int32Array;
 }
 
-/** Filas enteras que alcanza una velocidad inicial `v` (px/s) con gravedad `g`, en tiles de `tile` px. */
-export function riseRows(velocities: readonly number[], gravity: number, tile: number, round: 'floor' | 'ceil'): number {
-  const px = velocities.reduce((sum, v) => sum + (v * v) / (2 * gravity), 0);
-  const rows = px / tile;
-  // Un margen mínimo para que 4,0000001 no cuente como 5 ni 3,9999999 como 3.
-  return round === 'floor' ? Math.floor(rows + 1e-6) : Math.ceil(rows - 1e-6);
+/**
+ * Altura (px) que suben los pies con la física del juego: Arcade avanza a paso fijo (`stepHz`, 60 por defecto) e
+ * integra primero la velocidad y después la posición (Euler semi-implícito), así que sube menos que v²/2g. Cada
+ * velocidad (px/s, hacia arriba negativa) se aplica en el ápice de la anterior: salto + salto doble.
+ */
+export function risePx(velocities: readonly number[], gravity: number, stepHz: number): number {
+  const dt = 1 / stepHz;
+  let px = 0;
+  for (const v0 of velocities) {
+    for (let v = Math.abs(v0) - gravity * dt; v > 0; v -= gravity * dt) px += v * dt;
+  }
+  return px;
+}
+
+/** Filas enteras de pared que se trepan subiendo `px` (una pared de N filas pide N × tile px). */
+export function riseRows(px: number, tile: number): number {
+  // Un margen mínimo para que 47,9999999 cuente como 3 filas de 16.
+  return Math.floor(px / tile + 1e-6);
+}
+
+export interface ReachPhysics {
+  gravity: number;
+  /** Pasos de la física por segundo (Arcade `World.fps`). */
+  stepHz: number;
+  tile: number;
+  jumpVelocity: number;
+  /** Solo si Kerana tiene el salto doble. */
+  doubleJumpVelocity?: number;
+  bounceVelocity: number;
+  /** Altura del sombrero del hongo sobre el piso (px): el rebote sale de ahí. */
+  mushroomHeight: number;
+  bodyHeight: number;
+}
+
+/**
+ * Alcance del modelo (S24) con la física del juego, medido en S24 a 60 Hz cuadro a cuadro: salto 63,3 px (3 filas),
+ * salto doble en el ápice 108,7 px (6), hongo 135,7 px (8) y hongo + salto doble 181 px (11).
+ * El hongo empuja dos veces: `LevelScene.updateJungle` vuelve a ver a Kerana sobre el sombrero en el mismo cuadro
+ * en que el motor ya la lanzó (el cuerpo se mueve recién en el paso siguiente), así que el segundo impulso sale un
+ * paso de la física más arriba. Con el juego lento (más pasos por cuadro) sube más: el modelo usa los 60 Hz.
+ */
+export function trapReach(p: ReachPhysics): TrapReach {
+  const extra = p.doubleJumpVelocity === undefined ? [] : [p.doubleJumpVelocity];
+  const firstPush = (Math.abs(p.bounceVelocity) - p.gravity / p.stepHz) / p.stepHz;
+  return {
+    jumpRows: riseRows(risePx([p.jumpVelocity, ...extra], p.gravity, p.stepHz), p.tile),
+    bounceRows: riseRows(p.mushroomHeight + firstPush + risePx([p.bounceVelocity, ...extra], p.gravity, p.stepHz), p.tile),
+    bodyRows: Math.ceil(p.bodyHeight / p.tile),
+  };
+}
+
+/**
+ * Reloj de la red (S23; en lógica pura y con tests desde S24). Corre desde que Kerana pisa un piso encerrado y sigue
+ * mientras salta, camina o ataca adentro: solo se corta cuando pisa un piso que no lo es (salió). Moverse no lo
+ * reinicia. `step` devuelve true el cuadro en que se cumple la espera: hay que sacarla.
+ */
+export class TrapWatch {
+  private ms = 0;
+  private inside = false;
+
+  /** ¿Pisó un encierro y todavía no pisó un piso libre? */
+  get active(): boolean {
+    return this.inside;
+  }
+
+  get elapsedMs(): number {
+    return this.ms;
+  }
+
+  /** `standing`: pisa suelo este cuadro. `trappedFloor`: ese suelo es un piso encerrado (solo cuenta si pisa). */
+  step(dtMs: number, standing: boolean, trappedFloor: boolean, waitMs: number): boolean {
+    if (standing) this.inside = trappedFloor;
+    if (!this.inside) {
+      this.ms = 0;
+      return false;
+    }
+    this.ms += dtMs;
+    if (this.ms < waitMs) return false;
+    this.reset();
+    return true;
+  }
+
+  reset(): void {
+    this.ms = 0;
+    this.inside = false;
+  }
 }
 
 export function findTraps(grid: TrapGrid, reach: TrapReach): TrapResult {

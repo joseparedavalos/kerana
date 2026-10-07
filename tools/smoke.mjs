@@ -306,7 +306,8 @@ async function main() {
     await l2Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const l2x = await l2Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l2x > 309 * TILE && l2x < 329 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
+    // S24: la antesala se corrió 67 tiles con la zona de ritmo (x 376-395).
+    check(l2x > 376 * TILE && l2x < 396 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
     // Camina hasta que se cierre la arena (islote A): se detiene en cuanto se cierra (tope 15 s, para máquinas lentas).
     await walkIntoArena(l2Page);
     check(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), "nivel 2: la arena de Mbói Tu'i se cierra");
@@ -358,30 +359,33 @@ async function main() {
         drawn: s.breakables.every((b) => b.look.length > 0),
         checkpoints: s.checkpoints.length,
         feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
-        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (un solo encierro: el hueco del premio).
+        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (S24: ningún encierro, el hueco tiene salida).
         enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
         guardianScale: s.enemies.find((e) => e.def.id === 'nakurutu_guasu')?.scaleX,
+        bigJakareScale: s.enemies.find((e) => e.def.id === 'jakare_guasu')?.scaleX,
         traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
       };
     });
     check(
       l2Info.charge &&
-        l2Info.movers === 16 &&
+        l2Info.movers === 22 &&
         l2Info.vertical === 3 &&
         l2Info.switches === 1 &&
         l2Info.bouncers === 'ready,ready,ready,ready,asleep' &&
         l2Info.rocks === 2 &&
-        l2Info.brittle === 6 &&
+        l2Info.brittle === 7 &&
         l2Info.drawn &&
-        l2Info.checkpoints === 3 &&
+        l2Info.checkpoints === 4 &&
         l2Info.feathers === 3 &&
         l2Info.enemies.jakare === 3 &&
+        l2Info.enemies.jakare_guasu === 4 &&
+        l2Info.bigJakareScale > 1 &&
         l2Info.enemies.nakurutu === 3 &&
         l2Info.enemies.mboi === 4 &&
         l2Info.enemies.nakurutu_guasu === 1 &&
         l2Info.guardianScale > 2 &&
-        l2Info.traps === 5,
-      `nivel 2: 16 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 6 fardos dibujados, 3 fuegos, 3 plumas, enemigos con el ñakurutu guasu y un encierro de 5 tiles (${JSON.stringify(l2Info)})`,
+        l2Info.traps === 0,
+      `nivel 2: 22 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 7 fardos dibujados, 4 fuegos, 3 plumas, enemigos con el ñakurutu guasu y 4 jakare guasu, ningún encierro (${JSON.stringify(l2Info)})`,
     );
     // El tajo normal no rompe la roca agrietada del peñasco (x 14-16); el piloto la rompe después con el cargado.
     await l2Run.evaluate(() => {
@@ -399,9 +403,28 @@ async function main() {
     await sleep(600);
     const rockA = () => l2Run.evaluate(() => window.__KERANA_DEBUG__.scene.breakables.find((b) => b.kind === 'rock' && b.zone.x === 14 * 16).broken);
     check((await rockA()) === false, 'nivel 2: el tajo normal no rompe la roca agrietada');
+    // S24, zona de ritmo: mientras corre el piloto, cada jakare guasu tiene que asomar solo con las dos balsas de su
+    // encuentro juntas (2 tiles de hueco) y nunca con ellas separadas.
+    await l2Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const crocs = s.enemies.filter((e) => e.def.id === 'jakare_guasu');
+      const rafts = s.movers.filter((m) => m.zone.y === 33 * 16);
+      window.__RHYTHM__ = { exposed: 0, apart: 0 };
+      s.events.on('postupdate', () => {
+        for (const c of crocs) {
+          if (c.lurkState !== 'exposed') continue;
+          const from = rafts.filter((m) => m.block.x + m.block.width <= c.spawnX).sort((a, b) => b.block.x - a.block.x)[0];
+          const to = rafts.filter((m) => m.block.x >= c.spawnX).sort((a, b) => a.block.x - b.block.x)[0];
+          window.__RHYTHM__.exposed++;
+          if (!from || !to || Math.abs(to.block.x - (from.block.x + from.block.width) - 32) > 1) window.__RHYTHM__.apart++;
+        }
+      });
+    });
     await l2Run.evaluate(installPilot, L2_MAIN);
-    for (let t = 0; t < 300000 && !(await pilot(l2Run)).done; t += 500) await sleep(500);
+    for (let t = 0; t < 420000 && !(await pilot(l2Run)).done; t += 500) await sleep(500);
     const run2 = await pilot(l2Run);
+    const rhythm = await l2Run.evaluate(() => window.__RHYTHM__);
+    check(rhythm.exposed > 0 && rhythm.apart === 0, `nivel 2: los jakare guasu asoman solo con las balsas de su encuentro juntas (${JSON.stringify(rhythm)})`);
     check(run2.done && run2.respawns === 0, `nivel 2: Kerana cruza el estero entero sin caer al agua (${JSON.stringify(run2)})`);
     if (!run2.done) {
       await l2Run.screenshot({ path: join(SHOTS, 'l2-piloto-atascado.png') });
@@ -471,18 +494,30 @@ async function main() {
     console.log(`  l2 (copa del palmar): ${(copa.timeMs / 1000).toFixed(1)} s de juego desde la cima del albardón hasta el fuego 2`);
     await l2Copa.close();
 
-    // 1c5) Red de seguridad (S23): en el hueco del premio (x 234-238, al pie del ascenso 2) no hay salida. Sin god:
-    // Kerana baja desde el pilar, recoge la Luz de Arasy y la guavirá y, pasado GAMEPLAY.trap.waitMs, vuelve al pilar
-    // (con la Luz no pierde corazón). La segunda vez, ya sin Luz, vuelve y le cuesta un corazón.
-    const l2Trap = await open('/?debug=1&level=2');
-    await l2Trap.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    // 1c5) El hueco del premio tiene salida (S24): Kerana baja del pilar al hueco (x 234-238), cobra la Luz de Arasy y la
+    // guavirá, ve el fardo de la base del pilar desde adentro (en cámara, captura l2-hueco.png), lo rompe con el tajo
+    // normal (el que se tiene siempre) y sale por el túnel al pie del ascenso. La red no actúa: ya no es un encierro.
+    const l2Hole = await open('/?debug=1&level=2');
+    await l2Hole.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    const trapState = () =>
-      l2Trap.evaluate(() => {
+    const holeState = () =>
+      l2Hole.evaluate(() => {
         const d = window.__KERANA_DEBUG__;
-        return { x: +(d.player.body.center.x / 16).toFixed(1), feet: +(d.player.body.bottom / 16).toFixed(1), hearts: d.player.health.current, immune: d.player.isImmune, traps: window.__TRAPS__ };
+        const s = d.scene;
+        const fardo = s.breakables.find((b) => b.kind === 'brittle' && b.zone.x === 233 * 16);
+        return {
+          x: +(d.player.body.center.x / 16).toFixed(1),
+          feet: +(d.player.body.bottom / 16).toFixed(1),
+          immune: d.player.isImmune,
+          hearts: d.player.health.current,
+          traps: window.__TRAPS__,
+          fardo: fardo ? (fardo.broken ? 'roto' : fardo.look.length > 0 ? 'dibujado' : 'sin dibujo') : 'no está',
+          // El fardo entra en la cámara con Kerana en el hueco.
+          inView: !!fardo && s.cameras.main.worldView.contains(fardo.zone.centerX, fardo.zone.centerY),
+          prize: s.pickups.filter((p) => p.active && Math.floor(p.x / 16) >= 234 && Math.floor(p.x / 16) <= 238 && p.y / 16 > 30).length,
+        };
       });
-    await l2Trap.evaluate(() => {
+    await l2Hole.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       window.__TRAPS__ = 0;
       const orig = d.scene.respawn;
@@ -493,42 +528,87 @@ async function main() {
       d.player.body.reset(231.5 * 16, 26 * 16);
     });
     await sleep(500);
-    const intoHole = async () => {
-      await l2Trap.keyboard.down('ArrowRight');
-      for (let t = 0; t < 4000 && (await trapState()).x < 235.5; t += 100) await sleep(100);
-      await l2Trap.keyboard.up('ArrowRight');
-    };
-    const waitRescue = async (n) => {
-      for (let t = 0; t < 15000 && (await trapState()).traps < n; t += 200) await sleep(200);
-      await sleep(400);
-      return trapState();
-    };
-    const trapStart = await trapState();
-    await intoHole();
-    // Que aterrice en el fondo (fila 33) y recoja la Luz de Arasy.
-    for (let t = 0; t < 4000; t += 100) {
-      const st = await trapState();
-      if (st.feet === 33 && st.immune) break;
-      await sleep(100);
-    }
-    const inHole = await trapState();
-    await l2Trap.screenshot({ path: join(SHOTS, 'l2-hueco.png') });
-    const rescue1 = await waitRescue(1);
-    // El último suelo firme es el borde del pilar (x 227-233), desde donde cayó.
-    const onPillar = (st) => st.x >= 227 && st.x < 234 && st.feet === 26;
+    const holeStart = await holeState();
+    // Al hueco caminando desde el pilar, y de pared a pared para cobrar el premio.
+    await l2Hole.keyboard.down('ArrowRight');
+    for (let t = 0; t < 6000 && (await holeState()).x < 237.5; t += 100) await sleep(100);
+    await l2Hole.keyboard.up('ArrowRight');
+    await l2Hole.keyboard.down('ArrowLeft');
+    for (let t = 0; t < 4000 && (await holeState()).x > 234.6; t += 100) await sleep(100);
+    await l2Hole.keyboard.up('ArrowLeft');
+    await sleep(300);
+    const inHole = await holeState();
+    await l2Hole.screenshot({ path: join(SHOTS, 'l2-hueco.png') });
+    // Tajo normal hacia el fardo (mirando a la izquierda, pegada a la pared).
+    await l2Hole.keyboard.press('KeyX');
+    for (let t = 0; t < 2000 && (await holeState()).fardo !== 'roto'; t += 100) await sleep(100);
+    const broken = await holeState();
+    // Sale por el túnel hasta el piso de C1, al pie del ascenso (x < 227).
+    await l2Hole.keyboard.down('ArrowLeft');
+    for (let t = 0; t < 6000 && (await holeState()).x > 226; t += 100) await sleep(100);
+    await l2Hole.keyboard.up('ArrowLeft');
+    const out = await holeState();
     check(
-      inHole.feet === 33 && inHole.immune && rescue1.traps === 1 && onPillar(rescue1) && rescue1.hearts === trapStart.hearts,
-      `red de seguridad: del hueco del premio (Luz de Arasy) vuelve al pilar sin perder corazón (${JSON.stringify({ trapStart, inHole, rescue1 })})`,
+      holeStart.fardo === 'dibujado' &&
+        inHole.feet === 33 &&
+        inHole.immune &&
+        inHole.prize === 0 &&
+        inHole.inView &&
+        broken.fardo === 'roto' &&
+        out.x <= 226 &&
+        out.feet === 33 &&
+        out.traps === 0,
+      `nivel 2: el hueco del premio se cobra (Luz y guavirá), el fardo se ve desde adentro, cae con el tajo normal y se sale por el túnel; la red no actúa (${JSON.stringify({ holeStart, inHole, broken, out })})`,
     );
-    // Que se apague la Luz (8 s) y bajar otra vez.
-    for (let t = 0; t < 12000 && (await trapState()).immune; t += 300) await sleep(300);
-    await intoHole();
-    const rescue2 = await waitRescue(2);
+    await l2Hole.close();
+
+    // 1c6) Ñakurutu con tiro libre (S24): el del poste de C1 (x 204), con Kerana quieta en el piso a 4 tiles y el camino
+    // libre, avisa, se lanza y llega hasta ella. Con Kerana al pie del poste (el camino cruza el poste) espera en su lugar.
+    const l2Dive = await open('/?debug=1&level=2&god=1');
+    await l2Dive.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const diveAt = (kx, ms) =>
+      l2Dive.evaluate(
+        (kx, ms) =>
+          new Promise((resolve) => {
+            const d = window.__KERANA_DEBUG__;
+            const s = d.scene;
+            const n = s.enemies.find((e) => e.def.id === 'nakurutu' && Math.floor(e.spawnX / 16) === 204);
+            n.body.reset(n.spawnX, n.spawnY);
+            n.diveState = 'perch';
+            n.msLeft = 0;
+            d.player.body.reset(kx * 16, 33 * 16);
+            const out = { warned: false, dove: false, minDist: 99 };
+            let left = ms;
+            const tick = (_t, delta) => {
+              if (n.diveState === 'telegraph') out.warned = true;
+              if (n.diveState === 'dive') {
+                out.dove = true;
+                out.minDist = Math.min(out.minDist, +(Math.hypot(n.x - d.player.x, n.y - d.player.y) / 16).toFixed(2));
+              }
+              left -= delta;
+              if (left > 0 && !(out.dove && n.diveState === 'return')) return;
+              s.events.off('postupdate', tick);
+              resolve(out);
+            };
+            s.events.on('postupdate', tick);
+          }),
+        kx,
+        ms,
+      );
+    const diveFree = await diveAt(200.5, 4000);
+    const diveBlocked = await diveAt(203.4, 2500);
     check(
-      rescue2.traps === 2 && onPillar(rescue2) && rescue2.hearts === trapStart.hearts - 1,
-      `red de seguridad: sin la Luz, vuelve al último suelo firme y le cuesta un corazón (${JSON.stringify(rescue2)})`,
+      diveFree.warned && diveFree.dove && diveFree.minDist < 1.5 && !diveBlocked.warned && !diveBlocked.dove,
+      `nivel 2: el ñakurutu del poste con tiro libre avisa y se lanza hasta Kerana; con el poste en el medio espera (${JSON.stringify({ diveFree, diveBlocked })})`,
     );
-    await l2Trap.close();
+    // Zona de ritmo (S24): captura desde la orilla con el primer jakare guasu afuera (l2-ritmo.png).
+    await l2Dive.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(316.5 * 16, 33 * 16));
+    const firstOut = () => l2Dive.evaluate(() => window.__KERANA_DEBUG__.scene.enemies.find((e) => e.def.id === 'jakare_guasu').lurkState === 'exposed');
+    for (let t = 0; t < 10000 && !(await firstOut()); t += 100) await sleep(100);
+    await sleep(200);
+    await l2Dive.screenshot({ path: join(SHOTS, 'l2-ritmo.png') });
+    await l2Dive.close();
 
     // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.
     const l3Page = await open('/?debug=1&level=3&boss=1&god=1');
@@ -736,9 +816,10 @@ async function main() {
       return { webgl: s.sys.renderer.type === 2, lanterns: s.lanterns.length, pora: pora.length, poraLit: pora.some((e) => e.lit) };
     });
     check(l7info.lanterns >= 10 && l7info.pora >= 3 && !l7info.poraLit, `nivel 7: faroles y póra a oscuras (${JSON.stringify(l7info)})`);
-    // Kerana camina hasta el primer farol y lo enciende.
+    // Kerana camina hasta el primer farol y lo enciende. Tope de 12 s de reloj (S24: con el headless a 12-17 fps, 4 s no
+    // siempre alcanzaban); el bucle corta apenas se enciende.
     await l7aPage.keyboard.down('ArrowRight');
-    for (let t = 0; t < 4000 && !(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit)); t += 100) await sleep(100);
+    for (let t = 0; t < 12000 && !(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit)); t += 100) await sleep(100);
     await l7aPage.keyboard.up('ArrowRight');
     check(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit), 'nivel 7: tocar un farol lo enciende');
     await l7aPage.screenshot({ path: join(SHOTS, 'l7-street.png') });
@@ -980,6 +1061,104 @@ async function main() {
     for (let t = 0; t < 3000 && (await bState(1)) !== 'ready'; t += 50) await sleep(50);
     check(asleep && (await bState(1)) === 'ready', 'vitrina: el hongo dormido despierta con el tajo cargado');
     await vPage.close();
+
+    // 1m2) Red de seguridad (S24) con lo que hace una persona encerrada: en el pozo F de la vitrina (pared de 7, con
+    // salto doble no se sale) Kerana no se queda quieta: corre de pared a pared, salta, usa el salto doble y ataca sin
+    // parar. La red la saca igual a los GAMEPLAY.trap.waitMs (4000) de juego, a la torre y con un corazón menos.
+    // (S23 lo probaba con Kerana quieta y sin salto doble; con salto doble el modelo daba por salida la pared de 7.)
+    const netPage = await open('/?debug=1&level=vitrina&gifts=all');
+    await netPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    // Primero en la torre (último suelo firme), después adentro del pozo.
+    await netPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(84.5 * 16, 14 * 16));
+    await sleep(600);
+    const net = await netPage.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const d = window.__KERANA_DEBUG__;
+          const s = d.scene;
+          const b = d.player.body;
+          const kb = s.input.keyboard;
+          const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), attack: kb.addKey(88) };
+          const set = (k, on) => {
+            if (k.isDown === on) return;
+            k.isDown = on;
+            k.isUp = !on;
+            k.emit(on ? 'down' : 'up', k);
+          };
+          const out = { hearts0: d.player.health.current, marked: !!s.trapCells, traps: 0, ms: 0, jumps: 0, doubles: 0, attacks: 0, topFeet: 99, x0: 99, x1: 0 };
+          const orig = s.respawn;
+          s.respawn = function (reason) {
+            if (reason === 'trap') out.traps++;
+            return orig.call(this, reason);
+          };
+          b.reset(88.5 * 16, 27 * 16);
+          let f = 0;
+          let after = -1;
+          let phase = 'ground';
+          const tick = (_time, delta) => {
+            f++;
+            if (out.traps > 0) {
+              for (const k of Object.values(keys)) set(k, false);
+              // Unos cuadros después de la red (reaparece un poco arriba y cae), para leer dónde quedó.
+              if (++after < 40) return;
+              s.events.off('preupdate', tick);
+              Object.assign(out, { x: +(b.center.x / 16).toFixed(1), feet: +(b.bottom / 16).toFixed(1), hearts: d.player.health.current });
+              resolve(out);
+              return;
+            }
+            out.ms += delta;
+            out.topFeet = Math.min(out.topFeet, +(b.bottom / 16).toFixed(2));
+            out.x0 = Math.min(out.x0, +(b.center.x / 16).toFixed(2));
+            out.x1 = Math.max(out.x1, +(b.center.x / 16).toFixed(2));
+            // De pared a pared, cambiando cada 25 cuadros.
+            const right = Math.floor(f / 25) % 2 === 0;
+            set(keys.right, right);
+            set(keys.left, !right);
+            // Salta apenas pisa; cerca del ápice suelta y vuelve a apretar (salto doble).
+            if (phase === 'ground' && b.blocked.down) {
+              set(keys.jump, true);
+              out.jumps++;
+              phase = 'rise';
+            } else if (phase === 'rise' && b.velocity.y > -60) {
+              set(keys.jump, false);
+              phase = 'double';
+            } else if (phase === 'double') {
+              set(keys.jump, true);
+              out.doubles++;
+              phase = 'fall';
+            } else if (phase === 'fall' && b.blocked.down) {
+              set(keys.jump, false);
+              phase = 'ground';
+            }
+            // Un tajo cada 23 cuadros.
+            if (f % 23 === 0) out.attacks++;
+            set(keys.attack, f % 23 === 0);
+            if (out.ms > 12000) {
+              s.events.off('preupdate', tick);
+              for (const k of Object.values(keys)) set(k, false);
+              resolve(out);
+            }
+          };
+          s.events.on('preupdate', tick);
+        }),
+    );
+    check(
+      net.marked &&
+        net.traps === 1 &&
+        net.ms >= 3900 &&
+        net.ms <= 4400 &&
+        net.jumps >= 4 &&
+        net.doubles >= 3 &&
+        net.attacks >= 5 &&
+        net.topFeet > 20 &&
+        net.x >= 71 &&
+        net.x <= 87 &&
+        Math.abs(net.feet - 14) < 0.2 &&
+        net.hearts === net.hearts0 - 1,
+      `red de seguridad: Kerana encerrada que corre, salta, usa el salto doble y ataca sale a los 4 s, a la torre y con un corazón menos (${JSON.stringify(net)})`,
+    );
+    await netPage.close();
 
     // 2) Nivel directo con depuración: correr, saltar, pozo, agua y espinas.
     const page = await open('/?debug=1&level=test');

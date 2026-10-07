@@ -13,7 +13,7 @@
 //                                                     termina al pasar untilX (en el sentido de la carrera), al
 //                                                     tener la cabeza más abajo de la fila untilTop o al empezar
 //                                                     la pelea del jefe.
-//   { mover: [x, y], dir, at?, power?, exit: 'jump' | 'walk' | 'none', landX?, exitDir? }
+//   { mover: [x, y], dir, at?, power?, exit: 'jump' | 'walk' | 'none', landX?, exitDir?, safe? }
 //                                                     plataforma móvil cuyo origen ocupa (x, y): golpea su piedra si
 //                                                     power, espera a que esté en la punta `at` ('origin' o 'end'),
 //                                                     sube hacia dir (saltando si hay un hueco), viaja quieta hasta la
@@ -21,6 +21,8 @@
 //                                                     (hasta pisar más allá de landX), caminando, o no baja ('none':
 //                                                     el paso siguiente salta a otra plataforma). Si la plataforma
 //                                                     queda encima de la cabeza (un ascensor), sube saltando desde abajo.
+//                                                     Con safe: [x, y] (S24) espera también a que el jakare que sale
+//                                                     en esa celda se hunda antes de subir (zona de ritmo de l2).
 //   { charge: 1 | -1 }                                tajo cargado mirando hacia ese lado (mantiene X hasta cargar).
 //   { jumpTo: [x, fila], hold? }                      salta a una repisa o una penca: se acerca, salta (manteniendo
 //                                                     Espacio `hold` ms, 340 por defecto) y en el aire va hacia x;
@@ -171,14 +173,23 @@ export function installPilot(plan) {
   };
 
   const moverAt = ([x, y]) => scene.movers.find((mv) => inZone(mv.zone, [x, y]));
+  // El jakare que sale del agua en la celda (x, y) está abajo, recién hundido (S24, jakare guasu).
+  const lurkerDown = ([x, y]) => {
+    const e = scene.enemies.find((en) => en.def.archetype === 'lurker' && Math.floor(en.spawnX / T) === x && Math.floor((en.spawnY - 1) / T) === y);
+    return !e || !e.active || e.purified || e.lurkState === 'cooldown';
+  };
   // La plataforma está en la punta pedida (o llegando, o recién salida).
   const atEnd = (m, at) => {
     const mm = m.motor;
     if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1);
     return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1);
   };
-  // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta).
-  const onThis = (m, b) => onBlock(m.block, b) && b.center.x > m.block.x && b.center.x < m.block.x + m.block.width && grounded();
+  // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta) y sin pisar el
+  // suelo de al lado. S24: con el juego lento el paso anterior terminaba tarde y Kerana frenaba con el centro sobre la
+  // plataforma vertical de l1 pero parada en el borde del piso; la plataforma bajaba sin ella y el paso terminaba arriba.
+  const onGroundTile = (b) => scene.isSolidAt(b.left + 1, b.bottom + 2) || scene.isSolidAt(b.right - 1, b.bottom + 2);
+  const onThis = (m, b) =>
+    onBlock(m.block, b) && b.center.x > m.block.x && b.center.x < m.block.x + m.block.width && grounded() && !onGroundTile(b);
 
   // Un paso del plan; devuelve true cuando terminó.
   const doStep = (s) => {
@@ -230,6 +241,8 @@ export function installPilot(plan) {
           return false;
         }
         move(0);
+        // S24: con `safe`, además espera a que el jakare de esa celda se hunda (como una persona en la zona de ritmo).
+        if (s.safe && !lurkerDown(s.safe)) return false;
         // Sale a 40-60 px/s: recién salida de la punta se la alcanza caminando.
         if (atEnd(m, at)) st.phase = 'board';
         return false;

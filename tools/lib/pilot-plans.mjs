@@ -54,7 +54,8 @@ export const L2_MAIN = {
     ['ascenso 1 x 125', 125],
     ['fuego x 198', 198],
     ['ascenso 2 x 219', 219],
-    ['antesala x 309', 309],
+    ['fuego x 307', 307],
+    ['antesala x 376', 376],
   ],
   steps: [
     { run: 1, untilX: 12 },
@@ -89,6 +90,14 @@ export const L2_MAIN = {
     { mover: [280, 27], at: 'end', dir: 1, exit: 'jump', landX: 284.8 },
     { mover: [289, 33], dir: 1, exit: 'none' },
     { mover: [302, 33], at: 'end', dir: 1, exit: 'walk' },
+    // S24: zona de ritmo, seis balsas sobre agua honda; en cada encuentro espera a que el jakare guasu se hunda.
+    { run: 1, untilX: 317.5 },
+    { mover: [319, 33], dir: 1, exit: 'none' },
+    { mover: [332, 33], at: 'end', dir: 1, exit: 'none', safe: [327, 32] },
+    { mover: [337, 33], dir: 1, exit: 'walk', safe: [336, 32] },
+    { mover: [351, 33], at: 'end', dir: 1, exit: 'none' },
+    { mover: [356, 33], dir: 1, exit: 'none', safe: [355, 32] },
+    { mover: [369, 33], at: 'end', dir: 1, exit: 'walk', safe: [364, 32] },
     { run: 1, untilFight: true },
   ],
 };

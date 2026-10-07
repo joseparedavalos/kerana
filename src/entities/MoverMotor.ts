@@ -43,7 +43,7 @@ export class MoverMotor {
   private readonly uy: number;
   private readonly out: MoverDelta = { dx: 0, dy: 0 };
 
-  constructor(private readonly spec: MoverSpec) {
+  constructor(readonly spec: MoverSpec) {
     this.length = Math.hypot(spec.dx, spec.dy);
     this.ux = this.length > 0 ? spec.dx / this.length : 0;
     this.uy = this.length > 0 ? spec.dy / this.length : 0;
@@ -134,6 +134,15 @@ export class MoverMotor {
     if (this.mode === 'toggle' && this.powered) return this.length;
     return 0;
   }
+}
+
+/**
+ * Ciclo de una plataforma `loop` que arranca en su origen (S24, para sincronizar al jakare guasu): período y cuándo
+ * llega a cada punta por primera vez (ms desde que carga el nivel). Sale sin esperar, espera `waitMs` en cada punta.
+ */
+export function moverTiming(spec: MoverSpec): { periodMs: number; atEndMs: number; atOriginMs: number } {
+  const travelMs = (Math.hypot(spec.dx, spec.dy) / spec.speed) * 1000;
+  return { periodMs: 2 * travelMs + 2 * spec.waitMs, atEndMs: travelMs, atOriginMs: 2 * travelMs + spec.waitMs };
 }
 
 /** Caja de un cuerpo (px del mundo) y su velocidad vertical. */
