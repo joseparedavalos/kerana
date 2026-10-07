@@ -9,9 +9,10 @@ describe('parámetros de depuración', () => {
     expect(parseLevelParam(null)).toBeNull();
   });
 
-  it('solo se activan en desarrollo o con debug=1', () => {
-    expect(parseDebugFlags('?level=2&god=1', false)).toMatchObject({ debug: false, level: null, god: false });
+  it('el nivel se lee siempre; dios y dones solo con debug=1', () => {
+    expect(parseDebugFlags('?level=2&god=1', false)).toMatchObject({ debug: false, level: 'l2', god: false });
     expect(parseDebugFlags('?level=2&god=1', true)).toMatchObject({ level: 'l2', god: true });
+    expect(parseDebugFlags('?level=4', false)).toMatchObject({ level: 'l4', boss: false, giftsAll: false });
     expect(parseDebugFlags('?debug=1&level=test&gifts=all&boss=1', false)).toEqual({
       debug: true, level: 'test', boss: true, giftsAll: true, god: false,
     });

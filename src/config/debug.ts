@@ -19,14 +19,14 @@ export function parseLevelParam(value: string | null): LevelId | null {
   return (LEVEL_IDS as readonly string[]).includes(v) ? (v as LevelId) : null;
 }
 
-/** Los parámetros solo se activan en desarrollo o con ?debug=1. */
+/** El nivel se lee siempre (`?level=4`). Dios, dones y jefe solo en desarrollo o con ?debug=1. */
 export function parseDebugFlags(search: string, isDev: boolean): DebugFlags {
   const p = new URLSearchParams(search);
   const debug = p.get('debug') === '1';
   const active = isDev || debug;
   return {
     debug,
-    level: active ? parseLevelParam(p.get('level')) : null,
+    level: parseLevelParam(p.get('level')),
     boss: active && p.get('boss') === '1',
     giftsAll: active && p.get('gifts') === 'all',
     god: active && p.get('god') === '1',
