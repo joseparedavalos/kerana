@@ -920,6 +920,25 @@ export const GAMEPLAY = {
     cooldownMs: 1600,
   },
 
+  /**
+   * Jakare guasu (S24): el jakare en grande de la zona de ritmo de l2. No espera a Kerana: asoma cada vez que llega
+   * la balsa que tiene al lado (se sincroniza solo con la plataforma cuya punta le queda más cerca), siempre igual,
+   * para que desde la balsa anterior se lea el ritmo: burbujas mientras la balsa llega, afuera al juntarse las balsas,
+   * abajo el resto. Muerde el hueco y la primera baldosa de la balsa de llegada. El jakare común no cambia.
+   */
+  bigJakare: {
+    /** Tamaño del dibujo y del cuerpo (el cuerpo de 25 × 16 queda en 45 × 29: el hueco y una baldosa de la balsa). */
+    scale: 1.8,
+    /** Golpes que aguanta (solo afuera; el tajo cargado cuenta `chargedSlash.damage`). */
+    hp: 6,
+    /** Burbujas antes de asomar (ms): empiezan mientras la balsa todavía está llegando. */
+    warnMs: 1000,
+    /** Afuera desde que llega la balsa (ms): el resto de su espera es la ventana para saltar. */
+    exposedMs: 1000,
+    /** Cuánto sale del agua el cuerpo (px): cabeza y lomo; el resto queda bajo el agua. El común sale 8. */
+    emergeHeight: 20,
+  },
+
   pickups: {
     /** Corazones que cura un guavirá (GDD §4.3). */
     guaviraHeal: 1,

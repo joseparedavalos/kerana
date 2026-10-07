@@ -49,6 +49,11 @@ export interface EnemyDef {
   emergeHeight?: number;
   /** Lurker colgante (mbói en N5): cuelga de la rama que tiene encima en vez de salir del agua. */
   hangs?: boolean;
+  /**
+   * Lurker con ritmo (jakare guasu, S24): no espera a Kerana; asoma cada vez que llega la plataforma móvil que tiene
+   * al lado (LevelScene lo sincroniza con ella). `emergeHeight` es lo que sale del agua el cuerpo ya escalado.
+   */
+  rhythm?: boolean;
 
   // Diver: velocidad de picada y de regreso a su poste (px/s); `restMs`, quieto en el suelo tras la picada.
   diveSpeed?: number;
@@ -119,6 +124,21 @@ export const ENEMIES: Record<string, EnemyDef> = {
     cooldownMs: 900,
   },
   mboi: { id: 'mboi', archetype: 'walker', hp: 2, width: 22, height: 8, speed: 30, patrolDistance: 44 },
+  // Jakare guasu (S24): el jakare en grande de la zona de ritmo de l2, sincronizado con las balsas; valores en
+  // GAMEPLAY.bigJakare.
+  jakare_guasu: {
+    id: 'jakare_guasu',
+    archetype: 'lurker',
+    look: 'jakare',
+    hp: GAMEPLAY.bigJakare.hp,
+    width: 25,
+    height: 16,
+    scale: GAMEPLAY.bigJakare.scale,
+    warnMs: GAMEPLAY.bigJakare.warnMs,
+    exposedMs: GAMEPLAY.bigJakare.exposedMs,
+    emergeHeight: GAMEPLAY.bigJakare.emergeHeight,
+    rhythm: true,
+  },
   // Ñakurutu guasu (S23): guardián de un camino oculto de l2; valores en GAMEPLAY.guardian.
   nakurutu_guasu: {
     id: 'nakurutu_guasu',

@@ -306,7 +306,8 @@ async function main() {
     await l2Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const l2x = await l2Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l2x > 309 * TILE && l2x < 329 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
+    // S24: la antesala se corrió 67 tiles con la zona de ritmo (x 376-395).
+    check(l2x > 376 * TILE && l2x < 396 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
     // Camina hasta que se cierre la arena (islote A): se detiene en cuanto se cierra (tope 15 s, para máquinas lentas).
     await walkIntoArena(l2Page);
     check(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), "nivel 2: la arena de Mbói Tu'i se cierra");
@@ -361,27 +362,30 @@ async function main() {
         // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (S24: ningún encierro, el hueco tiene salida).
         enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
         guardianScale: s.enemies.find((e) => e.def.id === 'nakurutu_guasu')?.scaleX,
+        bigJakareScale: s.enemies.find((e) => e.def.id === 'jakare_guasu')?.scaleX,
         traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
       };
     });
     check(
       l2Info.charge &&
-        l2Info.movers === 16 &&
+        l2Info.movers === 22 &&
         l2Info.vertical === 3 &&
         l2Info.switches === 1 &&
         l2Info.bouncers === 'ready,ready,ready,ready,asleep' &&
         l2Info.rocks === 2 &&
         l2Info.brittle === 7 &&
         l2Info.drawn &&
-        l2Info.checkpoints === 3 &&
+        l2Info.checkpoints === 4 &&
         l2Info.feathers === 3 &&
         l2Info.enemies.jakare === 3 &&
+        l2Info.enemies.jakare_guasu === 4 &&
+        l2Info.bigJakareScale > 1 &&
         l2Info.enemies.nakurutu === 3 &&
         l2Info.enemies.mboi === 4 &&
         l2Info.enemies.nakurutu_guasu === 1 &&
         l2Info.guardianScale > 2 &&
         l2Info.traps === 0,
-      `nivel 2: 16 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 7 fardos dibujados, 3 fuegos, 3 plumas, enemigos con el ñakurutu guasu y ningún encierro (${JSON.stringify(l2Info)})`,
+      `nivel 2: 22 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 7 fardos dibujados, 4 fuegos, 3 plumas, enemigos con el ñakurutu guasu y 4 jakare guasu, ningún encierro (${JSON.stringify(l2Info)})`,
     );
     // El tajo normal no rompe la roca agrietada del peñasco (x 14-16); el piloto la rompe después con el cargado.
     await l2Run.evaluate(() => {
@@ -399,9 +403,28 @@ async function main() {
     await sleep(600);
     const rockA = () => l2Run.evaluate(() => window.__KERANA_DEBUG__.scene.breakables.find((b) => b.kind === 'rock' && b.zone.x === 14 * 16).broken);
     check((await rockA()) === false, 'nivel 2: el tajo normal no rompe la roca agrietada');
+    // S24, zona de ritmo: mientras corre el piloto, cada jakare guasu tiene que asomar solo con las dos balsas de su
+    // encuentro juntas (2 tiles de hueco) y nunca con ellas separadas.
+    await l2Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const crocs = s.enemies.filter((e) => e.def.id === 'jakare_guasu');
+      const rafts = s.movers.filter((m) => m.zone.y === 33 * 16);
+      window.__RHYTHM__ = { exposed: 0, apart: 0 };
+      s.events.on('postupdate', () => {
+        for (const c of crocs) {
+          if (c.lurkState !== 'exposed') continue;
+          const from = rafts.filter((m) => m.block.x + m.block.width <= c.spawnX).sort((a, b) => b.block.x - a.block.x)[0];
+          const to = rafts.filter((m) => m.block.x >= c.spawnX).sort((a, b) => a.block.x - b.block.x)[0];
+          window.__RHYTHM__.exposed++;
+          if (!from || !to || Math.abs(to.block.x - (from.block.x + from.block.width) - 32) > 1) window.__RHYTHM__.apart++;
+        }
+      });
+    });
     await l2Run.evaluate(installPilot, L2_MAIN);
-    for (let t = 0; t < 300000 && !(await pilot(l2Run)).done; t += 500) await sleep(500);
+    for (let t = 0; t < 420000 && !(await pilot(l2Run)).done; t += 500) await sleep(500);
     const run2 = await pilot(l2Run);
+    const rhythm = await l2Run.evaluate(() => window.__RHYTHM__);
+    check(rhythm.exposed > 0 && rhythm.apart === 0, `nivel 2: los jakare guasu asoman solo con las balsas de su encuentro juntas (${JSON.stringify(rhythm)})`);
     check(run2.done && run2.respawns === 0, `nivel 2: Kerana cruza el estero entero sin caer al agua (${JSON.stringify(run2)})`);
     if (!run2.done) {
       await l2Run.screenshot({ path: join(SHOTS, 'l2-piloto-atascado.png') });
@@ -579,6 +602,12 @@ async function main() {
       diveFree.warned && diveFree.dove && diveFree.minDist < 1.5 && !diveBlocked.warned && !diveBlocked.dove,
       `nivel 2: el ñakurutu del poste con tiro libre avisa y se lanza hasta Kerana; con el poste en el medio espera (${JSON.stringify({ diveFree, diveBlocked })})`,
     );
+    // Zona de ritmo (S24): captura desde la orilla con el primer jakare guasu afuera (l2-ritmo.png).
+    await l2Dive.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(316.5 * 16, 33 * 16));
+    const firstOut = () => l2Dive.evaluate(() => window.__KERANA_DEBUG__.scene.enemies.find((e) => e.def.id === 'jakare_guasu').lurkState === 'exposed');
+    for (let t = 0; t < 10000 && !(await firstOut()); t += 100) await sleep(100);
+    await sleep(200);
+    await l2Dive.screenshot({ path: join(SHOTS, 'l2-ritmo.png') });
     await l2Dive.close();
 
     // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.

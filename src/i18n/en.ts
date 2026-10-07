@@ -49,6 +49,7 @@ export const en: Record<TextKey, string> = {
   'hint.l2.antesala': 'The frogs go quiet all at once…',
   'hint.l2.sealed': 'The stone is sealed in: the Charged Slash light goes through rock',
   'hint.l2.sleep': 'Sleeping mushroom: wake it with the Charged Slash',
+  'hint.l2.ritmo': 'Jakare guasu: jump when it dives',
   'hint.l3.nandu': 'Ñandú: it runs straight ahead. {jump}!',
   'hint.l3.wind': 'Grass bending over: a gust is coming',
   'hint.l3.karakara': 'Karakara: they dive at you',

@@ -14,6 +14,8 @@ import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
 import { createEnemy } from '../entities/enemies';
 import { Diver } from '../entities/enemies/Diver';
+import { Lurker } from '../entities/enemies/Lurker';
+import { rhythmFromMovers } from '../entities/enemies/LurkerMotor';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { drawBreakables, needsChargedSlash, parseBreakableKind, type BreakableKind } from '../entities/BreakableLook';
 import { Bouncer } from '../entities/hazards/Bouncer';
@@ -324,6 +326,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
     const spawn = this.buildObjects();
     this.linkBreakables();
+    this.syncRhythmLurkers();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
 
     const save = SaveManager.current;
@@ -1146,6 +1149,20 @@ export class LevelScene extends Phaser.Scene {
         continue;
       }
       this.breakBreakable(b);
+    }
+  }
+
+  /**
+   * Jakare guasu (S24): cada Lurker con ritmo se sincroniza con la plataforma `loop` cuya punta (el origen o el otro
+   * extremo) le queda más cerca: sale cuando ella llega a esa punta y después una vez por vuelta. Sin una plataforma a
+   * 2 tiles, espera a Kerana como un jakare común.
+   */
+  private syncRhythmLurkers(): void {
+    const movers = this.movers.map((m) => ({ x: m.zone.x, y: m.zone.y, width: m.zone.width, spec: m.motor.spec }));
+    for (const enemy of this.enemies) {
+      if (!(enemy instanceof Lurker) || !enemy.def.rhythm) continue;
+      const r = rhythmFromMovers(enemy.spawnX, enemy.spawnY, movers, 2 * this.map.tileWidth);
+      if (r) enemy.setRhythm(r.periodMs, r.exposedAtMs);
     }
   }
 
