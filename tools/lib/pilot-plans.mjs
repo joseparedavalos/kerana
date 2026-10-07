@@ -78,7 +78,7 @@ export const L2_MAIN = {
     { run: 1, untilX: 261.5 },
     { run: 1, wait: [269, 33], untilMover: [269, 33] },
     { mover: [269, 33], dir: 1, exit: 'none' },
-    { mover: [280, 27], at: 'end', dir: 1, exit: 'jump', landX: 285.5 },
+    { mover: [280, 27], at: 'end', dir: 1, exit: 'jump', landX: 284.8 },
     { mover: [289, 33], dir: 1, exit: 'none' },
     { mover: [302, 33], at: 'end', dir: 1, exit: 'walk' },
     { run: 1, untilFight: true },

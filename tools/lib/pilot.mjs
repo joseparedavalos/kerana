@@ -244,9 +244,10 @@ export function installPilot(plan) {
         move(dir);
         if (s.exit === 'jump') {
           const edge = dir > 0 ? m.block.x + m.block.width : m.block.x;
-          if (!grounded() && st.jumpMs <= 0) seek(s.landX * T);
-          if (grounded() && dir * (b.center.x - edge) >= -10) startJump();
-          return dir * (b.center.x - s.landX * T) >= 0 && grounded();
+          // En el aire apunta a landX desde que despega (un poste angosto no perdona pasarse).
+          if (!grounded()) seek(s.landX * T);
+          else if (onThis(m, b) && dir * (b.center.x - edge) >= -10) startJump();
+          return dir * (b.center.x - s.landX * T) >= -3 && grounded() && !onThis(m, b);
         }
         return !onMover(b) && grounded();
       }
