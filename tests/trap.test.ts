@@ -152,10 +152,15 @@ describe('red de seguridad: encierros (S23, alcances de S24)', () => {
     expect(show(fromAscii(pocket(7)))).toEqual(['x 10-15 fila 13']);
   });
 
-  it('l2: el hueco del premio es un encierro, también con salto doble (con el alcance de S23 no se veía)', () => {
-    expect(show(fromLevel('l2'))).toEqual(['x 234-238 fila 33']);
-    expect(show(fromLevel('l2', DOUBLE))).toEqual(['x 234-238 fila 33']);
-    expect(fromLevel('l2', { ...DOUBLE, jumpRows: 7 })).toEqual([]);
+  it('l2: ningún encierro; el hueco del premio se sale rompiendo el fardo de la base del pilar (S24)', () => {
+    expect(fromLevel('l2')).toEqual([]);
+    expect(fromLevel('l2', DOUBLE)).toEqual([]);
+    // Sin el fardo (x 233, filas 29-32) el hueco vuelve a ser el encierro de S23, también con salto doble
+    // (con el alcance de S23, 7 filas, no se veía: así quedó Jose sin red con gifts=all).
+    const noFardo = (o: Obj) => !(o.cls === 'Breakable' && o.x === 233 * T);
+    expect(show(fromLevel('l2', BASE, noFardo))).toEqual(['x 234-238 fila 33']);
+    expect(show(fromLevel('l2', DOUBLE, noFardo))).toEqual(['x 234-238 fila 33']);
+    expect(fromLevel('l2', { ...DOUBLE, jumpRows: 7 }, noFardo)).toEqual([]);
   });
 
   it('ningún otro nivel tiene encierros con los dones que se traen', () => {

@@ -358,7 +358,7 @@ async function main() {
         drawn: s.breakables.every((b) => b.look.length > 0),
         checkpoints: s.checkpoints.length,
         feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
-        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (un solo encierro: el hueco del premio).
+        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (S24: ningún encierro, el hueco tiene salida).
         enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
         guardianScale: s.enemies.find((e) => e.def.id === 'nakurutu_guasu')?.scaleX,
         traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
@@ -371,7 +371,7 @@ async function main() {
         l2Info.switches === 1 &&
         l2Info.bouncers === 'ready,ready,ready,ready,asleep' &&
         l2Info.rocks === 2 &&
-        l2Info.brittle === 6 &&
+        l2Info.brittle === 7 &&
         l2Info.drawn &&
         l2Info.checkpoints === 3 &&
         l2Info.feathers === 3 &&
@@ -380,8 +380,8 @@ async function main() {
         l2Info.enemies.mboi === 4 &&
         l2Info.enemies.nakurutu_guasu === 1 &&
         l2Info.guardianScale > 2 &&
-        l2Info.traps === 5,
-      `nivel 2: 16 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 6 fardos dibujados, 3 fuegos, 3 plumas, enemigos con el ñakurutu guasu y un encierro de 5 tiles (${JSON.stringify(l2Info)})`,
+        l2Info.traps === 0,
+      `nivel 2: 16 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 7 fardos dibujados, 3 fuegos, 3 plumas, enemigos con el ñakurutu guasu y ningún encierro (${JSON.stringify(l2Info)})`,
     );
     // El tajo normal no rompe la roca agrietada del peñasco (x 14-16); el piloto la rompe después con el cargado.
     await l2Run.evaluate(() => {
@@ -471,18 +471,30 @@ async function main() {
     console.log(`  l2 (copa del palmar): ${(copa.timeMs / 1000).toFixed(1)} s de juego desde la cima del albardón hasta el fuego 2`);
     await l2Copa.close();
 
-    // 1c5) Red de seguridad (S23): en el hueco del premio (x 234-238, al pie del ascenso 2) no hay salida. Sin god:
-    // Kerana baja desde el pilar, recoge la Luz de Arasy y la guavirá y, pasado GAMEPLAY.trap.waitMs, vuelve al pilar
-    // (con la Luz no pierde corazón). La segunda vez, ya sin Luz, vuelve y le cuesta un corazón.
-    const l2Trap = await open('/?debug=1&level=2');
-    await l2Trap.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    // 1c5) El hueco del premio tiene salida (S24): Kerana baja del pilar al hueco (x 234-238), cobra la Luz de Arasy y la
+    // guavirá, ve el fardo de la base del pilar desde adentro (en cámara, captura l2-hueco.png), lo rompe con el tajo
+    // normal (el que se tiene siempre) y sale por el túnel al pie del ascenso. La red no actúa: ya no es un encierro.
+    const l2Hole = await open('/?debug=1&level=2');
+    await l2Hole.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    const trapState = () =>
-      l2Trap.evaluate(() => {
+    const holeState = () =>
+      l2Hole.evaluate(() => {
         const d = window.__KERANA_DEBUG__;
-        return { x: +(d.player.body.center.x / 16).toFixed(1), feet: +(d.player.body.bottom / 16).toFixed(1), hearts: d.player.health.current, immune: d.player.isImmune, traps: window.__TRAPS__ };
+        const s = d.scene;
+        const fardo = s.breakables.find((b) => b.kind === 'brittle' && b.zone.x === 233 * 16);
+        return {
+          x: +(d.player.body.center.x / 16).toFixed(1),
+          feet: +(d.player.body.bottom / 16).toFixed(1),
+          immune: d.player.isImmune,
+          hearts: d.player.health.current,
+          traps: window.__TRAPS__,
+          fardo: fardo ? (fardo.broken ? 'roto' : fardo.look.length > 0 ? 'dibujado' : 'sin dibujo') : 'no está',
+          // El fardo entra en la cámara con Kerana en el hueco.
+          inView: !!fardo && s.cameras.main.worldView.contains(fardo.zone.centerX, fardo.zone.centerY),
+          prize: s.pickups.filter((p) => p.active && Math.floor(p.x / 16) >= 234 && Math.floor(p.x / 16) <= 238 && p.y / 16 > 30).length,
+        };
       });
-    await l2Trap.evaluate(() => {
+    await l2Hole.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       window.__TRAPS__ = 0;
       const orig = d.scene.respawn;
@@ -493,42 +505,39 @@ async function main() {
       d.player.body.reset(231.5 * 16, 26 * 16);
     });
     await sleep(500);
-    const intoHole = async () => {
-      await l2Trap.keyboard.down('ArrowRight');
-      for (let t = 0; t < 4000 && (await trapState()).x < 235.5; t += 100) await sleep(100);
-      await l2Trap.keyboard.up('ArrowRight');
-    };
-    const waitRescue = async (n) => {
-      for (let t = 0; t < 15000 && (await trapState()).traps < n; t += 200) await sleep(200);
-      await sleep(400);
-      return trapState();
-    };
-    const trapStart = await trapState();
-    await intoHole();
-    // Que aterrice en el fondo (fila 33) y recoja la Luz de Arasy.
-    for (let t = 0; t < 4000; t += 100) {
-      const st = await trapState();
-      if (st.feet === 33 && st.immune) break;
-      await sleep(100);
-    }
-    const inHole = await trapState();
-    await l2Trap.screenshot({ path: join(SHOTS, 'l2-hueco.png') });
-    const rescue1 = await waitRescue(1);
-    // El último suelo firme es el borde del pilar (x 227-233), desde donde cayó.
-    const onPillar = (st) => st.x >= 227 && st.x < 234 && st.feet === 26;
+    const holeStart = await holeState();
+    // Al hueco caminando desde el pilar, y de pared a pared para cobrar el premio.
+    await l2Hole.keyboard.down('ArrowRight');
+    for (let t = 0; t < 6000 && (await holeState()).x < 237.5; t += 100) await sleep(100);
+    await l2Hole.keyboard.up('ArrowRight');
+    await l2Hole.keyboard.down('ArrowLeft');
+    for (let t = 0; t < 4000 && (await holeState()).x > 234.6; t += 100) await sleep(100);
+    await l2Hole.keyboard.up('ArrowLeft');
+    await sleep(300);
+    const inHole = await holeState();
+    await l2Hole.screenshot({ path: join(SHOTS, 'l2-hueco.png') });
+    // Tajo normal hacia el fardo (mirando a la izquierda, pegada a la pared).
+    await l2Hole.keyboard.press('KeyX');
+    for (let t = 0; t < 2000 && (await holeState()).fardo !== 'roto'; t += 100) await sleep(100);
+    const broken = await holeState();
+    // Sale por el túnel hasta el piso de C1, al pie del ascenso (x < 227).
+    await l2Hole.keyboard.down('ArrowLeft');
+    for (let t = 0; t < 6000 && (await holeState()).x > 226; t += 100) await sleep(100);
+    await l2Hole.keyboard.up('ArrowLeft');
+    const out = await holeState();
     check(
-      inHole.feet === 33 && inHole.immune && rescue1.traps === 1 && onPillar(rescue1) && rescue1.hearts === trapStart.hearts,
-      `red de seguridad: del hueco del premio (Luz de Arasy) vuelve al pilar sin perder corazón (${JSON.stringify({ trapStart, inHole, rescue1 })})`,
+      holeStart.fardo === 'dibujado' &&
+        inHole.feet === 33 &&
+        inHole.immune &&
+        inHole.prize === 0 &&
+        inHole.inView &&
+        broken.fardo === 'roto' &&
+        out.x <= 226 &&
+        out.feet === 33 &&
+        out.traps === 0,
+      `nivel 2: el hueco del premio se cobra (Luz y guavirá), el fardo se ve desde adentro, cae con el tajo normal y se sale por el túnel; la red no actúa (${JSON.stringify({ holeStart, inHole, broken, out })})`,
     );
-    // Que se apague la Luz (8 s) y bajar otra vez.
-    for (let t = 0; t < 12000 && (await trapState()).immune; t += 300) await sleep(300);
-    await intoHole();
-    const rescue2 = await waitRescue(2);
-    check(
-      rescue2.traps === 2 && onPillar(rescue2) && rescue2.hearts === trapStart.hearts - 1,
-      `red de seguridad: sin la Luz, vuelve al último suelo firme y le cuesta un corazón (${JSON.stringify(rescue2)})`,
-    );
-    await l2Trap.close();
+    await l2Hole.close();
 
     // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.
     const l3Page = await open('/?debug=1&level=3&boss=1&god=1');
