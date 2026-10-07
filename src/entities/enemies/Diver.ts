@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
 import type { EnemyDef } from '../../data/enemies';
+import { AudioManager } from '../../systems/AudioManager';
 import { EnemyBase } from './EnemyBase';
 
 const DIVE_OVERSHOOT_MS = 150;
 
-type DiverState = 'perch' | 'telegraph' | 'dive' | 'return';
+type DiverState = 'perch' | 'telegraph' | 'dive' | 'rest' | 'return';
 
 // Diver (GDD §5.2): espera en lo alto (un poste) y se lanza en picada hacia donde estaba
-// Kerana al terminar el aviso; después vuelve despacio a su lugar.
+// Kerana al terminar el aviso; después vuelve despacio a su lugar. Con `restMs` (ñakurutu guasu, S23)
+// queda quieto en el suelo un rato antes de volver.
 export class Diver extends EnemyBase {
   private diveState: DiverState = 'perch';
   private msLeft = 0;
@@ -30,6 +32,7 @@ export class Diver extends EnemyBase {
           this.facing = dx >= 0 ? 1 : -1;
           this.enter('telegraph', def.telegraphMs ?? 500);
           this.warning = true;
+          if (def.warnSfx) AudioManager.play(def.warnSfx);
           if (!this.flashing) this.setTint(0xf2eee3);
         }
         break;
@@ -51,8 +54,13 @@ export class Diver extends EnemyBase {
       case 'dive':
         if (this.msLeft <= 0 || this.body.blocked.down || this.body.blocked.left || this.body.blocked.right) {
           this.collidesWithGround = false;
-          this.enter('return', 0);
+          this.body.setVelocity(0, 0);
+          this.enter(def.restMs ? 'rest' : 'return', def.restMs ?? 0);
         }
+        break;
+      case 'rest':
+        this.body.setVelocity(0, 0);
+        if (this.msLeft <= 0) this.enter('return', 0);
         break;
       case 'return': {
         const tx = this.spawnX - this.x;

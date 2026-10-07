@@ -1207,9 +1207,9 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  /** Daño por contacto de un peligro o ataque de jefe (1 corazón). Devuelve si se aplicó. */
-  private hurtPlayer(fromX: number): boolean {
-    const applied = this.player.takeDamage(GAMEPLAY.damage.enemyContact, fromX);
+  /** Daño por contacto de un peligro, un enemigo o un ataque de jefe (1 corazón si no se dice otra cosa). Devuelve si se aplicó. */
+  private hurtPlayer(fromX: number, amount: number = GAMEPLAY.damage.enemyContact): boolean {
+    const applied = this.player.takeDamage(amount, fromX);
     if (!applied) return false;
     AudioManager.play('hurt');
     this.hitStop(GAMEPLAY.hitStop.onHurtMs);
@@ -1669,7 +1669,7 @@ export class LevelScene extends Phaser.Scene {
       AudioManager.play('purify');
       return;
     }
-    if (enemy.touchHurts) this.hurtPlayer(enemy.x);
+    if (enemy.touchHurts) this.hurtPlayer(enemy.x, enemy.def.contactDamage);
   }
 
   private onPickupOverlap(_playerObj: unknown, pickupObj: unknown): void {

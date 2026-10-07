@@ -893,6 +893,33 @@ export const GAMEPLAY = {
     waitMs: 4000,
   },
 
+  /**
+   * Ñakurutu guasu (S23): el ñakurutu de siempre en grande, guardián de un camino oculto de l2. Es un encuentro, no un
+   * jefe: sin barra ni arena. Avisa largo (temblor, blanco y graznido), se lanza, queda aturdido en el suelo y vuelve
+   * despacio; se lo vence a golpes o se pasa por debajo mientras vuelve.
+   */
+  guardian: {
+    /** Golpes que aguanta (el tajo cargado cuenta `chargedSlash.damage`). */
+    hp: 5,
+    /** Corazones que quita al tocarla (el ñakurutu común quita `damage.enemyContact`). */
+    contactDamage: 2,
+    /** Tamaño respecto del ñakurutu común (dibujo y cuerpo). */
+    scale: 2.6,
+    /** Distancia (px) a la que se lanza si Kerana está más abajo. */
+    detectRadius: 128,
+    /** Aviso antes de lanzarse (ms): tiempo para alejarse o prepararse. El común avisa 500. */
+    telegraphMs: 1100,
+    /** Velocidad de la picada y de la vuelta a su rama (px/s). */
+    diveSpeed: 200,
+    returnSpeed: 55,
+    /** Tope de la picada (ms). */
+    diveMaxMs: 1400,
+    /** Aturdido en el suelo tras la picada (ms): la ventana para pegarle o pasar. */
+    restMs: 1000,
+    /** Espera en la rama antes de poder lanzarse otra vez (ms). */
+    cooldownMs: 1600,
+  },
+
   pickups: {
     /** Corazones que cura un guavirá (GDD §4.3). */
     guaviraHeal: 1,
