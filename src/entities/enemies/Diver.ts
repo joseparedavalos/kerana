@@ -14,6 +14,9 @@ export class Diver extends EnemyBase {
   private diveState: DiverState = 'perch';
   private msLeft = 0;
   private readonly dir = new Phaser.Math.Vector2();
+  /** Desde dónde salió la picada y cuánto (al cuadrado) recorre sin chocar con el suelo. */
+  private readonly diveFrom = new Phaser.Math.Vector2();
+  private diveGraceSq = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, def, facing);
@@ -44,15 +47,20 @@ export class Diver extends EnemyBase {
           this.dir.set(dx, dy).normalize();
           this.facing = dx >= 0 ? 1 : -1;
           this.body.setVelocity(this.dir.x * speed, this.dir.y * speed);
-          // Llega un poco más allá de donde estaba Kerana; solo choca con el suelo en la picada.
+          // Llega un poco más allá de donde estaba Kerana; solo choca con el suelo en la picada, y no en la primera
+          // mitad (S23): parado sobre un poste, el primer paso lo apoyaba en el poste y la picada terminaba ahí.
           this.enter('dive', Math.min(def.chargeMaxMs ?? 1200, (dist / speed) * 1000 + DIVE_OVERSHOOT_MS));
-          this.collidesWithGround = true;
+          this.diveFrom.set(this.x, this.y);
+          this.diveGraceSq = (dist / 2) ** 2;
           this.warning = false;
           if (!this.flashing) this.clearTint();
         }
         break;
       case 'dive':
-        if (this.msLeft <= 0 || this.body.blocked.down || this.body.blocked.left || this.body.blocked.right) {
+        if (!this.collidesWithGround && Phaser.Math.Distance.Squared(this.x, this.y, this.diveFrom.x, this.diveFrom.y) > this.diveGraceSq) {
+          this.collidesWithGround = true;
+        }
+        if (this.msLeft <= 0 || (this.collidesWithGround && (this.body.blocked.down || this.body.blocked.left || this.body.blocked.right))) {
           this.collidesWithGround = false;
           this.body.setVelocity(0, 0);
           this.enter(def.restMs ? 'rest' : 'return', def.restMs ?? 0);
