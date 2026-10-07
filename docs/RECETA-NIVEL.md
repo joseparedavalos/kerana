@@ -1,6 +1,6 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22 y S23 con l2)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2)
 
-El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22) y §9 (S23, huecos sin salida y enemigos en los saltos), y marcado *(S22)* o *(S23)* donde cambió una regla.
+El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo), y marcado *(S22)*, *(S23)* o *(S24)* donde cambió una regla.
 
 ---
 
@@ -13,9 +13,10 @@ El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 par
 | Qué | Valor | Para qué sirve |
 |---|---|---|
 | Cuerpo | 1 × 2,6 tiles | un pasillo mide al menos 4 filas; si hay que saltar adentro, **6** (con 4 el techo corta el salto y no se pasan ni 2 tiles de espinas) |
-| Salto | 4,17 tiles de alto; 6,25 de largo a la misma altura | pared o escalón obligatorio: **≤ 3**. Algo que NO debe alcanzarse saltando: **≥ 5** arriba |
+| Salto | *(S24, medido)* **63,3 px = 3,96 tiles** de alto (la fórmula v²/2g daba 4,17: la física avanza a paso fijo y sube menos); 6,25 de largo a la misma altura | pared o escalón obligatorio: **≤ 3**. Una pared de **4 no se trepa nunca** (medido con saltos corriendo desde 0 a 40 px). Algo que NO debe alcanzarse saltando: **≥ 4** arriba |
+| Salto doble | *(S24, medido)* **108,7 px = 6,8 tiles** con el segundo en el ápice | una pared de **7 no se trepa** con salto doble (el hueco de l2 con `gifts=all`); una de 6 sí |
 | Hueco a la misma altura | el centro viaja ≈ 5,8 tiles; el cuerpo ya apoya con 1 px | un hueco de **N** tiles de aire pide **N − 1** de viaje. Para que algo quede fuera de alcance desde un borde, **≥ 8 tiles de aire** |
-| Hongo | 7,6 tiles (medido en el smoke: 126 px = 7,9) | repisa a la que solo se llega con el hongo: 5 a 7 tiles por encima del hongo. *(S22)* De costado, el rebote avanza ≈ 6 tiles hasta caer a 6 filas: una repisa que NO debe alcanzarse rebotando va a **≥ 8 tiles** del hongo |
+| Hongo | *(S24)* **135,7 px = 8,5 tiles** a 60 Hz: el rebote empuja dos veces (el segundo, un paso de la física más arriba) y con el juego lento sube más (144 px a 30 Hz); con salto doble, 181 px | repisa a la que solo se llega con el hongo: 5 a 7 tiles por encima del hongo. *(S22)* De costado, el rebote avanza ≈ 6 tiles hasta caer a 6 filas: una repisa que NO debe alcanzarse rebotando va a **≥ 8 tiles** del hongo |
 | Caída | sin daño | una caída de 10 tiles es un camino válido (se usó para pasar de la galería 1 a la 2). *(S23, corrige S22)* Quien sale corriendo de un borde avanza ≈ 5 tiles en una caída de 10 filas y **≈ 9,5 en una de 20** (medido: de la cima del ascenso 2 de l2, 21 filas, cayó en x 262,5 saliendo de x 253): abajo, **≥ 11 tiles** de piso antes del agua, y lo que se recoge (la Luz) donde se cae, no donde se salta |
 | Cabeza | 2,6 tiles sobre los pies | *(S23)* saltando, la cabeza llega ≈ 6,8 filas sobre el piso: un pickup a menos de 7 filas encima de un piso por el que se pasa se toca desde abajo si lo que lo sostiene es de un solo sentido. Para que no se alcance, que esté sobre roca (`#`) |
 | Onda del tajo cargado | la luz llega ≈ 6 tiles aunque haya pared | piedra encerrada a ≤ 6 tiles de donde se para Kerana, detrás de 1 tile de roca |
@@ -127,6 +128,8 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] *(S22)* Desde l2: el don anterior en el camino principal una vez por sección; cada cartel antes del primer encuentro con lo que explica; rompibles de las dos clases donde abren camino.
 - [ ] *(S23)* `tests/trap.test.ts` sin encierros nuevos: si uno es a propósito, con premio y anotado en el test (§9).
 - [ ] *(S23)* Enemigos en los saltos según §9: visibles desde el borde, con un ciclo que se lee antes de saltar y ninguno atado al reloj de una plataforma móvil de forma que el salto quede imposible.
+- [ ] *(S24)* Cada protección (la red, un premio en un hueco, una salida) probada como juega una persona en esa situación: moviéndose, saltando, con el salto doble si el que prueba usa `gifts=all` (§10.1).
+- [ ] *(S24)* `tests/diver.test.ts`: cada ñakurutu o karakara con camino libre hasta la mayoría de los lugares de su zona (§10.3).
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -190,11 +193,11 @@ Jose jugó l2 y encontró dos cosas que la receta no cubría: un hueco al que se
 **Cómo se buscan.** `tests/trap.test.ts` corre `findTraps` (el mismo análisis que usa el juego, `src/systems/trapLogic.ts`) sobre el JSON de cada nivel, con los dones que se traen al llegar (salto doble desde l4), y falla si aparece un encierro que no está en su lista. El análisis exagera a propósito lo que Kerana puede hacer (en el aire se mueve sin límite, las plataformas móviles son piso en todo su recorrido, los rompibles no existen): lo que marca es seguro un encierro. En S23 se comprobó además con una simulación de saltos con la física de `gameplay.ts` (script del scratchpad, no está en el repo): en l2 de S22 y en el de S23 los dos encuentran el mismo y único hueco, y ningún otro aparece ni con un salto un 10 % más bajo. Los demás niveles no tienen ninguno.
 
 **Reglas al dibujar.**
-- Todo piso rodeado de paredes de **≥ 5** (de **≥ 8** desde l4, con salto doble) necesita una salida: un escalón de ≤ 4 (mejor ≤ 3), un hongo, una penca, una plataforma móvil o un rompible. El agua honda, las espinas y un pozo hasta el fondo también sirven: ya devuelven a Kerana a tierra firme.
+- Todo piso rodeado de paredes de **≥ 4** (de **≥ 7** desde l4, con salto doble) necesita una salida *(S24: medido; S23 decía 5 y 8)*: un escalón de ≤ 3, un hongo, una penca, una plataforma móvil o un rompible de tajo normal. El agua honda, las espinas y un pozo hasta el fondo también sirven: ya devuelven a Kerana a tierra firme.
 - Al dibujar un pilar o una pared de ≥ 5, mirar qué queda **al pie del otro lado**: ahí estaba el hueco de Jose.
-- Si el hueco es interesante (desde arriba se ve algo), no hace falta taparlo: se le da **premio** y la red de seguridad saca a Kerana. En l2: una Luz de Arasy y una guavirá, con luciérnagas. Con la Luz activa, la red no cuesta corazón (como un pozo con la Luz): el premio vale la pena aunque no falte vida.
+- Si el hueco es interesante (desde arriba se ve algo), no hace falta taparlo: se le da **premio** y una **salida que se vea desde adentro** *(S24: el fardo del hueco de l2, §10.2; en S23 lo sacaba la red)*. En l2: una Luz de Arasy y una guavirá, con luciérnagas.
 
-**La red de seguridad** (global, `GAMEPLAY.trap.waitMs`): si Kerana queda en un piso encerrado, pasado ese tiempo vuelve al último suelo firme (que nunca se toma dentro de un encierro) y le cuesta `damage.trap` (1). Con `?debug=1` los pisos encerrados llevan una raya roja.
+**La red de seguridad** (global, `GAMEPLAY.trap.waitMs`): si Kerana queda en un piso encerrado, pasado ese tiempo vuelve al último suelo firme (que nunca se toma dentro de un encierro) y le cuesta `damage.trap` (1), aunque salte o se mueva todo el tiempo. Con `?debug=1` los pisos encerrados llevan una raya roja. *(S24)* Es el respaldo, no la salida: desde S24 ningún nivel tiene encierros (el único a propósito es el pozo F de la vitrina, para el smoke).
 
 ### 9.2 Enemigos en los saltos
 
@@ -242,4 +245,41 @@ El ñakurutu guasu (`nakurutu_guasu`, valores en `GAMEPLAY.guardian`) es el Dive
 4. **El ñakurutu no se lanzaba desde su poste** (§9.2).
 5. **El piloto de l1 fallaba en el smoke** (caía al pozo 2 una o muchas veces; en corridas sueltas no): con el juego más lento que en S22, el salto al bloque de la piedra caía sobre la balsa o golpeaba la piedra en el aire (la balsa `mode=run` salía antes de tiempo), y el salto de bajada apuntaba a 0,5 tiles del borde de la orilla: al frenar en el aire volvía al hueco. Correcciones en el piloto, no en el mapa: la piedra solo se golpea parada en el piso y, en un paso `mover` con `power`, antes que nada (aunque ya esté sobre la plataforma: se acerca, la mira y la golpea); si la plataforma se alejó de su punta mientras llegaba, se frena 14 px antes del borde y la espera otra vez; si ya se va de la punta de llegada, sigue viaje; después de cualquier caída el paso empieza de nuevo. Y en el plan de l1, un `jumpTo` al bloque de la piedra y `landX` 1,5 tiles adentro de la orilla. Con tres pilotos a la vez (juego muy lento) todavía puede fallar: el smoke corre de a uno.
 6. **El tiempo de l2 sale en dos valores** (≈ 80 s u ≈ 91 s): el par de balsas de C1 (ciclo de 3,6 s) deja al piloto al pie del ascenso 2 en una de dos fases de la plataforma vertical (ciclo de 7,4 s), y esa espera arrastra las de las balsas que siguen. Al medir, correr varias veces y dar los dos.
+
+---
+
+## 10. Lo que agregó S24: probar como juega una persona, y la zona de ritmo
+
+### 10.1 La lección: una protección se prueba con lo que hace una persona de verdad en esa situación
+
+Jose quedó encerrado en el hueco de l2 mucho más de los 4 s de la red, saltando todo el tiempo. S23 había probado la red con Kerana **quieta** y **sin salto doble**, y había calculado el alcance con la fórmula continua v²/2g (4,17 tiles; 7,18 con salto doble), redondeada a 4 y 7 filas. Las dos cosas eran el caso ideal:
+
+- **El reloj no tenía la culpa.** Reproducido en el juego (S24): sin salto doble, Kerana saltando, caminando, atacando o tocando el salto sin parar sale a los 4 s. El reloj no se reinicia al moverse.
+- **El modelo sí.** Con `gifts=all` (como decía el PR de S23 que se probara) Kerana tiene salto doble, el modelo daba por salida el pilar de 7 y el hueco no quedaba marcado: la red no actuaba nunca. Y no se sale: medido cuadro a cuadro, el salto doble perfecto sube 108,7 px y el pilar pide 112. Lo mismo con el salto normal: 63,3 px contra los 64 de una pared de 4.
+- **Corrección:** el alcance sale de la física del juego (`trapReach`, paso fijo de Arcade), no de una fórmula; el reloj pasó a lógica pura con tests de saltar, caminar y atacar; y el smoke prueba la red con Kerana corriendo de pared a pared, saltando, con salto doble y atacando (pozo F de la vitrina, pared de 7).
+
+En la práctica, al probar algo que protege al jugador (la red, una salida, un premio en un hueco):
+
+1. **Medir en el juego, no con fórmulas.** Detenido el bucle (`game.loop.sleep()`) y avanzando con `game.step()` a 60 Hz se mide lo que hace la física de verdad (S24: salto 63,3 px, salto doble 108,7, hongo 135,7 y hongo con salto doble 181). Un modelo "generoso" que exagera más allá de lo que la física permite deja trampas sin red.
+2. **Probar con lo que hace alguien atrapado:** saltar sin parar, contra las paredes, con el salto doble, atacando; nunca solo quieto.
+3. **Probar con los dones con los que prueba Jose:** `gifts=all` trae salto doble y dash, y cambia qué es un encierro.
+4. **Probar el estado entre niveles:** la escena se reutiliza; lo que se calcula por nivel (las celdas de la red, el reloj) se limpia al cargar el siguiente (en S23 quedaban las del nivel anterior).
+
+### 10.2 El hueco del premio con salida
+
+El hueco de l2 (x 234-238) se sale rompiendo un **fardo** en la base del pilar (x 233, filas 29-32) y por un túnel de 4 filas hasta el pie del ascenso. Fardo y no roca: se rompe con el tajo normal, que se tiene siempre (también en una partida sin el tajo cargado), y la red trata los rompibles como abiertos, así que con una roca alguien sin el tajo cargado quedaría encerrado sin red. A la altura de Kerana y pegado a donde cae: desde adentro se ve en cuanto se aterriza (paja clara contra roca oscura, captura `l2-hueco.png`).
+
+### 10.3 Enemigos con camino libre
+
+El ñakurutu y el karakara solo avisan y pican si la caja de su cuerpo recorre libre todo el camino hasta Kerana (`diverLogic.ts`); si no, esperan en su lugar. La salida cruza la cara de arriba de su percha (poste, rama o penca), nada más: pegada al pie de su poste, Kerana no es blanco. Al poner uno, que tenga camino libre a la mayoría de los lugares de su zona (`tests/diver.test.ts` lo mide en todos los mapas: en l2, el guasu 10/10, el de la ruta alta 5/7, el del poste de C1 6/10 y el del poste alto 6/12; los karakara de l3 y l6, 100 %).
+
+### 10.4 La zona de ritmo (l2, x 305-375)
+
+Un tramo que se cruza leyendo el ritmo, no reaccionando:
+
+- **Balsas encadenadas con el mismo ciclo** (3 tiles, recorren 4 a 50 px/s, esperan 1,8 s: 6,16 s). Alternan el sentido: las impares salen hacia la derecha desde su origen y las pares se dibujan en su punta derecha y salen hacia la izquierda; así se juntan de a dos, siempre a la vez, con **2 tiles de hueco**, y cada salto cae en la espera de las dos. Con ciclos distintos los encuentros se desfasan (lo vigila `tests/rhythm.test.ts`).
+- **El enemigo, sincronizado con las plataformas, no con Kerana:** el jakare guasu sale cuando llega la balsa que tiene más cerca (`rhythmFromMovers`) y su estado sale del reloj de juego, el mismo que mueve las balsas, así que no se desfasa nunca. Burbujas mientras las balsas llegan, afuera al juntarse (1 s), abajo el resto: la ventana para saltar es la espera menos lo que está afuera (0,8 s, más lo que tardan en separarse).
+- **Muerde donde se cae, no donde se espera:** su caja cubre el hueco y la primera baldosa de la balsa de llegada, a 1,5 px de la de salida. Esperar en la balsa propia siempre es seguro; si se pierde la ventana, la balsa vuelve al encuentro anterior y hay que pararse en sus dos baldosas lejanas (las burbujas avisan). Saltar con el jakare afuera cuesta corazones (el piloto sin esperar perdió 2 y 3).
+- **Un islote en el medio** (suelo firme, sin jakare): descanso y el lugar al que devuelve el agua. Un fuego 12 tiles antes del agua.
+- **Medidas:** el mapa pasa a 436 × 40 (la zona se insertó antes de la antesala, que se corrió 67 tiles). El piloto (que espera a que el jakare se hunda: opción `safe` del paso `mover`) cruza la zona en **≈ 21 s** dentro del recorrido de l2 (22-24 s desde la orilla, según la fase de la primera balsa). Sin salto doble ni dash.
 
