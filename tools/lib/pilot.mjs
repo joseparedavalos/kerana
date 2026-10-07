@@ -172,7 +172,8 @@ export function installPilot(plan) {
     if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1);
     return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1);
   };
-  const onThis = (m, b) => onBlock(m.block, b) && grounded();
+  // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta).
+  const onThis = (m, b) => onBlock(m.block, b) && b.center.x > m.block.x && b.center.x < m.block.x + m.block.width && grounded();
 
   // Un paso del plan; devuelve true cuando terminó.
   const doStep = (s) => {
