@@ -45,6 +45,8 @@ export const es = {
   'hint.l2.jakare': 'Burbujas: jakare. {attack} cuando asome',
   'hint.l2.nakurutu': 'Ñakurutu en el poste: si se lanza, ¡corré!',
   'hint.l2.antesala': 'Las ranas se callan de golpe…',
+  'hint.l2.sealed': 'La piedra está encerrada: la luz del tajo cargado atraviesa la roca',
+  'hint.l2.sleep': 'Hongo dormido: despertalo con el tajo cargado',
   'hint.l3.nandu': 'Ñandú: corre derecho. ¡{jump}!',
   'hint.l3.wind': 'Pasto que se inclina: se viene una ráfaga',
   'hint.l3.karakara': 'Karakara: se lanzan en picada',

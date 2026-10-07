@@ -14,6 +14,7 @@ import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
 import { createEnemy } from '../entities/enemies';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
+import { drawBreakables, needsChargedSlash, parseBreakableKind, type BreakableKind } from '../entities/BreakableLook';
 import { Bouncer } from '../entities/hazards/Bouncer';
 import { parseBouncerKind } from '../entities/hazards/BouncerMotor';
 import { Crumble } from '../entities/hazards/Crumble';
@@ -33,6 +34,7 @@ import type { PlayerStateName } from '../entities/PlayerMotor';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
+import { breakableGroups, restsOn } from '../systems/breakableLogic';
 import { CameraController } from '../systems/CameraController';
 import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
@@ -68,13 +70,20 @@ interface Sign {
   text: Phaser.GameObjects.Text;
 }
 
-/** Roca agrietada (tiles de `Ground`, pide el tajo cargado) o liana (objeto propio, basta el tajo normal). */
+/**
+ * Roca agrietada (tiles de `Ground`, pide el tajo cargado), bloque frágil (tiles de `Ground`, tajo normal, S22)
+ * o liana (objeto propio, tajo normal). Los de la misma clase que se tocan forman un bloque y caen juntos.
+ */
 interface Breakable {
   zone: Phaser.Geom.Rectangle;
+  kind: BreakableKind;
   needsCharge: boolean;
   hitsLeft: number;
-  /** Liana: rectángulo con cuerpo estático. Roca: undefined (son tiles). */
+  /** Liana: rectángulo con cuerpo estático. Roca y fardo: undefined (son tiles). */
   block?: Phaser.GameObjects.Rectangle;
+  /** El bloque entero (incluye a este) y su dibujo; se arman en `linkBreakables`. */
+  group: Breakable[];
+  look: Phaser.GameObjects.GameObject[];
   broken: boolean;
 }
 
@@ -144,6 +153,9 @@ export class LevelScene extends Phaser.Scene {
   private fallingHazards: FallingHazard[] = [];
   private dust!: Phaser.GameObjects.Particles.ParticleEmitter;
   private splashes!: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** Chispas del tajo normal (S22) y si ya salieron en este tajo. */
+  private slashSparks!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private slashSparked = false;
   private splashMs = 0;
   private sinkers: Sinking[] = [];
   /** Zonas de agua baja (GDD §4.8): frenan la carrera. */
@@ -184,7 +196,8 @@ export class LevelScene extends Phaser.Scene {
   /** Onda de luz del tajo cargado (una sola en pantalla). */
   private readonly lightWave = new LightWaveMotor(GAMEPLAY.lightWave);
   /** La onda choca solo con la capa Ground (las plataformas de un sentido no la frenan). */
-  private readonly waveProbe = (x: number, y: number): boolean => this.tileAt('Ground', x, y);
+  // Los rompibles son tiles de Ground pero no frenan la onda: ella los rompe (S22).
+  private readonly waveProbe = (x: number, y: number): boolean => this.tileAt('Ground', x, y) && !this.breakableAt(x, y);
   private lightWaveSprite?: Phaser.GameObjects.Rectangle;
   private readonly waveRect = new Phaser.Geom.Rectangle();
   private readonly enemyRect = new Phaser.Geom.Rectangle();
@@ -285,6 +298,18 @@ export class LevelScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(12);
+    const sfx = GAMEPLAY.slashFx;
+    this.slashSparks = this.add
+      .particles(0, 0, FX_PARTICLE, {
+        speed: { min: sfx.speed * 0.4, max: sfx.speed },
+        lifespan: sfx.lifespanMs,
+        scale: { start: sfx.scale, end: 0 },
+        alpha: { start: sfx.alpha, end: 0 },
+        tint: sfx.tint,
+        emitting: false,
+      })
+      .setDepth(12);
+    this.slashSparked = false;
     // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
     if (this.def.dark) this.darkness = new Darkness(this);
     this.buildMap();
@@ -293,6 +318,7 @@ export class LevelScene extends Phaser.Scene {
     for (const img of this.backdrop.images) this.darkness?.glow(img);
     if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
     const spawn = this.buildObjects();
+    this.linkBreakables();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
 
     const save = SaveManager.current;
@@ -434,6 +460,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.player.tick(delta, this.inputs);
     this.reportPlayerStateSfx();
+    this.updateSlashFx();
     this.cameraCtl.update(this.player.motor.facing);
     this.updateEnemies(delta);
     this.updateCarriers(delta);
@@ -842,8 +869,9 @@ export class LevelScene extends Phaser.Scene {
       enemy.purify();
       AudioManager.play('purify');
     }
+    // La onda rompe cualquier rompible que toque (también los fardos y las lianas).
     for (const b of this.breakables) {
-      if (b.broken || !b.needsCharge || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
+      if (b.broken || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
       if (wave.tryHit(b)) this.breakBreakable(b);
     }
     for (const b of this.bouncers) {
@@ -1112,20 +1140,62 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  private breakBreakable(b: Breakable): void {
-    b.broken = true;
-    if (b.block) {
-      b.block.destroy();
-    } else {
-      const ground = this.layers.Ground;
-      const tile = this.map.tileWidth;
-      for (let y = b.zone.top; y < b.zone.bottom; y += tile) {
-        for (let x = b.zone.left; x < b.zone.right; x += tile) ground?.removeTileAtWorldXY(x + 1, y + 1);
+  /** Arma los bloques (S22): los rompibles de la misma clase que se tocan caen juntos y se dibujan como uno. */
+  private linkBreakables(): void {
+    const ids = breakableGroups(this.breakables.map((b) => ({ x: b.zone.x, y: b.zone.y, width: b.zone.width, height: b.zone.height, kind: b.kind })));
+    const groups = new Map<number, Breakable[]>();
+    this.breakables.forEach((b, i) => {
+      const g = groups.get(ids[i]) ?? [];
+      g.push(b);
+      groups.set(ids[i], g);
+    });
+    for (const g of groups.values()) {
+      const look = drawBreakables(this, g[0].kind, g.map((b) => b.zone));
+      for (const b of g) {
+        b.group = g;
+        b.look = look;
       }
     }
-    this.dust.emitParticleAt(b.zone.centerX, b.zone.centerY, 10);
+  }
+
+  /** ¿Hay un rompible sin romper en (x, y)? */
+  private breakableAt(x: number, y: number): boolean {
+    return this.breakables.some((b) => !b.broken && b.zone.contains(x, y));
+  }
+
+  /** Rompe el bloque entero; lo que estaba apoyado encima cae al suelo (S22). */
+  private breakBreakable(hit: Breakable): void {
+    const ground = this.layers.Ground;
+    const tile = this.map.tileWidth;
+    for (const b of hit.group) {
+      if (b.broken) continue;
+      b.broken = true;
+      if (b.block) {
+        b.block.destroy();
+      } else {
+        for (let y = b.zone.top; y < b.zone.bottom; y += tile) {
+          for (let x = b.zone.left; x < b.zone.right; x += tile) ground?.removeTileAtWorldXY(x + 1, y + 1);
+        }
+      }
+      this.dust.emitParticleAt(b.zone.centerX, b.zone.centerY, b.block ? 10 : 4);
+    }
+    for (const obj of hit.look) obj.destroy();
+    hit.look.length = 0;
+    this.dropPickupsFrom(hit.group);
     AudioManager.play('rockBreak');
     this.shake(80, 0.004);
+  }
+
+  /** Lo que descansaba sobre la cara de arriba de un bloque roto cae hasta la superficie de abajo. */
+  private dropPickupsFrom(group: Breakable[]): void {
+    const cfg = GAMEPLAY.breakable;
+    for (const p of this.pickups) {
+      if (!p.active) continue;
+      const under = group.find((b) => restsOn(p.x, p.baseY, { x: b.zone.x, y: b.zone.y, width: b.zone.width, height: b.zone.height, kind: b.kind }, cfg.restTolerancePx));
+      if (!under) continue;
+      const floor = this.surfaceBelow(p.x, under.zone.top);
+      if (floor !== null) p.dropTo(floor, cfg.dropSpeed);
+    }
   }
 
   /** Daño por contacto de un peligro o ataque de jefe (1 corazón). Devuelve si se aplicó. */
@@ -1290,8 +1360,10 @@ export class LevelScene extends Phaser.Scene {
         }
         case 'Breakable': {
           const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
-          const isLiana = objectProp(obj, 'kind') === 'liana';
-          const b: Breakable = { zone, needsCharge: !isLiana, hitsLeft: isLiana ? GAMEPLAY.breakable.lianaHits : 1, broken: false };
+          const kind = parseBreakableKind(objectProp(obj, 'kind'));
+          const isLiana = kind === 'liana';
+          const hitsLeft = isLiana ? GAMEPLAY.breakable.lianaHits : kind === 'brittle' ? GAMEPLAY.breakable.brittleHits : 1;
+          const b: Breakable = { zone, kind, needsCharge: needsChargedSlash(kind), hitsLeft, group: [], look: [], broken: false };
           if (isLiana) {
             b.block = this.add.rectangle(zone.x + zone.width / 2 - 3, zone.y, 6, zone.height, LIANA_COLOR).setOrigin(0, 0).setDepth(3);
             this.physics.add.existing(b.block, true);
@@ -1624,6 +1696,24 @@ export class LevelScene extends Phaser.Scene {
       if (charged) this.fireLightWave();
     }
     this.lastPlayerState = state;
+  }
+
+  /** Unas pocas chispas en el arco del sable cuando el tajo normal golpea (el cargado tiene su onda). */
+  private updateSlashFx(): void {
+    const motor = this.player.motor;
+    if (!motor.attackHitboxActive) {
+      this.slashSparked = false;
+      return;
+    }
+    if (this.slashSparked || motor.chargedSwing) return;
+    this.slashSparked = true;
+    const cfg = GAMEPLAY.slashFx;
+    const c = this.player.body.center;
+    for (let i = 0; i < cfg.count; i++) {
+      const deg = cfg.arcFromDeg + ((cfg.arcToDeg - cfg.arcFromDeg) * i) / Math.max(1, cfg.count - 1);
+      const a = Phaser.Math.DegToRad(deg);
+      this.slashSparks.emitParticleAt(c.x + Math.cos(a) * cfg.radius * motor.facing, c.y + Math.sin(a) * cfg.radius, 1);
+    }
   }
 
   private updateDebugText(): void {

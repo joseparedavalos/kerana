@@ -7,6 +7,9 @@
 //      "---:::::" va 5 tiles a la derecha y vuelve. Va y viene sola salvo que diga mode=run|toggle.
 //   |  reja (Gate): los | seguidos de una columna son una reja; la abre un Switch.
 //   *  disparador (Switch): piedra de 1 tile que se enciende con el sable o con la onda de luz.
+//   %  bloque frágil (S22): suelo que se rompe con el tajo normal (Breakable kind=brittle). La roca agrietada
+//      "B" pide el tajo cargado. En el juego, los rompibles que se tocan forman un bloque y caen juntos.
+//   Plataformas y recorridos sobre agua (S22): si debajo hay "~", el tile lleva la superficie del agua.
 //   Propiedades por objeto con la línea de cabecera "at X,Y clave=valor…" (X, Y: cualquier tile del objeto):
 //     Mover:   id=… speed=px/s waitMs=… mode=loop|run|toggle solid=true|false
 //     Gate:    id=…
@@ -210,6 +213,12 @@ export function buildTiledMap(parsed, options = {}) {
   const px = (cx) => cx * TILE + TILE / 2;
   const py = (cy) => (cy + 1) * TILE;
 
+  // Plataforma o recorrido sobre el agua: la superficie sigue dibujada debajo de la balsa.
+  const waterUnder = (x, y, i) => {
+    const below = grid[y + 1]?.[x];
+    if (below === '~' || below === 'S') data.Water[i] = gid(TILES.waterSurface);
+  };
+
   let checkpoints = 0;
   let feathers = 0;
   let spawns = 0;
@@ -234,7 +243,8 @@ export function buildTiledMap(parsed, options = {}) {
           data.Hazards[i] = gid(TILES.hazard);
           break;
         case '~':
-          data.Water[i] = gid(y > 0 && grid[y - 1][x] === '~' ? TILES.waterDeep : TILES.waterSurface);
+          // Debajo de un camalote o de una balsa el agua ya es honda (la superficie está arriba).
+          data.Water[i] = gid(y > 0 && '~S-+:'.includes(grid[y - 1][x]) ? TILES.waterDeep : TILES.waterSurface);
           break;
         case 'S': {
           // Camalote sobre el agua: los "S" seguidos de una fila forman un solo objeto.
@@ -257,6 +267,7 @@ export function buildTiledMap(parsed, options = {}) {
         case '-':
         case '+': {
           // Plataforma móvil: los seguidos de una fila forman una; el recorrido son los ":" pegados.
+          waterUnder(x, y, i);
           if (grid[y][x - 1] === c) break;
           let len = 1;
           while (grid[y][x + len] === c) len++;
@@ -265,7 +276,8 @@ export function buildTiledMap(parsed, options = {}) {
           break;
         }
         case ':':
-          // Recorrido de una plataforma móvil: vacío.
+          // Recorrido de una plataforma móvil: vacío (con la superficie del agua si va sobre el agua).
+          waterUnder(x, y, i);
           break;
         case '|': {
           // Reja: los | seguidos de una columna forman una.
@@ -285,6 +297,11 @@ export function buildTiledMap(parsed, options = {}) {
         case 'B':
           data.Ground[i] = gid(TILES.cracked);
           addObject('Breakable', x * TILE, y * TILE, TILE, TILE);
+          break;
+        case '%':
+          // Bloque frágil: suelo que cede al tajo normal.
+          data.Ground[i] = gid(TILES.cracked);
+          addObject('Breakable', x * TILE, y * TILE, TILE, TILE, { kind: 'brittle' });
           break;
         case 'P':
           spawns++;

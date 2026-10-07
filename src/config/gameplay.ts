@@ -109,6 +109,44 @@ export const GAMEPLAY = {
   breakable: {
     /** Golpes normales que aguanta una liana. */
     lianaHits: 1,
+    // S22: bloque frágil ("%", tajo normal) y aspecto propio de cada clase, distinto del terreno.
+    /** Golpes normales que aguanta un bloque frágil. */
+    brittleHits: 1,
+    /** Roca agrietada (pide el tajo cargado): piedra gris azulada con grietas que brillan con la luz del tajo. */
+    rockColor: 0x6e7487,
+    rockEdgeColor: 0xa3a9bd,
+    rockCrackColor: 0x24263a,
+    rockGlowColor: 0xf2c14e,
+    /** El brillo de las grietas late entre estas opacidades, con este período (ms). */
+    rockGlowAlphaMin: 0.3,
+    rockGlowAlphaMax: 0.95,
+    rockGlowPulseMs: 900,
+    /** Bloque frágil (tajo normal): fardo de totora seca, paja clara con hebras y una atadura. */
+    brittleColor: 0xd2ab62,
+    brittleStrandColor: 0x8e6a32,
+    brittleTieColor: 0xf0deaa,
+    /** Liana: hojas claras y ataduras del mismo color que el fardo (se corta con el tajo normal). */
+    lianaLeafColor: 0x7cc25a,
+    /** Lo que estaba apoyado encima de un rompible cae hasta el suelo a esta velocidad (px/s). */
+    dropSpeed: 240,
+    /** Holgura (px) para decidir qué está apoyado sobre la cara de arriba. */
+    restTolerancePx: 6,
+  },
+
+  /** Partículas del tajo normal (S22): unas pocas chispas en el arco del sable, discretas. El cargado no las usa. */
+  slashFx: {
+    /** Chispas por tajo, repartidas en el arco. */
+    count: 5,
+    /** Radio del arco (px) desde el centro del cuerpo y ángulos de inicio y fin (grados; 0 = adelante, negativo = arriba). */
+    radius: 17,
+    arcFromDeg: -70,
+    arcToDeg: 45,
+    lifespanMs: 170,
+    /** Velocidad hacia afuera (px/s) y tamaño de cada chispa (escala sobre 3 px). */
+    speed: 35,
+    scale: 0.8,
+    alpha: 0.85,
+    tint: 0xfff4d6,
   },
 
   /** Base común de jefes (GDD §11.5). */

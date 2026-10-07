@@ -15,6 +15,8 @@ export class Pickup extends Phaser.Physics.Arcade.Sprite {
   readonly kind: PickupKind;
   /** Plumas: índice estable dentro del nivel (0–2, orden de aparición en el ASCII); -1 en lo demás. */
   readonly index: number;
+  /** Pies (y) en reposo: el vaivén sube 4 desde acá. */
+  private restY: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: PickupKind, index = -1) {
     const placeholder = `pickup_${kind}`;
@@ -30,7 +32,25 @@ export class Pickup extends Phaser.Physics.Arcade.Sprite {
     this.body.setAllowGravity(false);
     // El cuerpo se mide en píxeles de la textura: con arte (detail 2) se pide el doble para que mida SIZE unidades.
     this.body.setSize(SIZE / look.scale, SIZE / look.scale);
-    scene.tweens.add({ targets: this, y: y - 4, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.restY = y;
+    this.bob();
+  }
+
+  get baseY(): number {
+    return this.restY;
+  }
+
+  private bob(): void {
+    this.scene.tweens.add({ targets: this, y: this.restY - 4, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  /** Cae hasta `y` (S22: se rompió lo que lo sostenía) y sigue flotando ahí. */
+  dropTo(y: number, speed: number): void {
+    if (y <= this.restY) return;
+    this.scene.tweens.killTweensOf(this);
+    const ms = ((y - this.y) / speed) * 1000;
+    this.restY = y;
+    this.scene.tweens.add({ targets: this, y, duration: Math.max(1, ms), ease: 'Quad.easeIn', onComplete: () => this.active && this.bob() });
   }
 
   /** Desaparece con un pequeño destello al recogerse. */
