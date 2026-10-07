@@ -22,8 +22,12 @@ const L1_COMMON = {
     ['antesala x 250', 250],
   ],
   steps: [
-    { run: 1, untilX: 116.2 },
-    { mover: [118, 9], dir: 1, power: true, exit: 'jump', landX: 130.5 },
+    // S23: el hueco antes del bloque de la piedra (x 112-113) con un salto que apunta al bloque: corriendo, con el juego
+    // lento, caía sobre la balsa o pasaba de largo la piedra.
+    { run: 1, untilX: 110 },
+    { jumpTo: [115.5, 9] },
+    // Cae 1,5 tiles adentro de la orilla (con 0,5, al frenar en el aire se volvía al hueco).
+    { mover: [118, 9], dir: 1, power: true, exit: 'jump', landX: 131.5 },
     { run: 1, untilTop: 16 },
     { run: -1, untilX: 205.4 },
     { mover: [200, 22], dir: -1, exit: 'walk', exitDir: 1 },
