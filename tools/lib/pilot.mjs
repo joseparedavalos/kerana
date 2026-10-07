@@ -61,6 +61,9 @@ export function installPilot(plan) {
   scene.respawn = function (reason) {
     st.respawns++;
     st.log.push(`caída (${reason}) en x ${Math.round(player.body.center.x / T)}`);
+    // Tras una caída el paso empieza de nuevo (si no, una plataforma perdida se persigue para siempre).
+    st.phase = 'start';
+    st.aim = null;
     return origRespawn.call(this, reason);
   };
 
@@ -225,6 +228,14 @@ export function installPilot(plan) {
         }
         if (!grounded()) {
           seek(mid);
+          return false;
+        }
+        // S23: se alejó de la punta mientras Kerana llegaba (el tajo a la piedra la frena): a esperar que vuelva.
+        // Antes saltaba igual hacia la plataforma lejana y caía al pozo una y otra vez (smoke de l1, 1 de 4).
+        const away = at === 'end' ? mm.length - mm.pos : mm.pos;
+        if (away > 1.5 * T) {
+          move(0);
+          st.phase = 'wait';
           return false;
         }
         // Plataforma encima de la cabeza (S23: el ascensor del tronco baja hasta sobre Kerana): se sube saltando desde abajo.
