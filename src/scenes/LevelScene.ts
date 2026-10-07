@@ -35,7 +35,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
-import { findTraps, riseRows, trapGridFromMap, type TrapObject } from '../systems/trapLogic';
+import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } from '../systems/trapLogic';
 import { CameraController } from '../systems/CameraController';
 import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
@@ -139,10 +139,9 @@ export class LevelScene extends Phaser.Scene {
   private lastPlayerState: PlayerStateName = 'idle';
   private wasImmune = false;
   private readonly safeGround = new Phaser.Math.Vector2();
-  /** Red de seguridad (S23): 1 = piso encerrado (celda de los pies); tiempo que lleva Kerana en uno. */
+  /** Red de seguridad (S23): 1 = piso encerrado (celda de los pies); el reloj corre mientras Kerana está en uno. */
   private trapCells?: Uint8Array;
-  private inTrap = false;
-  private trapMs = 0;
+  private readonly trapWatch = new TrapWatch();
   private readonly checkpointPos = new Phaser.Math.Vector2();
   private readonly playerRect = new Phaser.Geom.Rectangle();
   private debugText?: Phaser.GameObjects.Text;
@@ -1538,6 +1537,9 @@ export class LevelScene extends Phaser.Scene {
    * con la geometría del mapa y un modelo que exagera su alcance (ver `trapLogic.ts`).
    */
   private findTraps(): void {
+    // La escena se reutiliza entre niveles (S24): sin esto quedaban las celdas y el reloj del nivel anterior.
+    this.trapCells = undefined;
+    this.trapWatch.reset();
     const map = this.map;
     const layer = (name: TileLayerName) => (x: number, y: number) => {
       const tile = this.layers[name]?.getTileAt(x, y);
@@ -1562,14 +1564,21 @@ export class LevelScene extends Phaser.Scene {
       objects,
       cowReachPx: GAMEPLAY.cow.patrolDistance + 2 * map.tileWidth,
     });
-    const g = GAMEPLAY.gravity;
     const p = GAMEPLAY.player;
-    const extra = this.player.motor.doubleJumpEnabled ? [p.doubleJumpVelocity] : [];
-    const result = findTraps(grid, {
-      jumpRows: riseRows([p.jumpVelocity, ...extra], g, map.tileHeight, 'floor'),
-      bounceRows: riseRows([GAMEPLAY.jungle.bounceVelocity, ...extra], g, map.tileHeight, 'ceil'),
-      bodyRows: Math.ceil(p.bodyHeight / map.tileHeight),
-    });
+    // Alcance con la física del juego (S24): paso fijo de Arcade, no la fórmula continua (ver `trapReach`).
+    const result = findTraps(
+      grid,
+      trapReach({
+        gravity: GAMEPLAY.gravity,
+        stepHz: this.physics.world.fps,
+        tile: map.tileHeight,
+        jumpVelocity: p.jumpVelocity,
+        doubleJumpVelocity: this.player.motor.doubleJumpEnabled ? p.doubleJumpVelocity : undefined,
+        bounceVelocity: GAMEPLAY.jungle.bounceVelocity,
+        mushroomHeight: GAMEPLAY.jungle.mushroomHeight,
+        bodyHeight: p.bodyHeight,
+      }),
+    );
     if (result.trappedSpans.length === 0) return;
     this.trapCells = result.trapped;
     if (!DEBUG.debug) return;
@@ -1596,26 +1605,18 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /**
-   * Red de seguridad (S23): el tiempo corre desde que Kerana pisa un encierro y sigue mientras salta adentro;
-   * se corta apenas pisa un piso que no lo es. Al cumplirse `GAMEPLAY.trap.waitMs`, vuelve al último suelo firme.
+   * Red de seguridad (S23): el tiempo corre desde que Kerana pisa un encierro y sigue mientras salta, camina o ataca
+   * adentro; se corta apenas pisa un piso que no lo es (`TrapWatch`). Al cumplirse `GAMEPLAY.trap.waitMs`, vuelve al
+   * último suelo firme.
    */
   private updateTrap(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
     if (!this.trapCells) return;
-    if (body.blocked.down) this.inTrap = this.trappedUnder(body);
-    if (!this.inTrap) {
-      this.trapMs = 0;
-      return;
-    }
-    this.trapMs += deltaMs;
-    if (this.trapMs < GAMEPLAY.trap.waitMs) return;
-    this.trapMs = 0;
-    this.inTrap = false;
-    this.respawn('trap');
+    if (this.trapWatch.step(deltaMs, body.blocked.down, this.trappedUnder(body), GAMEPLAY.trap.waitMs)) this.respawn('trap');
   }
 
   /** Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado (nunca en un encierro). */
   private trackSafeGround(body: Phaser.Physics.Arcade.Body): void {
-    if (!body.blocked.down || this.inTrap) return;
+    if (!body.blocked.down || this.trapWatch.active) return;
     const tile = this.map.tileWidth;
     const below = body.bottom + 1;
     const feetY = body.bottom - 2;
