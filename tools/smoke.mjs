@@ -816,9 +816,10 @@ async function main() {
       return { webgl: s.sys.renderer.type === 2, lanterns: s.lanterns.length, pora: pora.length, poraLit: pora.some((e) => e.lit) };
     });
     check(l7info.lanterns >= 10 && l7info.pora >= 3 && !l7info.poraLit, `nivel 7: faroles y póra a oscuras (${JSON.stringify(l7info)})`);
-    // Kerana camina hasta el primer farol y lo enciende.
+    // Kerana camina hasta el primer farol y lo enciende. Tope de 12 s de reloj (S24: con el headless a 12-17 fps, 4 s no
+    // siempre alcanzaban); el bucle corta apenas se enciende.
     await l7aPage.keyboard.down('ArrowRight');
-    for (let t = 0; t < 4000 && !(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit)); t += 100) await sleep(100);
+    for (let t = 0; t < 12000 && !(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit)); t += 100) await sleep(100);
     await l7aPage.keyboard.up('ArrowRight');
     check(await l7aPage.evaluate(() => window.__KERANA_DEBUG__.scene.lanterns[0].lit), 'nivel 7: tocar un farol lo enciende');
     await l7aPage.screenshot({ path: join(SHOTS, 'l7-street.png') });

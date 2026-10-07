@@ -184,8 +184,12 @@ export function installPilot(plan) {
     if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1);
     return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1);
   };
-  // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta).
-  const onThis = (m, b) => onBlock(m.block, b) && b.center.x > m.block.x && b.center.x < m.block.x + m.block.width && grounded();
+  // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta) y sin pisar el
+  // suelo de al lado. S24: con el juego lento el paso anterior terminaba tarde y Kerana frenaba con el centro sobre la
+  // plataforma vertical de l1 pero parada en el borde del piso; la plataforma bajaba sin ella y el paso terminaba arriba.
+  const onGroundTile = (b) => scene.isSolidAt(b.left + 1, b.bottom + 2) || scene.isSolidAt(b.right - 1, b.bottom + 2);
+  const onThis = (m, b) =>
+    onBlock(m.block, b) && b.center.x > m.block.x && b.center.x < m.block.x + m.block.width && grounded() && !onGroundTile(b);
 
   // Un paso del plan; devuelve true cuando terminó.
   const doStep = (s) => {
@@ -278,6 +282,12 @@ export function installPilot(plan) {
       }
       case 'ride': {
         move(0);
+        // S24: si la plataforma se fue sin ella (quedó en el piso), vuelve a esperarla en vez de bajar donde no llegó.
+        if (grounded() && !onBlock(m.block, b)) {
+          st.log.push(`la plataforma de x ${Math.round(m.zone.x / T)} se fue sin Kerana: la espera otra vez`);
+          st.phase = 'wait';
+          return false;
+        }
         const arrived = at === 'end' ? mm.pos <= 1 : mm.pos >= mm.length - 1;
         if (!arrived) return false;
         if (s.exit === 'none') return true;
