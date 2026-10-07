@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_HIGH, L2_MAIN } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -306,7 +306,7 @@ async function main() {
     await l2Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const l2x = await l2Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l2x > 220 * TILE && l2x < 240 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
+    check(l2x > 309 * TILE && l2x < 329 * TILE, `nivel 2 con boss=1 empieza en la antesala (x ${Math.round(l2x / TILE)} tiles)`);
     // Camina hasta que se cierre la arena (islote A): se detiene en cuanto se cierra (tope 15 s, para máquinas lentas).
     await walkIntoArena(l2Page);
     check(await l2Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), "nivel 2: la arena de Mbói Tu'i se cierra");
@@ -335,6 +335,100 @@ async function main() {
     const l2save = await l2Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(l2save.freed?.includes('mboi_tui') && l2save.maxHearts === 5, "guardado: Mbói Tu'i liberado y +1 corazón (5)");
     await l2Page.close();
+
+    // 1c2) l2 de punta a punta (S22): el piloto cruza el estero por la ruta principal (roca agrietada, cadenas de camalotes,
+    // piedra encerrada y balsa, par de balsas, hongo -> balsa alta, atajo del fardo, ruta baja, hongo dormido, plataforma
+    // vertical, hongo de un uso -> balsa alta, la cadena más larga) y después la liberación hasta "Nivel completado".
+    // El tajo cargado viene del guardado (l1 ya vencido en los pasos de arriba).
+    const l2Run = await open('/?debug=1&level=2&god=1');
+    await l2Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l2Info = await l2Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const groups = new Set(s.breakables.map((b) => b.group));
+      return {
+        charge: window.__KERANA_DEBUG__.player.motor.chargeEnabled,
+        movers: s.movers.length,
+        // Recorrido vertical: la plataforma se mueve en y (dx = 0).
+        vertical: s.movers.filter((m) => m.motor.uy !== 0).length,
+        switches: s.switches.length,
+        bouncers: s.bouncers.map((b) => b.motor.state).join(','),
+        rocks: [...groups].filter((g) => g[0].kind === 'rock').length,
+        brittle: [...groups].filter((g) => g[0].kind === 'brittle').length,
+        drawn: s.breakables.every((b) => b.look.length > 0),
+        checkpoints: s.checkpoints.length,
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+      };
+    });
+    check(
+      l2Info.charge &&
+        l2Info.movers === 11 &&
+        l2Info.vertical === 2 &&
+        l2Info.switches === 1 &&
+        l2Info.bouncers === 'ready,ready,ready,asleep' &&
+        l2Info.rocks === 2 &&
+        l2Info.brittle === 3 &&
+        l2Info.drawn &&
+        l2Info.checkpoints === 3 &&
+        l2Info.feathers === 3,
+      `nivel 2: 11 plataformas (2 verticales), 1 piedra, 4 hongos (normales, de un uso y dormido), 2 rocas y 3 fardos dibujados, 3 fuegos, 3 plumas (${JSON.stringify(l2Info)})`,
+    );
+    // El tajo normal no rompe la roca agrietada del peñasco (x 14-16); el piloto la rompe después con el cargado.
+    await l2Run.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(12.5 * 16, 33 * 16);
+      d.player.motor.facing = 1;
+    });
+    await sleep(300);
+    await l2Run.screenshot({ path: join(SHOTS, 'l2-rompibles.png') });
+    // Chispas del tajo normal (S22): captura durante el golpe.
+    await l2Run.keyboard.down('KeyX');
+    await sleep(90);
+    await l2Run.screenshot({ path: join(SHOTS, 'l2-tajo.png') });
+    await l2Run.keyboard.up('KeyX');
+    await sleep(600);
+    const rockA = () => l2Run.evaluate(() => window.__KERANA_DEBUG__.scene.breakables.find((b) => b.kind === 'rock' && b.zone.x === 14 * 16).broken);
+    check((await rockA()) === false, 'nivel 2: el tajo normal no rompe la roca agrietada');
+    await l2Run.evaluate(installPilot, L2_MAIN);
+    for (let t = 0; t < 300000 && !(await pilot(l2Run)).done; t += 500) await sleep(500);
+    const run2 = await pilot(l2Run);
+    check(run2.done && run2.respawns === 0, `nivel 2: Kerana cruza el estero entero sin caer al agua (${JSON.stringify(run2)})`);
+    if (!run2.done) {
+      await l2Run.screenshot({ path: join(SHOTS, 'l2-piloto-atascado.png') });
+      console.log((await l2Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
+    check(await rockA(), 'nivel 2: el tajo cargado rompe la roca agrietada entera (3 × 4 tiles de un golpe)');
+    console.log(`  l2 (ruta principal): ${(run2.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run2.splits)}`);
+    await l2Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    for (let i = 0; i < PRESS_MAX && !(await l2Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); })); i++) {
+      await l2Run.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l2Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); }), 'nivel 2 recorrido → liberación → Nivel completado');
+    await l2Run.close();
+
+    // 1c3) l2, ruta alta (S22): desde la repisa del ascenso 1, las pencas en zigzag, el muro de roca agrietada (tajo
+    // cargado), la balsa sobre el hueco y la pluma B; y el nido de la ruta baja deja caer su guavirá al romperse.
+    const l2High = await open('/?debug=1&level=2&god=1');
+    await l2High.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    await l2High.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(143.5 * 16, 26 * 16));
+    await sleep(300);
+    const l2HighStart = await l2High.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
+    await l2High.evaluate(installPilot, L2_HIGH);
+    for (let t = 0; t < 120000 && !(await pilot(l2High)).done; t += 500) await sleep(500);
+    const high2 = await l2High.evaluate(() => ({ done: window.__KERANA_PILOT__.done, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16), timeMs: Math.round(window.__KERANA_PILOT__.timeMs) }));
+    check(high2.done && high2.hud === l2HighStart + 1 && high2.respawns === 0, `nivel 2: la ruta alta llega al fuego 2 con la pluma B (${JSON.stringify(high2)})`);
+    const nest = await l2High.evaluate(async () => {
+      const scene = window.__KERANA_DEBUG__.scene;
+      const g = scene.pickups.find((p) => p.kind === 'guavira' && Math.floor(p.x / 16) === 161);
+      const before = g.baseY / 16;
+      scene.breakBreakable(scene.breakables.find((b) => b.kind === 'brittle' && b.zone.x === 161 * 16));
+      await new Promise((r) => setTimeout(r, 1500));
+      return { before, after: g.baseY / 16, y: Math.round(g.y / 16) };
+    });
+    check(nest.before === 27 && nest.after === 33, `nivel 2: al romper el nido, la guavirá cae al suelo (${JSON.stringify(nest)})`);
+    await l2High.close();
 
     // 1d) Nivel 3: antesala, cierre de la arena de Moñái, fase 3 forzada (robo) y liberación con salto doble.
     const l3Page = await open('/?debug=1&level=3&boss=1&god=1');

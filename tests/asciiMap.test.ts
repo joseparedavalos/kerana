@@ -197,6 +197,26 @@ describe('objetos de motor (S18)', () => {
     expect(() => build('size 4x2\nat 3,0 x=1', 'P...\n####')).toThrow(/ningún objeto/);
   });
 
+  it('S22: "%" es un bloque frágil (Breakable kind=brittle) y "B" la roca agrietada', () => {
+    const { of } = build('size 4x3', ['P.%B', '..%B', '####'].join('\n'));
+    const kinds = of('Breakable').map((b) => [b.x / 16, b.y / 16, props(b).kind ?? 'rock']);
+    expect(kinds).toEqual([
+      [2, 0, 'brittle'],
+      [3, 0, 'rock'],
+      [2, 1, 'brittle'],
+      [3, 1, 'rock'],
+    ]);
+  });
+
+  it('S22: una balsa sobre el agua deja la superficie dibujada debajo, y el agua de abajo es honda', () => {
+    const parsed = parseAscii(['size 6x3', '---', 'P.--::', '..~~~~', '######'].join('\n'));
+    const water = buildTiledMap(parsed).layers.find((l) => l.name === 'Water') as unknown as { data: number[] };
+    const at = (x: number, y: number) => water.data[y * 6 + x] - 1;
+    expect([at(2, 0), at(3, 0), at(4, 0), at(5, 0)]).toEqual(Array(4).fill(TILES.waterSurface));
+    expect(at(1, 0)).toBe(-1);
+    expect([at(2, 1), at(5, 1)]).toEqual([TILES.waterDeep, TILES.waterDeep]);
+  });
+
   it('una reja sin Switch avisa', () => {
     const { parsed } = build('size 4x2', 'P.|.\n####');
     expect(parsed.warnings.some((w: string) => /sin ningún Switch/.test(w))).toBe(true);
