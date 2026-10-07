@@ -508,22 +508,28 @@ Tres fuegos (x 101, x 184 y la antesala): el nivel es un tercio más ancho que l
 |---|---|
 | Lugar | Esteros y humedales de Ñeembucú |
 | Hora | Atardecer naranja que se vuelve noche |
-| Tamaño | ≈ 280 × 24 tiles |
-| Idea nueva | El agua: camalotes que se hunden, agua baja que frena y agua profunda que te devuelve a la orilla |
+| Tamaño | 369 × 40 tiles (S22) |
+| Idea nueva | El agua: camalotes que se hunden, agua baja que frena y agua profunda que te devuelve a la orilla. Se exige lo de l1 desde el principio: balsas (de una a otra), hongos como acceso y el tajo cargado en el camino |
 | Enemigos | `jakare`, `nakurutu`, `mboi` |
 | Peligros | Agua profunda; karaguatá |
 | Música | Percusión de agua, ranas y flauta grave |
 | Jefe | Mbói Tu'i |
 | Don | Corazón del estero (+1 corazón; 5 en total) |
 
-**Recorrido**
+**Recorrido** (rediseño de S22 con la receta de `docs/RECETA-NIVEL.md`; el detalle con x está en la cabecera de `tools/levels/l2.txt`)
 
-- **A. La orilla (≈ 60 tiles).** Primeros camalotes: se hunden 1,2 s después de pisarlos y reaparecen a los 3 s. El agua baja frena la carrera. *Pluma 1:* al final de una cadena de camalotes.
-- **B. Los juncales (≈ 80 tiles).** El jakare acecha bajo el agua (burbujas) y emerge. Juncos como plataformas de un solo sentido. *Pluma 2:* junto a la guarida de un jakare (riesgo).
-- **Checkpoint 1.**
-- **C. Cae la noche (≈ 80 tiles).** Ñakurutu en postes que se lanzan en picada. Cadenas de camalotes sobre agua profunda. **Luz de Arasy** antes de la cadena más larga. *Pluma 3:* al otro lado de un hueco largo (requiere dash → volver después).
-- **Checkpoint 2 (antesala).** Las ranas croan… y de golpe se callan.
-- **Arena: la laguna central.** Tres islotes con camalotes entre ellos.
+El suelo base está en la fila 33 y el mapa crece hacia arriba: dos ascensos reales sin salto doble (hongos, balsas altas, pencas y una plataforma vertical) y bajadas por caída libre. Kerana llega con el tajo cargado: l2 no lo enseña sin riesgo, lo pide una vez por sección.
+
+- **A. La orilla (x 0–70).** Al lado del inicio, un **fardo de totora** (se rompe con el tajo normal) esconde una guavirá; enseguida, un peñasco cuya base es **roca agrietada** de 3 × 4 cierra el paso: cartel del tajo cargado y primer uso obligatorio. Los dos rompibles se ven distintos del terreno y entre sí (paja clara contra piedra con grietas que brillan). Camalotes sobre agua baja (seguro), una mbói y dos cadenas de camalotes sobre agua honda. *Pluma A (saltar):* en el arco del salto largo (5 tiles de aire) desde el último camalote de la segunda cadena.
+- **B. Los juncales (x 71–197).** **Fuego** (x 74). Una **piedra encerrada** en una roca pegada a una balsa: solo la enciende la luz del tajo cargado y la balsa cruza el agua honda sobre un jakare. Un **par de balsas**: se salta de una a la otra cuando las dos llegan a sus puntas. **Ascenso 1, el palmar** (fila 33 → 18): un hongo lanza a una balsa alta que lleva a una repisa; de ahí, pencas en zigzag (izquierda y derecha, con una guavirá) o el **atajo** tras un fardo (luciérnagas), con un hongo en una chimenea. En la cima del albardón el camino se divide:
+  - *Ruta baja (fácil):* un pozo baja por dentro del albardón hasta el agua: un **nido de totora** que al romperlo deja caer una guavirá, un junco con jakare, una mbói y un camalote.
+  - *Ruta alta (rentable):* un **muro de roca agrietada** (tajo cargado) abre las copas: una balsa sobre el hueco, una guavirá, la *pluma B (tajo cargado)* y un ñakurutu. Caerse deja en la baja.
+  - **Fuego** donde se juntan (x 198).
+- **C. Cae la noche (x 199–308).** Poste con ñakurutu y camalotes. **Ascenso 2, el timbó** (fila 33 → 12), en zigzag: un **hongo dormido** al pie de una pared de 7 (hay que despertarlo con el tajo cargado), una **plataforma vertical** hacia la izquierda y, arriba, un **hongo de un solo uso** que lanza a una balsa alta que llega a la cima. *Pluma C (salto doble + dash, volver después):* en una penca a 12 tiles de aire de la cima. Desde la cima se cae a la orilla, sobre la **Luz de Arasy**, justo antes de **la cadena más larga**: camalote, balsa, un ascensor que baja al agua y sube hasta un poste alto con ñakurutu, y otro par de balsas con un jakare entre ellas.
+- **Checkpoint 2 (antesala, x 309–328).** Las ranas croan… y de golpe se callan.
+- **Arena: la laguna central (x 329–368).** Tres islotes con camalotes entre ellos.
+
+Tres fuegos (x 74, x 198 y la antesala). Piezas: 11 plataformas móviles de un solo sentido (9 horizontales y 2 verticales; dos pares de balsa a balsa y una balsa que pasa a un ascensor), 4 hongos (dos normales, uno de un solo uso y uno dormido; dos lanzan a una balsa), 1 piedra encerrada, 2 rocas agrietadas y 3 fardos. Cruzarlo por el camino principal sin explorar ni pelear lleva **≈ 80 s** de juego (antes de S22, ≈ 35 s; medido con el piloto del smoke).
 
 **Jefe: Mbói Tu'i**. 12 golpes (3 fases de 4).
 
@@ -1136,7 +1142,8 @@ point FallingHazard x=150 y=5 delayMs=800
 | `=` | Plataforma de un solo sentido (capa `Platforms`) |
 | `^` | Peligro: espinas o karaguatá (capa `Hazards`) |
 | `~` | Agua profunda (capa `Water`) |
-| `B` | Roca agrietada (objeto `Breakable`, 1 tile) |
+| `B` | Roca agrietada (objeto `Breakable`, 1 tile): pide el tajo cargado (o su onda). Se ve como piedra gris azulada con grietas que laten con la luz del tajo |
+| `%` | Bloque frágil (objeto `Breakable` con `kind=brittle`, 1 tile, S22): cede al tajo normal. Se ve como un fardo de totora seca (paja clara con atadura) |
 | `P` | Inicio de Kerana (`PlayerSpawn`) |
 | `C` | Fuego o checkpoint (`Checkpoint`) |
 | `G` | Guavirá |
@@ -1153,6 +1160,8 @@ point FallingHazard x=150 y=5 delayMs=800
 | `:` | Recorrido de una plataforma móvil (vacío) |
 | `\|` | Reja (objeto `Gate`; los seguidos de una columna son una). La abre un `Switch` |
 | `*` | Disparador (objeto `Switch`, 1 tile): se enciende con el sable o con la onda de luz |
+
+**Rompibles (S22).** Los tiles rompibles de la misma clase que se tocan forman un bloque y caen juntos (una pared de 3 × 4 cae de un golpe). La onda del tajo cargado rompe cualquier rompible que toque (antes se apagaba contra la roca agrietada, que es suelo). Lo que estaba apoyado sobre la cara de arriba de un bloque (una guavirá en un nido) cae al suelo al romperlo. Una plataforma móvil o su recorrido sobre agua (`~` debajo) deja dibujada la superficie del agua.
 
 Los objetos rectangulares (zonas de viento, niebla, oscuridad, arena, pindó, camalotes…) se declaran con `rect` en la cabecera, y los puntuales sin carácter propio (estalactitas, faroles…) con `point`; ambos en unidades de tile. El script `npm run maps` genera `public/assets/maps/<id>.json`.
 
