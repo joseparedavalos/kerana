@@ -85,8 +85,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l4',
     mapSource: 'ascii',
     biome: 'pueblo',
-    // La calle pintada sube hasta los pies. El suelo de tiles no se dibuja: la tapaba.
-    backgrounds: { far: 'bg_l4_far', shiftY: 180 },
+    // Fondo lejano (cerros, campanario, lapacho). La calle es el tileset, como en l3.
+    backgrounds: { far: 'bg_l4_far', shiftY: 40 },
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',
