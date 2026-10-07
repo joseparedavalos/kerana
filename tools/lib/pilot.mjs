@@ -19,7 +19,8 @@
 //                                                     sube hacia dir (saltando si hay un hueco), viaja quieta hasta la
 //                                                     otra punta y baja hacia exitDir (por defecto, dir) saltando
 //                                                     (hasta pisar más allá de landX), caminando, o no baja ('none':
-//                                                     el paso siguiente salta a otra plataforma).
+//                                                     el paso siguiente salta a otra plataforma). Si la plataforma
+//                                                     queda encima de la cabeza (un ascensor), sube saltando desde abajo.
 //   { charge: 1 | -1 }                                tajo cargado mirando hacia ese lado (mantiene X hasta cargar).
 //   { jumpTo: [x, fila], hold? }                      salta a una repisa o una penca: se acerca, salta (manteniendo
 //                                                     Espacio `hold` ms, 340 por defecto) y en el aire va hacia x;
@@ -224,6 +225,12 @@ export function installPilot(plan) {
         }
         if (!grounded()) {
           seek(mid);
+          return false;
+        }
+        // Plataforma encima de la cabeza (S23: el ascensor del tronco baja hasta sobre Kerana): se sube saltando desde abajo.
+        if (m.block.y + T / 2 < b.top) {
+          seek(mid);
+          if (Math.abs(mid - b.center.x) < m.block.width / 2 - 6) startJump();
           return false;
         }
         const d = Math.abs(mid - b.center.x) < 4 ? s.dir : Math.sign(mid - b.center.x);
