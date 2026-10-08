@@ -134,3 +134,84 @@ export const L2_COPA = {
     { run: 1, untilX: 199 },
   ],
 };
+
+// l3 · Misiones (S25). Ruta principal: tacurú agrietado, ñandú, par de balsas, pencas de la loma, grieta, viento en
+// contra (espera la calma), par de balsas, hongo -> repisa -> ascensor, vuelta por la barra y la rama alta, meseta (zanja y
+// tacurú agrietado), hongo
+// dormido, pencas en zigzag, copas, la cadena de seis y la zona de ritmo (en cada encuentro espera que amaine).
+export const L3_MAIN = {
+  aim: true,
+  wind: true,
+  splits: [
+    ['fuego x 127', 127],
+    ['ascenso 2 x 172', 172],
+    ['fuego x 232', 232],
+    ['cadena x 281', 281],
+    ['fuego x 349', 349],
+    ['antesala x 448', 448],
+  ],
+  steps: [
+    { run: 1, untilX: 11 },
+    { charge: 1 },
+    { run: 1, untilX: 59.5 },
+    { mover: [61, 33], dir: 1, exit: 'none' },
+    { mover: [74, 33], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 79 },
+    { jumpTo: [81, 30] },
+    { jumpTo: [85, 27] },
+    { jumpTo: [81, 24] },
+    { jumpTo: [86, 21] },
+    { run: 1, untilX: 154.5 },
+    { mover: [156, 33], dir: 1, exit: 'none' },
+    { mover: [169, 33], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 172.5 },
+    { bounce: [174, 32], landX: 178.5, landTop: 26 },
+    // Arriba del ascensor, a la izquierda por la barra (hueco con karakara) hasta el hongo de la rama alta.
+    { mover: [181, 26], dir: 1, exit: 'walk', exitDir: -1 },
+    { run: -1, untilX: 160.5 },
+    { bounce: [158, 14], landX: 162.5, landTop: 9 },
+    { run: 1, untilX: 205 },
+    { charge: 1 },
+    { run: 1, untilX: 243.5 },
+    { charge: 1 },
+    { bounce: [246, 32], landX: 251.5, landTop: 26 },
+    { jumpTo: [244, 23] },
+    { jumpTo: [239, 20] },
+    { jumpTo: [244, 17] },
+    { jumpTo: [239, 14] },
+    { jumpTo: [244, 11] },
+    { run: 1, untilX: 279.5 },
+    { mover: [281, 11], dir: 1, exit: 'none' },
+    { mover: [295, 11], at: 'end', dir: 1, exit: 'none' },
+    { mover: [301, 11], dir: 1, exit: 'none' },
+    { mover: [311, 15], at: 'end', dir: 1, exit: 'none' },
+    { mover: [317, 15], dir: 1, exit: 'none' },
+    { mover: [327, 11], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 360.5 },
+    // Zona de ritmo: en cada encuentro espera que amaine el viento en contra.
+    { mover: [362, 33], dir: 1, exit: 'none' },
+    { mover: [376, 33], at: 'end', dir: 1, exit: 'none', calm: [370, 32] },
+    { mover: [382, 33], dir: 1, exit: 'walk', calm: [380, 32] },
+    { mover: [396, 33], at: 'end', dir: 1, exit: 'none' },
+    { mover: [402, 33], dir: 1, exit: 'none', calm: [400, 32] },
+    { mover: [416, 33], at: 'end', dir: 1, exit: 'none', calm: [410, 32] },
+    { mover: [422, 33], dir: 1, exit: 'none', calm: [420, 32] },
+    { mover: [436, 33], at: 'end', dir: 1, exit: 'walk', calm: [430, 32] },
+    { run: 1, untilFight: true },
+  ],
+};
+
+// Lugar secreto de l3 (S25), la cueva del viento, desde la repisa del ascenso 2 (x 178,5, fila 26): espera el ascensor
+// abajo, rompe el fardo de la ladera, salta los dos pozos de 8 con la ráfaga a favor, cobra la pluma B en la cámara, baja
+// por el pozo de salida al túnel de abajo y vuelve por él a la izquierda hasta el hongo (rompe el otro fardo).
+export const L3_SECRET = {
+  aim: true,
+  wind: true,
+  ride: true,
+  noGapJump: [[215, 219]],
+  steps: [
+    { run: 1, wait: [181, 26], untilX: 186 },
+    { run: 1, untilTop: 29 },
+    { run: -1, untilX: 178 },
+  ],
+};

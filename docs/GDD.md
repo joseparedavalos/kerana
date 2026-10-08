@@ -560,22 +560,27 @@ Cuatro fuegos (x 74, x 198, x 307 y la antesala). Piezas: 22 plataformas móvile
 |---|---|
 | Lugar | Campos naturales de Misiones: pastizales, tierra colorada, islas de monte y tacurúes |
 | Hora | Mediodía, cielo celeste intenso |
-| Tamaño | ≈ 300 × 24 tiles |
-| Idea nueva | Viento (ráfagas que empujan) y altura (copas de árboles como plataformas) |
+| Tamaño | 518 × 40 tiles (S25) |
+| Idea nueva | Viento (ráfagas que empujan) y altura (copas de árboles como plataformas). Desde S25 el viento se lee: a favor ayuda, en contra no deja avanzar ni cruzar un hueco, y en la cueva del viento la ráfaga es la que permite saltar. Se exige lo de l1 y l2 desde el principio: balsas encadenadas, ascensores, hongos y el tajo cargado en el camino |
 | Enemigos | `nandu`, `karakara`, `teju_i` |
-| Peligros | Ráfagas; karaguatá. Los tacurúes son sólidos y algunos están agrietados |
+| Peligros | Ráfagas; karaguatá; pozos y la cañada bajo las copas. Los tacurúes son sólidos y algunos están agrietados |
 | Música | Guitarra y flauta, abierta y luminosa |
 | Jefe | Moñái |
 | Don | Salto doble |
 
-**Recorrido**
+**Recorrido** (rediseño de S25 con la receta de `docs/RECETA-NIVEL.md`; el detalle con x está en la cabecera de `tools/levels/l3.txt`)
 
-- **A. El pastizal (≈ 70 tiles).** Ñandúes que corren en línea recta (hay que saltarlos); tacurúes como escalones. *Pluma 1:* en una copa alta (requiere salto doble, que se gana al final de este nivel → volver después).
-- **B. Las ráfagas (≈ 80 tiles).** Zonas de viento anunciadas por el pasto y las partículas; karakara en picada; **Luz de Arasy**. *Pluma 2:* dentro de un tacurú agrietado (tajo cargado).
-- **Checkpoint 1.**
-- **C. Las islas de monte (≈ 80 tiles).** Saltos entre árboles con viento y karakara. *Pluma 3:* al final de un tramo con viento en contra.
-- **Checkpoint 2 (antesala).**
-- **Arena: la isla de monte.** Tres árboles altos con copas que sirven de plataforma; sus troncos bloquean la hipnosis.
+El suelo base está en la fila 33 y el mapa crece hacia arriba: tres ascensos sin salto doble (pencas en zigzag, hongos, una repisa, un ascensor y una vuelta hacia la izquierda), copas sobre una cañada sin fondo y 19 plataformas móviles (3 verticales). Los karakara (9) esperan en el aire sobre el otro lado de los saltos: se ven desde el borde, avisan y pican; se los corta o se espera que vuelvan. El viento tiene un ciclo fijo de 5,2 s (calma 2,2 · aviso 1 · ráfaga 2): el pasto y las ráfagas de aire lo anuncian.
+
+- **A. El pastizal (x 0–119).** Un nido de fardo con una guavirá al lado del inicio y, enseguida, un **tacurú agrietado** de 2 × 4 que cierra el paso (cartel; tajo cargado). Un ñandú en el llano, el **viento a favor** presentado sin riesgo sobre el llano y un pozo de 5. Un **par de balsas** sobre un pozo. **Ascenso 1, la loma** (fila 33 → 21): pencas en zigzag con un karakara que pica a quien sube, o el **atajo** tras un fardo de la ladera, con un hongo en una chimenea. En la loma, una grieta con un karakara del otro lado. *Pluma A (atacar y correr):* una **piedra temporizada** arriba de la loma abre por 3 s la reja de un nicho en la ladera de abajo; se golpea, se baja de un salto y se entra. Adentro, otra piedra vuelve a abrir la reja (nadie queda encerrado).
+- **B. Las ráfagas (x 120–222).** **Fuego** (x 127). Un teju'i y el **viento en contra** sobre un llano y un pozo: con la ráfaga no se avanza; se salta en la calma (cartel). Un par de balsas con un karakara en la llegada. **Ascenso 2** (fila 33 → 9): un hongo lanza a una repisa, un ascensor sube a una barra; la barra vuelve **hacia la izquierda** (hueco con un karakara, teju'i) hasta un hongo que lanza a una rama alta de un solo sentido, y por ella otra vez a la derecha hasta la meseta. Arriba, una Luz de Arasy, una zanja con karaguatá y un karakara del otro lado, y otro **tacurú agrietado** de 2 × 4 obligatorio.
+  - **Lugar secreto, la cueva del viento.** Con el ascensor abajo, en la ladera de la meseta se ven dos fardos (paja clara contra la tierra colorada), detrás de ellos asoma un túnel y hay luciérnagas. Adentro, dos pozos de 8 tiles: imposibles con un salto, se cruzan solo con la **ráfaga a favor** (el viento como herramienta, no como obstáculo). En calma, el salto cae al túnel de abajo, sin perder corazón. En la cámara: la *pluma B (saltar con el viento)*, una Luz de Arasy y dos guavirá. Se sale por un pozo al túnel de abajo, que vuelve a la entrada y sale por otro fardo junto al hongo del ascenso 2. El desvío cuesta ≈ 14-17 s (más volver a subir); la cámara no se alcanza por otro lado (el pozo de salida mide 7 filas).
+- **C. Las islas de monte (x 223–338).** **Fuego** (x 232). Un **hongo dormido** (tajo cargado, cartel) al pie de una barranca de 7. **Ascenso 3** (fila 33 → 11): pencas en zigzag hacia la izquierda y de vuelta, con dos karakara. Las copas sobre la cañada: un karakara en el hueco de la copa 1 a la 2, viento en contra de la 2 a la 3 (se salta en la calma), un teju'i en la copa 3. *Pluma C (salto doble, al rejugar):* en una copa alta sobre la copa 3. La **cadena de seis**: balsa, balsa, ascensor que baja, balsa, balsa y ascensor que sube, sin tocar suelo, todas con el ciclo del viento (5,2 s); un karakara pica durante el viaje.
+- **D. El paso de las ráfagas (x 339–447), zona de ritmo.** **Fuego** (x 349) y cartel. Ocho balsas sobre un barranco, con un islote en el medio: se juntan de a dos con 3 tiles de hueco y en cada encuentro sopla **viento en contra** mientras llegan y 0,3 s después de juntarse. Con la ráfaga, quien empuja hacia adelante cae y quien suelta vuelve a su balsa; cuando amaina hay ≈ 1 s para saltar. Balsas y viento tienen el mismo ciclo: el ritmo no se desfasa nunca.
+- **Checkpoint 4 (antesala, x 448).**
+- **Arena: la isla de monte** (x 478–517). Tres árboles altos con copas que sirven de plataforma; sus troncos bloquean la hipnosis.
+
+**Medidas (S25).** Ruta principal con el piloto (`god=1`): antes ≈ 28 s, después ≈ 112 s (ver PLAN, notas de S25). Sin salto doble ni dash.
 
 **Jefe: Moñái**. 12 golpes.
 

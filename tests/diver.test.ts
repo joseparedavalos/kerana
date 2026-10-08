@@ -134,3 +134,11 @@ describe('los Diver de los niveles tienen camino libre hasta donde pasa Kerana (
     for (const d of l2) expect(d.clear).toBeGreaterThan(0);
   });
 });
+
+describe('l3: karakara en los saltos (S25)', () => {
+  it('los nueve karakara tienen a su alcance un lugar donde pasa Kerana y camino libre hasta él', () => {
+    const l3 = diverReach('l3');
+    expect(l3.length).toBe(9);
+    for (const d of l3) expect([d.x, d.zone > 0, d.clear > 0]).toEqual([d.x, true, true]);
+  });
+});

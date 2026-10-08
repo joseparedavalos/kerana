@@ -53,6 +53,8 @@ export const es = {
   'hint.l3.karakara': 'Karakara: se lanzan en picada',
   'hint.l3.cracked': 'Tacurú agrietado: tajo cargado ({attack} mantenido)',
   'hint.l3.antesala': 'Cuernos que brillan: escondete tras un tronco',
+  'hint.l3.ritmo': 'Viento en contra: saltá cuando amaina',
+  'hint.l3.sleep': 'Hongo dormido: despertalo con el tajo cargado',
   'hint.l4.jagua': 'Jagua: ladra y carga. ¡{jump}!',
   'hint.l4.museo': 'Museo Mitológico Ramón Elías',
   'hint.l4.fog': 'Niebla del sueño: ¡no te quedes quieta!',

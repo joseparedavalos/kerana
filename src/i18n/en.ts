@@ -55,6 +55,8 @@ export const en: Record<TextKey, string> = {
   'hint.l3.karakara': 'Karakara: they dive at you',
   'hint.l3.cracked': 'Cracked termite mound: Charged Slash (hold {attack})',
   'hint.l3.antesala': 'Glowing horns: hide behind a trunk',
+  'hint.l3.ritmo': 'Headwind: jump when it dies down',
+  'hint.l3.sleep': 'Sleeping mushroom: wake it with the Charged Slash',
   'hint.l4.jagua': 'Jagua: it barks, then charges. {jump}!',
   'hint.l4.museo': 'Ramón Elías Mythology Museum',
   'hint.l4.fog': "Sleepy fog: don't stand still!",

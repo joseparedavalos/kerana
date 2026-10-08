@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { ENEMIES } from '../src/data/enemies';
 import { rhythmFromMovers, rhythmState, type RhythmMover } from '../src/entities/enemies/LurkerMotor';
+import { WindCycle } from '../src/entities/hazards/WindCycle';
 import { MoverMotor, moverTiming, type MoverSpec } from '../src/entities/MoverMotor';
 
 const T = 16;
@@ -108,5 +109,60 @@ describe('l2: la zona de ritmo (S24)', () => {
     const zone = movers.filter((m) => m.x >= 319 * T && m.x <= 371 * T);
     expect(zone.length).toBe(6);
     expect(new Set(zone.map((m) => moverTiming(m.spec).periodMs)).size).toBe(1);
+  });
+});
+
+describe('l3: la zona de ritmo con viento (S25)', () => {
+  const objs = (MAPS['../public/assets/maps/l3.json'].layers.find((l) => l.type === 'objectgroup')?.objects ?? []).map((o) => ({
+    ...o,
+    props: Object.fromEntries((o.properties ?? []).map((q) => [q.name, q.value])) as Record<string, unknown>,
+  }));
+  const movers = objs
+    .filter((o) => o.type === 'Mover')
+    .map((o) => ({ x: o.x, y: o.y, width: o.width, spec: { dx: Number(o.props.dx ?? 0) * T, dy: Number(o.props.dy ?? 0) * T, speed: Number(o.props.speed), waitMs: Number(o.props.waitMs) } as MoverSpec }));
+  const winds = objs.filter((o) => o.type === 'WindZone');
+  const zone = movers.filter((m) => m.y === 33 * T && m.x >= 362 * T);
+  const gusts = winds.filter((w) => w.y === 27 * T);
+  const WIND = GAMEPLAY.wind;
+  const windPeriod = WIND.calmMs + WIND.warnMs + WIND.gustMs;
+
+  it('19 plataformas (3 verticales); las ocho balsas de la zona y la cadena de seis con el mismo ciclo que el viento', () => {
+    expect(movers.length).toBe(19);
+    expect(movers.filter((m) => m.spec.dy !== 0).length).toBe(3);
+    expect(zone.length).toBe(8);
+    const chain = movers.filter((m) => m.x >= 281 * T && m.x <= 329 * T);
+    expect(chain.length).toBe(6);
+    for (const m of [...zone, ...chain]) expect(moverTiming(m.spec).periodMs).toBe(windPeriod);
+  });
+
+  it('en cada encuentro (3 tiles de hueco) sopla en contra mientras llegan y amaina con las balsas juntas al menos 0,7 s; sin desfase en 20 vueltas', () => {
+    expect(gusts.length).toBe(6);
+    const motors = zone.map((m) => ({ m, mm: new MoverMotor(m.spec) }));
+    const cycles = gusts.map((w) => new WindCycle(WIND, Number(w.props.offsetMs ?? 0)));
+    const meetings = gusts.map(() => [] as { startPhase: string; calmMs: number }[]);
+    const open = gusts.map(() => null as null | { startPhase: string; calmMs: number });
+    const step = 10;
+    for (let t = 0; t < windPeriod * 20; t += step) {
+      for (const { mm } of motors) mm.step(step);
+      for (const c of cycles) c.step(step);
+      gusts.forEach((w, i) => {
+        const pos = motors.map(({ m, mm }) => ({ left: m.x + mm.offsetX, right: m.x + mm.offsetX + m.width }));
+        const from = pos.filter((p) => p.right <= w.x + 1).sort((a, b) => b.right - a.right)[0];
+        const to = pos.filter((p) => p.left >= w.x + w.width - 1).sort((a, b) => a.left - b.left)[0];
+        const together = to.left - from.right <= 3 * T + 0.5;
+        if (together && !open[i]) open[i] = { startPhase: cycles[i].phase, calmMs: 0 };
+        if (together && cycles[i].phase === 'calm') open[i]!.calmMs += step;
+        if (!together && open[i]) {
+          meetings[i].push(open[i]!);
+          open[i] = null;
+        }
+      });
+    }
+    gusts.forEach((w, i) => {
+      // La primera vuelta el viento arranca en calma larga (offsetMs): se cuentan desde la segunda.
+      const later = meetings[i].slice(1);
+      expect([w.x / T, later.length >= 18]).toEqual([w.x / T, true]);
+      for (const m of later) expect([w.x / T, m.startPhase, m.calmMs >= 700]).toEqual([w.x / T, 'gust', true]);
+    });
   });
 });

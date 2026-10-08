@@ -7,6 +7,8 @@
 // Plan: { hitSwitches: [[x, y]…], noGapJump: [[x0, x1]…], splits: [[nombre, x]…], aim?, steps: [paso…] }, en tiles.
 // `aim` (S22): al saltar un hueco busca dónde caer y frena en el aire para no pasarse (camalotes, juncos);
 // si el camalote de enfrente está hundido, espera en el borde.
+// `wind` (S25): antes de saltar un hueco con viento en contra espera la calma; con `ride`, un hueco con viento a favor
+// se salta solo con la ráfaga (la cueva del viento de l3).
 // Pasos:
 //   { run: 1 | -1, untilX?, untilTop?, untilFight? }  corre saltando paredes de hasta 3 tiles, huecos y espinas
 //                                                     y ataca lo que tenga delante (enemigos, lianas, fardos);
@@ -23,6 +25,8 @@
 //                                                     queda encima de la cabeza (un ascensor), sube saltando desde abajo.
 //                                                     Con safe: [x, y] (S24) espera también a que el jakare que sale
 //                                                     en esa celda se hunda antes de subir (zona de ritmo de l2).
+//                                                     Con calm: [x, y] (S25) espera a que amaine el viento de la zona que
+//                                                     tiene esa celda (zona de ritmo de l3).
 //   { charge: 1 | -1 }                                tajo cargado mirando hacia ese lado (mantiene X hasta cargar).
 //   { jumpTo: [x, fila], hold? }                      salta a una repisa o una penca: se acerca, salta (manteniendo
 //                                                     Espacio `hold` ms, 340 por defecto) y en el aire va hacia x;
@@ -104,7 +108,8 @@ export function installPilot(plan) {
   const surfaceAt = (x, feet) => {
     for (let dy = -3; dy <= 3; dy++) {
       const y = feet + dy * T + 4;
-      if (solid(x, y) && !solid(x, y - T)) return Math.floor(y / T) * T;
+      // S25: un piso con espinas encima no es dónde caer (la zanja con karaguatá de l3).
+      if (solid(x, y) && !solid(x, y - T)) return hazard(x, y - T) ? null : Math.floor(y / T) * T;
     }
     return null;
   };
@@ -123,6 +128,24 @@ export function installPilot(plan) {
   // Un camalote hundido entre el borde y donde se cae: mejor esperar a que vuelva.
   const sunkAhead = (dir, front) =>
     scene.sinkers.some((s) => !s.motor.solid && dir * (s.zone.centerX - front) > 0 && dir * (s.zone.centerX - front) < 7 * T);
+
+  // Viento (S25): la zona de viento que cruza el salto (las 6 columnas de delante, a la altura de Kerana).
+  const windAhead = (dir, front, y) =>
+    (scene.windZones ?? []).find((z) => z.zone.top <= y && z.zone.bottom >= y && (dir > 0 ? z.zone.right > front && z.zone.left < front + 6 * T : z.zone.left < front && z.zone.right > front - 6 * T));
+  // Calma con tiempo para el salto entero.
+  const calmIn = (z) => z.cycle.phase === 'calm' && z.cycle.leftMs > 700;
+  const windCalm = ([x, y]) => {
+    const z = (scene.windZones ?? []).find((w) => w.zone.contains((x + 0.5) * T, (y + 0.5) * T));
+    return !z || calmIn(z);
+  };
+  // Espera en el borde: con viento en contra hasta la calma; con `ride` y viento a favor, hasta la ráfaga.
+  const windWait = (dir, front, y) => {
+    if (!plan.wind) return false;
+    const z = windAhead(dir, front, y);
+    if (!z) return false;
+    if (z.dir !== dir) return !calmIn(z);
+    return !!plan.ride && !(z.cycle.phase === 'gust' && z.cycle.leftMs > 900);
+  };
 
   const run = (dir) => {
     const b = body();
@@ -162,6 +185,10 @@ export function installPilot(plan) {
     const noFloor = gapOk && !solid(front + dir * 2, feet + 4);
     const spikes = hazard(cx + dir * 20, feet - 4) || hazard(cx + dir * 34, feet - 4);
     if (noFloor && plan.aim && sunkAhead(dir, front)) {
+      move(0);
+      return;
+    }
+    if (noFloor && !wall && windWait(dir, front, b.center.y)) {
       move(0);
       return;
     }
@@ -243,6 +270,8 @@ export function installPilot(plan) {
         move(0);
         // S24: con `safe`, además espera a que el jakare de esa celda se hunda (como una persona en la zona de ritmo).
         if (s.safe && !lurkerDown(s.safe)) return false;
+        // S25: con `calm`, espera a que amaine el viento del encuentro (zona de ritmo de l3).
+        if (s.calm && !windCalm(s.calm)) return false;
         // Sale a 40-60 px/s: recién salida de la punta se la alcanza caminando.
         if (atEnd(m, at)) st.phase = 'board';
         return false;

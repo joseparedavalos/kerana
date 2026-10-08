@@ -1,6 +1,6 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2 y en S25 con l3)
 
-El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo), y marcado *(S22)*, *(S23)* o *(S24)* donde cambió una regla.
+El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto). Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
 
 ---
 
@@ -20,6 +20,8 @@ El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 par
 | Caída | sin daño | una caída de 10 tiles es un camino válido (se usó para pasar de la galería 1 a la 2). *(S23, corrige S22)* Quien sale corriendo de un borde avanza ≈ 5 tiles en una caída de 10 filas y **≈ 9,5 en una de 20** (medido: de la cima del ascenso 2 de l2, 21 filas, cayó en x 262,5 saliendo de x 253): abajo, **≥ 11 tiles** de piso antes del agua, y lo que se recoge (la Luz) donde se cae, no donde se salta |
 | Cabeza | 2,6 tiles sobre los pies | *(S23)* saltando, la cabeza llega ≈ 6,8 filas sobre el piso: un pickup a menos de 7 filas encima de un piso por el que se pasa se toca desde abajo si lo que lo sostiene es de un solo sentido. Para que no se alcance, que esté sobre roca (`#`) |
 | Onda del tajo cargado | la luz llega ≈ 6 tiles aunque haya pared | piedra encerrada a ≤ 6 tiles de donde se para Kerana, detrás de 1 tile de roca |
+| *(S25)* Viento en contra | con `speed=150` el objetivo de la carrera queda en 0: no se avanza y un salto de 3 tiles de aire no cruza (empujando hacia adelante se cae; soltando, el viento la devuelve). Con 90 (por defecto) o 120 se camina despacio | hueco que se salta solo en la calma |
+| *(S25)* Viento a favor | medido desde quieta en el borde: con `speed=120` el salto llega a ≈ 8 tiles (no alcanza para 8 de aire), con 160 cruza 2 de 3 y con **200, 6 de 6**; en calma, 0 de 4 | hueco de 8 que solo se cruza con la ráfaga |
 
 **Piezas (S18):** `-` plataforma de un solo sentido (las sólidas `+` pueden trabar a Kerana contra un techo: no usarlas), `:` recorrido, `*` piedra (Switch), `|` reja, `M` hongo (`kind=once` o `kind=sleep`). Propiedades con `at X,Y …`. Un hongo **también rebota si se llega caminando**: cualquier hongo en el piso del camino lo pisa todo el que pasa (ver errores, §5).
 
@@ -130,6 +132,8 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] *(S23)* Enemigos en los saltos según §9: visibles desde el borde, con un ciclo que se lee antes de saltar y ninguno atado al reloj de una plataforma móvil de forma que el salto quede imposible.
 - [ ] *(S24)* Cada protección (la red, un premio en un hueco, una salida) probada como juega una persona en esa situación: moviéndose, saltando, con el salto doble si el que prueba usa `gifts=all` (§10.1).
 - [ ] *(S24)* `tests/diver.test.ts`: cada ñakurutu o karakara con camino libre hasta la mayoría de los lugares de su zona (§10.3).
+- [ ] *(S25)* Zonas de viento solo sobre huecos (o sobre un llano donde empujar no tira a nadie a un pozo) y, si marcan el ritmo de plataformas, con el mismo período que ellas (§11.1).
+- [ ] *(S25)* Una reja que cierra un nicho tiene una piedra también adentro (§11.4).
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -291,3 +295,63 @@ Un tramo que se cruza leyendo el ritmo, no reaccionando:
 4. **Topes de reloj real en el smoke:** el farol de l7 tenía 4 s para que Kerana llegara caminando; con el headless a 12-17 fps a veces no alcanzaban. Los topes de reloj se ponen holgados y se corta por estado.
 5. **El cuerpo escalado de un enemigo no se actualiza mientras está deshabilitado** (el jakare bajo el agua): la primera medida de su caja, en el cuadro en que asoma, daba el tamaño sin escalar. Medir a mitad de la emersión.
 
+
+---
+
+## 11. Lo que agregó l3 (S25): el viento como ritmo, cadenas largas y el lugar secreto
+
+l3 se hizo con el mismo orden de trabajo (§1), con el generador partiendo del commit base de la sesión (la antesala y la arena del l3 viejo, x 230-299, se copian a x 448-517 y 16 filas más abajo). Pedía más que l2: más plataformas y en cadena, una zona de ritmo, tres ascensos, zigzag, ocho saltos con enemigo y un lugar secreto propio del nivel.
+
+**Medidas de l3:** 518 × 40 (antes 300 × 24). Ruta principal con el piloto: **antes ≈ 28 s, después ≈ 112 s**. La cueva del viento: ≈ 14-17 s desde la repisa del ascenso 2 hasta volver al pie del ascenso (según cuánto se espere el ascensor).
+
+| # | Tiles | Qué pide | Cadencia |
+|---|---|---|---|
+| A1 | x 0-31 | nido de fardo, tacurú agrietado (tajo cargado), ñandú | llano x 24-32 |
+| A2 | x 32-60 | viento a favor sobre el llano (seguro), pozo de 5 | orilla x 49-60 |
+| A3 | x 61-87 | par de balsas, pencas en zigzag con karakara (o atajo del fardo y el hongo) | la loma, fila 21 |
+| A4 | x 88-119 | grieta con karakara, piedra temporizada y nicho (pluma A) | **fuego x 127** |
+| B1 | x 120-155 | teju'i, viento en contra sobre un llano y un pozo | orilla x 150-155 |
+| B2 | x 156-183 | par de balsas con karakara en la llegada, hongo -> repisa -> ascensor | el ascensor (espera) |
+| B3 | x 158-183, fila 15 → 9 | vuelta a la izquierda por la barra (hueco con karakara, teju'i), hongo, rama alta a la derecha | la meseta |
+| B4 | x 184-222 | zanja con karaguatá y karakara, tacurú agrietado | **fuego x 232** |
+| C1 | x 223-258 | hongo dormido (tajo cargado), pencas en zigzag con dos karakara | copa 1, fila 11 |
+| C2 | x 259-280 | hueco con karakara, viento en contra entre copas, teju'i | copa 3 |
+| C3 | x 281-338 | cadena de seis (balsa, balsa, ascensor que baja, balsa, balsa, ascensor que sube) | **fuego x 349** |
+| D | x 350-447 | zona de ritmo: ocho balsas con viento en contra en cada encuentro | **antesala x 448** |
+
+### 11.1 El viento como ritmo
+
+- **El mismo período que las plataformas.** El ciclo del viento es fijo (`GAMEPLAY.wind`: calma 2,2 s, aviso 1, ráfaga 2 = 5,2 s) y no se toca; las plataformas se ajustan a él: 3 tiles que recorren 4 a 50 px/s y esperan **1,32 s** dan 5,2 s. Las dos cosas avanzan con el mismo `delta` en el mismo `update`: no se desfasan nunca (lo vigila `tests/rhythm.test.ts`, 20 vueltas).
+- **Dónde sopla:** una `WindZone` de 3 × 13 justo sobre el hueco de cada encuentro, hasta el fondo del mapa (el pasto se dibuja en el borde de abajo de la zona: sobre un hueco quedaría flotando). Kerana parada en su balsa nunca está adentro; saltando, sí.
+- **Cuándo sopla:** desde 1,7 s antes de que las balsas se junten hasta 0,3 s después; después amaina y quedan ≈ 1 s juntas más lo que tardan en separarse. Con el aviso de 1 s antes, el pasto y las ráfagas se ven mientras llegan. Fórmula: `offsetMs = (M − 1700 − 3200) mod 5200`, con M el momento en que se juntan (encuentro en las puntas lejanas, M = 1280: **1580**; en los orígenes, M = 3880: **4180**).
+- **Con la ráfaga** (`speed=150`, en contra) el salto no avanza: quien empuja hacia adelante cae al barranco; quien suelta vuelve a su balsa. Esperar en la balsa siempre es seguro.
+- **El viento nunca sobre donde se para Kerana en algo chico** (una copa, una isla, una balsa): con la ráfaga, quieta, se desliza a 90-200 px/s y en 2 s cruza 11 tiles o más; se cae sin haber hecho nada. Sobre un llano, solo si el empuje no la lleva a un pozo (el viento a favor de A termina 2 tiles antes del pozo).
+- **El modelo de encierros trata las zonas de viento como salida** (`trapLogic.ts`): no ve un encierro adentro de una. Las salidas de la cueva del viento son reales (el túnel de abajo y su fardo).
+
+### 11.2 Cadenas largas y verticales en la cadena
+
+- **Balsa → ascensor que baja → balsa:** el ascensor se dibuja arriba con el recorrido hacia abajo (4 filas, mismo ciclo): arriba durante la espera de los orígenes (se sube desde una balsa que está en su origen) y abajo durante la de las puntas (se salta a una balsa que llega a su punta). Para subir al final, otro igual: abajo cuando llega la balsa, arriba cuando sale a la copa. Así la cadena de seis no toca suelo y cada salto cae en una espera de las dos plataformas.
+- Debajo de las copas y de la cadena, la cañada es un pozo hasta el fondo: caer devuelve al último suelo firme (la copa de antes), sin encierros.
+
+### 11.3 El lugar secreto: la cueva del viento
+
+- **Forma propia del nivel:** un túnel dentro de la meseta donde el viento es la herramienta (pozos de 8 que solo cruza la ráfaga a favor) y no el obstáculo. En calma, el salto cae al **túnel de abajo**, que vuelve a la entrada: equivocarse cuesta tiempo, no corazones.
+- **Descubrible:** un fardo (paja, no el tile de suelo) en la ladera, a la altura del ascensor cuando está abajo, donde todos esperan; detrás de la paja se ve el túnel (el interior no se tapa) y hay luciérnagas. Del túnel de abajo sale otro fardo junto al hongo del ascenso 2. *Probé* una zona de viento chica delante del fardo para que el aire "entrara" en la paja: el pasto de una `WindZone` se dibuja en su borde de abajo y quedaba flotando sobre la repisa (captura `l3-cueva.png`); se sacó.
+- **Proporción:** la primera versión salía por la otra ladera, junto al fuego 2, y era más corta que el camino principal (13 s contra 22): un atajo con premio. Ahora el túnel de abajo devuelve al pie del ascenso y hay que volver a subir: ≈ 17 s más el ascenso por la pluma B, una Luz de Arasy y dos guavirá. La cámara no se alcanza por otro lado (pozo de salida de 7 filas).
+
+### 11.4 Otras piezas
+
+- **Piedra temporizada y nicho:** una reja que se cierra con Kerana adentro la encierra, y el modelo de encierros no ve las rejas. Una segunda piedra **adentro**, con el mismo `target`, la vuelve a abrir.
+- **Hongo bajo una rama:** si la repisa a la que lanza el hongo es sólida y está corrida 2-3 tiles, quien se mueve hacia ella mientras sube choca con su cara de abajo y cae. La rama de B va de un solo sentido (`=`): se la atraviesa subiendo.
+- **Vuelta (zigzag):** el ascensor de B sube a una barra que va **a la izquierda** sobre el par de balsas, un hongo lanza a una rama alta y por ella se vuelve a la derecha. Más tiempo (≈ 8 s) y altura sin ensanchar el mapa.
+- **Karakara en los saltos:** en el aire sobre el otro lado del hueco, 3-4 filas sobre el borde y a ≤ 6 tiles en x, dentro de sus 110 px (`detectRadius`) desde donde Kerana se para a saltar. `tests/diver.test.ts` (camino libre): x 78 4/4, x 104 9/9, x 164 11/11, x 173 15/15, x 198 10/12, x 235 3/3, x 248 3/3, x 264 7/7, x 297 9/9.
+
+### 11.5 Errores de S25 y su corrección
+
+1. **El piloto se probaba con un `dist/` viejo:** `npm run maps` escribe en `public/`; el piloto y el smoke sirven `dist/`. Después de cada cambio de mapa, `npm run build`.
+2. **El piloto apuntaba al fondo de la zanja con karaguatá** (cayó 481 veces): `landingAim` tomaba el piso de abajo de las espinas como lugar para caer. Corrección en el piloto: un piso con un peligro encima no es dónde caer.
+3. **El hongo de la vuelta lanzaba contra la rama sólida** (el piloto quedó sobre una balsa de abajo): rama de un solo sentido (§11.4).
+4. **La ráfaga a favor no alcanzaba** para un pozo de 8 desde quieta (con 120 y con 160): 200. Medido saltando desde el borde en ráfaga y en calma (§0).
+5. **El viento en contra a 120 sobre el llano** dejaba avanzar y volver a saltar a mitad de una ráfaga: 150 (no se avanza).
+6. **`body.reset(x, y)` pone el borde de arriba del cuerpo en y:** para dejar los pies en la fila R, `y = R − 2,7` tiles.
+7. **El secreto como atajo** (§11.3).
