@@ -673,7 +673,7 @@ async function main() {
         l3Info.vertical === 3 &&
         l3Info.switches === 2 &&
         l3Info.gates === 1 &&
-        l3Info.bouncers === 'ready,ready,ready,asleep' &&
+        l3Info.bouncers === 'ready,ready,ready,asleep,ready' &&
         l3Info.rocks === 2 &&
         l3Info.brittle === 5 &&
         l3Info.wind === 12 &&
@@ -681,7 +681,7 @@ async function main() {
         l3Info.feathers === 3 &&
         l3Info.enemies.karakara === 9 &&
         l3Info.traps === 0,
-      `nivel 3: 19 plataformas (3 verticales), 2 piedras y 1 reja, 4 hongos, 2 tacurúes agrietados y 5 fardos, 12 zonas de viento, 4 fuegos, 3 plumas, 9 karakara, ningún encierro (${JSON.stringify(l3Info)})`,
+      `nivel 3: 19 plataformas (3 verticales), 2 piedras y 1 reja, 5 hongos (S26: el del pozo de salida de la cueva), 2 tacurúes agrietados y 5 fardos, 12 zonas de viento, 4 fuegos, 3 plumas, 9 karakara, ningún encierro (${JSON.stringify(l3Info)})`,
     );
     // Zona de ritmo: mientras corre el piloto, el viento en contra de cada encuentro sopla cuando las balsas llegan y
     // amaina con ellas juntas (lo mismo que tests/rhythm.test.ts, ahora en el juego).
@@ -765,6 +765,60 @@ async function main() {
     if (!cave.done) console.log((await l3Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
     console.log(`  l3 (cueva del viento): ${(cave.timeMs / 1000).toFixed(1)} s de juego desde la repisa del ascenso 2 hasta volver al pie`);
     await l3Cave.close();
+
+    // 1d4) l3, el pozo de salida de la cueva (S26): desde el túnel de abajo, la cámara de la pluma B queda 7 filas arriba
+    // (el salto doble sube 6). En el fondo del pozo, 3 filas hundido, hay un hongo: solo no alcanza (10 filas); con el
+    // salto doble en el ápice y un dash hacia la cámara, sí. Física real del juego: se manejan las teclas cuadro a cuadro.
+    const l3Shaft = await open('/?debug=1&level=3&god=1&gifts=all');
+    await l3Shaft.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const shaftTry = (useDouble) =>
+      l3Shaft.evaluate(
+        (useDouble) =>
+          new Promise((resolve) => {
+            const d = window.__KERANA_DEBUG__;
+            const scene = d.scene;
+            const p = d.player;
+            const kb = scene.input.keyboard;
+            const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), dash: kb.addKey(67) };
+            const held = {};
+            const set = (name, on) => {
+              if (!!held[name] === on) return;
+              const k = keys[name];
+              k.isDown = on;
+              k.isUp = !on;
+              k.emit(on ? 'down' : 'up', k);
+              held[name] = on;
+            };
+            p.body.reset(214.5 * 16, 31 * 16);
+            const feathers = scene.feathers;
+            const st = { f: 0, top: 99 };
+            const step = () => {
+              st.f++;
+              const vy = p.body.velocity.y;
+              if (st.b === undefined && vy < -300) st.b = st.f;
+              if (st.b !== undefined && st.apex === undefined && vy >= -20) st.apex = st.f;
+              st.top = Math.min(st.top, p.body.bottom / 16);
+              const t = st.apex === undefined ? -1 : st.f - st.apex;
+              const above = p.body.bottom < 26 * 16 - 1;
+              const end = st.f > 400 || (st.b !== undefined && p.body.blocked.down && st.f - st.b > 10);
+              set('right', !end && st.b === undefined);
+              set('left', !end && st.b !== undefined && above && p.x > 213.5 * 16);
+              set('jump', !end && useDouble && t >= 0 && t < 20);
+              set('dash', !end && useDouble && above && t >= 0 && t < 3);
+              if (!end) return;
+              scene.events.off('preupdate', step);
+              resolve({ feet: +(p.body.bottom / 16).toFixed(2), top: +st.top.toFixed(2), feather: scene.feathers - feathers });
+            };
+            scene.events.on('preupdate', step);
+          }),
+        useDouble,
+      );
+    const shaftMush = await shaftTry(false);
+    check(shaftMush.top > 26 && shaftMush.feather === 0, `nivel 3: el hongo del pozo de salida solo no llega a la cámara (${JSON.stringify(shaftMush)})`);
+    const shaftDouble = await shaftTry(true);
+    check(shaftDouble.feet === 26 && shaftDouble.feather === 1, `nivel 3: hongo + salto doble + dash llegan a la cámara y a la pluma B (${JSON.stringify(shaftDouble)})`);
+    await l3Shaft.close();
 
     // 1e) Nivel 4: antesala, cierre de la arena de Jasy Jatere, fase invisible, carrera por el bastón y dash guardado.
     const l4Page = await open('/?debug=1&level=4&boss=1&god=1');
