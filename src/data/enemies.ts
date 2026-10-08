@@ -166,6 +166,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     hp: 2,
     width: 16,
     height: 26,
+    scale: GAMEPLAY.nandu.scale,
     detectRadius: 130,
     telegraphMs: 450,
     chargeSpeed: 200,
