@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -615,7 +615,8 @@ async function main() {
     await l3Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const l3x = await l3Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l3x > 230 * TILE && l3x < 260 * TILE, `nivel 3 con boss=1 empieza en la antesala (x ${Math.round(l3x / TILE)} tiles)`);
+    // S25: la antesala se corrió con el rediseño (x 448-477).
+    check(l3x > 448 * TILE && l3x < 478 * TILE, `nivel 3 con boss=1 empieza en la antesala (x ${Math.round(l3x / TILE)} tiles)`);
     await walkIntoArena(l3Page);
     check(await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 3: la arena de Moñái se cierra');
     await sleep(6000);
@@ -640,6 +641,130 @@ async function main() {
     const l3save = await l3Page.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(l3save.freed?.includes('monai') && l3save.gifts?.includes('double_jump'), 'guardado: Moñái liberado y salto doble');
     await l3Page.close();
+
+    // 1d2) l3 de punta a punta (S25): el piloto cruza el campo por la ruta principal (tacurú agrietado, par de balsas, pencas
+    // de la loma, viento en contra, hongo -> ascensor, barra y rama alta, meseta, hongo dormido, pencas en zigzag, copas, la
+    // cadena de seis y la zona de ritmo con viento) y después la liberación hasta "Nivel completado".
+    const l3Run = await open('/?debug=1&level=3&god=1');
+    await l3Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l3Info = await l3Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const groups = new Set(s.breakables.map((b) => b.group));
+      return {
+        charge: window.__KERANA_DEBUG__.player.motor.chargeEnabled,
+        movers: s.movers.length,
+        vertical: s.movers.filter((m) => m.motor.uy !== 0).length,
+        switches: s.switches.length,
+        gates: s.gates.length,
+        bouncers: s.bouncers.map((b) => b.motor.state).join(','),
+        rocks: [...groups].filter((g) => g[0].kind === 'rock').length,
+        brittle: [...groups].filter((g) => g[0].kind === 'brittle').length,
+        wind: s.windZones.length,
+        checkpoints: s.checkpoints.length,
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+        enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
+        traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
+      };
+    });
+    check(
+      l3Info.charge &&
+        l3Info.movers === 19 &&
+        l3Info.vertical === 3 &&
+        l3Info.switches === 2 &&
+        l3Info.gates === 1 &&
+        l3Info.bouncers === 'ready,ready,ready,asleep' &&
+        l3Info.rocks === 2 &&
+        l3Info.brittle === 5 &&
+        l3Info.wind === 12 &&
+        l3Info.checkpoints === 4 &&
+        l3Info.feathers === 3 &&
+        l3Info.enemies.karakara === 9 &&
+        l3Info.traps === 0,
+      `nivel 3: 19 plataformas (3 verticales), 2 piedras y 1 reja, 4 hongos, 2 tacurúes agrietados y 5 fardos, 12 zonas de viento, 4 fuegos, 3 plumas, 9 karakara, ningún encierro (${JSON.stringify(l3Info)})`,
+    );
+    // Zona de ritmo: mientras corre el piloto, el viento en contra de cada encuentro sopla cuando las balsas llegan y
+    // amaina con ellas juntas (lo mismo que tests/rhythm.test.ts, ahora en el juego).
+    await l3Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const zones = s.windZones.filter((z) => z.zone.y === 27 * 16);
+      const rafts = s.movers.filter((m) => m.zone.y === 33 * 16 && m.zone.x >= 362 * 16);
+      const open = zones.map(() => null);
+      window.__WINDS__ = { meetings: 0, calm: 0, startGust: 0 };
+      s.events.on('postupdate', (_t, d) => {
+        zones.forEach((z, i) => {
+          const from = rafts.filter((m) => m.block.x + m.block.width <= z.zone.x + 1).sort((a, b) => b.block.x - a.block.x)[0];
+          const to = rafts.filter((m) => m.block.x >= z.zone.right - 1).sort((a, b) => a.block.x - b.block.x)[0];
+          const together = to.block.x - (from.block.x + from.block.width) <= 3 * 16 + 0.5;
+          if (together && !open[i]) open[i] = { gust: z.cycle.phase === 'gust', calm: 0 };
+          if (together && z.cycle.phase === 'calm') open[i].calm += d;
+          if (!together && open[i]) {
+            const w = window.__WINDS__;
+            w.meetings++;
+            if (open[i].calm >= 600) w.calm++;
+            if (open[i].gust) w.startGust++;
+            open[i] = null;
+          }
+        });
+      });
+    });
+    await l3Run.evaluate(installPilot, L3_MAIN);
+    for (let t = 0; t < 420000 && !(await pilot(l3Run)).done; t += 500) await sleep(500);
+    const run3 = await pilot(l3Run);
+    check(run3.done && run3.respawns === 0, `nivel 3: Kerana cruza el campo entero sin caer (${JSON.stringify(run3)})`);
+    if (!run3.done) {
+      await l3Run.screenshot({ path: join(SHOTS, 'l3-piloto-atascado.png') });
+      console.log((await l3Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
+    const winds3 = await l3Run.evaluate(() => window.__WINDS__);
+    // La primera vuelta de cada zona arranca en calma (offsetMs): se acepta un encuentro sin ráfaga por zona.
+    check(
+      winds3.meetings > 20 && winds3.calm === winds3.meetings && winds3.startGust >= winds3.meetings - 6,
+      `nivel 3: en la zona de ritmo el viento sopla cuando llegan las balsas y amaina con ellas juntas (${JSON.stringify(winds3)})`,
+    );
+    console.log(`  l3 (ruta principal): ${(run3.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run3.splits)}`);
+    await l3Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    for (let i = 0; i < PRESS_MAX && !(await l3Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); })); i++) {
+      await l3Run.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l3Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); }), 'nivel 3 recorrido → liberación → Nivel completado');
+    await l3Run.close();
+
+    // 1d3) l3, el lugar secreto (S25): la cueva del viento. Desde la repisa del ascenso 2: el fardo de la ladera se ve con
+    // el ascensor abajo (captura l3-cueva.png), se rompe, los dos pozos de 8 se cruzan solo con la ráfaga a favor, la pluma B
+    // está en la cámara y el túnel de abajo devuelve al pie del ascenso. Antes, un salto en calma cae al túnel de abajo.
+    const l3Cave = await open('/?debug=1&level=3&god=1');
+    await l3Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const calmJump = await l3Cave.evaluate(async () => {
+      const d = window.__KERANA_DEBUG__;
+      const z = d.scene.windZones.find((w) => w.zone.x === 189 * 16);
+      d.player.body.reset(186 * 16, 23.3 * 16);
+      await new Promise((r) => {
+        const f = () => (z.cycle.phase === 'calm' && z.cycle.leftMs > 1400 ? r() : setTimeout(f, 16));
+        f();
+      });
+      return true;
+    });
+    await l3Cave.evaluate(installPilot, { aim: true, steps: [{ run: 1, untilX: 199 }] });
+    for (let t = 0; t < 15000 && !(await pilot(l3Cave)).done; t += 250) await sleep(250);
+    const calmEnd = await l3Cave.evaluate(() => window.__KERANA_DEBUG__.player.body.bottom / 16);
+    check(calmJump && calmEnd > 30, `nivel 3: en la cueva, el salto en calma no cruza el pozo de 8 y cae al túnel de abajo (pies en la fila ${calmEnd.toFixed(1)})`);
+    await l3Cave.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(178.5 * 16, 23.3 * 16));
+    await l3Cave.waitForFunction(() => { const m = window.__KERANA_DEBUG__.scene.movers.find((mv) => mv.zone.x === 181 * 16); return m.motor.pos < 1 && m.motor.waitLeftMs > 300; }, { timeout: 30000, polling: 50 });
+    await l3Cave.screenshot({ path: join(SHOTS, 'l3-cueva.png') });
+    const caveStart = await l3Cave.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
+    await l3Cave.evaluate(installPilot, L3_SECRET);
+    for (let t = 0; t < 120000 && !(await pilot(l3Cave)).done; t += 500) await sleep(500);
+    const cave = await l3Cave.evaluate(() => ({ done: window.__KERANA_PILOT__.done, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16), feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16), timeMs: Math.round(window.__KERANA_PILOT__.timeMs) }));
+    check(
+      cave.done && cave.hud === caveStart + 1 && cave.respawns === 0 && cave.feet === 33 && cave.x < 184,
+      `nivel 3: la cueva del viento se cruza con la ráfaga a favor, paga la pluma B y devuelve al pie del ascenso (${JSON.stringify(cave)})`,
+    );
+    if (!cave.done) console.log((await l3Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    console.log(`  l3 (cueva del viento): ${(cave.timeMs / 1000).toFixed(1)} s de juego desde la repisa del ascenso 2 hasta volver al pie`);
+    await l3Cave.close();
 
     // 1e) Nivel 4: antesala, cierre de la arena de Jasy Jatere, fase invisible, carrera por el bastón y dash guardado.
     const l4Page = await open('/?debug=1&level=4&boss=1&god=1');
