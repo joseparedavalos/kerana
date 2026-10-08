@@ -157,6 +157,8 @@ Todos **miran a la izquierda**. Agrega a Notes: `Spooky but not gory: no blood.`
 
 **Teju Jagua por código (S13d, S20):** el lomo, las patas, la cola y los cuellos se dibujan en `tejuJaguaArt.ts`. S20: el cuerpo se dibuja a `bodySize` (0,65) del tamaño de S13d, ya achicado en la textura (con `pixelArt` no se escala la imagen); cuellos de 18 de grosor; las cabezas dormidas se apoyan sobre el lomo. La onda del coletazo es una textura de tierra (cresta del tamaño de la hitbox con piedritas y polvo, estela de lomitas detrás) con polvo y piedritas en partículas; el aviso levanta polvo y abre una grieta que tiembla por el recorrido de la onda. Cabeza expuesta: halo dorado que late detrás y tres estrellitas de mareo encima (texturas `teju_jagua_halo` y `teju_jagua_star`, por código). S21: el aliento de fuego se dibuja en un `Graphics` cada frame (`FlameArt` en `tejuJaguaArt.ts`): cuerpo naranja del tamaño exacto de la zona de daño, chorros amarillos con núcleo casi blanco que salen de los hocicos y se abren al bajar, lenguas que fluyen hacia el suelo, desborde rojizo tenue a los costados, suelo iluminado, hebras de aire que tiembla y pavesas en partículas. Aviso: el suelo de la zona se tiñe desde abajo de las cabezas hasta los bordes, el aire de la zona brilla con los bordes marcados y sube calor; el humo de los hocicos sigue. Sin texturas nuevas.
 
+**Moñái por código (S26):** `src/entities/bosses/monaiArt.ts`, con el criterio de Teju Jagua (texturas al doble de detalle, `ART_K` = 2). Cabeza de perfil mirando a la izquierda en tres texturas (`monai_head`, `monai_head_open` con fauces y colmillos mientras hace daño, `monai_head_daze` con el ojo cerrado) que llenan la zona de daño (26 × 18); cuernos aparte (`monai_horns`, color hueso con anillos: es lo que se tiñe iridiscente). Cuerpo dibujado cada frame en un `Graphics`: tubo que se afina hacia la cola con borde, vientre crema, manchas y brillo; en una copa se enrosca en el tronco y la vuelta de atrás va en otro `Graphics` detrás del tronco. Estrellitas de mareo y halo de los cuernos, por código. **El sprite `raw/monai/` (colgando, 72 × 128) ya no se usa**: obligaba a prolongar el cuello con una columna recta hasta fuera de la pantalla. Si se genera otro, que sea horizontal (cabeza sola o con un poco de cuello). Árboles de su arena, en el mismo archivo: tronco (`monai_tree_trunk_<i>`) y copa (`monai_tree_crown_<i>`) por árbol, con variación por semilla.
+
 ### 3.5 Enemigos
 Agrega al final de cada prompt:
 
@@ -172,7 +174,7 @@ side view facing left, small 2D platformer enemy, 16-bit pixel art
 | `jakare` | `raw/jakare/` | `A yacare caiman` | Walk · Attack (mordida) | 64 × 32 | S7 |
 | `nakurutu` | `raw/nakurutu/` | `A great horned owl` | Idle (posado) · Attack (picada) | 48 × 48 | S7 |
 | `mboi` | `raw/mboi/` | `A small green snake` | Walk | 48 × 48 | S7 |
-| `nandu` | `raw/nandu/` | `A greater rhea running` | Run | 64 × 64 | S8 |
+| `nandu` | `raw/nandu/` | `A greater rhea running` | Run | 64 × 64 (en el juego × 1,6, `GAMEPLAY.nandu.scale`, S26: del alto de Kerana) | S8 |
 | `karakara` | `raw/karakara/` | `A southern crested caracara bird` | Idle (vuelo) · Attack (picada) | 48 × 48 | S8 |
 | `jagua` | `raw/jagua/` | `A scruffy but lovable street dog` | Run · Attack (ladrido) | 64 × 64 | S9 |
 | `kuati` | `raw/kuati/` | `A coati with a ringed tail` | Run · Jump | 48 × 48 | S10 |
