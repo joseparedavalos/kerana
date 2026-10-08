@@ -769,11 +769,12 @@ async function main() {
     // 1d4) l3, el pozo de salida de la cueva (S26): desde el túnel de abajo, la cámara de la pluma B queda 7 filas arriba
     // (el salto doble sube 6). En el fondo del pozo, 3 filas hundido, hay un hongo: solo no alcanza (10 filas); con el
     // salto doble en el ápice y un dash hacia la cámara, sí. Física real del juego: se manejan las teclas cuadro a cuadro.
-    const l3Shaft = await open('/?debug=1&level=3&god=1&gifts=all');
-    await l3Shaft.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
-    await sleep(500);
-    const shaftTry = (useDouble) =>
-      l3Shaft.evaluate(
+    // Una página por intento (el estado del anterior no se arrastra).
+    const shaftTry = async (useDouble) => {
+      const l3Shaft = await open('/?debug=1&level=3&god=1&gifts=all');
+      await l3Shaft.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+      await sleep(500);
+      const result = await l3Shaft.evaluate(
         (useDouble) =>
           new Promise((resolve) => {
             const d = window.__KERANA_DEBUG__;
@@ -801,31 +802,47 @@ async function main() {
               st.top = Math.min(st.top, p.body.bottom / 16);
               const t = st.apex === undefined ? -1 : st.f - st.apex;
               const above = p.body.bottom < 26 * 16 - 1;
-              const end = st.f > 400 || (st.b !== undefined && p.body.blocked.down && st.f - st.b > 10);
-              set('right', !end && st.b === undefined);
-              set('left', !end && st.b !== undefined && above && p.x > 213.5 * 16);
+              // Al pisar la cámara camina a la izquierda hasta x 212 (pluma B y guavirás) y termina.
+              const landed = st.b !== undefined && p.body.blocked.down && st.f - st.b > 10;
+              if (landed && st.land === undefined) st.land = { f: st.f, feet: p.body.bottom / 16 };
+              const walk = st.land !== undefined && Math.abs(st.land.feet - 26) < 0.1 && st.f - st.land.f < 60;
+              const end = st.f > 500 || (landed && !walk);
+              // Salto doble en el ápice del rebote. Sobre la cámara (pies arriba de la fila 26) va a la izquierda hasta x 214
+              // y frena; el dash, una vez, cerca del ápice del salto doble (en el mismo cuadro lo anularía: el dash pone
+              // vy = 0) y solo mientras sigue sobre el pozo (x > 216), para no pasarse al pozo 2 de la cueva.
+              const goLeft = st.b !== undefined && above && p.x > 214 * 16;
+              set('right', !end && !walk && (st.b === undefined || (above && !goLeft && p.body.velocity.x < -20)));
+              set('left', !end && (goLeft || (walk && p.x > 212 * 16)));
               set('jump', !end && useDouble && t >= 0 && t < 20);
-              set('dash', !end && useDouble && above && t >= 0 && t < 3);
+              if (useDouble && st.dash === undefined && above && t >= 14 && p.x > 216 * 16) st.dash = st.f;
+              set('dash', !end && st.dash !== undefined && st.f - st.dash < 3);
               if (!end) return;
               scene.events.off('preupdate', step);
-              resolve({ feet: +(p.body.bottom / 16).toFixed(2), top: +st.top.toFixed(2), feather: scene.feathers - feathers });
+              resolve({ feet: +(p.body.bottom / 16).toFixed(2), x: +(p.x / 16).toFixed(1), top: +st.top.toFixed(2), feather: scene.feathers - feathers });
             };
             scene.events.on('preupdate', step);
           }),
         useDouble,
       );
+      await l3Shaft.close();
+      return result;
+    };
     const shaftMush = await shaftTry(false);
-    check(shaftMush.top > 26 && shaftMush.feather === 0, `nivel 3: el hongo del pozo de salida solo no llega a la cámara (${JSON.stringify(shaftMush)})`);
+    // La pluma B puede estar ya en el guardado (la cobra 1d3): se mira dónde queda Kerana.
+    check(shaftMush.top > 26 && shaftMush.feet > 26, `nivel 3: el hongo del pozo de salida solo no llega a la cámara (${JSON.stringify(shaftMush)})`);
     const shaftDouble = await shaftTry(true);
-    check(shaftDouble.feet === 26 && shaftDouble.feather === 1, `nivel 3: hongo + salto doble + dash llegan a la cámara y a la pluma B (${JSON.stringify(shaftDouble)})`);
-    await l3Shaft.close();
+    check(
+      shaftDouble.feet === 26 && shaftDouble.x >= 210 && shaftDouble.x < 217,
+      `nivel 3: hongo + salto doble + dash llegan a la cámara de la pluma B (${JSON.stringify(shaftDouble)})`,
+    );
 
     // 1e) Nivel 4: antesala, cierre de la arena de Jasy Jatere, fase invisible, carrera por el bastón y dash guardado.
     const l4Page = await open('/?debug=1&level=4&boss=1&god=1');
     await l4Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const l4x = await l4Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l4x > 210 * TILE && l4x < 230 * TILE, `nivel 4 con boss=1 empieza en la antesala (x ${Math.round(l4x / TILE)} tiles)`);
+    // La antesala de l4 está en x 256 desde que Jose rehízo Capiatá a mano (7 de octubre; antes, x 210-230).
+    check(l4x > 250 * TILE && l4x < 270 * TILE, `nivel 4 con boss=1 empieza en la antesala (x ${Math.round(l4x / TILE)} tiles)`);
     await walkIntoArena(l4Page);
     check(await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 4: la arena de Jasy Jatere se cierra');
     await sleep(5000);
@@ -968,7 +985,8 @@ async function main() {
     await cowPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const cows = await cowPage.evaluate(() => window.__KERANA_DEBUG__.scene.cows.length);
-    check(cows === 3, `nivel 4: vacas sueltas (${cows})`);
+    // Dos vacas sueltas en el l4 que rehízo Jose (antes, tres).
+    check(cows === 2, `nivel 4: vacas sueltas (${cows})`);
     // Mantener hasta que el tajo esté cargado (en máquinas lentas el tiempo de juego va más lento que el real).
     // Espera por estado (carga completa, tope 10 s) en vez de un tiempo fijo.
     await cowPage.keyboard.down('KeyX');
