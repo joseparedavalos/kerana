@@ -545,11 +545,13 @@ export class LevelScene extends Phaser.Scene {
     if (!this.arenaRect || !this.arenaBossId) return;
     const rect = this.arenaRect;
     const floorY = this.surfaceBelow(rect.centerX, rect.top) ?? rect.bottom;
+    const groundY = this.surfaceBelow(rect.centerX, rect.top, true) ?? rect.bottom;
     const ledgeProbe = this.surfaceBelow(rect.left + this.map.tileWidth * 5.5, rect.top);
     const ledgeY = ledgeProbe !== null && ledgeProbe < floorY - 8 ? ledgeProbe : null;
     const ctx: BossContext = {
       arena: rect,
       floorY,
+      groundY,
       ledgeY,
       playerX: () => this.player.x,
       playerY: () => this.player.y,
@@ -904,10 +906,11 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /** Superficie (y) del primer tile sólido o plataforma debajo de (x, fromY), o null. */
-  private surfaceBelow(x: number, fromY: number): number | null {
+  /** Primera superficie bajo (x, fromY); con `groundOnly`, sin contar las plataformas de un solo sentido. */
+  private surfaceBelow(x: number, fromY: number, groundOnly = false): number | null {
     const tile = this.map.tileHeight;
     for (let y = fromY + tile / 2; y < this.map.heightInPixels; y += tile) {
-      if (this.isSolidAt(x, y)) return Math.floor(y / tile) * tile;
+      if (groundOnly ? this.tileAt('Ground', x, y) : this.isSolidAt(x, y)) return Math.floor(y / tile) * tile;
     }
     return null;
   }

@@ -395,6 +395,33 @@ export const GAMEPLAY = {
     tailHeight: 16,
     /** Vuelo entre copas (ms). */
     flyMs: 500,
+    /**
+     * Arte por código (S26, monaiArt.ts). En una copa, el cuerpo se enrosca en el tronco: los primeros `neckSegments`
+     * bajan de la cabeza a la copa y el resto da vueltas alrededor del tronco (radio y bajada por segmento, px);
+     * `coilSettleMs`: cuánto tarda en enroscarse al llegar. Las vueltas de atrás del tronco se dibujan más oscuras.
+     */
+    neckSegments: 2,
+    coilRadius: 10,
+    coilPitch: 3,
+    coilSettleMs: 150,
+    /** Al caer o embestir, la cabeza se inclina hacia donde va, hasta este ángulo (grados; 0 = siempre derecha). */
+    diveTiltMaxDeg: 30,
+    /**
+     * Árboles de la arena (S26): copa irregular de racimos de hojas, ancho (px) y alto sobre y bajo la línea de la copa
+     * (la plataforma "="); cada árbol varía hasta ± la mitad de `treeVariation`.
+     */
+    crownWidth: 104,
+    crownAbove: 30,
+    crownBelow: 18,
+    treeVariation: 0.2,
+  },
+  /**
+   * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de
+   * alto y se leía como un pollito al lado de Kerana (42). Con 1,6 el cuerpo de 16 × 26 queda en 26 × 42: tan alto
+   * como Kerana, y el salto (63 px) lo sigue pasando con margen.
+   */
+  nandu: {
+    scale: 1.6,
   },
   wind: {
     /** Ciclo de cada zona (ms): calma, aviso (pasto inclinado y partículas, GDD §4.8) y ráfaga. */
@@ -989,7 +1016,6 @@ export const GAMEPLAY = {
   sprites: {
     tejuHead: { origin: [0.48, 0.62] },
     mboiTui: { origin: [0.31, 0.33] },
-    monai: { origin: [0.39, 0.86], bodyColor: 0x55702a, bellyColor: 0x7a9a3a, columnWidth: 6, columnColor: 0x4f6a26 },
     jasyJatere: { staffColumns: [0, 0.3], surpriseOffsetY: 10 },
     aoAo: { idleTimeScale: 0.35 },
     luison: { eyeForward: 15 },

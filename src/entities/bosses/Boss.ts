@@ -12,6 +12,11 @@ export interface BossContext {
   arena: Phaser.Geom.Rectangle;
   /** Superficie del suelo de la arena (y de los pies). */
   floorY: number;
+  /**
+   * Suelo firme bajo el centro de la arena sin contar las plataformas de un solo sentido (S26). En la arena de Moñái
+   * `floorY` da con la copa del medio ("=" a 3 tiles del suelo); los jefes que caminan el suelo usan este.
+   */
+  groundY: number;
   /** Superficie de las repisas laterales, si hay. */
   ledgeY: number | null;
   /** Pies de Kerana. */
