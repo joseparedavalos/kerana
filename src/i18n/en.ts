@@ -70,6 +70,8 @@ export const en: Record<TextKey, string> = {
   'hint.l5.dosel': 'Double {jump} and {dash} in the air',
   'hint.l4.vacas': 'In Capiatá, cows have the right of way',
   'hint.l4.mover': 'The raft goes back and forth. This one is practice: there is ground below.',
+  'hint.l4.double': '{jump} again in mid-air: double jump',
+  'hint.l4.wave': 'A stone sealed in the wall: only the light of the Charged Slash reaches it',
   'hint.l6.taitetu': 'A herd of taitetu: jump over them or wait up high',
   'hint.l6.viento': 'Wind at your back: you jump farther',
   'hint.l6.pindo': "Pindó palm: you're safe up there",
