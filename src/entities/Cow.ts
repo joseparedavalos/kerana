@@ -4,14 +4,25 @@ import { skinIfAvailable } from '../systems/SpriteSkin';
 import { carryRiders, collectRiders, placeKinematic } from './Mover';
 import { MoverMotor } from './MoverMotor';
 
-const CFG = GAMEPLAY.cow;
+const LOOK = GAMEPLAY.cow;
 const TEXTURE = 'vaca_placeholder';
+
+/** Lo que cambia de una vaca a otra: la común (`GAMEPLAY.cow`) o la vaca guasu (`GAMEPLAY.bigCow`, S27). */
+export interface CowConfig {
+  speed: number;
+  patrolDistance: number;
+  turnPauseMs: number;
+  mooMinMs: number;
+  mooMaxMs: number;
+  /** Tamaño respecto de la vaca común (dibujo y cuerpo); 1 si falta. */
+  scale?: number;
+}
 
 /** Vaca overa (placeholder por código): cuerpo blanco con manchas, cabeza a la derecha. */
 function ensureTexture(scene: Phaser.Scene): void {
   if (scene.textures.exists(TEXTURE)) return;
-  const w = CFG.width;
-  const h = CFG.height;
+  const w = LOOK.width;
+  const h = LOOK.height;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   g.fillStyle(0xf2eee3).fillRect(2, 3, w - 9, h - 8); // lomo
   g.fillStyle(0x3e2a1c).fillRect(6, 4, 6, 4).fillRect(15, 7, 5, 4); // manchas
@@ -27,7 +38,8 @@ function ensureTexture(scene: Phaser.Scene): void {
 // Vaca suelta de Capiatá: camina despacio de un lado a otro, muge de vez en cuando, no hace daño
 // y se puede usar de plataforma (se salta sobre su lomo). Desde S18 la patrulla es un `MoverMotor`
 // (ida y vuelta de ± `patrolDistance` que empieza en el medio, con pausa en cada punta) y lleva a
-// quien está encima con el mismo código que las plataformas móviles.
+// quien está encima con el mismo código que las plataformas móviles. La vaca guasu (S27) es la misma
+// vaca en grande: escala el dibujo y el cuerpo, con su velocidad, patrulla y mugido.
 export class Cow extends Phaser.Physics.Arcade.Image {
   declare body: Phaser.Physics.Arcade.Body;
   readonly motor: MoverMotor;
@@ -41,23 +53,26 @@ export class Cow extends Phaser.Physics.Arcade.Image {
     feetY: number,
     facing: 1 | -1,
     private readonly onMoo: (cow: Cow) => void,
+    private readonly cfg: CowConfig = GAMEPLAY.cow,
   ) {
     ensureTexture(scene);
     super(scene, x, feetY, TEXTURE);
-    this.patrolOriginX = x - CFG.patrolDistance;
+    this.patrolOriginX = x - cfg.patrolDistance;
     this.motor = new MoverMotor({
-      dx: CFG.patrolDistance * 2,
+      dx: cfg.patrolDistance * 2,
       dy: 0,
-      speed: CFG.speed,
-      waitMs: CFG.turnPauseMs,
-      startPos: CFG.patrolDistance,
+      speed: cfg.speed,
+      waitMs: cfg.turnPauseMs,
+      startPos: cfg.patrolDistance,
       startDir: facing,
     });
-    this.mooMs = Phaser.Math.Between(CFG.mooMinMs, CFG.mooMaxMs);
+    this.mooMs = Phaser.Math.Between(cfg.mooMinMs, cfg.mooMaxMs);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(4);
-    this.body.setSize(CFG.width, CFG.height - 4).setOffset(0, 4);
+    this.body.setSize(LOOK.width, LOOK.height - 4).setOffset(0, 4);
+    // El cuerpo de Arcade escala con la imagen: el lomo queda `(height − 4) × scale` sobre los pies.
+    if (cfg.scale) this.setScale(cfg.scale);
     Cow.setupBody(this.body);
     // Sprite real (S13c): el placeholder mira a la derecha sin voltear; quieta, el cuadro 0.
     skinIfAvailable(scene, this, 'vaca', { anim: 'vaca_walk', sourceFacesRight: true, stillFrame: true });
@@ -76,7 +91,7 @@ export class Cow extends Phaser.Physics.Arcade.Image {
   tick(deltaMs: number, bodies: readonly Phaser.Physics.Arcade.Body[]): void {
     this.mooMs -= deltaMs;
     if (this.mooMs <= 0) {
-      this.mooMs = Phaser.Math.Between(CFG.mooMinMs, CFG.mooMaxMs);
+      this.mooMs = Phaser.Math.Between(this.cfg.mooMinMs, this.cfg.mooMaxMs);
       this.onMoo(this);
     }
     collectRiders(bodies, this.body.top, this.body.left, this.body.right, this.riders);
