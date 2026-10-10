@@ -42,3 +42,34 @@ export function terrainAlpha(depth: number, tiles: number, fadeAlpha: number): n
   if (depth < tiles) return 1;
   return depth === tiles ? fadeAlpha : 0;
 }
+
+/**
+ * Piso del nivel (S29): en cada columna, la fila donde empieza el tramo sólido que llega al borde de abajo del mapa
+ * (`height` si la columna no lo toca: un pozo), y la línea del piso, la más común de esas filas (empate: la más honda).
+ * Lo que está en ese tramo y a la altura de la línea o más abajo se dibuja entero: el suelo llega hasta abajo de la
+ * pantalla y no queda una franja flotando con el fondo por debajo. Las casas que se apoyan en el piso siguen huecas.
+ */
+export function terrainFloor(solid: (x: number, y: number) => boolean, width: number, height: number): { runTop: Int32Array; line: number } {
+  const runTop = new Int32Array(width).fill(height);
+  const counts = new Map<number, number>();
+  for (let x = 0; x < width; x++) {
+    let y = height;
+    while (y > 0 && solid(x, y - 1)) y--;
+    runTop[x] = y;
+    if (y < height) counts.set(y, (counts.get(y) ?? 0) + 1);
+  }
+  let line = height;
+  let best = 0;
+  for (const [y, n] of counts) {
+    if (n > best || (n === best && y > line)) {
+      best = n;
+      line = y;
+    }
+  }
+  return { runTop, line };
+}
+
+/** El tile (x, y) es piso y se dibuja entero (ver `terrainFloor`). */
+export function isFloorTile(floor: { runTop: Int32Array; line: number }, x: number, y: number): boolean {
+  return y >= floor.runTop[x] && y >= floor.line;
+}
