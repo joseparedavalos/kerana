@@ -4,8 +4,8 @@
 # M = hongo (kind=once: de un uso; kind=sleep: dormido, lo despierta el tajo cargado o la onda) · R = rama que se quiebra
 # A. El sotobosque (x 0-102, fila 92): nido de fardo (x 8) · túnel de raíces (x 16-25, 3 filas) con una espina (x 21):
 #    solo el dash · fardo (x 27) y kuati (x 31) · cadena de hongos sobre el karaguatá (x 37-58): tres hongos sobre
-#    tocones (x 39, 46 de un uso, 53); pluma A sobre el de un uso (x 46, fila 81) · zanja segura con una rama (x 64-68) ·
-#    pozo (x 73-94) con cuatro ramas que se quiebran; mbói colgado de una rama sobre el primer salto (x 74)
+#    tocones (x 39, 46 de un uso, 53); pluma A sobre el de un uso (x 46, fila 81): rebote y salto doble · zanja segura
+#    con una rama (x 64-68) · pozo (x 73-94) con cuatro ramas que se quiebran; mbói colgado sobre el primer salto (x 74)
 # B. La subida (x 96-153, fila 92 -> 54): fuego 1 (x 96) · hongo dormido (x 101) al pie del tronco de 8 (x 103-130):
 #    tajo cargado y rebote · Luz de Arasy (x 110) y nido de roca (x 120) · cadena de cinco ascensores (x 131-149, fila
 #    84 -> 54; 6 filas cada uno, el mismo ciclo, se juntan alternando arriba y abajo) · hongo de vuelta al tronco en el
