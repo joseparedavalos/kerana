@@ -167,21 +167,37 @@ export interface BodyPoint {
   back: boolean;
 }
 
+/** Vueltas de atrás que asoman a la altura de la copa: van en otra capa, delante de la copa y de la plataforma (S28). */
+export interface HighBack {
+  gfx: Phaser.GameObjects.Graphics;
+  /** Los puntos de atrás cuyo borde de arriba queda sobre esta y van en `gfx`. */
+  belowY: number;
+}
+
 /**
  * Cuerpo de serpiente: un tubo que se afina hacia la cola, con borde oscuro, vientre crema abajo, manchas en el lomo
- * y brillo arriba. `front` recibe lo que va delante del tronco y `back` las vueltas de atrás (más oscuras).
+ * y brillo arriba. `front` recibe lo que va delante del tronco y `back` las vueltas de atrás (más oscuras); con
+ * `high`, las vueltas de atrás que tocan la copa van en su capa (siguen oscuras, pero no se esconden tras la copa).
  * Los puntos van de la nuca a la cola; se dibujan de la cola a la nuca (lo de adelante monta encima).
  */
-export function drawSnakeBody(front: Phaser.GameObjects.Graphics, back: Phaser.GameObjects.Graphics, pts: readonly BodyPoint[], n: number, alpha: number): void {
+export function drawSnakeBody(
+  front: Phaser.GameObjects.Graphics,
+  back: Phaser.GameObjects.Graphics,
+  pts: readonly BodyPoint[],
+  n: number,
+  alpha: number,
+  high?: HighBack,
+): void {
+  const backOf = (p: BodyPoint) => (high && p.y - p.r < high.belowY ? high.gfx : back);
   for (let i = n - 1; i >= 0; i--) {
     const p = pts[i];
-    const g = p.back ? back : front;
+    const g = p.back ? backOf(p) : front;
     g.fillStyle(p.back ? SNAKE.backOutline : SNAKE.outline, alpha).fillCircle(p.x, p.y, p.r + 1);
   }
   for (let i = n - 1; i >= 0; i--) {
     const p = pts[i];
     if (p.back) {
-      back.fillStyle(SNAKE.back, alpha).fillCircle(p.x, p.y, p.r);
+      backOf(p).fillStyle(SNAKE.back, alpha).fillCircle(p.x, p.y, p.r);
       continue;
     }
     front.fillStyle(SNAKE.body, alpha).fillCircle(p.x, p.y, p.r);

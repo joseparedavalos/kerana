@@ -46,6 +46,11 @@ export interface BossContext {
   setBlackout(on: boolean): void;
   /** Brilla con luz propia en un nivel oscuro (ojos, terrones); sin oscuridad no hace nada. */
   glow<T extends Phaser.GameObjects.GameObject>(obj: T): T;
+  /**
+   * Pone los objetos a la profundidad de Kerana y justo debajo de ella, en este orden: delante de los tiles y de lo
+   * creado antes, nunca encima de Kerana (S28, cuerpo de Moñái).
+   */
+  placeBelowPlayer(objs: readonly (Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Depth)[]): void;
   sfx(key: SfxKey): void;
   /** Sonido con paneo estéreo según dónde está `x` en la pantalla (silbido de Jasy Jatere). */
   sfxAt(key: SfxKey, x: number): void;

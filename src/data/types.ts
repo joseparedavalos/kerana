@@ -24,6 +24,11 @@ export interface LevelDef {
   biome: Biome;
   /** Fondo fijo a la cámara (ASSETS §6): `far` general, `cave` bajo tierra (zonas `Cave`), `brightness` 0-1 (1 por defecto). */
   backgrounds: LevelBackgrounds;
+  /**
+   * Terreno como repisa (S28): la capa Ground se dibuja solo hasta estos tiles del aire más cercano (la última fila,
+   * tenue) y más adentro se ve el fondo. Solo es dibujo: las colisiones no cambian. Sin valor, bloque macizo.
+   */
+  terrainShell?: number;
   musicKey: string;
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;

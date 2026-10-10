@@ -50,6 +50,7 @@ import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
+import { terrainAlpha, terrainDepths } from '../systems/terrainLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
@@ -320,7 +321,7 @@ export class LevelScene extends Phaser.Scene {
     // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
     if (this.def.dark) this.darkness = new Darkness(this);
     this.buildMap();
-    this.backdrop = new LevelBackdrop(this, this.def.backgrounds, this.map.widthInPixels);
+    this.backdrop = new LevelBackdrop(this, this.def.backgrounds, this.map.widthInPixels, this.map.heightInPixels);
     // El fondo no recibe la luz del nivel oscuro: se tiñe con el ambiente (la oscuridad sigue por encima).
     for (const img of this.backdrop.images) this.darkness?.glow(img);
     if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
@@ -378,7 +379,12 @@ export class LevelScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.player.getAttackHitbox(), this.enemies, this.onAttackHit, undefined, this);
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerTouchEnemy, undefined, this);
-    this.physics.add.overlap(this.player, this.pickups, this.onPickupOverlap, undefined, this);
+    // Los pickups no son piso: Arcade enciende `touching.down` también en un overlap, así que el contacto
+    // se atiende en el processCallback y se corta ahí (false), antes de que Arcade marque el contacto.
+    this.physics.add.overlap(this.player, this.pickups, undefined, (p, pk) => {
+      this.onPickupOverlap(p, pk);
+      return false;
+    }, this);
     for (const sinker of this.sinkers) this.physics.add.collider(this.player, sinker.raft);
     for (const b of this.bouncers) this.physics.add.collider(this.player, b.cap);
     for (const c of this.crumbles) {
@@ -571,6 +577,13 @@ export class LevelScene extends Phaser.Scene {
       playerOnRefuge: () => this.playerOnRefuge(),
       setBlackout: (on) => this.setBlackout(on, rect),
       glow: (obj) => this.darkness?.glow(obj) ?? obj,
+      placeBelowPlayer: (objs) => {
+        // Misma profundidad que Kerana y antes que ella en la lista: el orden estable deja a Kerana encima.
+        for (const obj of objs) {
+          obj.setDepth(this.player.depth);
+          this.children.moveBelow(obj, this.player);
+        }
+      },
       sfx: (key: SfxKey) => AudioManager.play(key),
       sfxAt: (key: SfxKey, x: number) => {
         const view = this.cameras.main.worldView;
@@ -1317,9 +1330,24 @@ export class LevelScene extends Phaser.Scene {
         if (tile.index !== -1) tile.setCollision(false, false, true, false);
       });
     }
+    if (this.def.terrainShell) this.drawTerrainAsLedges(this.def.terrainShell);
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.physics.world.setBoundsCollision(true, true, false, false);
+  }
+
+  /** Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo. Solo dibujo. */
+  private drawTerrainAsLedges(tiles: number): void {
+    const ground = this.layers.Ground;
+    if (!ground) return;
+    const { width, height } = this.map;
+    const depth = terrainDepths((x, y) => (ground.getTileAt(x, y)?.index ?? -1) !== -1, width, height, tiles);
+    ground.forEachTile((tile) => {
+      if (tile.index === -1) return;
+      const alpha = terrainAlpha(depth[tile.y * width + tile.x], tiles, GAMEPLAY.backdrop.terrainFadeAlpha);
+      if (alpha <= 0) tile.setVisible(false);
+      else tile.setAlpha(alpha);
+    });
   }
 
   /** Crea checkpoints, carteles, enemigos y objetos; devuelve el punto de inicio (pies). */
