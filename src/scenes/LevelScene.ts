@@ -379,9 +379,12 @@ export class LevelScene extends Phaser.Scene {
     Foreground?.setDepth(10);
 
     this.physics.add.overlap(this.player.getAttackHitbox(), this.enemies, this.onAttackHit, undefined, this);
-    this.physics.add.overlap(this.player, this.enemies, this.onPlayerTouchEnemy, undefined, this);
-    // Los pickups no son piso: Arcade enciende `touching.down` también en un overlap, así que el contacto
-    // se atiende en el processCallback y se corta ahí (false), antes de que Arcade marque el contacto.
+    // Ni los enemigos ni los pickups son piso: Arcade enciende `touching.down` también en un overlap, así que el
+    // contacto se atiende en el processCallback y se corta ahí (false), antes de que Arcade marque el contacto (S28, S30).
+    this.physics.add.overlap(this.player, this.enemies, undefined, (p, e) => {
+      this.onPlayerTouchEnemy(p, e);
+      return false;
+    }, this);
     this.physics.add.overlap(this.player, this.pickups, undefined, (p, pk) => {
       this.onPickupOverlap(p, pk);
       return false;
