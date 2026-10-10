@@ -187,7 +187,8 @@ async function main() {
     const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
     await title.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El diálogo pide 2 pulsaciones por línea (revelar y avanzar); el resto de la secuencia corre sola.
-    for (let i = 0; i < 40 && !(await isActive('LevelComplete')); i++) {
+    // S27: con 40 pulsaciones (≈ 12 s) falló una vez con el headless lento; el mismo tope que los demás pasos.
+    for (let i = 0; i < PRESS_MAX && !(await isActive('LevelComplete')); i++) {
       await title.keyboard.press('Space');
       await sleep(300);
     }
@@ -328,7 +329,7 @@ async function main() {
     await l2Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l2Done = () => l2Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 40 && !(await l2Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l2Done()); i++) {
       await l2Page.keyboard.press('Space');
       await sleep(300);
     }
