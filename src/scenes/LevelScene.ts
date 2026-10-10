@@ -50,6 +50,7 @@ import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
+import { terrainAlpha, terrainDepths } from '../systems/terrainLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
@@ -320,7 +321,7 @@ export class LevelScene extends Phaser.Scene {
     // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
     if (this.def.dark) this.darkness = new Darkness(this);
     this.buildMap();
-    this.backdrop = new LevelBackdrop(this, this.def.backgrounds, this.map.widthInPixels);
+    this.backdrop = new LevelBackdrop(this, this.def.backgrounds, this.map.widthInPixels, this.map.heightInPixels);
     // El fondo no recibe la luz del nivel oscuro: se tiñe con el ambiente (la oscuridad sigue por encima).
     for (const img of this.backdrop.images) this.darkness?.glow(img);
     if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
@@ -1329,9 +1330,24 @@ export class LevelScene extends Phaser.Scene {
         if (tile.index !== -1) tile.setCollision(false, false, true, false);
       });
     }
+    if (this.def.terrainShell) this.drawTerrainAsLedges(this.def.terrainShell);
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.physics.world.setBoundsCollision(true, true, false, false);
+  }
+
+  /** Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo. Solo dibujo. */
+  private drawTerrainAsLedges(tiles: number): void {
+    const ground = this.layers.Ground;
+    if (!ground) return;
+    const { width, height } = this.map;
+    const depth = terrainDepths((x, y) => (ground.getTileAt(x, y)?.index ?? -1) !== -1, width, height, tiles);
+    ground.forEachTile((tile) => {
+      if (tile.index === -1) return;
+      const alpha = terrainAlpha(depth[tile.y * width + tile.x], tiles, GAMEPLAY.backdrop.terrainFadeAlpha);
+      if (alpha <= 0) tile.setVisible(false);
+      else tile.setAlpha(alpha);
+    });
   }
 
   /** Crea checkpoints, carteles, enemigos y objetos; devuelve el punto de inicio (pies). */

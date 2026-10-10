@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
 import type { LevelBackgrounds } from '../data/types';
 import type { Area } from './lightLogic';
-import { backdropFit, backdropPanX, backdropTint, caveSpan } from './backdropLogic';
+import { backdropFit, backdropFitPanY, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
@@ -19,14 +19,18 @@ export class LevelBackdrop {
   private readonly caves: Area[] = [];
   private readonly brightness: number;
   private readonly fit: { scale: number; top: number };
+  /** Cuánto baja el fondo con la vista arriba del nivel (S28; 0 si el nivel no tiene alto para desplazarse). */
+  private readonly travelY: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
     defs: LevelBackgrounds,
     private readonly mapWidth: number,
+    private readonly mapHeight: number,
   ) {
     this.brightness = defs.brightness ?? 1;
-    this.fit = backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0);
+    this.travelY = CFG.panYRange * Math.max(0, mapHeight - VIEW.height);
+    this.fit = backdropFitPanY(VIEW.height, backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0), this.travelY);
     this.far = this.makeImage(defs.far);
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
@@ -67,7 +71,8 @@ export class LevelBackdrop {
     const off = fixedOffset(cam);
     const width = VIEW.width * this.fit.scale;
     const panX = backdropPanX(cam.worldView.x, this.mapWidth - VIEW.width, width - VIEW.width, CFG.panRange);
-    for (const img of this.images) img.setPosition(off.x + panX, off.y + this.fit.top);
+    const panY = backdropPanY(cam.worldView.y, this.mapHeight - VIEW.height, this.travelY);
+    for (const img of this.images) img.setPosition(off.x + panX, off.y + this.fit.top + panY);
     if (this.cave) this.updateCave(cam.worldView.x, off, panX);
     if (ambient !== undefined) this.applyTint(ambient);
   }

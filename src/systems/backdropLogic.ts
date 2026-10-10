@@ -36,6 +36,27 @@ export function backdropFit(viewHeight: number, overscale: number, shiftY: numbe
 }
 
 /**
+ * Desplazamiento vertical (≥ 0, hacia abajo) del fondo fijo a la cámara (S28): `travel` con la vista arriba del
+ * nivel y 0 abajo (el encuadre de siempre). `viewY` es el borde de arriba de la vista; `maxViewY`, el mayor posible.
+ */
+export function backdropPanY(viewY: number, maxViewY: number, travel: number): number {
+  if (maxViewY <= 0 || travel <= 0) return 0;
+  const progress = Math.min(1, Math.max(0, viewY / maxViewY));
+  return travel * (1 - progress) || 0;
+}
+
+/**
+ * Agranda el fondo hacia arriba para que, bajado `travel`, no destape el borde de arriba de la vista. El borde de
+ * abajo queda donde estaba (abajo del nivel el encuadre no cambia).
+ */
+export function backdropFitPanY(viewHeight: number, fit: { scale: number; top: number }, travel: number): { scale: number; top: number } {
+  if (travel <= 0) return fit;
+  const bottom = fit.top + viewHeight * fit.scale;
+  const top = Math.min(fit.top, -travel);
+  return { scale: (bottom - top) / viewHeight, top };
+}
+
+/**
  * Tramo horizontal de la vista cubierto por zonas de cueva (ocupan toda la altura), en unidades desde el
  * borde izquierdo de la vista y sin recortar (puede salirse de la vista). Si hay varias a la vista, va de la
  * primera a la última. `null` si ninguna se ve.

@@ -1013,6 +1013,14 @@ export const GAMEPLAY = {
     overscale: 1.12,
     /** Fracción del margen sobrante que recorre de punta a punta del nivel (1 = todo el margen; parallax lento). */
     panRange: 1,
+    /**
+     * Desplazamiento vertical (S28): fracción del recorrido vertical de la cámara que recorre el fondo. Abajo del
+     * nivel queda el encuadre de siempre (`shiftY`); al subir, el fondo baja (más cielo). La imagen se agranda hacia
+     * arriba lo justo para no destaparse. 0 = fijo en vertical, como antes.
+     */
+    panYRange: 0.15,
+    /** Terreno como repisa (`terrainShell` en levels.ts): opacidad de la última fila antes del fondo. */
+    terrainFadeAlpha: 0.55,
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */
     caveEdgeWidth: 32,
     /** Opacidad del degradado en su centro (0-1). */
