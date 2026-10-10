@@ -428,7 +428,7 @@ Para "todo premio es alcanzable con la física real" se usó una simulación com
 ### 12.6 Errores de S27 y su corrección
 
 1. **Piezas de la cadena pegadas:** el parser une `-` vecinos en una sola plataforma y se queja de `':' en más de un lado`. 1 tile de hueco entre una y otra.
-2. **Un `run` que salta un fardo puede aterrizar sobre una balsa que ya salió** y seguir corriendo al hueco (el paso decide el salto antes de mirar `untilX`): cayó una vez de cada dos al pasar de la casa Z a la primera balsa de C. En el plan, dos `jumpTo` medidos entre el techo del galpón y la casa.
+2. **Un `run` que salta un fardo puede aterrizar sobre una balsa que ya salió** y seguir corriendo al hueco (el paso decide el salto antes de mirar `untilX`): cayó una vez de cada dos al pasar de la casa Z a la primera balsa de C. En el plan, dos `jumpTo` medidos entre el techo del galpón y la casa. Y el destino de un `jumpTo` a ≥ 11 px del borde de un rompible: con el margen de 3 px de `seek`, el destino x 260,5 dejaba el cuerpo hasta 3 px sobre el fardo de la casa Z; caía en su esquina (fila 24, no la 25 del paso) y saltaba en el lugar para siempre (una corrida del smoke trabada 7 min; reproducido en 5 de 7 puntos de partida). Con x 261, 10 de 10.
 3. **La letra de la vaca borraba la espina de debajo** (§12.3): punto de cabecera.
 4. **La repisa del ascenso 2 se alcanzaba con salto doble desde la calle** (fila 31, 6 filas): fila 30.
 5. **Por el pretil de la terraza se llegaba a la repisa** sin el ascensor: terraza más corta (x 196-207) y 9 tiles de calle antes del ascensor.

@@ -268,10 +268,11 @@ export const L4_MAIN = {
     { mover: [217, 37], dir: 1, exit: 'walk' },
     { mover: [224, 30], dir: 1, exit: 'walk' },
     // Del techo del galpón a la casa Z con saltos medidos: un run que salta el fardo de la casa puede aterrizar sobre la
-    // balsa que ya salió y seguir corriendo al hueco.
+    // balsa que ya salió y seguir corriendo al hueco. El segundo, a x 261 y no a 260,5: con el margen de 3 px de `seek`
+    // el cuerpo quedaba hasta 3 px sobre el fardo (x 259), caía en su esquina y saltaba en el lugar para siempre.
     { run: 1, untilX: 252.5 },
     { jumpTo: [257, 25] },
-    { jumpTo: [260.5, 25] },
+    { jumpTo: [261, 25] },
     { mover: [262, 25], dir: 1, exit: 'none' },
     { mover: [275, 25], at: 'end', dir: 1, exit: 'jump', landX: 280.5, double: true },
     { run: 1, untilX: 287.5 },
