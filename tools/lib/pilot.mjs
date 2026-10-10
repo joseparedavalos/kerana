@@ -189,6 +189,8 @@ export function installPilot(plan) {
     const sw = grounded() && hitSwitches.find((s) => !s.motor.powered && dir * (s.zone.centerX - cx) > -4 && dir * (s.zone.centerX - cx) < 26 && Math.abs(s.zone.centerY - b.center.y) < 2 * T);
     if (sw) {
       move(0);
+      // S30: mirando hacia la piedra (en l5, al corregir el aterrizaje en la rama alta quedaba de espaldas a ella).
+      player.motor.facing = sw.zone.centerX < cx ? -1 : 1;
       tapAttack();
       return;
     }

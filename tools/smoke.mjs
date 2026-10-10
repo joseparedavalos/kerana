@@ -297,7 +297,9 @@ async function main() {
     check(await powered('reja_cueva'), 'nivel 1: el sable enciende la piedra temporizada de la cueva');
     // S28: dentro del nicho, la reja se cierra al apagarse la piedra y la segunda piedra (x 39) la vuelve a abrir.
     await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(40 * 16 + 8, 6 * 16));
-    for (let t = 0; t < 8000 && (await powered('reja_cueva')); t += 100) await sleep(100);
+    // S30: tope holgado (se corta por estado): la piedra dura 5 s de juego y con el juego al 62 % del reloj real no se
+    // apagaba en 8 s (falla igual en main en este contenedor).
+    for (let t = 0; t < 20000 && (await powered('reja_cueva')); t += 100) await sleep(100);
     const closedInside = !(await powered('reja_cueva'));
     await l1Back.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = -1));
     await l1Back.keyboard.press('KeyX');
@@ -1001,8 +1003,11 @@ async function main() {
       d.player.motor.facing = -1;
       return { dash: d.player.motor.dashEnabled, feathers: s.feathers };
     });
+    // S30: espera por estado a que termine el enfriamiento del dash (con el juego más lento que el reloj real, 500 ms
+    // fijos no alcanzaban y el segundo dash no salía; también falla así en main en un contenedor más lento).
     const dashKey = async () => {
-      await sleep(500);
+      await sleep(300);
+      for (let t = 0; t < 5000 && (await l4Bell.evaluate(() => window.__KERANA_DEBUG__.player.motor.dashCooldownMs > 0 || !window.__KERANA_DEBUG__.player.body.blocked.down)); t += 50) await sleep(50);
       await l4Bell.keyboard.down('KeyC');
       await sleep(80);
       await l4Bell.keyboard.up('KeyC');
@@ -1192,6 +1197,7 @@ async function main() {
     for (let t = 0; t < 600000 && !(await pilot(l5Run)).done; t += 500) await sleep(500);
     const run5 = await pilot(l5Run);
     check(run5.done && run5.respawns === 0, `nivel 5: Kerana cruza Canindeyú entera sin caer (${JSON.stringify(run5)})`);
+    if (run5.respawns > 0) console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log)).filter((l) => l.startsWith('caída') || l.startsWith('paso')).slice(-40).join('\n'));
     if (!run5.done) {
       await l5Run.screenshot({ path: join(SHOTS, 'l5-piloto-atascado.png') });
       console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
@@ -1252,11 +1258,13 @@ async function main() {
       await l5Feathers.evaluate(installPilot, plan);
       for (let t = 0; t < 60000 && !(await pilot(l5Feathers)).done; t += 250) await sleep(250);
       const after = await l5Feathers.evaluate(() => ({ done: window.__KERANA_PILOT__.done, respawns: window.__KERANA_PILOT__.respawns, feathers: window.__KERANA_DEBUG__.scene.feathers }));
+      if (!after.done || after.respawns > 0) console.log((await l5Feathers.evaluate(() => window.__KERANA_PILOT__.log)).slice(-20).join('\n'));
       return { before, ...after };
     };
     const featherA = await featherRun(35.5, 92, { steps: [{ bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true }] });
     check(featherA.done && featherA.respawns === 0 && featherA.feathers === featherA.before + 1, `nivel 5: la pluma A se cobra rebotando en el hongo de un uso de la cadena (${JSON.stringify(featherA)})`);
-    const featherC = await featherRun(222.5, 14, { steps: [{ bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true }] });
+    // Cae sobre el hongo desde arriba (sin cruzar el hueco del ascensor de la copa 7, que puede estar abajo).
+    const featherC = await featherRun(228, 11, { steps: [{ bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true }] });
     check(featherC.done && featherC.respawns === 0 && featherC.feathers === featherC.before + 1, `nivel 5: la pluma C se cobra con el hongo, el salto doble y el dash por encima de las espinas (${JSON.stringify(featherC)})`);
     await l5Feathers.close();
 
@@ -1317,6 +1325,95 @@ async function main() {
     const l5bounce = Math.round(await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.lastHeight));
     check(l5bounce > 90, `nivel 5: el hongo hace rebotar a Kerana (${l5bounce} px)`);
     await l5aPage.close();
+
+    // 1g2) Ni los enemigos ni los pickups son piso (S28 los pickups, S30 los enemigos): con el juego detenido y a paso
+    // fijo, un enemigo (o una guavirá) quieto en el aire en una columna libre, Kerana cae a través de él desde 3 tiles más
+    // arriba y aprieta saltar justo al tocarlo. Si fuera piso volvería a saltar en el aire (vy −400); sigue cayendo.
+    const floorPage = await open('/?debug=1&level=1&god=1');
+    await floorPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(800);
+    const notFloor = await floorPage.evaluate(() => {
+      const T = 16;
+      const g = window.__KERANA_GAME__;
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const p = d.player;
+      g.loop.sleep();
+      // Sin salto doble (el guardado de los pasos anteriores lo trae): saltar en el aire solo es posible si algo es piso.
+      p.motor.doubleJumpEnabled = false;
+      let now = g.loop.now || performance.now();
+      const step = () => {
+        now += 1000 / 60;
+        g.step(now, 1000 / 60);
+      };
+      const jump = s.input.keyboard.addKey(32);
+      const press = (on) => {
+        jump.isDown = on;
+        jump.isUp = !on;
+        jump.emit(on ? 'down' : 'up', jump);
+      };
+      // Columna libre: 12 filas de aire y 3 tiles de ancho a cada lado, lejos de las plataformas.
+      const W = s.map.widthInPixels / T;
+      let col = -1;
+      let row0 = -1;
+      for (let x = 6; x < W - 6 && col < 0; x++)
+        for (let y = 2; y < 14 && col < 0; y++) {
+          let free = true;
+          for (let dx = -2; dx <= 2 && free; dx++)
+            for (let dy = 0; dy < 12 && free; dy++) {
+              const px = (x + dx) * T + 8;
+              const py = (y + dy) * T + 8;
+              if (s.isSolidAt(px, py) || s.movers.some((m) => Math.abs(m.zone.centerX - px) < m.zone.width / 2 + 3 * T && py > m.zone.top - 3 * T && py < m.zone.bottom + 3 * T)) free = false;
+            }
+          if (free) {
+            col = x;
+            row0 = y;
+          }
+        }
+      const trial = (obj) => {
+        const ex = col * T + 8;
+        const ey = (row0 + 7) * T;
+        const hold = () => {
+          obj.body.reset(ex, ey);
+          obj.body.setVelocity(0, 0);
+        };
+        hold();
+        s.events.on('preupdate', hold);
+        const top = obj.body.top;
+        p.motor.reset();
+        p.body.reset(ex, top - 3 * T);
+        p.body.setVelocity(0, 0);
+        let touched = false;
+        let vy = null;
+        for (let i = 0, t = -1; i < 90; i++) {
+          step();
+          if (t < 0 && p.body.bottom >= top + 2) {
+            t = i;
+            touched = true;
+            press(true);
+          }
+          if (t >= 0 && i === t + 4) {
+            vy = Math.round(p.body.velocity.y);
+            press(false);
+            break;
+          }
+        }
+        s.events.off('preupdate', hold);
+        obj.body.reset(-500, -500);
+        for (let i = 0; i < 30; i++) step();
+        return { kind: obj.def?.id ?? obj.kind, touched, vy };
+      };
+      const enemy = s.enemies.find((e) => !e.purified && e.active);
+      const pickup = s.pickups.find((k) => k.active && k.kind === 'guavira');
+      const out = { col, enemy: trial(enemy), pickup: trial(pickup) };
+      g.loop.wake();
+      return out;
+    });
+    check(
+      notFloor.col > 0 && notFloor.enemy.touched && notFloor.enemy.vy > 0 && notFloor.pickup.touched && notFloor.pickup.vy > 0,
+      `ni un enemigo ni una guavirá devuelven el salto al tocarlos cayendo (${JSON.stringify(notFloor)})`,
+    );
+    await floorPage.close();
 
     // 1h) Nivel 6: antesala, cierre de la arena de Ao Ao, refugio en el pindó, furia (fase 3) y +1 corazón (7).
     const l6Page = await open('/?debug=1&level=6&boss=1&god=1');
