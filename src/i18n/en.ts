@@ -65,6 +65,8 @@ export const en: Record<TextKey, string> = {
   'hint.l4.tejas': 'Creaking roof tile: run!',
   'hint.l4.antesala': 'The whistle tells you which side he is on',
   'hint.l5.dash': "{dash}: Siesta Step. Thorns can't touch you",
+  'hint.l5.compas': 'Bounce and wait for the branch: it carries you up',
+  'hint.l5.dormido': 'Sleeping mushroom: wake it with the Charged Slash',
   'hint.l5.hongos': 'Mushroom: step on it to bounce high',
   'hint.l5.ramas': "Creaking branch: don't stay on it!",
   'hint.l5.dosel': 'Double {jump} and {dash} in the air',

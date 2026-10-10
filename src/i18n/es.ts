@@ -63,6 +63,8 @@ export const es = {
   'hint.l4.tejas': 'Teja que cruje: ¡corré!',
   'hint.l4.antesala': 'El silbido te dice de qué lado está',
   'hint.l5.dash': '{dash}: Paso de la siesta, las espinas no te tocan',
+  'hint.l5.compas': 'Rebotá y esperá la rama: sube con vos',
+  'hint.l5.dormido': 'Hongo dormido: despertalo con el tajo cargado',
   'hint.l5.hongos': 'Hongo: pisalo y rebotás alto',
   'hint.l5.ramas': 'Rama que cruje: ¡no te quedes encima!',
   'hint.l5.dosel': 'Doble {jump} y {dash} en el aire',
