@@ -50,7 +50,8 @@ import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
-import { terrainAlpha, terrainDepths } from '../systems/terrainLogic';
+import { cowPatrol } from '../systems/cowLogic';
+import { isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
@@ -795,10 +796,14 @@ export class LevelScene extends Phaser.Scene {
     return onRefuge(body.center.x, body.bottom, grounded, this.refuges, GAMEPLAY.pindo.feetTolerancePx);
   }
 
-  /** Vaca suelta; `guasu` (S27): la vaca grande del potrero de l4, con sus valores y un mugido más grave. */
-  private makeCow(x: number, feetY: number, facing: 1 | -1, guasu = false): Cow {
+  /**
+   * Vaca suelta; `guasu` (S27): la vaca grande del potrero de l4, con sus valores y un mugido más grave. `patrol`
+   * (S29): patrulla propia, más corta, para la vaca que deja la vaca embrujada en un piso angosto.
+   */
+  private makeCow(x: number, feetY: number, facing: 1 | -1, guasu = false, patrol?: number): Cow {
     const moo = guasu ? 'mooGuasu' : 'moo';
-    const cfg = guasu ? GAMEPLAY.bigCow : GAMEPLAY.cow;
+    const base = guasu ? GAMEPLAY.bigCow : GAMEPLAY.cow;
+    const cfg = patrol === undefined ? base : { ...base, patrolDistance: patrol };
     return new Cow(
       this,
       x,
@@ -866,9 +871,18 @@ export class LevelScene extends Phaser.Scene {
     for (const sw of waveStrikes(this.switches, this.lightWave, lw.width, lw.height, GAMEPLAY.switches.waveThroughWalls, this.struck)) this.hitSwitch(sw);
   }
 
-  /** La vaca embrujada purificada queda como una vaca tranquila más. */
+  /**
+   * La vaca embrujada purificada queda como una vaca tranquila más. S29: si se purificó junto a un borde (el pretil
+   * o el fardo de la terraza de l4), la patrulla se corre (o se acorta) lo justo para no salirse del piso y caminar
+   * en el aire.
+   */
   private cowFromEnemy(enemy: EnemyBase): void {
-    const cow = this.makeCow(enemy.x, enemy.y, enemy.facing);
+    const ground = this.layers.Ground;
+    const tile = this.map.tileWidth;
+    const row = Math.round(enemy.y / tile);
+    const solid = (col: number, r: number) => (ground?.getTileAt(col, r)?.index ?? -1) !== -1;
+    const fit = cowPatrol(enemy.x, GAMEPLAY.cow.width / 2, GAMEPLAY.cow.patrolDistance, tile, (col) => solid(col, row) && !solid(col, row - 1));
+    const cow = this.makeCow(fit.x, enemy.y, enemy.facing, false, fit.patrol);
     cow.setAlpha(0);
     this.tweens.add({ targets: cow, alpha: 1, duration: 400, delay: 200 });
     this.cows.push(cow);
@@ -1341,9 +1355,12 @@ export class LevelScene extends Phaser.Scene {
     const ground = this.layers.Ground;
     if (!ground) return;
     const { width, height } = this.map;
-    const depth = terrainDepths((x, y) => (ground.getTileAt(x, y)?.index ?? -1) !== -1, width, height, tiles);
+    const solid = (x: number, y: number) => (ground.getTileAt(x, y)?.index ?? -1) !== -1;
+    const depth = terrainDepths(solid, width, height, tiles);
+    // S29: el piso del nivel se dibuja entero hasta el borde de abajo (si no, se ve una franja con el fondo por debajo).
+    const floor = terrainFloor(solid, width, height);
     ground.forEachTile((tile) => {
-      if (tile.index === -1) return;
+      if (tile.index === -1 || isFloorTile(floor, tile.x, tile.y)) return;
       const alpha = terrainAlpha(depth[tile.y * width + tile.x], tiles, GAMEPLAY.backdrop.terrainFadeAlpha);
       if (alpha <= 0) tile.setVisible(false);
       else tile.setAlpha(alpha);
