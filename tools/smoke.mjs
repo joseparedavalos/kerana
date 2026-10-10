@@ -241,8 +241,8 @@ async function main() {
       };
     });
     check(
-      l1Info.movers === 3 && l1Info.gates === 3 && l1Info.switches === 4 && l1Info.bouncers === 'ready,ready,asleep' && l1Info.feathers === 3,
-      `nivel 1: 3 plataformas, 3 rejas, 4 piedras, hongos de un uso y dormido, 3 plumas (${JSON.stringify(l1Info)})`,
+      l1Info.movers === 3 && l1Info.gates === 3 && l1Info.switches === 5 && l1Info.bouncers === 'ready,ready,asleep' && l1Info.feathers === 3,
+      `nivel 1: 3 plataformas, 3 rejas, 5 piedras (S28: la segunda del nicho de la pluma A), hongos de un uso y dormido, 3 plumas (${JSON.stringify(l1Info)})`,
     );
     await l1Page.evaluate(installPilot, L1_LOW);
     const pilot = (page) => page.evaluate(() => {
@@ -293,6 +293,14 @@ async function main() {
     await l1Back.keyboard.press('KeyX');
     for (let t = 0; t < 3000 && !(await powered('reja_cueva')); t += 50) await sleep(50);
     check(await powered('reja_cueva'), 'nivel 1: el sable enciende la piedra temporizada de la cueva');
+    // S28: dentro del nicho, la reja se cierra al apagarse la piedra y la segunda piedra (x 39) la vuelve a abrir.
+    await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(40 * 16 + 8, 6 * 16));
+    for (let t = 0; t < 8000 && (await powered('reja_cueva')); t += 100) await sleep(100);
+    const closedInside = !(await powered('reja_cueva'));
+    await l1Back.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = -1));
+    await l1Back.keyboard.press('KeyX');
+    for (let t = 0; t < 3000 && !(await powered('reja_cueva')); t += 50) await sleep(50);
+    check(closedInside && (await powered('reja_cueva')), 'nivel 1: encerrada en el nicho de la pluma A, la piedra de adentro abre la reja');
     const sealedBefore = await powered('reja_camara');
     await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(204 * 16 + 10, 22 * 16));
     await sleep(300);
