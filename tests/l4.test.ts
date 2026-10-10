@@ -219,10 +219,10 @@ describe('rejas que se cierran solas: nadie queda encerrado (S27)', () => {
     expect(lockedIn('vitrina', DOUBLE)).toEqual([]);
   });
 
-  it('PENDIENTE: el nicho de la pluma A de l1 (reja x 38) encierra a Kerana y no tiene piedra adentro (S27 no toca l1)', () => {
-    // Comprobado en el juego en S27: con Kerana en el nicho, al apagarse la piedra la reja se cierra y no se sale (la
-    // red tampoco lo ve). Cuando se arregle l1 (una piedra adentro, como en el nicho de l3), esta lista queda vacía.
-    expect(lockedIn('l1', BASE)).toEqual(['reja_cueva: x 39-40 fila 6']);
+  it('l1: el nicho de la pluma A (reja x 38) tiene su piedra adentro y no encierra a Kerana (S28)', () => {
+    // Encontrado en S27 y confirmado en el juego: con Kerana en el nicho, al apagarse la piedra de afuera la reja se
+    // cerraba y no se salía (la red no lo ve: da las rejas por abiertas). S28 puso una segunda piedra adentro (x 39).
+    expect(lockedIn('l1', BASE)).toEqual([]);
     for (const id of ['l2', 'l5', 'l6', 'l7', 'yvaga']) expect([id, lockedIn(id, DOUBLE)]).toEqual([id, []]);
   });
 });
