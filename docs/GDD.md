@@ -660,22 +660,28 @@ El suelo base es la calle, en la fila 37; el mapa crece hacia arriba con tres as
 |---|---|
 | Lugar | Bosque Atlántico de Canindeyú (inspiración: Reserva Natural del Bosque Mbaracayú): árboles gigantes, lianas, niebla y lluvia |
 | Hora | Día lluvioso, luz verde filtrada |
-| Tamaño | ≈ 280 × 45 tiles (el más vertical) |
-| Idea nueva | Subir por la selva: hongos que rebotan y ramas que se quiebran; exige usar el dash |
+| Tamaño | 336 × 100 tiles (S30; el más vertical: antes 280 × 45) |
+| Idea nueva | Subir y bajar por la selva: hongos que rebotan (normales, de un uso y dormidos), ramas que se quiebran, cadenas de ascensores y ramas que van y vienen. Es el primer nivel con todo el vocabulario: el dash se exige en el camino (túnel de raíces, salto largo del dosel, cortina de karaguatá), igual que el tajo cargado (hongos dormidos) y el salto doble |
 | Enemigos | `kuati`, `kai`, `mboi` (colgante) |
-| Peligros | Ramas que se quiebran; karaguatá; caídas |
+| Peligros | Ramas que se quiebran; karaguatá; caídas (la quebrada) |
 | Música | Tambores graves, lluvia, coros de pájaros |
 | Jefe | Kurupi |
 | Don | Corazón de la selva (+1 corazón; 6 en total) |
 
-**Recorrido**
+**Recorrido** (rediseño de S30 con la receta de `docs/RECETA-NIVEL.md`; el detalle con x está en la cabecera de `tools/levels/l5.txt`)
 
-- **A. El sotobosque (≈ 60 tiles).** Hongos que rebotan; kuati que saltan. *Pluma 1:* sobre una cadena de rebotes.
-- **B. La subida (≈ 80 tiles, vertical).** Ramas que se quiebran 0,6 s después de pisarlas (crujido de aviso); mbói que cuelgan; ka'i que lanzan frutas desde las copas; **Luz de Arasy**. *Pluma 2:* en un hueco al que solo se llega con dash.
-- **Checkpoint 1.**
-- **C. El dosel (≈ 70 tiles).** Saltos largos entre copas con dash y salto doble, bajo la lluvia. *Pluma 3:* detrás de una cortina de lianas (secreto).
-- **Checkpoint 2 (antesala).**
-- **Arena: el claro.** Dos niveles de ramas y raíces grandes.
+La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fila 92), se sube 78 filas por un tronco y por la zona de ritmo hasta el dosel (fila 14) y se baja otras 78 por la quebrada hasta el claro de Kurupi. Las rutas se cruzan en altura: la rama larga pasa sobre el sotobosque y el dosel sobre la rama y los ascensores. Hay 20 plataformas móviles, todas de un solo sentido (11 verticales: una cadena de cinco ascensores que sube, una de tres que baja), 14 hongos de las tres variantes, 7 ramas que se quiebran y 10 saltos con un enemigo.
+
+- **A. El sotobosque (x 0–102).** Un nido de fardo. **El túnel de raíces:** 3 filas de alto con una espina que solo cruza el dash (cartel). Un kuati y un fardo. **La cadena de hongos** sobre el karaguatá: tres hongos sobre tocones (el del medio, de un uso). *Pluma A:* sobre la cadena, para quien rebota con el salto doble. Una rama que se quiebra sobre una zanja segura (cartel) y cuatro sobre un pozo, con un mbói colgado sobre el primer salto.
+- **B. La subida (x 96–153, fila 92 → 54).** **Fuego** (x 96). Un **hongo dormido** al pie de un tronco de 8: el tajo cargado lo despierta y el rebote sube (cartel). **Luz de Arasy** y un nido de roca. **Cadena de cinco ascensores:** cada uno espera al siguiente a la misma altura. **La rama larga**, hacia la izquierda sobre el sotobosque: un hueco con un mbói y **la reja de raíces**: su piedra está en una rama alta a la que solo lleva otro hongo dormido; abierta, un pasillo bajo el nudo del tronco, con un fardo. **Fuego** (x 88).
+- **Zona de ritmo: el compás de los hongos (x 52–79, fila 54 → 14).** Un pozo vertical con cinco ramas que van y vienen a la par y un hongo en cada repisa, alternando los lados. Se rebota en el lugar hasta que la rama está encima, se cae en ella, se cruza y el hongo de la otra repisa lanza a la rama de arriba, que espera ahí. Los hongos de un uso empujan una sola vez (piden el salto doble); el último está dormido. No es esperar a un enemigo (l2) ni al viento (l3) ni apurarse (l4): es rebotar al compás.
+- **C. El dosel (x 74–232, fila 14).** **Fuego** (x 80). Par de balsas, kuati, una balsa larga, ka'i, un hueco con mbói, un **hongo que lanza a un ascensor** que entrega a una balsa, un ka'i, un tronco caído de roca, otro mbói y un kuati. **El salto largo** pide salto doble y dash (cartel). *Pluma C:* junto a la copa 7, un hongo al pie de una pared con espinas encima: hongo, salto doble y dash por encima de las espinas.
+  - **Lugar secreto, el claro.** Un ascensor es la tapa de un hueco de la copa 6: cuando baja, el hueco queda abierto, con luciérnagas y una guavirá flotando. Abajo, un claro escondido con una Luz de Arasy, guavirás y un hongo que lanza a la rama de la *pluma B*. Se vuelve en el mismo ascensor. También se llega cayendo por el borde de la copa.
+- **D. La bajada (x 224–265, fila 14 → 80).** Un ascensor baja por un hueco de la copa 7 a una rama con un kuati; dos ramas que se quiebran; una cortina de karaguatá bajo un techo (dash); una cadena de tres ascensores sobre la quebrada y un pasaje por el último tronco (con un fardo) a la antesala.
+- **Antesala (x 266–295).** Fuego y una guavirá.
+- **Arena: el claro (x 296–335).** La de S10: dos niveles de ramas.
+
+**Medidas (S30).** Ruta principal con el piloto (`god=1`, con los tres dones): antes ≈ 28 s, después ≈ 157 s (ver PLAN, notas de S30).
 
 **Jefe: Kurupi**. 12 golpes.
 

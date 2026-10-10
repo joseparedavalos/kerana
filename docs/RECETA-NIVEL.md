@@ -1,4 +1,4 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3 y en S27 con l4)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3, en S27 con l4 y en S30 con l5)
 
 El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto). Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
 
@@ -136,6 +136,9 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] *(S25)* Una reja que cierra un nicho tiene una piedra también adentro (§11.4).
 - [ ] *(S27)* Cada reja temporizada dibujada de los dos lados: si Kerana puede quedar del otro lado, ahí hay otra piedra con el mismo `target` o una salida sin la reja (`tests/l4.test.ts`, todos los mapas). Cada puzzle comprobado sin su piedra en la simulación de alcance (§12.1).
 - [ ] *(S27)* Todo premio alcanzable con la física real (simulación de §12.5 y, para lo que pide un don, una prueba en el juego en el smoke); un enemigo sobre un tile de peligro, como punto de cabecera.
+- [ ] *(S30)* En un nivel vertical, cada salto tiene decidido qué hay debajo: pozo (corazón) o red (tiempo); ninguna caída larga saltea contenido (§13.1). Pilas de plataformas a ≥ 8 filas.
+- [ ] *(S30)* Hongos: el de un uso sube ≈ 107 px (un empujón), no 136; ninguno con espinas pegadas al sombrero (tocones) (§13.2).
+- [ ] *(S30)* Un escalón ajeno no saltea un puzzle: la simulación con la reja cerrada y sin cada hongo o plataforma del puzzle (`NOMOVER`, `LOCK`).
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -437,4 +440,78 @@ Para "todo premio es alcanzable con la física real" se usó una simulación com
 8. **`body.reset(x, y)` pone los pies en y** (el origen de Kerana es 0,5 1): corrige §11.5.6. Las pruebas viejas del smoke (y = fila − 2,7) funcionaban porque Kerana caía 2,7 filas en un lugar abierto; bajo un techo bajo (la pluma C) no. Para dejarla parada en la fila R: `body.reset(x, R * 16 − 1)`.
 9. **El smoke salteaba "Nivel completado"** (2 de 5 corridas, en l1): apretaba Espacio cada 300 ms hasta ver esa pantalla, que acepta Espacio desde el primer cuadro; el mapa entra al nivel con Espacio, así que la pulsación siguiente volvía a entrar a l1. Primero lo creí lentitud y subí el tope de pulsaciones: no cambió nada. Reproducido con un script que vuelca el estado (la escena había vuelto al inicio), se arregló apretando solo con el diálogo abierto. Lección: en un bucle, no apretar una tecla que también confirma la pantalla siguiente; apretar solo cuando el estado la pide.
 10. **Un piloto que funciona no prueba un puzzle:** el plan principal pasa la reja temporizada sin la piedra de adentro y no usa la pluma A. Cada pieza que el plan no recorre tiene su paso propio en el smoke (1d6 el corral, 1d7 las plumas A y C, 1d8 las tejas).
+
+---
+
+## 13. Lo que agregó l5 (S30): diseño vertical, hongos y el compás
+
+l5 se hizo con el mismo orden de trabajo (§1). El generador parte del commit base de la sesión (`66e17dd`) solo para copiar la antesala y la arena (x 210-279 del l5 viejo, a x 266-335 y 72 filas más abajo). Es el primer nivel donde Kerana tiene todo (tajo cargado, salto doble y dash) y el primero que es vertical de verdad: la verticalidad es la identidad, no un ascenso entre dos llanos.
+
+**Medidas de l5:** 336 × 100 (antes 280 × 45). Ruta principal con el piloto: **antes ≈ 28 s, después ≈ 157 s** (156,6 s en cada corrida sin caídas). El claro (lugar secreto): ≈ 48-64 s desde la copa 6 hasta volver a ella (según la fase del ascensor: 47,9 s en la mayoría de las corridas del smoke, 64,3 s en una).
+
+| # | Tiles | Qué pide | Cadencia |
+|---|---|---|---|
+| A1 | x 0-36 | nido, túnel de raíces con una espina (dash, cartel), kuati, fardo | la orilla del karaguatá |
+| A2 | x 37-63 | cadena de tres hongos sobre tocones (normal, de un uso, normal), pluma A | llano x 59-63 |
+| A3 | x 64-102 | rama sobre una zanja segura, pozo con cuatro ramas que se quiebran, mbói | **fuego x 96** |
+| B1 | x 96-130 | hongo dormido al pie de un tronco de 8 (tajo cargado, cartel) | la copa del tronco |
+| B2 | x 131-149, fila 84 → 54 | cadena de cinco ascensores | la rama larga |
+| B3 | x 88-145, fila 54 | hueco con mbói, la reja de raíces (hongo dormido → rama alta con la piedra), pasillo con fardo | **fuego x 88** |
+| R | x 52-79, fila 54 → 14 | zona de ritmo: el compás de los hongos (cinco ramas, cinco hongos) | **fuego x 80** (copa 0) |
+| C1 | x 74-137 | par de balsas, kuati, balsa larga, ka'i | copa 3 |
+| C2 | x 138-180 | hueco con mbói, hongo → ascensor → balsa, ka'i, tronco de roca | copa 5 |
+| C3 | x 181-232 | hueco con mbói, kuati, salto largo (salto doble y dash, cartel), kuati | copa 7 |
+| D | x 224-265, fila 14 → 80 | ascensor que baja, kuati, dos ramas que se quiebran, cortina de karaguatá (dash), cadena de tres ascensores | **antesala x 266** |
+
+### 13.1 Diseñar en vertical
+
+- **Una caída no cuesta nada: cada cosa que hay debajo de una ruta es una red.** En un nivel horizontal un pozo es la regla; en uno vertical, casi todo lo que está debajo de un salto es otra parte del nivel. Para cada salto hay que decidir qué pasa al fallar: **pozo** (abajo no hay nada hasta el borde del mapa: un corazón y vuelta al último suelo firme) o **red** (abajo hay una ruta anterior: no cuesta corazones, cuesta volver a subir). En l5 el dosel sobre la rama larga (x 74-145) cae a la rama (hay que repetir el compás: los saltos ahí son cortos y amables), y el dosel y la bajada sobre la quebrada (x 154-258) caen al vacío.
+- **Una caída larga no puede saltearse contenido.** La primera bajada de l5 caía directo al piso de la antesala desde cualquier ascensor. Arreglo: debajo de la bajada no hay piso (es la quebrada), y la antesala está detrás de un tronco al que se entra por un **pasaje a la altura del último ascensor**: se llega solo bajando en él.
+- **Rutas que se cruzan:** la rama larga (fila 54) pasa sobre el sotobosque (fila 92) y el dosel (fila 14) sobre la rama larga y la cadena de ascensores. El jugador ve dónde estuvo y adónde va.
+- **Pilas de plataformas:** entre dos plataformas apiladas, **8 filas**. El salto doble llega a una de un solo sentido 7 filas más arriba (§0, S28): con menos, se trepa la pila sin usar lo que la pila propone (en el compás, los hongos).
+- **Cadenas de ascensores** (5 subiendo en B, 3 bajando en D): todos del mismo largo y velocidad, con 1 tile de hueco, alternando el origen (abajo, arriba, abajo…): cada uno espera al siguiente en la punta donde se juntan (`tests/l5.test.ts` lo mide). La de bajada es la misma idea con el primero dibujado arriba.
+- **El piso del nivel no es uno solo:** `terrainShell` (S28) también vale: la línea de piso sale la fila 92 (sotobosque, bajo los ascensores y la arena) y los troncos, el nudo y las copas se dibujan como cáscaras.
+
+### 13.2 Hongos: lo que se midió
+
+- **El hongo de un uso empuja una sola vez** (se desinfla en el primer cuadro): sube **≈ 107 px** (6,7 filas), no los 135,7 del normal (que empuja dos veces, §0). Medido en el juego con el rastro del piloto. Desde un hongo de un uso, una plataforma a 8 filas pide el salto doble (hongo + doble: ≈ 155 px). La simulación de S26-S28 lo trataba como el normal y daba por alcanzables cosas que no lo eran.
+- **Un hongo rodeado de espinas lastima:** el chequeo de peligro mira los pies en `bottom − 2`, a 3 px de cada costado; al caer en el borde del sombrero, un pie queda sobre la espina de al lado. Los hongos sobre el karaguatá van **sobre tocones** (un tile de suelo, el karaguatá una fila más abajo).
+- **Hongo → plataforma:** la plataforma 8 filas sobre el piso del hongo (el rebote llega a 9,1): se rebota en el lugar hasta que la plataforma espera encima y se cae en ella. Más baja, se llega con el salto doble sin el hongo.
+- **Hongo dormido al pie de una pared de 8:** el rebote llega a la cara de arriba (8 filas, sólida); el salto doble (6) no. Pide el tajo cargado sin cartel de más (`hint.l5.dormido` la primera vez).
+- **Hongo + salto doble + dash:** el hongo junto a una pared de 7 con una **columna de espinas encima**. Mientras sube, la pared no deja ir hacia la pluma; arriba, las espinas solo las cruza el dash (intangible). Hay que subir **quieta** (ir hacia la pluma mientras se sube es tocar las espinas), salto doble en el ápice y dash. El hongo va del lado al que se llega caminando (la primera versión lo dejaba encerrado del otro lado de la pared); del lado de la pluma se cae a la rama baja de la bajada. En el borde de una pared con espinas encima uno se para (los 3 px de margen de los pies): no importa, porque desde ahí también hace falta el dash.
+- **Cadena de hongos:** a 7 tiles uno de otro sobre el karaguatá. Un hongo de un uso en el medio deja la cadena de ida (vuelve a los 3 s).
+
+### 13.3 La zona de ritmo: el compás de los hongos
+
+- **No repite l2, l3 ni l4:** aquellas se cruzan saltando de plataforma en plataforma (esperar al jakare, al viento, apurarse antes de la teja). Esta **sube** y Kerana casi no pisa: **rebota en el lugar** sobre un hongo (esperar es rebotar), cae en la rama cuando la rama está encima, viaja y el hongo del otro lado la lanza a la rama siguiente. El ritmo es rebote, rama, viaje.
+- **Cómo se arma:** un pozo vertical de 18 tiles de ancho, cinco ramas (plataformas de 3) que van y vienen **a la par** (mismo origen a la izquierda, mismo largo, 60 px/s, 2 s de espera: período 10,9 s) separadas 8 filas, y una repisa con un hongo junto a cada punta, alternando los lados. Como van a la par, cuando una rama deja a Kerana en una punta, la de arriba está esperando en esa misma punta: hay 2 s para bajarse, pisar el hongo y caer en ella. Si se pierde, la rama vuelve en 11 s (se rebota mientras tanto).
+- **Las tres variantes en la misma subida:** normal (se rebota cuanto haga falta), de un uso (una vez: hace falta el salto doble, §13.2) y dormido (el último: tajo cargado parada en la repisa, o la onda desde la rama que llega).
+- **No se saltea:** sin las ramas no se llega a ninguna repisa (simulación quitando las cinco); entre repisas del mismo lado hay 16 filas.
+
+### 13.4 Otras piezas
+
+- **El dash en el camino, una vez por sección:** A, el túnel de raíces; C, el salto largo del dosel (12 tiles: el salto doble solo cruza ≈ 10); D, la cortina de karaguatá. **Una sola espina, no dos:** con una, el dash empieza bien desde 25 px de margen; con dos (la pluma C de l4), desde 4 px: para el camino principal es demasiado justo.
+- **La reja de raíces (puzzle de S27, forma 1):** la piedra está en una rama alta a la que solo lleva el hongo dormido de al lado; la reja cierra el pasillo bajo el nudo del tronco. Piedra permanente: no encierra. La simulación con la reja cerrada confirma que sin la piedra no se pasa, y sin el hongo no se llega a la piedra. **Ojo con los escalones de otros:** la rama del mbói del hueco de al lado servía de escalón hacia la piedra (se movió 6 tiles).
+- **Saltos con enemigo (10):** cuatro mbói colgados sobre huecos (x 74, x 137, x 140, x 183; se activan desde el borde: hay que estar a ≤ 6 filas debajo de ellos, si no, no ven a Kerana), cuatro kuati en la llegada (copas 2, 6 y 7 y la rama baja de D) y dos ka'i que tiran a quien llega en una balsa (copas 3 y 5). Ninguno con azar.
+
+### 13.5 El lugar secreto: el claro
+
+- **Forma propia:** no es un pilar, una cueva ni un interior con reja: es un **claro al que se llega cayendo desde arriba**. Un ascensor es la tapa de un hueco de la copa 6: cuando baja, el hueco queda abierto; con luciérnagas y una guavirá flotando adentro (se ve desde la copa). Se baja en el ascensor o se cae (también por el borde izquierdo de la copa: el claro queda debajo). Adentro, Luz de Arasy, guavirás y un hongo que lanza a la rama de la pluma B. Se vuelve en el mismo ascensor.
+- **Proporción:** ≈ 48-64 s (casi todo, esperar el ascensor de 17 s de ciclo) por la pluma B, una Luz de Arasy y tres guavirá, contra ≈ 3 s de cruzar la copa.
+
+### 13.6 Errores de S30 y su corrección
+
+1. **Los hongos sobre el karaguatá lastimaban** (§13.2): tocones.
+2. **El hongo de un uso no llegaba a la rama** (el piloto rebotaba bien y quedaba 0,8 filas corto): empuja una vez (§13.2). En el compás, salto doble desde los de un uso; en la simulación, un empujón.
+3. **La rama del mbói era un escalón hacia la piedra** de la reja: hueco y mbói 6 tiles más lejos (§13.4).
+4. **La chimenea de la pluma C tenía dos paredes** y en el borde de la de afuera uno se paraba: una sola pared con espinas (§13.2).
+5. **La entrada a la cortina de karaguatá medía 1 tile** desde arriba: el piloto caía sobre el techo y saltaba en el lugar. Piso de la repisa 3 tiles más largo hacia la izquierda.
+6. **Piloto:** (a) el paso `dash` se tragaba los `jumpTo` con `dash: true` (se revisaba antes); (b) el salto doble y el dash apretados en el mismo cuadro: el dash pone vy = 0 y anula el doble (ahora el dash espera el ápice del segundo salto); (c) un salto para llegar a un hongo (−400 px/s) se tomaba por un rebote (−540): umbral −450; (d) la inercia al bajar de una plataforma dejaba a Kerana sobre el hongo y rebotaba antes de que empezara el paso `bounce` (sigue en el aire si ya rebotó); (e) la piedra de la reja, 40 filas más arriba, se tomaba por una piedra "delante" (ahora mira la altura); (f) `seek` a 3 px iba y venía sin pararse antes del dash, y al acercarse a la espina del túnel la inercia la metía en ella (`from`: suelta la flecha a la distancia de frenado); (g) golpeaba la piedra de la reja de espaldas (al corregir el aterrizaje en la rama alta quedaba mirando al otro lado: ahora se da vuelta hacia la piedra); (h) el salto hacia un hongo con espinas en el medio salía a 12 px de la espina y los pies seguían en su fila al cruzarla (24 px).
+7. **La pluma C con el hongo del otro lado de la pared:** se llegaba al hongo solo desde arriba; la simulación la daba por alcanzable por un artefacto (pararse en un ascensor dentro de un hueco con el cuerpo metido en la pared). Hongo del lado al que se llega caminando y simulación corregida (§13.7).
+8. **Dos chequeos viejos del smoke fallaban también en `main`** en este contenedor (el nicho de l1 y la pluma C de l4): el juego corre al 62 % del reloj real (l1 a 27 FPS, igual con y sin S30) y esperaban tiempos fijos (8 s para que se apague una piedra de 5 s; 500 ms entre dos dash, con 660 ms de enfriamiento de juego). Ahora esperan por estado (receta §10.5.4: los topes de reloj, holgados; se corta por estado).
+9. **Los enemigos eran piso** (S28): el contacto de Kerana con los enemigos se atiende en el `processCallback` y devuelve `false`, como el de los pickups. Reproducido antes (un mbopi quieto en el aire: con él vuelve a saltar, vy −400; sin él, sigue cayendo) y confirmado después (con él, sigue cayendo; el contacto sigue lastimando: 4 → 3 corazones sin `god`).
+
+### 13.7 La simulación de alcance (S30)
+
+La de S25-S28 no estaba en el repo; se rehízo en el scratchpad (`tmp/sim/reach.sim.ts`, corre con Vitest y una configuración propia para usar el **motor real** de Kerana, `PlayerMotor`, con la física de Arcade a 60 Hz). Lo que agregó: viajar en las plataformas verticales (pararse en una da todo su recorrido; antes solo se subía saltando de franja en franja), el hongo de un uso con un empujón, los camalotes de l2 como piso, el tajo cargado (40 × 28 a media altura) para las piedras, y opciones para quitar plataformas y hongos (`NOMOVER`) y cerrar las rejas (`LOCK`). Resultado en l5: con los tres dones, los 16 premios; sin dash, ni la pluma C ni nada después del salto largo; con las rejas cerradas, nada después de la reja salvo con la piedra; sin las ramas del compás, ninguna repisa.
 

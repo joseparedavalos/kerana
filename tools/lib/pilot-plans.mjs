@@ -321,3 +321,98 @@ export const L4_SECRET = {
     { mover: [224, 30], dir: 1, exit: 'walk' },
   ],
 };
+
+// l5 · Canindeyú (S30). Ruta principal: el túnel de raíces (dash), la cadena de hongos sobre el karaguatá, las ramas que
+// se quiebran sobre el pozo, el hongo dormido al pie del tronco, la cadena de cinco ascensores, la rama larga hacia la
+// izquierda (mbói en el hueco, la reja de raíces: hongo dormido → rama alta con la piedra), la zona de ritmo (el compás
+// de los hongos: cinco ramas que van y vienen, hongos normales, de un uso y dormido), el dosel (par de balsas, balsa
+// larga, hongo → ascensor → balsa, roca, salto largo con salto doble y dash) y la bajada (ascensor, ramas que se
+// quiebran, cortina de karaguatá con dash, cadena de tres ascensores) hasta la antesala. Filas reales del JSON.
+export const L5_MAIN = {
+  aim: true,
+  hitSwitches: [[118, 44]],
+  // Bajar de la rama de la piedra caminando (no saltar contra el nudo del tronco).
+  noGapJump: [[116.5, 124]],
+  splits: [
+    ['fuego 1 x 96', 96],
+    ['rama larga (fila 54)', 145, 55],
+    ['dosel x 74 (fila 14)', 74, 15],
+    ['copa 7 x 217', 217, 15],
+    ['antesala x 266', 266],
+  ],
+  steps: [
+    { run: 1, untilX: 18 },
+    { dash: 1, from: 20.2 },
+    // Antes de que el run vea las espinas (34 px adelante) y salte: el salto lo decide el paso del hongo.
+    { run: 1, untilX: 34.4 },
+    { bounce: [39, 90], via: [[46, 90], [53, 90]], landX: 61, landTop: 92 },
+    { run: 1, untilX: 71.5 },
+    { jumpTo: [76, 90] },
+    { jumpTo: [81, 88] },
+    { jumpTo: [86, 90] },
+    { jumpTo: [91, 88] },
+    { jumpTo: [96.5, 92] },
+    { run: 1, untilX: 99.5 },
+    { charge: 1 },
+    { bounce: [101, 91], landX: 106, landTop: 84 },
+    { run: 1, untilX: 129.5 },
+    { mover: [131, 84], dir: 1, exit: 'none' },
+    { mover: [135, 72], at: 'end', dir: 1, exit: 'none' },
+    { mover: [139, 72], dir: 1, exit: 'none' },
+    { mover: [143, 60], at: 'end', dir: 1, exit: 'none' },
+    { mover: [147, 60], dir: 1, exit: 'none' },
+    { run: -1, untilX: 126.5 },
+    { charge: -1 },
+    { bounce: [124, 53], landX: 120.5, landTop: 45 },
+    { run: -1, untilX: 90 },
+    { run: -1, untilX: 58.5 },
+    { bounce: [55, 53], onto: [58, 46], reach: 5 },
+    { mover: [58, 46], dir: 1, exit: 'walk' },
+    { bounce: [75, 45], onto: [58, 38], reach: 5, double: true },
+    { mover: [58, 38], at: 'end', dir: -1, exit: 'walk' },
+    { bounce: [55, 37], onto: [58, 30], reach: 5 },
+    { mover: [58, 30], dir: 1, exit: 'walk' },
+    { bounce: [75, 29], onto: [58, 22], reach: 5, double: true },
+    { mover: [58, 22], at: 'end', dir: -1, exit: 'walk' },
+    { charge: -1 },
+    { bounce: [55, 21], onto: [58, 14], reach: 5 },
+    { mover: [58, 14], dir: 1, exit: 'walk' },
+    { run: 1, untilX: 85.5 },
+    { mover: [87, 14], dir: 1, exit: 'none' },
+    { mover: [102, 14], at: 'end', dir: 1, exit: 'walk' },
+    { mover: [113, 14], dir: 1, exit: 'walk' },
+    { run: 1, untilX: 148 },
+    { bounce: [151, 15], onto: [155, 16], reach: 5 },
+    { mover: [155, 16], dir: 1, exit: 'none' },
+    { mover: [165, 10], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 174.5 },
+    { charge: 1 },
+    { run: 1, untilX: 202.5 },
+    { jumpTo: [219, 14], double: true, dash: true },
+    { mover: [224, 14], dir: 1, exit: 'walk' },
+    { run: 1, untilX: 236 },
+    { jumpTo: [239, 30] },
+    { jumpTo: [243, 34] },
+    { jumpTo: [245, 38] },
+    { dash: 1, from: 250 },
+    { mover: [256, 38], dir: 1, exit: 'none' },
+    { mover: [252, 66], at: 'end', dir: -1, exit: 'none' },
+    { mover: [256, 66], dir: 1, exit: 'walk' },
+    { run: 1, untilFight: true },
+  ],
+};
+
+// Lugar secreto de l5 (S30), el claro, desde la copa 6 (x 192, fila 14): el ascensor que tapa el hueco baja al claro;
+// la guavirá del hueco, la Luz de Arasy y dos guavirá en el piso; el hongo de un uso lanza a la rama de la pluma B; de
+// vuelta, el mismo ascensor sube a la copa.
+export const L5_SECRET = {
+  aim: true,
+  steps: [
+    { mover: [194, 14], dir: 1, exit: 'walk' },
+    { run: 1, untilX: 202.5 },
+    { run: -1, untilX: 193.6 },
+    { bounce: [191, 35], landX: 188, landTop: 28 },
+    { jumpTo: [193.6, 36] },
+    { mover: [194, 14], at: 'end', dir: 1, exit: 'walk' },
+  ],
+};
