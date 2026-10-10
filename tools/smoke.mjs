@@ -7,11 +7,13 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET, L5_MAIN, L5_SECRET } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
 const TILE = 16;
+// Piezas de l5 (S30, cabecera de tools/levels/l5.txt).
+const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4 };
 
 function findBrowser() {
   const candidates = [process.env.CHROME_PATH];
@@ -1132,12 +1134,142 @@ async function main() {
     check(l4save.freed?.includes('jasy_jatere') && l4save.gifts?.includes('dash'), 'guardado: Jasy Jatere liberado y Paso de la siesta');
     await l4Page.close();
 
+    // 1e2) l5 de punta a punta (S30): el piloto cruza Canindeyú por la ruta principal (el túnel de raíces con el dash, la
+    // cadena de hongos, las ramas que se quiebran, el hongo dormido, la cadena de cinco ascensores, la reja de raíces, el
+    // compás de los hongos, el dosel con el salto doble y el dash, la bajada) y después la liberación hasta "Nivel
+    // completado". Corre después de 1e: el guardado ya tiene el tajo cargado, el salto doble y el dash (como quien llega a l5).
+    const l5Run = await open('/?debug=1&level=5&god=1');
+    await l5Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l5Info = await l5Run.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const groups = new Set(s.breakables.map((b) => b.group));
+      const kinds = s.bouncers.reduce((acc, b) => ({ ...acc, [b.motor.kind]: (acc[b.motor.kind] ?? 0) + 1 }), {});
+      return {
+        charge: d.player.motor.chargeEnabled,
+        double: d.player.motor.doubleJumpEnabled,
+        dash: d.player.motor.dashEnabled,
+        movers: s.movers.length,
+        vertical: s.movers.filter((m) => m.motor.spec.dy !== 0).length,
+        oneWay: s.movers.every((m) => !m.solid),
+        switches: s.switches.length,
+        gates: s.gates.length,
+        bouncers: kinds,
+        crumbles: s.crumbles.length,
+        rocks: [...groups].filter((g) => g[0].kind === 'rock').length,
+        brittle: [...groups].filter((g) => g[0].kind === 'brittle').length,
+        checkpoints: s.checkpoints.length,
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+        enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
+        traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
+      };
+    });
+    check(
+      l5Info.charge &&
+        l5Info.double &&
+        l5Info.dash &&
+        l5Info.movers === L5_COUNTS.movers &&
+        l5Info.vertical === L5_COUNTS.vertical &&
+        l5Info.oneWay &&
+        l5Info.switches === 1 &&
+        l5Info.gates === 1 &&
+        l5Info.bouncers.normal === L5_COUNTS.normal &&
+        l5Info.bouncers.once === L5_COUNTS.once &&
+        l5Info.bouncers.sleep === L5_COUNTS.sleep &&
+        l5Info.crumbles === L5_COUNTS.crumbles &&
+        l5Info.rocks === L5_COUNTS.rocks &&
+        l5Info.brittle === L5_COUNTS.brittle &&
+        l5Info.checkpoints === 4 &&
+        l5Info.feathers === 3 &&
+        l5Info.enemies.kuati === L5_COUNTS.kuati &&
+        l5Info.enemies.kai === L5_COUNTS.kai &&
+        l5Info.enemies.mboi_colgante === L5_COUNTS.mboi &&
+        l5Info.traps === 0,
+      `nivel 5: ${L5_COUNTS.movers} plataformas de un solo sentido (${L5_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos (${L5_COUNTS.normal} normales, ${L5_COUNTS.once} de un uso, ${L5_COUNTS.sleep} dormidos), ${L5_COUNTS.crumbles} ramas que se quiebran, ${L5_COUNTS.rocks} rocas y ${L5_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L5_COUNTS.kuati} kuati, ${L5_COUNTS.kai} ka'i, ${L5_COUNTS.mboi} mbói, ningún encierro (${JSON.stringify(l5Info)})`,
+    );
+    await l5Run.evaluate(installPilot, L5_MAIN);
+    for (let t = 0; t < 600000 && !(await pilot(l5Run)).done; t += 500) await sleep(500);
+    const run5 = await pilot(l5Run);
+    check(run5.done && run5.respawns === 0, `nivel 5: Kerana cruza Canindeyú entera sin caer (${JSON.stringify(run5)})`);
+    if (!run5.done) {
+      await l5Run.screenshot({ path: join(SHOTS, 'l5-piloto-atascado.png') });
+      console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
+    console.log(`  l5 (ruta principal): ${(run5.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run5.splits)}`);
+    await l5Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l5RunDone = () => l5Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < PRESS_MAX && !(await l5RunDone()); i++) {
+      await l5Run.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l5RunDone(), 'nivel 5 recorrido → liberación → Nivel completado');
+    await l5Run.close();
+
+    // 1e3) l5, el lugar secreto (S30): el claro. Desde la copa 6, el ascensor que tapa el hueco baja al claro (la guavirá
+    // del hueco, la Luz de Arasy y dos guavirá); el hongo de un uso lanza a la rama de la pluma B; el mismo ascensor sube.
+    const l5Cave = await open('/?debug=1&level=5&god=1');
+    await l5Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const claro0 = await l5Cave.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(192 * 16, 14 * 16 - 1);
+      return { feathers: d.scene.feathers, pickups: d.scene.pickups.filter((p) => p.active).length };
+    });
+    await sleep(300);
+    await l5Cave.evaluate(installPilot, L5_SECRET);
+    for (let t = 0; t < 150000 && !(await pilot(l5Cave)).done; t += 500) await sleep(500);
+    const claro = await l5Cave.evaluate(() => ({
+      done: window.__KERANA_PILOT__.done,
+      respawns: window.__KERANA_PILOT__.respawns,
+      feathers: window.__KERANA_DEBUG__.scene.feathers,
+      pickups: window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).length,
+      x: Math.round(window.__KERANA_DEBUG__.player.x / 16),
+      feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16),
+      timeMs: Math.round(window.__KERANA_PILOT__.timeMs),
+    }));
+    await l5Cave.screenshot({ path: join(SHOTS, 'l5-claro.png') });
+    check(
+      claro.done && claro.respawns === 0 && claro.feathers === claro0.feathers + 1 && claro0.pickups - claro.pickups === 5 && claro.feet === 14 && claro.x >= 197,
+      `nivel 5: el ascensor del hueco baja al claro, la Luz de Arasy, tres guavirá y la pluma B, y de vuelta a la copa (${JSON.stringify({ ...claro0, ...claro })})`,
+    );
+    if (!claro.done) console.log((await l5Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    console.log(`  l5 (el claro): ${(claro.timeMs / 1000).toFixed(1)} s de juego desde la copa 6 hasta volver a ella`);
+    await l5Cave.close();
+
+    // 1e4) l5, las plumas A y C (S30). A: sobre la cadena de hongos del karaguatá; se cobra rebotando en el hongo de un uso.
+    // C: junto a la chimenea de la copa 7: el hongo, el salto doble en el ápice y el dash cruzan la columna de espinas.
+    const l5Feathers = await open('/?debug=1&level=5&god=1');
+    await l5Feathers.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const featherRun = async (x, row, plan) => {
+      const before = await l5Feathers.evaluate(([px, r]) => {
+        const d = window.__KERANA_DEBUG__;
+        d.player.body.reset(px * 16, r * 16 - 1);
+        return d.scene.feathers;
+      }, [x, row]);
+      await sleep(300);
+      await l5Feathers.evaluate(installPilot, plan);
+      for (let t = 0; t < 60000 && !(await pilot(l5Feathers)).done; t += 250) await sleep(250);
+      const after = await l5Feathers.evaluate(() => ({ done: window.__KERANA_PILOT__.done, respawns: window.__KERANA_PILOT__.respawns, feathers: window.__KERANA_DEBUG__.scene.feathers }));
+      return { before, ...after };
+    };
+    const featherA = await featherRun(35.5, 92, { steps: [{ bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true }] });
+    check(featherA.done && featherA.respawns === 0 && featherA.feathers === featherA.before + 1, `nivel 5: la pluma A se cobra rebotando en el hongo de un uso de la cadena (${JSON.stringify(featherA)})`);
+    const featherC = await featherRun(222.5, 14, { steps: [{ bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true }] });
+    check(featherC.done && featherC.respawns === 0 && featherC.feathers === featherC.before + 1, `nivel 5: la pluma C se cobra con el hongo, el salto doble y el dash por encima de las espinas (${JSON.stringify(featherC)})`);
+    await l5Feathers.close();
+
     // 1f) Nivel 5: antesala, cierre de la arena de Kurupi, llamado de animales, engaño (fase 3) y +1 corazón.
     const l5Page = await open('/?debug=1&level=5&boss=1&god=1');
     await l5Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    const l5x = await l5Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l5x > 210 * TILE && l5x < 240 * TILE, `nivel 5 con boss=1 empieza en la antesala (x ${Math.round(l5x / TILE)} tiles)`);
+    // S30: como en l4, la antesala se mide desde la arena (los 30 tiles antes de BossArena).
+    const l5ante = await l5Page.evaluate(() => ({ x: window.__KERANA_DEBUG__.player.x, arena: window.__KERANA_DEBUG__.scene.arenaRect.x }));
+    check(
+      l5ante.x > l5ante.arena - 30 * TILE && l5ante.x < l5ante.arena,
+      `nivel 5 con boss=1 empieza en la antesala (x ${Math.round(l5ante.x / TILE)} tiles; la arena empieza en x ${l5ante.arena / TILE})`,
+    );
     await walkIntoArena(l5Page);
     check(await l5Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 5: la arena de Kurupi se cierra');
     await sleep(5000);
@@ -1168,20 +1300,20 @@ async function main() {
     check(l5save.freed?.includes('kurupi') && l5save.maxHearts === 6, `guardado: Kurupi liberado y +1 corazón (${l5save.maxHearts})`);
     await l5Page.close();
 
-    // 1g) Nivel 5 desde el principio: caminando a la derecha, el primer hongo hace rebotar a Kerana más alto que un salto.
-    // (Empieza pasadas las espinas de práctica del Paso de la siesta, x 7-9.)
+    // 1g) Nivel 5: el hongo de vuelta al tronco (S30: en el piso bajo los ascensores, x 133-134) hace rebotar a Kerana
+    // más alto que un salto al llegar caminando.
     const l5aPage = await open('/?debug=1&level=5&god=1');
     await l5aPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await l5aPage.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
-      d.player.body.reset(11 * 16 + 8, d.player.y);
+      d.player.body.reset(138 * 16, 92 * 16 - 1);
     });
     await sleep(500);
     // La altura la mide el juego (BounceMeter de Kerana, en cada paso): muestrear desde afuera perdía el pico
     // y una ventana fija de tiempo real se quedaba corta cuando el headless va lento. Espera por estado (tope 15 s).
-    await l5aPage.keyboard.down('ArrowRight');
+    await l5aPage.keyboard.down('ArrowLeft');
     for (let t = 0; t < 15000 && (await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.count)) < 1; t += 50) await sleep(50);
-    await l5aPage.keyboard.up('ArrowRight');
+    await l5aPage.keyboard.up('ArrowLeft');
     const l5bounce = Math.round(await l5aPage.evaluate(() => window.__KERANA_DEBUG__.player.bounceMeter.lastHeight));
     check(l5bounce > 90, `nivel 5: el hongo hace rebotar a Kerana (${l5bounce} px)`);
     await l5aPage.close();
