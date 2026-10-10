@@ -1020,8 +1020,8 @@ export const GAMEPLAY = {
      */
     panYRange: 0.15,
     /**
-     * Relleno del fondo (S29): la imagen ya no se agranda con el alto del nivel; lo que destapa al bajar lo cubre un
-     * degradado del color medio de sus filas de arriba al de sus filas de abajo. Filas de la imagen que se promedian.
+     * Relleno del fondo (S29): la imagen ya no se agranda con el alto del nivel; la franja que destapa arriba al bajar
+     * la cubre el color medio de sus primeras filas. Filas de la imagen que se promedian.
      */
     fillSampleRows: 4,
     /** Alto (unidades) del fundido sobre el borde de arriba de la imagen, para que no se vea la costura con el relleno. */
