@@ -630,7 +630,7 @@ El suelo base es la calle, en la fila 37; el mapa crece hacia arriba con tres as
 - **Antesala (x 462–481).** Fuego 4 y una guavirá.
 - **Arena: la plaza (x 482–521).** La de S17: el lapacho al centro (sus ramas son plataformas), bancos y dos techos a los lados. Niebla del sueño en la pelea.
 
-**Medidas (S27).** Ruta principal con el piloto (`god=1`, con tajo cargado y salto doble, sin dash): antes ≈ 30 s (el l4 de Jose), después ≈ 127 s (ver PLAN, notas de S27).
+**Medidas (S27).** Ruta principal con el piloto (`god=1`, con tajo cargado y salto doble, sin dash): antes ≈ 30 s (el l4 de Jose), después ≈ 121-127 s según la fase de las balsas (ver PLAN, notas de S27).
 
 **Jefe: Jasy Jatere**. 9 golpes, más quitarle el bastón.
 
