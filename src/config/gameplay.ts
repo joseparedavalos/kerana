@@ -595,6 +595,25 @@ export const GAMEPLAY = {
     turnPauseMs: 1200,
   },
 
+  /**
+   * Vaca guasu (S27): la vaca suelta en grande, en el potrero escondido de l4. Es la misma vaca (no daña, camina sola
+   * y se la usa de plataforma de un solo sentido) con sus propios valores; la común (`cow`) no cambia. Cruza el potrero
+   * de espinas con Kerana en el lomo.
+   */
+  bigCow: {
+    /** Tamaño respecto de la vaca común (dibujo y cuerpo). Con 2,4 el lomo queda 48 px (3 filas) sobre los pies. */
+    scale: 2.4,
+    /** Velocidad (px/s): la de la común por la escala (14 × 2,4 ≈ 34), los mismos pasos pero más largos. */
+    speed: 34,
+    /** Media patrulla (px): va y viene ± esto desde donde nace. En l4, del henil (a 1 tile) al ras de la repisa del premio. */
+    patrolDistance: 68,
+    /** Pausa en cada punta (ms): el momento de subirse o bajarse. */
+    turnPauseMs: 1200,
+    /** Mugido (más grave que el de la común): cada cuánto, al azar entre estos valores (ms); solo si está en pantalla. */
+    mooMinMs: 3000,
+    mooMaxMs: 6000,
+  },
+
   // ── S18: piezas de motor (plataformas móviles, disparadores, variantes de hongo) ──────────────
   // Valores nuevos; ninguno cambia un valor anterior. Los mapas pueden pisarlos por objeto.
 

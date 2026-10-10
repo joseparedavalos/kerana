@@ -782,11 +782,21 @@ export class LevelScene extends Phaser.Scene {
     return onRefuge(body.center.x, body.bottom, grounded, this.refuges, GAMEPLAY.pindo.feetTolerancePx);
   }
 
-  private makeCow(x: number, feetY: number, facing: 1 | -1): Cow {
-    return new Cow(this, x, feetY, facing, (cow) => {
-      const view = this.cameras.main.worldView;
-      if (view.contains(cow.x, cow.y - 4)) AudioManager.play('moo', panFor(cow.x, view.centerX, view.width / 2));
-    });
+  /** Vaca suelta; `guasu` (S27): la vaca grande del potrero de l4, con sus valores y un mugido más grave. */
+  private makeCow(x: number, feetY: number, facing: 1 | -1, guasu = false): Cow {
+    const moo = guasu ? 'mooGuasu' : 'moo';
+    const cfg = guasu ? GAMEPLAY.bigCow : GAMEPLAY.cow;
+    return new Cow(
+      this,
+      x,
+      feetY,
+      facing,
+      (cow) => {
+        const view = this.cameras.main.worldView;
+        if (view.contains(cow.x, cow.y - 4)) AudioManager.play(moo, panFor(cow.x, view.centerX, view.width / 2));
+      },
+      cfg,
+    );
   }
 
   private addCowToGroup(cow: Cow): void {
@@ -1357,8 +1367,8 @@ export class LevelScene extends Phaser.Scene {
         case 'Enemy': {
           const kind = String(objectProp(obj, 'kind') ?? 'walker');
           const facing: 1 | -1 = objectProp(obj, 'facing') === 'right' ? 1 : -1;
-          if (kind === 'vaca') {
-            this.cows.push(this.makeCow(x, y, facing));
+          if (kind === 'vaca' || kind === 'vaca_guasu') {
+            this.cows.push(this.makeCow(x, y, facing, kind === 'vaca_guasu'));
             break;
           }
           const enemy = createEnemy(this, kind, x, y, facing);

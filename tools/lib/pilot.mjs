@@ -28,9 +28,12 @@
 //                                                     Con calm: [x, y] (S25) espera a que amaine el viento de la zona que
 //                                                     tiene esa celda (zona de ritmo de l3).
 //   { charge: 1 | -1 }                                tajo cargado mirando hacia ese lado (mantiene X hasta cargar).
-//   { jumpTo: [x, fila], hold? }                      salta a una repisa o una penca: se acerca, salta (manteniendo
+//   { jumpTo: [x, fila], hold?, double? }             salta a una repisa o una penca: se acerca, salta (manteniendo
 //                                                     Espacio `hold` ms, 340 por defecto) y en el aire va hacia x;
-//                                                     termina al pisar con los pies en esa fila.
+//                                                     termina al pisar con los pies en esa fila. Con double (S27), salto
+//                                                     doble en el ápice.
+//   S27: un paso mover también puede ser una vaca (la celda de donde nace); con double, la bajada `jump` lleva salto
+//   doble en el ápice.
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
@@ -70,11 +73,15 @@ export function installPilot(plan) {
     // Tras una caída el paso empieza de nuevo (si no, una plataforma perdida se persigue para siempre).
     st.phase = 'start';
     st.aim = null;
+    st.doubled = false;
     return origRespawn.call(this, reason);
   };
 
   const onBlock = (blk, b) => Math.abs(blk.y - b.bottom) <= 3 && b.right > blk.x && b.left < blk.x + blk.width;
   const onMover = (b) => scene.movers.some((m) => onBlock(m.block, b));
+  // Vacas (S27): el lomo es una plataforma que camina; se la trata como una plataforma móvil más.
+  const cowBlock = (c) => ({ x: c.body.left, y: c.body.top, width: c.body.width });
+  const onCow = (b) => (scene.cows ?? []).some((c) => onBlock(cowBlock(c), b));
   // Camalotes (S22): sostienen mientras no se hundieron.
   const onSinker = (b) => scene.sinkers.some((s) => s.isStoodOn(b));
   const inRect = (r, x, y) => x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
@@ -83,7 +90,7 @@ export function installPilot(plan) {
   const hazard = (x, y) => scene.tileAt('Hazards', x, y);
   const body = () => player.body;
   // touching.down también se enciende al pasar por un pickup o un enemigo (overlap): solo cuentan el mapa y las plataformas.
-  const grounded = () => body().blocked.down || onMover(body()) || onSinker(body());
+  const grounded = () => body().blocked.down || onMover(body()) || onSinker(body()) || onCow(body());
 
   const move = (dir) => {
     set('right', dir > 0);
@@ -102,6 +109,14 @@ export function installPilot(plan) {
   const startJump = (ms = 340) => {
     if (st.jumpCool > 0 || st.jumpMs > 0) return;
     st.jumpMs = ms;
+  };
+  // Salto doble (S27): en el aire, cerca del ápice, suelta y vuelve a pulsar Espacio en el mismo cuadro (una vez por paso).
+  const doubleAtApex = () => {
+    if (st.doubled || grounded() || body().velocity.y < -40) return;
+    st.doubled = true;
+    set('jump', false);
+    set('jump', true);
+    st.jumpMs = 340;
   };
 
   /** Superficie (y) en la columna x entre 3 tiles arriba y 3 abajo de los pies, o null. */
@@ -199,7 +214,12 @@ export function installPilot(plan) {
     }
   };
 
-  const moverAt = ([x, y]) => scene.movers.find((mv) => inZone(mv.zone, [x, y]));
+  const cowAt = ([x, y]) => {
+    const c = (scene.cows ?? []).find((cw) => Math.floor((cw.x - cw.motor.offsetX + cw.motor.spec.startPos) / T) === x && Math.floor((cw.y - 1) / T) === y);
+    if (!c) return undefined;
+    return { motor: c.motor, get block() { return cowBlock(c); } };
+  };
+  const moverAt = ([x, y]) => scene.movers.find((mv) => inZone(mv.zone, [x, y])) ?? cowAt([x, y]);
   // El jakare que sale del agua en la celda (x, y) está abajo, recién hundido (S24, jakare guasu).
   const lurkerDown = ([x, y]) => {
     const e = scene.enemies.find((en) => en.def.archetype === 'lurker' && Math.floor(en.spawnX / T) === x && Math.floor((en.spawnY - 1) / T) === y);
@@ -331,11 +351,13 @@ export function installPilot(plan) {
         if (s.exit === 'jump') {
           const edge = dir > 0 ? m.block.x + m.block.width : m.block.x;
           // En el aire apunta a landX desde que despega (un poste angosto no perdona pasarse).
-          if (!grounded()) seek(s.landX * T);
-          else if (onThis(m, b) && dir * (b.center.x - edge) >= -10) startJump();
+          if (!grounded()) {
+            seek(s.landX * T);
+            if (s.double) doubleAtApex();
+          } else if (onThis(m, b) && dir * (b.center.x - edge) >= -10) startJump();
           return dir * (b.center.x - s.landX * T) >= -3 && grounded() && !onThis(m, b);
         }
-        return !onMover(b) && grounded();
+        return !onMover(b) && !onCow(b) && grounded();
       }
     }
   };
@@ -349,12 +371,14 @@ export function installPilot(plan) {
     }
     if (!grounded() || st.jumpMs > 0) {
       seek(tx);
+      if (s.double && !grounded()) doubleAtApex();
       return false;
     }
-    // Se acerca hasta 2,5 tiles, o salta desde el borde si se acaba el piso antes.
+    // Se acerca hasta 2,5 tiles, o salta desde el borde si se acaba el piso antes (S27: o si tiene un pretil delante).
     const d = Math.sign(tx - b.center.x);
     const edge = !solid(b.center.x + d * (b.halfWidth + 6), b.bottom + 4);
-    if (Math.abs(b.center.x - tx) > 2.5 * T && !edge) {
+    const wall = solid(b.center.x + d * (b.halfWidth + 4), b.bottom - 6);
+    if (Math.abs(b.center.x - tx) > 2.5 * T && !edge && !wall) {
       seek(tx);
       return false;
     }
@@ -444,6 +468,7 @@ export function installPilot(plan) {
     st.step++;
     st.phase = 'start';
     st.aim = null;
+    st.doubled = false;
     if (st.step >= steps.length) {
       st.done = true;
       for (const k of Object.keys(held)) set(k, false);

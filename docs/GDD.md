@@ -610,23 +610,27 @@ El suelo base está en la fila 33 y el mapa crece hacia arriba: tres ascensos si
 |---|---|
 | Lugar | Capiatá, conocida como "la ciudad de los mitos" y sede del Museo Mitológico Ramón Elías. Pueblo de casas con corredores y tejas, con una plaza y un lapacho (*tajy*) en flor |
 | Hora | La siesta, hacia las 13:00: sol vertical, calor que ondula el aire, calles vacías |
-| Tamaño | 450 × 32 tiles (el GDD pedía ≈ 260 × 30; jugado, eso se cruzaba caminando) |
-| Idea nueva | Techos y corredores (verticalidad urbana) y la niebla del sueño |
-| Enemigos | `jagua`, `abejas` |
-| Peligros | Niebla del sueño; tejas que se sueltan (aviso: crujido y polvo) |
+| Tamaño | 522 × 44 tiles (S27; el l4 que Jose rehízo el 7 de octubre medía 320 × 24) |
+| Idea nueva | Puzzles de piedras y rejas (S27): puertas que abre una piedra que hay que alcanzar primero, bloques que se rompen hasta llegar a la piedra, piedras que solo enciende la onda a través de una pared, una reja temporizada y dos piedras sobre una misma reja; ninguno deja a Kerana encerrada si se resuelve mal. Techos y corredores (tres ascensos) y la niebla del sueño. El salto doble se exige desde el principio |
+| Enemigos | `jagua`, `abejas`, `vaca_embrujada`. Las vacas sueltas y la **vaca guasu** (S27) son suelo que camina |
+| Peligros | Niebla del sueño; tejas que se sueltan (aviso: crujido y polvo); karaguatá en el potrero y en el campanario; pozos |
 | Música | Arpa paraguaya perezosa y marimba lenta |
 | Jefe | Jasy Jatere |
 | Don | Paso de la siesta (dash) |
 
-**Recorrido**
+**Recorrido** (rediseño de S27 con la receta de `docs/RECETA-NIVEL.md`; el detalle con x está en la cabecera de `tools/levels/l4.txt`)
 
-- **A. La calle (0–89).** Balsa de práctica sobre suelo firme y la misma, más larga, sobre un pozo. Jagua en el aterrizaje. *Pluma 1:* campanario (salto doble), con ascensor secreto. Reja bajo la calle (guavirá). Cartel de museo.
-- **B. El mercado (90–169).** Vacas sueltas como suelo que camina; la vaca embrujada carga en el descanso. **Luz de Arasy**. Fuego 1.
-- **C. Los patios (170–259).** Niebla del sueño (§4.8) sobre un pozo: la balsa no perdona quedarse quieto. Enjambres. *Pluma 2:* túnel de espinas (pide el paso de la siesta, que se gana al final de este nivel → volver después). Fuego 2.
-- **D. Los techos (260–349).** Islas con tejas que caen y balsas que se miran. *Pluma 3:* detrás del frente (`Foreground`). Fuego 3.
-- **E. El callejón (350–389).** El pozo de balsa otra vez, con abejas y vaca embrujada. No es calle vacía.
-- **Antesala (390–409).** Una abuela duerme la siesta en una silla [Extra: personaje decorativo].
-- **Arena: la plaza (410–449).** El lapacho al centro (sus ramas son plataformas), bancos y dos techos a los lados. Niebla del sueño en la pelea.
+El suelo base es la calle, en la fila 37; el mapa crece hacia arriba con tres ascensos que piden el salto doble (aleros en zigzag, dos ascensores que despiertan con una piedra, la torre del campanario) y baja a la galería de las tejas. Hay 20 plataformas móviles, todas de un solo sentido (4 verticales): dos pares de balsas, la balsa dormida de la zanja, los dos ascensores, la cadena de cinco que baja del campanario y las ocho balsas de la galería. Cuatro jagua, cuatro panales y la vaca embrujada esperan en los saltos; la niebla de la siesta duerme a quien se queda quieto.
+
+- **A. La calle de la siesta (x 0–137).** Un nido de fardo y una **tapia de 5** que pide el salto doble (cartel). Un jagua en la calle. **El museo:** el portón del zaguán está cerrado y su piedra está arriba, en el techo del corredor: se sube al techo (o se la golpea saltando desde la calle) y el portón se abre; adentro, un fardo de 4 cierra el zaguán. La **niebla de la siesta** con una teja floja y una zanja. **El patio del jagua.** *Pluma A (la onda):* en un nicho enrejado; su piedra está encerrada en la pared y solo la enciende la luz del tajo cargado, desde el patio, entre los barrotes (cartel). **Ascenso 1** (fila 37 → 23) en zigzag por dos aleros hasta un techo con una roca agrietada. Un **par de balsas** con un panal sobre la llegada.
+- **B. El galpón (x 138–253).** **Fuego** (x 148). Dos vacas sueltas bajo un balcón. **La despensa:** un fardo, una roca agrietada, la piedra y otra roca; rotas, la piedra despierta la **balsa dormida** que cruza la zanja. **La terraza**, con pretiles, y la vaca embrujada. **Ascenso 2** (fila 37 → 23): el ascensor está dormido y su piedra, sellada en la pared; la enciende la onda desde la calle (cartel). Una repisa con un panal y un segundo ascensor hasta el techo del galpón.
+  - **Lugar secreto, el potrero de la vaca guasu.** Desde la repisa del ascenso 2 se ve la reja del corral, con luciérnagas; su piedra está detrás de los barrotes y solo le llega la luz de la onda. Adentro, un henil y un potrero de karaguatá de 14 tiles que ni el salto doble cruza: la **vaca guasu** (la vaca de Capiatá en grande, con el lomo a 3 tiles del suelo) va y viene entre el henil y la repisa del premio y lleva a Kerana en el lomo. Con salto doble desde el lomo se llega al estante de la *pluma B (la vaca)*, con una Luz de Arasy; en la repisa, tres guavirá. De vuelta en la vaca, salto doble al henil y por la reja, que ya no se cierra, al segundo ascensor. El desvío cuesta ≈ 36–44 s.
+- **C. El campanario (x 254–362).** **Fuego** (x 257) en la casa Z, con un nido de fardo y una Luz de Arasy. Un par de balsas con un panal bajo el alero. **La plaza:** un jagua y la **piedra temporizada** (4 s) de la reja del campanario, que está del otro lado de un pozo de 6 (salto doble): se golpea y se cruza antes de que cierre. Adentro hay **otra piedra** que la vuelve a abrir (dos piedras sobre una reja: nadie queda encerrado). **Ascenso 3** (fila 23 → 8) en zigzag dentro de la torre, con un panal. *Pluma C (el paso de la siesta, al rejugar):* bajo un techo bajo, detrás de dos espinas que solo cruza el dash. La **cadena de bajada**: balsa, ascensor, balsa, ascensor y balsa, sin tocar suelo, hasta un jagua entre pretiles.
+- **D. La galería de las tejas (x 363–461), zona de ritmo.** **Fuego** (x 373) y cartel. Ocho balsas bajo el techo de una galería, con un islote: se juntan de a dos con 3 tiles de hueco. Sobre cada muelle donde se espera para saltar cuelgan **dos tejas flojas**: crujen cuando la balsa llega y caen con las balsas juntas; parada adelante quedan ≈ 0,7 s para saltar y atrás no tocan. Pide apuro, no paciencia (en l2 se espera al jakare; en l3, al viento).
+- **Antesala (x 462–481).** Fuego 4 y una guavirá.
+- **Arena: la plaza (x 482–521).** La de S17: el lapacho al centro (sus ramas son plataformas), bancos y dos techos a los lados. Niebla del sueño en la pelea.
+
+**Medidas (S27).** Ruta principal con el piloto (`god=1`, con tajo cargado y salto doble, sin dash): antes ≈ 30 s (el l4 de Jose), después ≈ 121 s (ver PLAN, notas de S27).
 
 **Jefe: Jasy Jatere**. 9 golpes, más quitarle el bastón.
 

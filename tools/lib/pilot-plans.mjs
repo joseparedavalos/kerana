@@ -215,3 +215,109 @@ export const L3_SECRET = {
     { run: -1, untilX: 178 },
   ],
 };
+
+// l4 · Capiatá (S27). Ruta principal: casa de práctica (salto doble), museo (piedra del techo del corredor y portón),
+// niebla y teja, pozo con pretil al patio del jagua, ascenso 1 en zigzag (balcón, rama, techo), par de balsas con
+// panal, mercado (fuego 1), la despensa (fardo, roca agrietada y la piedra de la balsa dormida), la zanja, el descanso
+// de la vaca embrujada, el ascensor dormido (onda a través de la pared) y el segundo ascensor al techo del galpón,
+// fuego 2, par de balsas con panal, terraza del jagua y piedra temporizada de la puerta del campanario, ascenso 3,
+// la cadena de bajada (balsa, ascensor, balsa, ascensor, balsa), la repisa del jagua, fuego 3 y la galería de las tejas.
+export const L4_MAIN = {
+  aim: true,
+  hitSwitches: [
+    [37, 32],
+    [171, 36],
+    [288, 22],
+  ],
+  // Bajar del techo del corredor caminando.
+  noGapJump: [[29, 31]],
+  splits: [
+    ['fuego x 148', 148],
+    ['zanja x 182', 182],
+    ['ascenso 2 x 217', 217],
+    ['fuego x 257', 257],
+    ['campanario x 302', 302],
+    ['cadena x 320', 320],
+    ['fuego x 373', 373],
+    ['antesala x 462', 462],
+  ],
+  steps: [
+    { run: 1, untilX: 9 },
+    { jumpTo: [13, 32], double: true },
+    { run: 1, untilX: 26 },
+    { jumpTo: [33, 33], double: true },
+    { run: 1, untilX: 38.5 },
+    { run: -1, untilTop: 34 },
+    { run: 1, untilX: 75.5 },
+    { jumpTo: [85, 35], double: true },
+    { jumpTo: [93, 30], double: true },
+    { jumpTo: [86, 25], double: true },
+    { jumpTo: [98, 23], double: true },
+    { run: 1, untilX: 112.5 },
+    { mover: [114, 23], dir: 1, exit: 'none' },
+    { mover: [127, 23], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 164 },
+    { run: 1, untilX: 167.5 },
+    { charge: 1 },
+    { run: 1, untilX: 172 },
+    { charge: 1 },
+    { run: 1, untilX: 180 },
+    { mover: [182, 37], dir: 1, exit: 'jump', landX: 199, double: true },
+    { run: 1, untilX: 218 },
+    { charge: 1 },
+    { mover: [217, 37], dir: 1, exit: 'walk' },
+    { mover: [224, 30], dir: 1, exit: 'walk' },
+    // Del techo del galpón a la casa Z con saltos medidos: un run que salta el fardo de la casa puede aterrizar sobre la
+    // balsa que ya salió y seguir corriendo al hueco. El segundo, a x 261 y no a 260,5: con el margen de 3 px de `seek`
+    // el cuerpo quedaba hasta 3 px sobre el fardo (x 259), caía en su esquina y saltaba en el lugar para siempre.
+    { run: 1, untilX: 252.5 },
+    { jumpTo: [257, 25] },
+    { jumpTo: [261, 25] },
+    { mover: [262, 25], dir: 1, exit: 'none' },
+    { mover: [275, 25], at: 'end', dir: 1, exit: 'jump', landX: 280.5, double: true },
+    { run: 1, untilX: 287.5 },
+    { jumpTo: [298, 23], double: true },
+    { run: 1, untilX: 308 },
+    { jumpTo: [315, 18], double: true },
+    { jumpTo: [309, 13], double: true },
+    { jumpTo: [312, 8], double: true },
+    { run: 1, untilX: 318.5 },
+    { mover: [320, 8], dir: 1, exit: 'none' },
+    { mover: [330, 14], at: 'end', dir: 1, exit: 'none' },
+    { mover: [334, 14], dir: 1, exit: 'none' },
+    { mover: [344, 20], at: 'end', dir: 1, exit: 'none' },
+    { mover: [348, 20], dir: 1, exit: 'jump', landX: 359 },
+    { run: 1, untilX: 376.5 },
+    { mover: [378, 33], dir: 1, exit: 'none' },
+    { mover: [392, 33], at: 'end', dir: 1, exit: 'none' },
+    { mover: [398, 33], dir: 1, exit: 'walk' },
+    { mover: [412, 33], at: 'end', dir: 1, exit: 'none' },
+    { mover: [418, 33], dir: 1, exit: 'none' },
+    { mover: [432, 33], at: 'end', dir: 1, exit: 'none' },
+    { mover: [438, 33], dir: 1, exit: 'none' },
+    { mover: [452, 33], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilFight: true },
+  ],
+};
+
+// Lugar secreto de l4 (S27), el potrero de la vaca guasu, desde la repisa del ascenso 2 (x 221, fila 30): la onda pasa
+// entre los barrotes de la reja y enciende la piedra del pasillo; el henil (nido de fardo); la vaca guasu cruza el
+// potrero de espinas con Kerana en el lomo; repisa del premio y salto doble al estante de la pluma B; de vuelta en la
+// vaca, salto al henil y por la reja al segundo ascensor, que sube al techo del galpón.
+export const L4_SECRET = {
+  aim: true,
+  // Hasta el borde del henil caminando: la vaca se aborda desde ahí, cuando está en su punta.
+  noGapJump: [[233.5, 235]],
+  steps: [
+    { run: 1, untilX: 222.5 },
+    { charge: 1 },
+    // Cruza la ranura del segundo ascensor cuando está abajo (si no, al pasar lo puede levantar).
+    { run: 1, wait: [224, 30], untilX: 233.6 },
+    { mover: [242, 36], dir: 1, exit: 'walk' },
+    { jumpTo: [252, 30], double: true },
+    { jumpTo: [249.5, 34] },
+    { mover: [242, 36], at: 'end', dir: -1, exit: 'jump', landX: 233, double: true },
+    { run: -1, untilX: 228.5 },
+    { mover: [224, 30], dir: 1, exit: 'walk' },
+  ],
+};

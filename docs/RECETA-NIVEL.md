@@ -1,4 +1,4 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2 y en S25 con l3)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3 y en S27 con l4)
 
 El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto). Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
 
@@ -134,6 +134,8 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] *(S24)* `tests/diver.test.ts`: cada ñakurutu o karakara con camino libre hasta la mayoría de los lugares de su zona (§10.3).
 - [ ] *(S25)* Zonas de viento solo sobre huecos (o sobre un llano donde empujar no tira a nadie a un pozo) y, si marcan el ritmo de plataformas, con el mismo período que ellas (§11.1).
 - [ ] *(S25)* Una reja que cierra un nicho tiene una piedra también adentro (§11.4).
+- [ ] *(S27)* Cada reja temporizada dibujada de los dos lados: si Kerana puede quedar del otro lado, ahí hay otra piedra con el mismo `target` o una salida sin la reja (`tests/l4.test.ts`, todos los mapas). Cada puzzle comprobado sin su piedra en la simulación de alcance (§12.1).
+- [ ] *(S27)* Todo premio alcanzable con la física real (simulación de §12.5 y, para lo que pide un don, una prueba en el juego en el smoke); un enemigo sobre un tile de peligro, como punto de cabecera.
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -353,5 +355,86 @@ l3 se hizo con el mismo orden de trabajo (§1), con el generador partiendo del c
 3. **El hongo de la vuelta lanzaba contra la rama sólida** (el piloto quedó sobre una balsa de abajo): rama de un solo sentido (§11.4).
 4. **La ráfaga a favor no alcanzaba** para un pozo de 8 desde quieta (con 120 y con 160): 200. Medido saltando desde el borde en ráfaga y en calma (§0).
 5. **El viento en contra a 120 sobre el llano** dejaba avanzar y volver a saltar a mitad de una ráfaga: 150 (no se avanza).
-6. **`body.reset(x, y)` pone el borde de arriba del cuerpo en y:** para dejar los pies en la fila R, `y = R − 2,7` tiles.
+6. ~~**`body.reset(x, y)` pone el borde de arriba del cuerpo en y:** para dejar los pies en la fila R, `y = R − 2,7` tiles.~~ *(S27: al revés, pone los pies en y; funcionaba porque Kerana caía 2,7 filas en un lugar abierto. Ver §12.6.)*
 7. **El secreto como atajo** (§11.3).
+
+---
+
+## 12. Lo que agregó l4 (S27): puzzles de piedras y rejas sin encerrar a nadie, la galería de las tejas y la vaca guasu
+
+l4 se hizo con el mismo orden de trabajo (§1). El generador parte del commit base de la sesión solo para copiar la plaza de la arena (la de S17, `ea0d0a3`, x 210-269, a x 482-521 y 20 filas más abajo: los saltos de Jasy Jatere, `jasyJatere.spots`, cuentan con sus techos y ramas). Lo nuevo de l4 son los **puzzles con piedras (`Switch`) y rejas (`Gate`)**: puertas que se abren con una piedra que hay que alcanzar primero, bloques que se rompen hasta llegar a la piedra, piedras que solo enciende la onda a través de una pared, una temporizada y dos piedras sobre una misma reja.
+
+**Medidas de l4:** 522 × 44 (antes 320 × 24, el l4 que Jose rehízo el 7 de octubre). Ruta principal con el piloto: **antes ≈ 30 s** (por tramos: 21,8 s del inicio a x 206 + ≈ 1 s de las espinas a la altura de la cabeza, que trababan al piloto + 7,2 s de x 213 a la arena), **después ≈ 121 s** hasta la pelea (121,3 / 121,3 / 121,4 s en la tanda final del smoke), sin caídas. El potrero de la vaca guasu: ≈ 36-44 s (36,2 s en el smoke) desde la repisa del ascenso 2 hasta el techo del galpón (según la fase de la vaca y del segundo ascensor).
+
+| # | Tiles | Qué pide | Cadencia |
+|---|---|---|---|
+| A1 | x 0-27 | fardo-nido, tapia de 5 (salto doble, cartel), jagua en la calle | el museo |
+| A2 | x 28-56 | piedra en el techo del corredor → portón; zaguán con un fardo de 4 | salida del zaguán x 57 |
+| A3 | x 57-81 | niebla de la siesta con una teja floja, zanja de 5 | patio x 82 |
+| A4 | x 82-113 | patio del jagua (nicho de la pluma A: onda), ascenso 1 en zigzag, roca agrietada | techo x 96-113 |
+| A5 | x 114-147 | par de balsas con panal sobre la llegada | **fuego x 148** |
+| B1 | x 148-165 | dos vacas sueltas bajo un balcón | la despensa |
+| B2 | x 166-195 | despensa (fardo, roca, piedra, roca) → balsa dormida sobre la zanja | la terraza |
+| B3 | x 196-216 | terraza con pretiles y vaca embrujada, calle | el ascensor (espera) |
+| B4 | x 217-253 | ascensor dormido (onda a través de la pared), repisa con panal, segundo ascensor, techo del galpón | **fuego x 257** |
+| C1 | x 254-289 | par de balsas con panal bajo el alero, plaza con jagua y la piedra temporizada | pozo de 6 |
+| C2 | x 290-319 | pozo de 6 (salto doble), reja temporizada, ascenso 3 en zigzag adentro con panal | el campanario, fila 8 |
+| C3 | x 320-362 | cadena de cinco (balsa, ascensor, balsa, ascensor, balsa), jagua en la llegada | **fuego x 373** |
+| D | x 363-461 | galería de las tejas: ocho balsas, dos tejas flojas sobre cada muelle | **antesala x 462** |
+
+### 12.1 Puzzles con piedras y rejas: cinco formas
+
+| Forma | En l4 | Cómo se arma |
+|---|---|---|
+| Reja con piedra que hay que alcanzar primero | portón del museo (x 41) | la piedra (x 37) en el techo de un solo sentido del corredor, del lado de acá: se sube al techo, o se le pega saltando desde la calle (el salto atraviesa el techo). La reja abre hacia adelante y no se vuelve a cerrar (permanente) |
+| Romper hasta la piedra | la despensa (x 166-173) | fardo (tajo normal), roca (tajo cargado), **la piedra**, roca. La piedra (permanente) despierta una balsa `mode=run`, que desde entonces va y viene sobre la zanja: no importa cuánto se tarde en llegar |
+| Solo la onda, a través de una pared | nicho de la pluma A (x 96-101) y reja del corral (x 227-229) | ver la regla de abajo: la piedra a ≥ 2 tiles de donde Kerana se puede parar |
+| Temporizada: cruzar antes de que cierre | reja del campanario (x 302), piedra en la plaza (x 288, `ms=4000`) | 4 s alcanzan para golpear, el salto doble sobre el pozo de 6 y 6 tiles de carrera; quien tarda ve cerrarse la reja y vuelve a golpear. El reloj se ve: la piedra parpadea al final (`warnMs`) |
+| Dos piedras sobre la misma reja | campanario: la temporizada de afuera y una permanente adentro (x 311) | cualquiera de las dos abre (OR). La de adentro es la regla de abajo |
+
+**La regla: un puzzle mal resuelto nunca deja a Kerana encerrada.** El test de encierros (`trapLogic`) no ve las rejas (las da por abiertas), así que esto se comprueba aparte:
+- **Una reja que abre una piedra permanente no encierra:** no se vuelve a cerrar. Usarla en las rejas por las que se vuelve (el corral: la salida del potrero es la misma reja).
+- **Una reja temporizada se dibuja de los dos lados.** Si Kerana puede quedar del otro lado cuando cierra, del otro lado hay **otra piedra con el mismo `target`** (o una salida que no pase por la reja). El campanario tiene las dos: la piedra de adentro y la salida por arriba (la cadena).
+- **Lo vigila `tests/l4.test.ts`** ("rejas que se cierran solas"), en todos los mapas: para cada reja con una piedra temporizada, el lado de adentro tiene que alcanzar (con el mismo modelo de alcance del test de encierros) una piedra que la abra, o salir sin pasar por ella. Encontró un caso viejo: **el nicho de la pluma A de l1** (reja x 38, piedra temporizada afuera, nada adentro) encierra a quien entra y deja cerrar la reja (confirmado en el juego). S27 no toca l1: queda marcado como `PENDIENTE` en el test (pasa mientras el caso exista y avisa cuando se arregle) y en las notas del PLAN.
+- **La reja no se cierra sobre Kerana** (espera a que salga): no aplasta. Una plataforma `mode=run` dormida que se va sin Kerana tampoco encierra si su piedra es permanente y queda al alcance desde donde se espera (la de la despensa, junto a la zanja; la del ascensor, en la pared al lado).
+- **Para probar que cada puzzle hace falta,** la simulación de alcance (§12.5) se corre sin cada piedra: sin la del museo, la de la balsa o la del campanario el resto del nivel queda cerrado; sin la del corral, solo el secreto; sin tajo cargado, solo las dos de la onda (nicho A y corral).
+
+**La onda y el sable a través de una pared.** La luz de la onda pasa entre los barrotes y a través de la roca (≈ 117 px desde el centro del cuerpo, §0). **El sable tampoco mira las paredes:** su caja sale 26 px del borde del cuerpo, así que una piedra detrás de **1** tile de pared se enciende con el sable pegado a la pared (pasa con el ascensor dormido de B4, y está bien: la piedra está para la onda pero no hace falta prohibir el sable). Para que **solo** la onda llegue, la piedra va a ≥ 2 tiles de donde Kerana puede pararse: la del nicho A está 5 tiles detrás de la reja (1 de pared entre el nicho y la piedra) y la del corral, detrás de los barrotes, 2 tiles adentro.
+
+### 12.2 La galería de las tejas (zona de ritmo propia)
+
+- **No repite l2 (jakare) ni l3 (viento):** aquellas piden paciencia (esperar que se hunda o que amaine); esta pide **apuro**. Ocho balsas bajo el techo de una galería, de a pares que se juntan con 3 tiles de hueco (como l3, 5,2 s), y sobre cada **muelle donde se espera para saltar** (la punta de la balsa que llega) cuelgan **dos tejas flojas**, sobre la baldosa delantera y la del medio.
+- **Cómo se sincronizan sin código nuevo:** la teja cruje cuando Kerana pasa a ≤ 28 px en x (`triggerRangeX`, sin mirar la altura), espera `delayMs` y cae. Viajando parada adelante, cruje mientras la balsa llega y cae con las balsas juntas: **≈ 0,7 s para saltar**. Parada atrás no la toca (no llega a estar debajo). Con el `delayMs` de 800 caía 0,45 s después de atracar (muy justo): **1150**. Las tejas vuelven a los 3 s: cada vuelta las encuentra colgadas.
+- **Verificado** con `tests/l4.test.ts` (la balsa con su motor y la teja cayendo, cuadro a cuadro) y en el juego con el smoke 1d8 (`god=1`: se registra cuándo la teja se cruza con Kerana, adelante y atrás).
+
+### 12.3 El lugar secreto: el potrero de la vaca guasu
+
+- **Forma propia:** no es un pilar en alto (l2) ni una cueva en la ladera (l3): es el **interior de un galpón** detrás de una reja cuya piedra está detrás de los barrotes (solo llega la luz de la onda). Desde la repisa del ascenso 2 se ve la reja, con luciérnagas, y la vaca guasu se ve abajo, dentro del galpón, mientras se pasa por el techo.
+- **La vaca guasu es una plataforma, no un obstáculo:** la vaca común en grande (`GAMEPLAY.bigCow`: `scale` 2,4, `speed` 34, `patrolDistance` 68, `turnPauseMs` 1200, mugido más grave; la común no cambia). El cuerpo mide 72 × 48 y **el lomo queda justo 3 filas sobre los pies**: desde el lomo, el salto doble llega al henil y al estante del premio (4 filas). Va y viene entre el henil (a 1 tile) y la repisa del premio (al ras), con 1,2 s de pausa en cada punta para subirse o bajarse, sobre 14 tiles de espinas que ni el salto doble cruza. No hace daño (como la común). Una vaca sólida sería una plataforma sólida (prohibidas: pueden trabar a Kerana contra un techo).
+- **Recompensa:** pluma B, Luz de Arasy y tres guavirás, por ≈ 36-44 s de desvío contra ≈ 10 s del camino del techo.
+- **Un enemigo encima de un tile de peligro va como punto de cabecera** (`point Enemy x= y= kind=vaca_guasu …`): una letra en la grilla reemplaza el tile (la `^` de debajo de la vaca desaparecía y quedaba una baldosa segura en el potrero; la simulación de alcance la encontró).
+
+### 12.4 Otras piezas
+
+- **El don anterior (salto doble) en el camino, una vez por sección:** la tapia de 5 del inicio (cartel), el ascenso 1 en zigzag, el pozo de 6 antes del campanario y el ascenso 3. La repisa del ascenso 2 (fila 30) está 7 filas sobre la calle: el salto doble sube 6 y no la alcanza desde abajo (en la fila 31 se llegaba y se salteaba el ascensor).
+- **Saltos con enemigo (9):** jagua en la calle (x 23) y en el patio (x 89), panal sobre la llegada del par de balsas de A (x 132), vaca embrujada en la terraza (x 201: los pretiles cortan su carrera), panal en la repisa del ascenso 2 (x 222), panal bajo el alero sobre el par de balsas de C (x 269), jagua en la plaza (x 284), panal en el campanario (x 307) y jagua en la llegada de la cadena (x 360). Ninguno con azar; los jagua y la vaca embrujada cargan solo en su piso (`|dy|` < 1,5 alturas).
+- **Pluma C detrás de espinas bajo un techo bajo:** un pasillo de 3 filas (no se salta adentro) con **dos** espinas y una baldosa libre antes; el dash (51 px intangible, también desde el suelo) cruza desde la baldosa libre hasta la pluma pegada a la pared, y otro dash vuelve. Con tres espinas hacían falta 58 px: la simulación la daba por inalcanzable y el smoke ahora lo prueba en el juego (1d7).
+- **Cadena con piezas de 6 tiles:** balsa, ascensor, balsa, ascensor, balsa, todas a 50 px/s con 1,32 s de espera (período 6,48 s), con 1 tile de hueco entre una y otra: pegadas, el parser las une en una sola plataforma (`':' en más de un lado`).
+
+### 12.5 La simulación de alcance (scratchpad, fuera del repo)
+
+Para "todo premio es alcanzable con la física real" se usó una simulación como la de S26, extendida: vuelos a 60 Hz con Euler semi-implícito como Arcade, caja de 16 × 42, techos, plataformas de un solo sentido (las móviles son piso en todo su recorrido; las `mode=run` solo en su origen hasta que su piedra se enciende), **vacas como plataformas** (todo su recorrido), salto doble en varios momentos, dash en el aire y **desde el suelo**, y **rejas y piedras**: una reja se abre cuando alguna de sus piedras queda al alcance del sable (parado o saltando) o de la onda. Variantes: `--no-charge`, `--no-double`, `--dash`, `--no-cow=vaca_guasu`, `--no-target=<id>`. Resultado en l4: sin dash, 17 de 18 premios (falta solo la pluma C, que pide el dash); con dash, los 18. Lo que encontró: la baldosa sin espinas bajo la vaca, la repisa del ascenso 2 al alcance desde la calle, un atajo por el pretil de la terraza y la pluma C fuera de alcance aun con dash. Ojo: la primera versión solo hacía el dash en el aire y daba la pluma C por inalcanzable aunque el arreglo ya estaba (falso negativo): el juego deja hacer el dash parado.
+
+### 12.6 Errores de S27 y su corrección
+
+1. **Piezas de la cadena pegadas:** el parser une `-` vecinos en una sola plataforma y se queja de `':' en más de un lado`. 1 tile de hueco entre una y otra.
+2. **Un `run` que salta un fardo puede aterrizar sobre una balsa que ya salió** y seguir corriendo al hueco (el paso decide el salto antes de mirar `untilX`): cayó una vez de cada dos al pasar de la casa Z a la primera balsa de C. En el plan, dos `jumpTo` medidos entre el techo del galpón y la casa. Y el destino de un `jumpTo` a ≥ 11 px del borde de un rompible: con el margen de 3 px de `seek`, el destino x 260,5 dejaba el cuerpo hasta 3 px sobre el fardo de la casa Z; caía en su esquina (fila 24, no la 25 del paso) y saltaba en el lugar para siempre (una corrida del smoke trabada 7 min; reproducido en 5 de 7 puntos de partida). Con x 261, 10 de 10.
+3. **La letra de la vaca borraba la espina de debajo** (§12.3): punto de cabecera.
+4. **La repisa del ascenso 2 se alcanzaba con salto doble desde la calle** (fila 31, 6 filas): fila 30.
+5. **Por el pretil de la terraza se llegaba a la repisa** sin el ascensor: terraza más corta (x 196-207) y 9 tiles de calle antes del ascensor.
+6. **La teja caía demasiado pronto** (0,45 s después de atracar): `delayMs` 1150 (≈ 0,7 s).
+7. **La pluma C no se alcanzaba ni con dash** (tres espinas): dos espinas y una baldosa libre (§12.4).
+8. **`body.reset(x, y)` pone los pies en y** (el origen de Kerana es 0,5 1): corrige §11.5.6. Las pruebas viejas del smoke (y = fila − 2,7) funcionaban porque Kerana caía 2,7 filas en un lugar abierto; bajo un techo bajo (la pluma C) no. Para dejarla parada en la fila R: `body.reset(x, R * 16 − 1)`.
+9. **El smoke salteaba "Nivel completado"** (2 de 5 corridas, en l1): apretaba Espacio cada 300 ms hasta ver esa pantalla, que acepta Espacio desde el primer cuadro; el mapa entra al nivel con Espacio, así que la pulsación siguiente volvía a entrar a l1. Primero lo creí lentitud y subí el tope de pulsaciones: no cambió nada. Reproducido con un script que vuelca el estado (la escena había vuelto al inicio), se arregló apretando solo con el diálogo abierto. Lección: en un bucle, no apretar una tecla que también confirma la pantalla siguiente; apretar solo cuando el estado la pide.
+10. **Un piloto que funciona no prueba un puzzle:** el plan principal pasa la reja temporizada sin la piedra de adentro y no usa la pluma A. Cada pieza que el plan no recorre tiene su paso propio en el smoke (1d6 el corral, 1d7 las plumas A y C, 1d8 las tejas).
+

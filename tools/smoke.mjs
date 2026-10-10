@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -187,8 +187,12 @@ async function main() {
     const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
     await title.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El diálogo pide 2 pulsaciones por línea (revelar y avanzar); el resto de la secuencia corre sola.
-    for (let i = 0; i < 40 && !(await isActive('LevelComplete')); i++) {
-      await title.keyboard.press('Space');
+    // S27: solo se aprieta mientras hay diálogo. Espacio también confirma "Nivel completado" y, en el mapa, entra al
+    // nivel: si una pulsación caía justo cuando aparecía "Nivel completado", pasaba al mapa y la siguiente volvía a
+    // entrar a l1 (falló 2 de 5 corridas; reproducido: Kerana de vuelta en x 9 y Teju Jagua con 12 de vida).
+    const inDialogue = () => title.evaluate(() => window.__KERANA_DEBUG__?.scene.dialogueBox?.active ?? false);
+    for (let i = 0; i < PRESS_MAX && !(await isActive('LevelComplete')); i++) {
+      if (await inDialogue()) await title.keyboard.press('Space');
       await sleep(300);
     }
     check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
@@ -255,8 +259,9 @@ async function main() {
     }
     console.log(`  l1 (ruta baja): ${(run1.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run1.splits)}`);
     await l1Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    // Solo con el diálogo abierto (S27, como en el paso 1): Espacio también pasa "Nivel completado".
     for (let i = 0; i < PRESS_MAX && !(await l1Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false)); i++) {
-      await l1Page.keyboard.press('Space');
+      if (await l1Page.evaluate(() => window.__KERANA_DEBUG__?.scene.dialogueBox?.active ?? false)) await l1Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l1Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false), 'nivel 1 recorrido → liberación → Nivel completado');
@@ -328,7 +333,7 @@ async function main() {
     await l2Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l2Done = () => l2Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
-    for (let i = 0; i < 40 && !(await l2Done()); i++) {
+    for (let i = 0; i < PRESS_MAX && !(await l2Done()); i++) {
       await l2Page.keyboard.press('Space');
       await sleep(300);
     }
@@ -836,13 +841,251 @@ async function main() {
       `nivel 3: hongo + salto doble + dash llegan a la cámara de la pluma B (${JSON.stringify(shaftDouble)})`,
     );
 
+    // 1d5) l4 de punta a punta (S27): el piloto cruza Capiatá por la ruta principal (salto doble, la piedra del techo del
+    // corredor del museo, el patio del jagua, el ascenso en zigzag, la despensa y la balsa dormida, el ascensor dormido que
+    // enciende la onda a través de la pared, la puerta temporizada del campanario, la cadena de bajada y la galería de las
+    // tejas) y después la liberación hasta "Nivel completado". Corre antes de 1e: el guardado tiene el tajo cargado y el
+    // salto doble, todavía no el dash (como quien llega a l4).
+    const l4Run = await open('/?debug=1&level=4&god=1');
+    await l4Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l4Info = await l4Run.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const groups = new Set(s.breakables.map((b) => b.group));
+      return {
+        charge: d.player.motor.chargeEnabled,
+        double: d.player.motor.doubleJumpEnabled,
+        dash: d.player.motor.dashEnabled,
+        movers: s.movers.length,
+        vertical: s.movers.filter((m) => m.motor.spec.dy !== 0).length,
+        oneWay: s.movers.every((m) => !m.solid),
+        switches: s.switches.length,
+        timed: s.switches.filter((w) => !w.motor.permanent).length,
+        gates: s.gates.length,
+        cows: s.cows.length,
+        guasu: s.cows.filter((c) => c.scaleX > 1).length,
+        rocks: [...groups].filter((g) => g[0].kind === 'rock').length,
+        brittle: [...groups].filter((g) => g[0].kind === 'brittle').length,
+        tejas: s.fallingHazards.length,
+        fog: s.fogZones.length,
+        checkpoints: s.checkpoints.length,
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+        enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
+        traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
+      };
+    });
+    check(
+      l4Info.charge &&
+        l4Info.double &&
+        !l4Info.dash &&
+        l4Info.movers === 20 &&
+        l4Info.vertical === 4 &&
+        l4Info.oneWay &&
+        l4Info.switches === 7 &&
+        l4Info.timed === 1 &&
+        l4Info.gates === 4 &&
+        l4Info.cows === 3 &&
+        l4Info.guasu === 1 &&
+        l4Info.rocks === 3 &&
+        l4Info.brittle === 6 &&
+        l4Info.tejas === 13 &&
+        l4Info.fog === 4 &&
+        l4Info.checkpoints === 4 &&
+        l4Info.feathers === 3 &&
+        l4Info.enemies.jagua === 4 &&
+        l4Info.enemies.abejas === 4 &&
+        l4Info.enemies.vaca_embrujada === 1 &&
+        l4Info.traps === 0,
+      `nivel 4: 20 plataformas de un solo sentido (4 verticales), 7 piedras (1 temporizada) y 4 rejas, 3 vacas (1 guasu), 3 rocas agrietadas y 6 fardos, 13 tejas, 4 nieblas, 4 fuegos, 3 plumas, 4 jagua, 4 panales, 1 vaca embrujada, ningún encierro (${JSON.stringify(l4Info)})`,
+    );
+    await l4Run.evaluate(installPilot, L4_MAIN);
+    for (let t = 0; t < 480000 && !(await pilot(l4Run)).done; t += 500) await sleep(500);
+    const run4 = await pilot(l4Run);
+    check(run4.done && run4.respawns === 0, `nivel 4: Kerana cruza Capiatá entera sin caer (${JSON.stringify(run4)})`);
+    if (!run4.done) {
+      await l4Run.screenshot({ path: join(SHOTS, 'l4-piloto-atascado.png') });
+      console.log((await l4Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
+    console.log(`  l4 (ruta principal): ${(run4.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run4.splits)}`);
+    await l4Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l4RunDone = () => l4Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < PRESS_MAX && !(await l4RunDone()); i++) {
+      await l4Run.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l4RunDone(), 'nivel 4 recorrido → liberación → Nivel completado');
+    await l4Run.close();
+
+    // 1d6) l4, el lugar secreto (S27): el potrero de la vaca guasu. Desde la repisa del ascenso 2: la reja del corral está
+    // cerrada y su piedra queda detrás de los barrotes; la onda del tajo cargado pasa entre ellos y la enciende. Adentro,
+    // la vaca guasu cruza las espinas con Kerana en el lomo; la pluma B está en el bloque del fondo (salto doble); de
+    // vuelta en la vaca, salto doble al henil y por la reja al segundo ascensor, que sube al techo del galpón.
+    const l4Cave = await open('/?debug=1&level=4&god=1');
+    await l4Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const corral0 = await l4Cave.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      // body.reset pone los pies (origen 0,5 1): 1 px sobre la repisa.
+      d.player.body.reset(221 * 16, 30 * 16 - 1);
+      const gate = d.scene.gates.find((g) => g.zone.x === 227 * 16);
+      return { closed: !gate.isOpen, feathers: d.scene.feathers };
+    });
+    await sleep(300);
+    await l4Cave.screenshot({ path: join(SHOTS, 'l4-corral.png') });
+    await l4Cave.evaluate(installPilot, L4_SECRET);
+    for (let t = 0; t < 150000 && !(await pilot(l4Cave)).done; t += 500) await sleep(500);
+    const cave4 = await l4Cave.evaluate(() => ({
+      done: window.__KERANA_PILOT__.done,
+      respawns: window.__KERANA_PILOT__.respawns,
+      feathers: window.__KERANA_DEBUG__.scene.feathers,
+      open: window.__KERANA_DEBUG__.scene.gates.find((g) => g.zone.x === 227 * 16).isOpen,
+      x: Math.round(window.__KERANA_DEBUG__.player.x / 16),
+      feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16),
+      timeMs: Math.round(window.__KERANA_PILOT__.timeMs),
+    }));
+    check(
+      corral0.closed && cave4.done && cave4.respawns === 0 && cave4.open && cave4.feathers === corral0.feathers + 1 && cave4.feet === 23,
+      `nivel 4: la onda abre el corral entre los barrotes, la vaca guasu cruza las espinas, la pluma B y de vuelta al techo del galpón (${JSON.stringify({ ...corral0, ...cave4 })})`,
+    );
+    if (!cave4.done) console.log((await l4Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    console.log(`  l4 (potrero de la vaca guasu): ${(cave4.timeMs / 1000).toFixed(1)} s de juego desde la repisa del ascenso 2 hasta el techo del galpón`);
+    await l4Cave.close();
+
+    // 1d7) l4, las plumas A y C (S27). A: la piedra está encerrada en la pared, detrás del nicho enrejado del patio del
+    // jagua. Con el tajo cargado desde el patio, la luz pasa la reja y la pared y la enciende: la reja se abre y la pluma se
+    // cobra. C: abajo.
+    const l4Niche = await open('/?debug=1&level=4&god=1');
+    await l4Niche.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const niche0 = await l4Niche.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(95 * 16, 35 * 16 - 1);
+      return { closed: !d.scene.gates.find((g) => g.zone.x === 96 * 16).isOpen, feathers: d.scene.feathers };
+    });
+    await sleep(300);
+    await l4Niche.evaluate(installPilot, { steps: [{ charge: 1 }, { run: 1, untilX: 98.5 }] });
+    for (let t = 0; t < 30000 && !(await pilot(l4Niche)).done; t += 250) await sleep(250);
+    const niche = await l4Niche.evaluate(() => ({ done: window.__KERANA_PILOT__.done, open: window.__KERANA_DEBUG__.scene.gates.find((g) => g.zone.x === 96 * 16).isOpen, feathers: window.__KERANA_DEBUG__.scene.feathers }));
+    check(
+      niche0.closed && niche.done && niche.open && niche.feathers === niche0.feathers + 1,
+      `nivel 4: la onda enciende la piedra encerrada en la pared y la reja del nicho se abre: pluma A (${JSON.stringify({ ...niche0, ...niche })})`,
+    );
+    await l4Niche.close();
+    // Pluma C: bajo el techo bajo del campanario (no se salta adentro), dos espinas (x 304-305) y la pluma pegada a la
+    // pared (x 303). Desde la baldosa libre (x 306), el dash (51 px intangible) llega a la pluma; otro dash vuelve a la
+    // baldosa libre. Con tres espinas no llegaba (hacían falta 58 px): las espinas devuelven a Kerana (respawn).
+    const l4Bell = await open('/?debug=1&level=4&god=1&gifts=all');
+    await l4Bell.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const bell0 = await l4Bell.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      window.__RESPAWNS__ = 0;
+      const orig = s.respawn;
+      s.respawn = function (reason) {
+        window.__RESPAWNS__++;
+        return orig.call(this, reason);
+      };
+      d.player.body.reset(306.6 * 16, 8 * 16 - 1);
+      d.player.motor.facing = -1;
+      return { dash: d.player.motor.dashEnabled, feathers: s.feathers };
+    });
+    const dashKey = async () => {
+      await sleep(500);
+      await l4Bell.keyboard.down('KeyC');
+      await sleep(80);
+      await l4Bell.keyboard.up('KeyC');
+      await sleep(700);
+    };
+    await dashKey();
+    const bellIn = await l4Bell.evaluate(() => ({ x: +(window.__KERANA_DEBUG__.player.x / 16).toFixed(2), feathers: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__RESPAWNS__ }));
+    await l4Bell.evaluate(() => {
+      window.__KERANA_DEBUG__.player.motor.facing = 1;
+    });
+    await dashKey();
+    const bellOut = await l4Bell.evaluate(() => ({ x: +(window.__KERANA_DEBUG__.player.x / 16).toFixed(2), feet: window.__KERANA_DEBUG__.player.body.bottom / 16, respawns: window.__RESPAWNS__ }));
+    check(
+      bell0.dash && bellIn.feathers === bell0.feathers + 1 && bellIn.respawns === 0 && bellOut.respawns === 0 && bellOut.x > 306 && bellOut.feet === 8,
+      `nivel 4: con el dash, Kerana cruza las dos espinas del campanario, cobra la pluma C y vuelve sin tocarlas (${JSON.stringify({ ...bell0, bellIn, bellOut })})`,
+    );
+    await l4Bell.close();
+
+    // 1d8) l4, la galería de las tejas (S27): parada en la punta delantera de la primera balsa, la teja cruje antes de
+    // llegar al muelle y la toca con las balsas juntas (hay que saltar enseguida); parada atrás no la toca. Con god=1 no
+    // hay daño: se registra cuándo la teja se cruza con Kerana.
+    const l4Tejas = await open('/?debug=1&level=4&god=1');
+    await l4Tejas.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const tejaRide = (offsetTiles) =>
+      l4Tejas.evaluate(
+        (offsetTiles) =>
+          new Promise((resolve) => {
+            const d = window.__KERANA_DEBUG__;
+            const s = d.scene;
+            const p = d.player;
+            const raft = s.movers.find((m) => m.zone.x === 378 * 16);
+            const tejas = s.fallingHazards.filter((h) => Math.abs(h.sprite.x - 383.5 * 16) < 20 || Math.abs(h.sprite.x - 384.5 * 16) < 20);
+            const out = { offsetTiles, arrive: null, warn: null, hit: null, leave: null };
+            let t = 0;
+            let total = 0;
+            let placed = false;
+            const orig = s.hurtPlayer.bind(s);
+            s.hurtPlayer = (x, dmg) => {
+              if (placed && out.hit === null) out.hit = Math.round(t);
+              return orig(x, dmg);
+            };
+            const f = (_time, delta) => {
+              t += delta;
+              total += delta;
+              const mm = raft.motor;
+              // Tope (20 s de juego): si algo no pasa, el chequeo falla con lo que haya, sin colgar el smoke.
+              if (total > 20000 && out.leave === null) out.leave = -1;
+              if (!placed && out.leave === null) {
+                // Espera a que la balsa esté por salir de su origen y sube a Kerana.
+                if (mm.pos < 1 && mm.waitLeftMs > 0 && mm.waitLeftMs < 250 && tejas.every((h) => h.state === 'hanging')) {
+                  p.body.reset(raft.block.x + 8 + offsetTiles * 16, raft.block.y - 1);
+                  placed = true;
+                  t = 0;
+                }
+                return;
+              }
+              if (placed && out.arrive === null && mm.pos >= mm.length - 0.5) out.arrive = Math.round(t);
+              if (placed && out.warn === null && tejas.some((h) => h.state === 'warning')) out.warn = Math.round(t);
+              if (out.arrive !== null && out.leave === null && mm.pos < mm.length - 0.5) out.leave = Math.round(t);
+              if (out.leave !== null) {
+                s.events.off('postupdate', f);
+                s.hurtPlayer = orig;
+                // Al muelle de salida: si sigue en la balsa, vuelve a soltar las tejas en cada vuelta y nunca están
+                // todas colgadas para la prueba siguiente.
+                p.body.reset(371 * 16, 33 * 16 - 1);
+                resolve(out);
+              }
+            };
+            s.events.on('postupdate', f);
+          }),
+        offsetTiles,
+      );
+    const tejaFront = await tejaRide(2);
+    await sleep(7000);
+    const tejaBack = await tejaRide(0);
+    check(
+      tejaFront.warn < tejaFront.arrive && tejaFront.hit !== null && tejaFront.hit - tejaFront.arrive >= 500 && tejaFront.hit < tejaFront.leave && tejaBack.hit === null,
+      `nivel 4: en la galería, adelante la teja cruje antes de llegar y cae con las balsas juntas; atrás no toca (${JSON.stringify({ tejaFront, tejaBack })})`,
+    );
+    await l4Tejas.close();
+
     // 1e) Nivel 4: antesala, cierre de la arena de Jasy Jatere, fase invisible, carrera por el bastón y dash guardado.
     const l4Page = await open('/?debug=1&level=4&boss=1&god=1');
     await l4Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    const l4x = await l4Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    // La antesala de l4 está en x 256 desde que Jose rehízo Capiatá a mano (7 de octubre; antes, x 210-230).
-    check(l4x > 250 * TILE && l4x < 270 * TILE, `nivel 4 con boss=1 empieza en la antesala (x ${Math.round(l4x / TILE)} tiles)`);
+    // S27: la antesala se mide desde la arena (los 20 tiles antes de BossArena), así el chequeo no se desactualiza al
+    // rehacer el mapa (S26 lo había corregido a mano para el l4 de Jose, x 256; con el rediseño de S27, x 462-481).
+    const l4ante = await l4Page.evaluate(() => ({ x: window.__KERANA_DEBUG__.player.x, arena: window.__KERANA_DEBUG__.scene.arenaRect.x }));
+    check(
+      l4ante.x > l4ante.arena - 20 * TILE && l4ante.x < l4ante.arena,
+      `nivel 4 con boss=1 empieza en la antesala (x ${Math.round(l4ante.x / TILE)} tiles; la arena empieza en x ${l4ante.arena / TILE})`,
+    );
     await walkIntoArena(l4Page);
     check(await l4Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 4: la arena de Jasy Jatere se cierra');
     await sleep(5000);
@@ -984,9 +1227,15 @@ async function main() {
     const cowPage = await open('/?debug=1&level=4&gifts=all&god=1');
     await cowPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    const cows = await cowPage.evaluate(() => window.__KERANA_DEBUG__.scene.cows.length);
-    // Dos vacas sueltas en el l4 que rehízo Jose (antes, tres).
-    check(cows === 2, `nivel 4: vacas sueltas (${cows})`);
+    // S27: las vacas se cuentan en el mapa (las sueltas y la vaca guasu del potrero), no con un número fijo; la guasu es
+    // la vaca en grande: lomo 3 filas sobre los pies.
+    const cows = await cowPage.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const kinds = s.map.getObjectLayer('Objects').objects.map((o) => (o.properties ?? []).find((q) => q.name === 'kind')?.value);
+      const big = s.cows.find((c) => c.scaleX > 1);
+      return { scene: s.cows.length, map: kinds.filter((k) => k === 'vaca' || k === 'vaca_guasu').length, guasuBack: big ? Math.round(big.y - big.body.top) : 0, guasuWidth: big ? Math.round(big.body.width) : 0 };
+    });
+    check(cows.scene === cows.map && cows.guasuBack === 48 && cows.guasuWidth === 72, `nivel 4: vacas sueltas y la vaca guasu (${JSON.stringify(cows)})`);
     // Mantener hasta que el tajo esté cargado (en máquinas lentas el tiempo de juego va más lento que el real).
     // Espera por estado (carga completa, tope 10 s) en vez de un tiempo fijo.
     await cowPage.keyboard.down('KeyX');
