@@ -1019,6 +1019,13 @@ export const GAMEPLAY = {
      * arriba lo justo para no destaparse. 0 = fijo en vertical, como antes.
      */
     panYRange: 0.15,
+    /**
+     * Relleno del fondo (S29): la imagen ya no se agranda con el alto del nivel; lo que destapa al bajar lo cubre un
+     * degradado del color medio de sus filas de arriba al de sus filas de abajo. Filas de la imagen que se promedian.
+     */
+    fillSampleRows: 4,
+    /** Alto (unidades) del fundido sobre el borde de arriba de la imagen, para que no se vea la costura con el relleno. */
+    fillEdgeHeight: 24,
     /** Terreno como repisa (`terrainShell` en levels.ts): opacidad de la última fila antes del fondo. */
     terrainFadeAlpha: 0.55,
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */

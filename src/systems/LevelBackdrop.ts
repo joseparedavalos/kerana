@@ -2,24 +2,31 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
 import type { LevelBackgrounds } from '../data/types';
 import type { Area } from './lightLogic';
-import { backdropFit, backdropFitPanY, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
+import { averageColor, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
 const EDGE_KEY = 'bg_cave_edge';
+const FILL_KEY = 'bg_fill_';
 
 // Fondo del nivel (ASSETS §6): una imagen fija a la cámara, un poco agrandada, que se desplaza en horizontal
 // según el avance por el nivel (no se repite, así no se ve la unión). En l1, el fondo de cueva se ve solo
 // dentro de las zonas `Cave` (ocupan toda la altura: basta recortarlo en horizontal) y el cielo solo fuera;
 // en la boca se ven los dos, con un degradado oscuro en el borde. Si falta la imagen, queda el color de la cámara.
+// S29: la escala no depende del alto del nivel (la imagen conserva su tamaño y su proporción); lo que destapa el
+// desplazamiento vertical lo cubre un degradado con los colores del borde de arriba y de abajo de la imagen.
 export class LevelBackdrop {
   private readonly far?: Phaser.GameObjects.Image;
+  /** Relleno detrás de la imagen lejana (S29): degradado del color de su borde de arriba al de abajo. */
+  private readonly fill?: Phaser.GameObjects.Image;
+  /** Fundido sobre el borde de arriba de la imagen lejana (S29): del color del relleno a transparente. */
+  private readonly fillEdge?: Phaser.GameObjects.Image;
   private readonly cave?: Phaser.GameObjects.Image;
   private readonly edges: Phaser.GameObjects.Image[] = [];
   private readonly caves: Area[] = [];
   private readonly brightness: number;
   private readonly fit: { scale: number; top: number };
-  /** Cuánto baja el fondo con la vista arriba del nivel (S28; 0 si el nivel no tiene alto para desplazarse). */
+  /** Cuánto baja el fondo con la vista arriba del nivel (S28; 0 si el nivel no tiene alto para desplazarse). Lo de arriba lo cubre `fill`. */
   private readonly travelY: number;
 
   constructor(
@@ -30,8 +37,17 @@ export class LevelBackdrop {
   ) {
     this.brightness = defs.brightness ?? 1;
     this.travelY = CFG.panYRange * Math.max(0, mapHeight - VIEW.height);
-    this.fit = backdropFitPanY(VIEW.height, backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0), this.travelY);
+    this.fit = backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0);
+    this.fill = this.makeFill(defs.far);
     this.far = this.makeImage(defs.far);
+    if (this.fill && this.far) {
+      this.fillEdge = scene.add
+        .image(0, 0, FILL_KEY + defs.far + '_edge')
+        .setOrigin(0)
+        .setScrollFactor(0)
+        .setDisplaySize(VIEW.width, CFG.fillEdgeHeight)
+        .setDepth(CFG.depth + 0.5);
+    }
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
       this.cave.setVisible(false);
@@ -73,6 +89,8 @@ export class LevelBackdrop {
     const panX = backdropPanX(cam.worldView.x, this.mapWidth - VIEW.width, width - VIEW.width, CFG.panRange);
     const panY = backdropPanY(cam.worldView.y, this.mapHeight - VIEW.height, this.travelY);
     for (const img of this.images) img.setPosition(off.x + panX, off.y + this.fit.top + panY);
+    this.fill?.setPosition(off.x, off.y);
+    this.fillEdge?.setPosition(off.x, off.y + this.fit.top + panY);
     if (this.cave) this.updateCave(cam.worldView.x, off, panX);
     if (ambient !== undefined) this.applyTint(ambient);
   }
@@ -112,6 +130,57 @@ export class LevelBackdrop {
   private applyTint(ambient: number): void {
     const tint = backdropTint(this.brightness, ambient);
     for (const img of this.images) img.setTint(tint);
+    this.fill?.setTint(tint);
+    this.fillEdge?.setTint(tint);
+  }
+
+  /** Degradado vertical del color medio de las filas de arriba de la imagen al de las de abajo, del tamaño de la vista. */
+  private makeFill(key?: string): Phaser.GameObjects.Image | undefined {
+    if (!key || !this.scene.textures.exists(key)) return undefined;
+    const fillKey = FILL_KEY + key;
+    if (!this.scene.textures.exists(fillKey)) {
+      const src = this.scene.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
+      const probe = document.createElement('canvas');
+      probe.width = src.width;
+      probe.height = src.height;
+      const pctx = probe.getContext('2d', { willReadFrequently: true });
+      if (!pctx) return undefined;
+      pctx.drawImage(src, 0, 0);
+      const rows = CFG.fillSampleRows;
+      const top = averageColor(pctx.getImageData(0, 0, src.width, rows).data);
+      const bottom = averageColor(pctx.getImageData(0, src.height - rows, src.width, rows).data);
+      const h = 64;
+      const tex = this.scene.textures.createCanvas(fillKey, 4, h);
+      if (!tex) return undefined;
+      const ctx = tex.getContext();
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      const css = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
+      // La mitad de arriba, del color de arriba (lo que se destapa al bajar); la de abajo pasa al color de abajo.
+      grad.addColorStop(0, css(top));
+      grad.addColorStop(0.5, css(top));
+      grad.addColorStop(1, css(bottom));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 4, h);
+      tex.refresh();
+      // Fundido del borde de arriba: el color de arriba, de opaco a transparente.
+      const edge = this.scene.textures.createCanvas(fillKey + '_edge', 4, h);
+      if (edge) {
+        const ectx = edge.getContext();
+        const eg = ectx.createLinearGradient(0, 0, 0, h);
+        const rgba = (a: number) => `rgba(${(top >> 16) & 0xff},${(top >> 8) & 0xff},${top & 0xff},${a})`;
+        eg.addColorStop(0, rgba(1));
+        eg.addColorStop(1, rgba(0));
+        ectx.fillStyle = eg;
+        ectx.fillRect(0, 0, 4, h);
+        edge.refresh();
+      }
+    }
+    return this.scene.add
+      .image(0, 0, fillKey)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDisplaySize(VIEW.width, VIEW.height)
+      .setDepth(CFG.depth - 1);
   }
 
   /** Franja horizontal transparente → oscura → transparente (se estira a lo alto de la vista). */

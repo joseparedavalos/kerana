@@ -46,14 +46,20 @@ export function backdropPanY(viewY: number, maxViewY: number, travel: number): n
 }
 
 /**
- * Agranda el fondo hacia arriba para que, bajado `travel`, no destape el borde de arriba de la vista. El borde de
- * abajo queda donde estaba (abajo del nivel el encuadre no cambia).
+ * Color medio (`0xRRGGBB`) de una fila de píxeles RGBA (de `getImageData`), para el relleno del fondo (S29).
  */
-export function backdropFitPanY(viewHeight: number, fit: { scale: number; top: number }, travel: number): { scale: number; top: number } {
-  if (travel <= 0) return fit;
-  const bottom = fit.top + viewHeight * fit.scale;
-  const top = Math.min(fit.top, -travel);
-  return { scale: (bottom - top) / viewHeight, top };
+export function averageColor(rgba: ArrayLike<number>): number {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  const n = Math.floor(rgba.length / 4);
+  if (n === 0) return 0;
+  for (let i = 0; i < n * 4; i += 4) {
+    r += rgba[i];
+    g += rgba[i + 1];
+    b += rgba[i + 2];
+  }
+  return (Math.round(r / n) << 16) | (Math.round(g / n) << 8) | Math.round(b / n);
 }
 
 /**
