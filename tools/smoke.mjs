@@ -779,7 +779,7 @@ async function main() {
       cave.done && cave.hud === caveStart + 1 && cave.respawns === 0 && cave.feet === 33 && cave.x < 184,
       `nivel 3: la cueva del viento se cruza con la ráfaga a favor, paga la pluma B y devuelve al pie del ascenso (${JSON.stringify(cave)})`,
     );
-    if (!cave.done) console.log((await l3Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    if (!cave.done || cave.hud !== caveStart + 1) console.log((await l3Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
     console.log(`  l3 (cueva del viento): ${(cave.timeMs / 1000).toFixed(1)} s de juego desde la repisa del ascenso 2 hasta volver al pie`);
     await l3Cave.close();
 
