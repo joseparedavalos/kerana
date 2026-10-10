@@ -34,6 +34,11 @@
 //                                                     doble en el ápice.
 //   S27: un paso mover también puede ser una vaca (la celda de donde nace); con double, la bajada `jump` lleva salto
 //   doble en el ápice.
+//   S30: { dash: 1 | -1 } dash desde el piso hacia ese lado (las espinas de un túnel bajo). jumpTo y bounce con
+//   dash: true hacen el dash en el aire hacia el destino (después del salto doble, si lo hay). bounce con via:
+//   [[x, y]…] sigue rebotando de hongo en hongo (cada uno, el de la lista) antes de ir a landX; con reach (tiles,
+//   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
+//   hueco, salta hacia él.
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
@@ -46,8 +51,8 @@ export function installPilot(plan) {
   const scene = window.__KERANA_DEBUG__.scene;
   const player = window.__KERANA_DEBUG__.player;
   const kb = scene.input.keyboard;
-  const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), attack: kb.addKey(88) };
-  const held = { left: false, right: false, jump: false, attack: false };
+  const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), attack: kb.addKey(88), dash: kb.addKey(67) };
+  const held = { left: false, right: false, jump: false, attack: false, dash: false };
   const set = (name, on) => {
     if (held[name] === on) return;
     const k = keys[name];
@@ -74,6 +79,8 @@ export function installPilot(plan) {
     st.phase = 'start';
     st.aim = null;
     st.doubled = false;
+    st.dashed = false;
+    st.via = 0;
     return origRespawn.call(this, reason);
   };
 
@@ -101,6 +108,15 @@ export function installPilot(plan) {
     const dx = x - body().center.x;
     move(Math.abs(dx) <= 3 ? 0 : Math.sign(dx));
   };
+  // Dash en el aire (S30): una vez por paso, después del salto doble si el paso lo pide, cerca del ápice.
+  const dashInAir = (needDouble, dir = 0) => {
+    // Con salto doble, en el ápice del segundo (en el mismo cuadro, el dash anularía el salto doble: vy = 0).
+    if (st.dashed || grounded() || (needDouble && (!st.doubled || st.timeMs - st.doubledAt < 120)) || body().velocity.y < -40) return;
+    if (dir !== 0) move(dir);
+    if (!held.left && !held.right) return;
+    st.dashed = true;
+    set('dash', true);
+  };
   const tapAttack = () => {
     if (st.attackCool > 0) return;
     set('attack', true);
@@ -114,6 +130,7 @@ export function installPilot(plan) {
   const doubleAtApex = () => {
     if (st.doubled || grounded() || body().velocity.y < -40) return;
     st.doubled = true;
+    st.doubledAt = st.timeMs;
     set('jump', false);
     set('jump', true);
     st.jumpMs = 340;
@@ -168,9 +185,12 @@ export function installPilot(plan) {
     const feet = b.bottom;
     // Piedra por golpear delante: se frena y ataca. Solo en el piso (S23): en el aire la golpeaba al pasar y la balsa de
     // l1 salía antes de que Kerana llegara.
-    const sw = grounded() && hitSwitches.find((s) => !s.motor.powered && dir * (s.zone.centerX - cx) > -4 && dir * (s.zone.centerX - cx) < 26);
+    // S30: y a su altura (en l5 la piedra de la reja está 40 filas sobre el tronco).
+    const sw = grounded() && hitSwitches.find((s) => !s.motor.powered && dir * (s.zone.centerX - cx) > -4 && dir * (s.zone.centerX - cx) < 26 && Math.abs(s.zone.centerY - b.center.y) < 2 * T);
     if (sw) {
       move(0);
+      // S30: mirando hacia la piedra (en l5, al corregir el aterrizaje en la rama alta quedaba de espaldas a ella).
+      player.motor.facing = sw.zone.centerX < cx ? -1 : 1;
       tapAttack();
       return;
     }
@@ -260,6 +280,8 @@ export function installPilot(plan) {
       return false;
     }
     if (s.charge !== undefined) return doCharge(s);
+    // { dash: 1 | -1 } es un paso; jumpTo y bounce también pueden llevar dash: true (en el aire).
+    if (typeof s.dash === 'number') return doDash(s);
     if (s.jumpTo !== undefined) return doJumpTo(s, b);
     if (s.bounce !== undefined) return doBounce(s, b);
     const m = moverAt(s.mover);
@@ -372,6 +394,7 @@ export function installPilot(plan) {
     if (!grounded() || st.jumpMs > 0) {
       seek(tx);
       if (s.double && !grounded()) doubleAtApex();
+      if (s.dash) dashInAir(!!s.double);
       return false;
     }
     // Se acerca hasta 2,5 tiles, o salta desde el borde si se acaba el piso antes (S27: o si tiene un pretil delante).
@@ -385,6 +408,45 @@ export function installPilot(plan) {
     startJump(s.hold);
     seek(tx);
     return false;
+  };
+
+  // Dash desde el piso (S30): parada, mira hacia ese lado, aprieta el dash y sigue caminando hasta que termina.
+  const doDash = (s) => {
+    switch (st.phase) {
+      case 'start':
+        move(0);
+        if (!grounded()) return false;
+        // Ya del otro lado (reapareció pasado el obstáculo): listo, no vuelve a cruzarlo caminando.
+        if (s.from !== undefined && s.dash * (body().center.x - s.from * T) > 1.5 * T) return true;
+        // Con from: primero se para en esa x (una espina en un túnel bajo deja poco margen para empezar el dash).
+        if (s.from !== undefined) {
+          // Se acerca caminando y frena cerca (a 6 px): con `seek` (3 px) iba y venía sin pararse nunca.
+          // Frena a tiempo: suelta la flecha a la distancia de frenado (v² / 2·2000) antes (si no, la inercia la mete
+          // en la espina).
+          const dx = s.from * T - body().center.x;
+          const vx = body().velocity.x;
+          move(Math.abs(dx) > 6 + (vx * vx) / 4000 ? Math.sign(dx) : 0);
+          if (Math.abs(dx) > 6 || Math.abs(body().velocity.x) > 5) return false;
+        }
+        player.motor.facing = s.dash;
+        set('dash', true);
+        st.log.push(`dash desde x ${(body().center.x / T).toFixed(2)} (vx ${Math.round(body().velocity.x)})`);
+        st.phase = 'go';
+        st.waitMs = 0;
+        st.dashSeen = false;
+        return false;
+      default:
+        st.waitMs += st.dt;
+        if (player.motor.dashing) st.dashSeen = true;
+        // Si el dash no arrancó (enfriamiento, aturdida), no camina hacia las espinas: vuelve a intentarlo.
+        if (!st.dashSeen) {
+          move(0);
+          if (st.waitMs > 150) st.phase = 'start';
+          return false;
+        }
+        move(s.dash);
+        return !player.motor.dashing && grounded();
+    }
   };
 
   const doCharge = (s) => {
@@ -411,30 +473,70 @@ export function installPilot(plan) {
     }
   };
 
+  // Un rebote sale a −540 px/s; el salto, a −400, y el salto doble, a −340 (S30: para no confundirlos).
+  const BOUNCE_VY = -450;
   const doBounce = (s, b) => {
     const cap = scene.bouncers.find((h) => inZone(h.zone, s.bounce));
     const hx = cap.zone.centerX;
     const target = s.onto ? moverAt(s.onto) : null;
     switch (st.phase) {
       case 'start': {
+        // S30: si ya rebotó en este hongo (la inercia del paso anterior la dejó encima), el paso sigue en el aire.
+        if (body().velocity.y < BOUNCE_VY && Math.abs(b.center.x - hx) < 2 * T && b.bottom < cap.zone.bottom + 4) {
+          st.phase = 'air';
+          st.via = 0;
+          st.rising = true;
+          return false;
+        }
         move(0);
         if (s.wait && !atEnd(moverAt(s.wait.mover), s.wait.at ?? 'origin')) return false;
         if (!cap.canBounce) return false;
         st.phase = 'go';
         return false;
       }
-      case 'go':
+      case 'go': {
         seek(hx);
-        if (body().velocity.y < -300) st.phase = 'air';
+        // S30: espinas o un hueco entre Kerana y el hongo: salta hacia él.
+        const d = Math.sign(hx - b.center.x);
+        const front = b.center.x + d * (b.halfWidth + 4);
+        // (Con 24 px de anticipación: los pies tienen que salir de la fila de la espina antes de cruzarla.)
+        if (grounded() && Math.abs(hx - b.center.x) > T && st.jumpMs <= 0 && (hazard(front + d * 20, b.bottom - 4) || !solid(front + d * 2, b.bottom + 4))) startJump();
+        if (body().velocity.y < BOUNCE_VY) {
+          st.phase = 'air';
+          st.via = 0;
+          st.rising = true;
+        }
         return false;
+      }
       default: {
+        // Un rebote nuevo (S30, cadenas de hongos): pasa al hongo siguiente de la lista.
+        const vy = body().velocity.y;
+        if (!st.rising && vy < BOUNCE_VY) {
+          st.rising = true;
+          // El rebote devuelve el salto doble y el dash (como en el juego).
+          st.doubled = false;
+          st.dashed = false;
+          if (s.via && st.via < s.via.length) st.via++;
+        } else if (st.rising && vy >= 0) st.rising = false;
+        if (s.via && st.via < s.via.length) {
+          const next = scene.bouncers.find((h) => inZone(h.zone, s.via[st.via]));
+          seek(next.zone.centerX);
+          return false;
+        }
         if (target) {
           if (onThis(target, b)) return true;
           const mid = target.block.x + target.block.width / 2;
           // Lejos: rebota en el lugar hasta que la plataforma pase por encima.
-          seek(Math.abs(mid - hx) < 3 * T ? mid : hx);
+          seek(Math.abs(mid - hx) < (s.reach ?? 3) * T ? mid : hx);
+          // S30: el hongo de un uso empuja una vez (sube menos): salto doble en el ápice.
+          if (s.double && !grounded()) doubleAtApex();
         } else {
-          seek(s.landX * T);
+          // S30: con hold, quieta sobre el hongo hasta el dash (la pluma C de l5: subiendo, ir hacia ella es tocar las
+          // espinas de la pared); el dash sale hacia landX.
+          if (s.hold && s.dash && !st.dashed) seek(hx);
+          else seek(s.landX * T);
+          if (s.double && !grounded()) doubleAtApex();
+          if (s.dash) dashInAir(!!s.double, s.hold ? Math.sign(s.landX * T - b.center.x) : 0);
           if (grounded() && (s.landTop === undefined || b.bottom <= s.landTop * T + 2) && Math.abs(b.center.x - s.landX * T) < T) return true;
         }
         // Volvió al piso sin llegar (hongo de un uso desinflado): a esperar otra vez.
@@ -451,10 +553,12 @@ export function installPilot(plan) {
     st.jumpCool = Math.max(0, st.jumpCool - d);
     st.attackCool = Math.max(0, st.attackCool - d);
     if (held.attack && !st.charging) set('attack', false);
+    if (held.dash) set('dash', false);
     const tx = body().center.x / T;
     // Rastro (ms, x, pies) cada ≈ 100 ms, en tiles.
     if (st.trace.length === 0 || st.timeMs - st.trace[st.trace.length - 1][0] >= 100) st.trace.push([Math.round(st.timeMs), +tx.toFixed(1), +(body().bottom / T).toFixed(1)]);
-    for (const [name, x] of splits) if (st.splits[name] === undefined && tx >= x) st.splits[name] = Math.round(st.timeMs);
+    // S30: un parcial puede pedir además estar a esa altura o más arriba (pies en la fila `top` o menos): l5 sube y baja.
+    for (const [name, x, top] of splits) if (st.splits[name] === undefined && tx >= x && (top === undefined || body().bottom / T <= top)) st.splits[name] = Math.round(st.timeMs);
     const finished = doStep(steps[st.step]);
     // Un salto decidido justo cuando el paso termina en el piso no se hace: lo decide el paso siguiente.
     if (finished && grounded() && held.jump === false) st.jumpMs = 0;
@@ -469,6 +573,8 @@ export function installPilot(plan) {
     st.phase = 'start';
     st.aim = null;
     st.doubled = false;
+    st.dashed = false;
+    st.via = 0;
     if (st.step >= steps.length) {
       st.done = true;
       for (const k of Object.keys(held)) set(k, false);

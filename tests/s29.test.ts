@@ -81,9 +81,9 @@ describe('la vaca de la vaca embrujada no camina en el aire (S29)', () => {
 });
 
 describe('nada flota con el terreno como repisa (S29)', () => {
-  it('en l2, l3 y l4 todo lo que está apoyado en el suelo pisa un tile que se dibuja', () => {
+  it('en l2, l3, l4 y l5 (S30) todo lo que está apoyado en el suelo pisa un tile que se dibuja', () => {
     const shelled = Object.values(LEVELS).filter((d) => d !== undefined && d.terrainShell !== undefined);
-    expect(shelled.map((d) => d!.id)).toEqual(['l2', 'l3', 'l4']);
+    expect(shelled.map((d) => d!.id)).toEqual(['l2', 'l3', 'l4', 'l5']);
     for (const def of shelled.map((d) => d!)) {
       const map = mapOf(def.mapKey.replace(/^map_/, ''));
       expect(map, def.id).toBeDefined();
