@@ -187,9 +187,12 @@ async function main() {
     const isActive = (key) => title.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
     await title.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El diálogo pide 2 pulsaciones por línea (revelar y avanzar); el resto de la secuencia corre sola.
-    // S27: con 40 pulsaciones (≈ 12 s) falló una vez con el headless lento; el mismo tope que los demás pasos.
+    // S27: solo se aprieta mientras hay diálogo. Espacio también confirma "Nivel completado" y, en el mapa, entra al
+    // nivel: si una pulsación caía justo cuando aparecía "Nivel completado", pasaba al mapa y la siguiente volvía a
+    // entrar a l1 (falló 2 de 5 corridas; reproducido: Kerana de vuelta en x 9 y Teju Jagua con 12 de vida).
+    const inDialogue = () => title.evaluate(() => window.__KERANA_DEBUG__?.scene.dialogueBox?.active ?? false);
     for (let i = 0; i < PRESS_MAX && !(await isActive('LevelComplete')); i++) {
-      await title.keyboard.press('Space');
+      if (await inDialogue()) await title.keyboard.press('Space');
       await sleep(300);
     }
     check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
@@ -256,8 +259,9 @@ async function main() {
     }
     console.log(`  l1 (ruta baja): ${(run1.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run1.splits)}`);
     await l1Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    // Solo con el diálogo abierto (S27, como en el paso 1): Espacio también pasa "Nivel completado".
     for (let i = 0; i < PRESS_MAX && !(await l1Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false)); i++) {
-      await l1Page.keyboard.press('Space');
+      if (await l1Page.evaluate(() => window.__KERANA_DEBUG__?.scene.dialogueBox?.active ?? false)) await l1Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l1Page.evaluate(() => window.__KERANA_GAME__?.scene.isActive('LevelComplete') ?? false), 'nivel 1 recorrido → liberación → Nivel completado');
