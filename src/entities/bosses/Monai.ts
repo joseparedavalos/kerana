@@ -8,6 +8,7 @@ import {
   type BodyPoint,
   drawDazeStars,
   drawSnakeBody,
+  type HighBack,
   ensureMonaiArt,
   ensureTreeArt,
   HEAD_DAZE_TEXTURE,
@@ -45,6 +46,8 @@ export class Monai extends Boss {
   private readonly bodyGfx: Phaser.GameObjects.Graphics;
   /** Vueltas del enroscado detrás del tronco. */
   private readonly backGfx: Phaser.GameObjects.Graphics;
+  /** Vueltas de atrás a la altura de la copa: delante de la copa y de la plataforma, detrás de Kerana (S28). */
+  private readonly highBack: HighBack;
   /** Halo de los cuernos y estrellitas de mareo. */
   private readonly fxGfx: Phaser.GameObjects.Graphics;
   private readonly points: BodyPoint[] = [];
@@ -100,10 +103,13 @@ export class Monai extends Boss {
     });
     this.shadow = scene.add.ellipse(0, this.floorY - 1, CFG.shadowWidth, 8, SHADOW_COLOR, 0.6).setDepth(3).setVisible(false);
     this.backGfx = scene.add.graphics().setDepth(-5);
-    this.bodyGfx = scene.add.graphics().setDepth(4);
+    this.highBack = { gfx: scene.add.graphics(), belowY: this.canopyY + CFG.crownBelow };
+    this.bodyGfx = scene.add.graphics();
     const [ox, oy] = headOrigin();
-    this.head = scene.add.image(0, 0, HEAD_TEXTURE).setOrigin(ox, oy).setScale(1 / ART_K).setDepth(5);
-    this.horns = scene.add.image(0, 0, HORNS_TEXTURE).setOrigin(ox, oy).setScale(1 / ART_K).setDepth(5);
+    this.head = scene.add.image(0, 0, HEAD_TEXTURE).setOrigin(ox, oy).setScale(1 / ART_K);
+    this.horns = scene.add.image(0, 0, HORNS_TEXTURE).setOrigin(ox, oy).setScale(1 / ART_K);
+    // Cuerpo y cabeza por delante de las copas y las plataformas, pero detrás de Kerana: nunca la tapan (S28).
+    ctx.placeBelowPlayer([this.highBack.gfx, this.bodyGfx, this.head, this.horns]);
     this.fxGfx = scene.add.graphics().setDepth(6);
     this.pulse = scene.add.circle(0, 0, 10).setStrokeStyle(3, PULSE_COLORS[0]).setDepth(6).setVisible(false);
     this.tailHeart = scene.add.circle(0, 0, 4, HEART_COLOR).setDepth(6).setVisible(false);
@@ -295,7 +301,7 @@ export class Monai extends Boss {
   }
 
   fadeOut(ms: number): void {
-    this.scene.tweens.add({ targets: [this.head, this.horns, this.bodyGfx, this.backGfx, this.fxGfx, this.tailHeart], alpha: 0, duration: ms });
+    this.scene.tweens.add({ targets: [this.head, this.horns, this.bodyGfx, this.backGfx, this.highBack.gfx, this.fxGfx, this.tailHeart], alpha: 0, duration: ms });
   }
 
   // ── Visual ────────────────────────────────────────────────────────────────
@@ -414,6 +420,7 @@ export class Monai extends Boss {
   private drawBody(): void {
     this.bodyGfx.clear();
     this.backGfx.clear();
+    this.highBack.gfx.clear();
     if (this.head.alpha <= 0) return;
     const segs = this.segments;
     const n = segs.length;
@@ -441,7 +448,7 @@ export class Monai extends Boss {
       m.r = (radius(i) + radius(i + 1)) / 2;
       m.back = s.back && t.back;
     }
-    drawSnakeBody(this.bodyGfx, this.backGfx, pts, k, this.head.alpha);
+    drawSnakeBody(this.bodyGfx, this.backGfx, pts, k, this.head.alpha, this.highBack);
   }
 
   /** Halo de los cuernos mientras brillan y estrellitas de mareo en la ventana del cuerpo. */

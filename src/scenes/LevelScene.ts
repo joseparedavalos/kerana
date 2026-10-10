@@ -378,7 +378,12 @@ export class LevelScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.player.getAttackHitbox(), this.enemies, this.onAttackHit, undefined, this);
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerTouchEnemy, undefined, this);
-    this.physics.add.overlap(this.player, this.pickups, this.onPickupOverlap, undefined, this);
+    // Los pickups no son piso: Arcade enciende `touching.down` también en un overlap, así que el contacto
+    // se atiende en el processCallback y se corta ahí (false), antes de que Arcade marque el contacto.
+    this.physics.add.overlap(this.player, this.pickups, undefined, (p, pk) => {
+      this.onPickupOverlap(p, pk);
+      return false;
+    }, this);
     for (const sinker of this.sinkers) this.physics.add.collider(this.player, sinker.raft);
     for (const b of this.bouncers) this.physics.add.collider(this.player, b.cap);
     for (const c of this.crumbles) {
@@ -571,6 +576,13 @@ export class LevelScene extends Phaser.Scene {
       playerOnRefuge: () => this.playerOnRefuge(),
       setBlackout: (on) => this.setBlackout(on, rect),
       glow: (obj) => this.darkness?.glow(obj) ?? obj,
+      placeBelowPlayer: (objs) => {
+        // Misma profundidad que Kerana y antes que ella en la lista: el orden estable deja a Kerana encima.
+        for (const obj of objs) {
+          obj.setDepth(this.player.depth);
+          this.children.moveBelow(obj, this.player);
+        }
+      },
       sfx: (key: SfxKey) => AudioManager.play(key),
       sfxAt: (key: SfxKey, x: number) => {
         const view = this.cameras.main.worldView;
