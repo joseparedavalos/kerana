@@ -1480,7 +1480,7 @@ async function main() {
     // Durante la persecución la cámara va fija al borde que avanza (y vuelve a seguir a Kerana al terminar).
     await l6Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
-      window.__L6_CHASE__ = { started: false, maxLag: 0, warned: false, ended: false };
+      window.__L6_CHASE__ = { started: false, maxLag: 0, ended: false, boundsW: 0 };
       s.events.on('postupdate', () => {
         const c = s.chase;
         const w = window.__L6_CHASE__;
@@ -1491,7 +1491,11 @@ async function main() {
           const bnd = s.cameras.main.getBounds();
           w.maxLag = Math.max(w.maxLag, Math.abs(bnd.x - c.motor.edgeX), Math.abs(bnd.width - 640));
         }
-        if (c.motor.phase === 'done') w.ended = true;
+        // En el cuadro en que termina vuelven los límites del mapa (antes de la arena, que pone los suyos).
+        if (c.motor.phase === 'done' && !w.ended) {
+          w.ended = true;
+          w.boundsW = s.cameras.main.getBounds().width;
+        }
       });
     });
     const l6Pickups = () => l6Run.evaluate(() => window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).map((p) => `${p.kind}@${Math.floor(p.x / 16)}`).sort());
@@ -1508,7 +1512,7 @@ async function main() {
       await l6Run.screenshot({ path: join(SHOTS, 'l6-piloto-atascado.png') });
       console.log((await l6Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
     }
-    const l6Chase = await l6Run.evaluate(() => ({ ...window.__L6_CHASE__, boundsW: window.__KERANA_DEBUG__.scene.cameras.main.getBounds().width, mapW: window.__KERANA_DEBUG__.scene.map.widthInPixels }));
+    const l6Chase = await l6Run.evaluate(() => ({ ...window.__L6_CHASE__, mapW: window.__KERANA_DEBUG__.scene.map.widthInPixels }));
     check(
       l6Chase.started && l6Chase.ended && l6Chase.maxLag < 0.01 && l6Chase.boundsW === l6Chase.mapW,
       `nivel 6: la persecución larga, la cámara va al borde que avanza y al terminar vuelve a seguir a Kerana (${JSON.stringify(l6Chase)})`,
