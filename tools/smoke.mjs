@@ -7,13 +7,15 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET, L5_MAIN, L5_SECRET } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET, L5_MAIN, L5_SECRET, L6_FEATHER_A, L6_FEATHER_C, L6_MAIN, L6_SECRET } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
 const TILE = 16;
 // Piezas de l5 (S30, cabecera de tools/levels/l5.txt).
 const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4 };
+// Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
+const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 5, cria: 2, chasePindos: 2 };
 
 function findBrowser() {
   const candidates = [process.env.CHROME_PATH];
@@ -1415,12 +1417,233 @@ async function main() {
     );
     await floorPage.close();
 
+    // 1h0) l6 de punta a punta (S31): el piloto cruza Guairá por la ruta principal (la escalera de lajas, la columna de roca,
+    // el pozo de la piedra, el hongo de un uso, la segunda escalera, el filo, la grieta con viento, el hongo dormido y las
+    // balsas sobre la cascada, las cadenas, LA PERSECUCIÓN de Ao Ao y la cadena de bajada) y después la liberación hasta
+    // "Nivel completado". El guardado ya tiene el tajo cargado, el salto doble y el dash.
+    const l6Run = await open('/?debug=1&level=6&god=1');
+    await l6Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l6Info = await l6Run.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const groups = new Set(s.breakables.map((b) => b.group));
+      const kinds = s.bouncers.reduce((acc, b) => ({ ...acc, [b.motor.kind]: (acc[b.motor.kind] ?? 0) + 1 }), {});
+      return {
+        charge: d.player.motor.chargeEnabled,
+        double: d.player.motor.doubleJumpEnabled,
+        dash: d.player.motor.dashEnabled,
+        movers: s.movers.length,
+        vertical: s.movers.filter((m) => m.motor.spec.dy !== 0).length,
+        oneWay: s.movers.every((m) => !m.solid),
+        switches: s.switches.length,
+        gates: s.gates.length,
+        bouncers: kinds,
+        crumbles: s.crumbles.length,
+        rocks: [...groups].filter((g) => g[0].kind === 'rock').length,
+        brittle: [...groups].filter((g) => g[0].kind === 'brittle').length,
+        checkpoints: s.checkpoints.length,
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+        enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
+        chase: !!s.chase,
+        chasePindos: s.chase ? s.chase.refuges.length : 0,
+        waterfalls: s.waterfalls.length,
+        traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
+      };
+    });
+    check(
+      l6Info.charge &&
+        l6Info.double &&
+        l6Info.dash &&
+        l6Info.movers === L6_COUNTS.movers &&
+        l6Info.vertical === L6_COUNTS.vertical &&
+        l6Info.oneWay &&
+        l6Info.switches === 1 &&
+        l6Info.gates === 1 &&
+        l6Info.bouncers.normal === L6_COUNTS.normal &&
+        l6Info.bouncers.once === L6_COUNTS.once &&
+        l6Info.bouncers.sleep === L6_COUNTS.sleep &&
+        l6Info.crumbles === L6_COUNTS.crumbles &&
+        l6Info.rocks === L6_COUNTS.rocks &&
+        l6Info.brittle === L6_COUNTS.brittle &&
+        l6Info.checkpoints === 4 &&
+        l6Info.feathers === 3 &&
+        l6Info.enemies.taitetu === L6_COUNTS.taitetu &&
+        l6Info.enemies.karakara === L6_COUNTS.karakara &&
+        l6Info.enemies.ao_ao_cria === L6_COUNTS.cria &&
+        l6Info.chase &&
+        l6Info.chasePindos === L6_COUNTS.chasePindos &&
+        l6Info.waterfalls === 1 &&
+        l6Info.traps === 0,
+      `nivel 6: ${L6_COUNTS.movers} plataformas de un solo sentido (${L6_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos de las tres variantes, ${L6_COUNTS.crumbles} lajas que se quiebran, ${L6_COUNTS.rocks} rocas y ${L6_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L6_COUNTS.taitetu} taitetu, ${L6_COUNTS.karakara} karakara, ${L6_COUNTS.cria} crías, la persecución con ${L6_COUNTS.chasePindos} pindó, la cascada, ningún encierro (${JSON.stringify(l6Info)})`,
+    );
+    // Durante la persecución la cámara va fija al borde que avanza (y vuelve a seguir a Kerana al terminar).
+    await l6Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      window.__L6_CHASE__ = { started: false, maxLag: 0, warned: false, ended: false };
+      s.events.on('postupdate', () => {
+        const c = s.chase;
+        const w = window.__L6_CHASE__;
+        if (!c) return;
+        if (c.motor.phase === 'running') {
+          w.started = true;
+          w.maxLag = Math.max(w.maxLag, Math.abs(s.cameras.main.worldView.x - c.motor.edgeX));
+        }
+        if (c.motor.phase === 'done') w.ended = true;
+      });
+    });
+    await l6Run.evaluate(installPilot, L6_MAIN);
+    for (let t = 0; t < 600000 && !(await pilot(l6Run)).done; t += 500) await sleep(500);
+    const run6 = await pilot(l6Run);
+    check(run6.done && run6.respawns === 0, `nivel 6: Kerana cruza Guairá entera sin caer y sin que Ao Ao la alcance (${JSON.stringify(run6)})`);
+    if (run6.respawns > 0) console.log((await l6Run.evaluate(() => window.__KERANA_PILOT__.log)).filter((l) => l.startsWith('caída') || l.startsWith('paso')).slice(-40).join('\n'));
+    if (!run6.done) {
+      await l6Run.screenshot({ path: join(SHOTS, 'l6-piloto-atascado.png') });
+      console.log((await l6Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
+    const l6Chase = await l6Run.evaluate(() => ({ ...window.__L6_CHASE__, boundsW: window.__KERANA_DEBUG__.scene.cameras.main.getBounds().width, mapW: window.__KERANA_DEBUG__.scene.map.widthInPixels }));
+    check(
+      l6Chase.started && l6Chase.ended && l6Chase.maxLag < 2 && l6Chase.boundsW === l6Chase.mapW,
+      `nivel 6: la persecución larga, la cámara va al borde que avanza y al terminar vuelve a seguir a Kerana (${JSON.stringify(l6Chase)})`,
+    );
+    console.log(`  l6 (ruta principal): ${(run6.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run6.splits)}`);
+    await l6Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l6RunDone = () => l6Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
+    for (let i = 0; i < PRESS_MAX && !(await l6RunDone()); i++) {
+      await l6Run.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l6RunDone(), 'nivel 6 recorrido → liberación → Nivel completado');
+    await l6Run.close();
+
+    // 1h0b) La persecución sin god (S31): quedarse quieta avisa (franja roja) y después Ao Ao la alcanza: 1 corazón y vuelta
+    // a la largada (antes del primer pindó la persecución se reinicia). En el pindó 1 el borde se detiene; bajada y quieta,
+    // la alcanza y vuelve al pindó.
+    const chasePage = await open('/?debug=1&level=6');
+    await chasePage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    await chasePage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(263 * 16, 16 * 16 - 1));
+    await sleep(300);
+    const chaseState = () =>
+      chasePage.evaluate(() => {
+        const d = window.__KERANA_DEBUG__;
+        const m = d.scene.chase.motor;
+        return { phase: m.phase, warn: m.warn, edge: Math.round(m.edgeX), last: m.lastRefugeX, hearts: d.player.health.current, x: +(d.player.body.center.x / 16).toFixed(1), feet: +(d.player.body.bottom / 16).toFixed(1), band: d.scene.chase.band.visible };
+      });
+    await chasePage.keyboard.down('ArrowRight');
+    for (let t = 0; t < 15000 && (await chaseState()).phase !== 'running'; t += 100) await sleep(100);
+    await chasePage.keyboard.up('ArrowRight');
+    const c0 = await chaseState();
+    let sawWarn = false;
+    let caught = null;
+    for (let t = 0; t < 60000 && !caught; t += 100) {
+      const st = await chaseState();
+      if (st.warn && st.band) sawWarn = true;
+      if (st.hearts < c0.hearts) caught = st;
+      await sleep(100);
+    }
+    if (caught) {
+      await sleep(1000);
+      caught = await chaseState();
+    }
+    check(
+      c0.phase === 'running' && sawWarn && !!caught && caught.hearts === c0.hearts - 1 && caught.phase === 'idle' && caught.x < 266,
+      `nivel 6: quieta en la persecución, primero el aviso y después Ao Ao la alcanza (1 corazón, vuelve a la largada) (${JSON.stringify({ c0, sawWarn, caught })})`,
+    );
+    // Otra vez, ahora hasta el pindó 1: en su copa el borde se detiene; bajada y quieta, vuelve al pindó.
+    await sleep(1500);
+    await chasePage.keyboard.down('ArrowRight');
+    for (let t = 0; t < 15000 && (await chaseState()).phase !== 'running'; t += 100) await sleep(100);
+    await chasePage.keyboard.up('ArrowRight');
+    await chasePage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(303.5 * 16, 19 * 16 - 1));
+    for (let t = 0; t < 5000 && (await chaseState()).phase !== 'refuge'; t += 100) await sleep(100);
+    const r0 = await chaseState();
+    await sleep(2000);
+    const r1 = await chaseState();
+    await chasePage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(306 * 16, 22 * 16 - 1));
+    let back = null;
+    for (let t = 0; t < 60000 && !back; t += 100) {
+      const st = await chaseState();
+      if (st.hearts < r1.hearts) back = st;
+      await sleep(100);
+    }
+    // Después de la pausa del golpe (hitStop) el cuerpo ya está donde reapareció.
+    if (back) {
+      await sleep(1000);
+      back = await chaseState();
+    }
+    check(
+      r0.phase === 'refuge' && r1.phase === 'refuge' && r1.edge === r0.edge && !!back && back.hearts === r1.hearts - 1 && Math.abs(back.x - 303.5) < 1.5 && Math.abs(back.feet - 19) < 0.5,
+      `nivel 6: en el pindó el borde se detiene; bajada y quieta, Ao Ao la alcanza y vuelve al pindó (${JSON.stringify({ r0, r1, back })})`,
+    );
+    await chasePage.screenshot({ path: join(SHOTS, 'l6-persecucion.png') });
+    await chasePage.close();
+
+    // 1h1) l6, el lugar secreto (S31): la gruta tras la cascada. Desde la cumbre 1 se deja caer por el borde, a través de la
+    // cascada, a la cornisa; adentro, la Luz de Arasy, dos guavirá y la columna de fardo con la pluma B encima; vuelve en el
+    // ascensor de la cascada.
+    const l6Cave = await open('/?debug=1&level=6&god=1');
+    await l6Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const gruta0 = await l6Cave.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(163 * 16, 15 * 16 - 1);
+      return { feathers: d.scene.feathers, pickups: d.scene.pickups.filter((p) => p.active).length };
+    });
+    await sleep(300);
+    await l6Cave.evaluate(installPilot, L6_SECRET);
+    for (let t = 0; t < 150000 && !(await pilot(l6Cave)).done; t += 500) await sleep(500);
+    const gruta = await l6Cave.evaluate(() => ({
+      done: window.__KERANA_PILOT__.done,
+      respawns: window.__KERANA_PILOT__.respawns,
+      feathers: window.__KERANA_DEBUG__.scene.feathers,
+      pickups: window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).length,
+      x: Math.round(window.__KERANA_DEBUG__.player.x / 16),
+      feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16),
+      timeMs: Math.round(window.__KERANA_PILOT__.timeMs),
+    }));
+    await l6Cave.screenshot({ path: join(SHOTS, 'l6-gruta.png') });
+    check(
+      gruta.done && gruta.respawns === 0 && gruta.feathers === gruta0.feathers + 1 && gruta0.pickups - gruta.pickups === 4 && gruta.feet === 15 && gruta.x <= 165,
+      `nivel 6: tras la cascada, la gruta: la Luz de Arasy, dos guavirá y la pluma B (rompiendo la columna), y de vuelta a la cumbre en el ascensor (${JSON.stringify({ ...gruta0, ...gruta })})`,
+    );
+    if (!gruta.done) console.log((await l6Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    console.log(`  l6 (la gruta): ${(gruta.timeMs / 1000).toFixed(1)} s de juego desde la cumbre 1 hasta volver a ella`);
+    await l6Cave.close();
+
+    // 1h2) l6, las plumas A y C (S31). A: en el fondo de la quebrada, tajo cargado a la columna de roca y la pluma del
+    // nicho. C: en la persecución, del pindó 1 a la cornisa alta (salto doble), el dash por encima de la espina y la pluma,
+    // sin que Ao Ao la alcance.
+    const l6Feathers = await open('/?debug=1&level=6&god=1');
+    await l6Feathers.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l6FeatherRun = async (x, row, plan) => {
+      const before = await l6Feathers.evaluate(([px, r]) => {
+        const d = window.__KERANA_DEBUG__;
+        d.player.body.reset(px * 16, r * 16 - 1);
+        return d.scene.feathers;
+      }, [x, row]);
+      await sleep(300);
+      await l6Feathers.evaluate(installPilot, plan);
+      for (let t = 0; t < 90000 && !(await pilot(l6Feathers)).done; t += 250) await sleep(250);
+      const after = await l6Feathers.evaluate(() => ({ done: window.__KERANA_PILOT__.done, respawns: window.__KERANA_PILOT__.respawns, feathers: window.__KERANA_DEBUG__.scene.feathers }));
+      if (!after.done || after.respawns > 0) console.log((await l6Feathers.evaluate(() => window.__KERANA_PILOT__.log)).slice(-20).join('\n'));
+      return { before, ...after };
+    };
+    const l6A = await l6FeatherRun(66, 62, L6_FEATHER_A);
+    check(l6A.done && l6A.respawns === 0 && l6A.feathers === l6A.before + 1, `nivel 6: la pluma A, tras la columna de roca de la quebrada (tajo cargado) (${JSON.stringify(l6A)})`);
+    const l6C = await l6FeatherRun(263, 16, L6_FEATHER_C);
+    check(l6C.done && l6C.respawns === 0 && l6C.feathers === l6C.before + 1, `nivel 6: la pluma C, en la ruta alta de la persecución (salto doble y dash), sin que Ao Ao la alcance (${JSON.stringify(l6C)})`);
+    await l6Feathers.close();
+
     // 1h) Nivel 6: antesala, cierre de la arena de Ao Ao, refugio en el pindó, furia (fase 3) y +1 corazón (7).
     const l6Page = await open('/?debug=1&level=6&boss=1&god=1');
     await l6Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    const l6x = await l6Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l6x > 230 * TILE && l6x < 250 * TILE, `nivel 6 con boss=1 empieza en la antesala (x ${Math.round(l6x / TILE)} tiles)`);
+    // S31: la antesala sale de la arena (como en l4 y l5).
+    const l6ante = await l6Page.evaluate(() => ({ x: window.__KERANA_DEBUG__.player.x, arena: window.__KERANA_DEBUG__.scene.arenaRect.x }));
+    const l6x = l6ante.x;
+    check(l6ante.x > l6ante.arena - 30 * TILE && l6ante.x < l6ante.arena, `nivel 6 con boss=1 empieza en la antesala (x ${Math.round(l6x / TILE)} tiles; la arena empieza en x ${l6ante.arena / TILE})`);
     await walkIntoArena(l6Page);
     check(await l6Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 6: la arena de Ao Ao se cierra');
     await sleep(4000);

@@ -39,6 +39,10 @@
 //   [[x, y]…] sigue rebotando de hongo en hongo (cada uno, el de la lista) antes de ir a landX; con reach (tiles,
 //   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
 //   hueco, salta hacia él.
+//   S31: un paso mover con strict espera a la plataforma en la punta (no recién salida): un ascensor que sube desde
+//   el piso de al lado.
+//   S31: jumpTo con rise (fila) sube derecho, sin ir hacia x, hasta tener los pies más arriba de esa fila (junto a un
+//   alero, como la punta del filo de l6, ir hacia la repisa mientras sube es golpearse la cabeza).
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
@@ -245,11 +249,13 @@ export function installPilot(plan) {
     const e = scene.enemies.find((en) => en.def.archetype === 'lurker' && Math.floor(en.spawnX / T) === x && Math.floor((en.spawnY - 1) / T) === y);
     return !e || !e.active || e.purified || e.lurkState === 'cooldown';
   };
-  // La plataforma está en la punta pedida (o llegando, o recién salida).
-  const atEnd = (m, at) => {
+  // La plataforma está en la punta pedida (o llegando, o recién salida). S31: con strict, solo llegando o esperando en
+  // la punta (un ascensor que sube desde el piso de al lado: recién salido ya está una fila arriba y se pasa por debajo).
+  const atEnd = (m, at, strict = false) => {
     const mm = m.motor;
-    if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1);
-    return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1);
+    // (Con strict: llegando, o esperando en la punta con tiempo para subirse.)
+    if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1) && (!strict || (mm.dir === 1 ? mm.pos >= mm.length - 1 : mm.waitLeftMs > 400));
+    return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1) && (!strict || (mm.dir === -1 ? mm.pos <= 1 : mm.waitLeftMs > 400));
   };
   // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta) y sin pisar el
   // suelo de al lado. S24: con el juego lento el paso anterior terminaba tarde y Kerana frenaba con el centro sobre la
@@ -315,7 +321,7 @@ export function installPilot(plan) {
         // S25: con `calm`, espera a que amaine el viento del encuentro (zona de ritmo de l3).
         if (s.calm && !windCalm(s.calm)) return false;
         // Sale a 40-60 px/s: recién salida de la punta se la alcanza caminando.
-        if (atEnd(m, at)) st.phase = 'board';
+        if (atEnd(m, at, !!s.strict)) st.phase = 'board';
         return false;
       }
       case 'board': {
@@ -341,6 +347,12 @@ export function installPilot(plan) {
         // (a 14 px: no resbala) y la espera otra vez. Antes saltaba igual hacia la plataforma lejana y caía al pozo una
         // y otra vez (smoke de l1).
         const away = at === 'end' ? mm.length - mm.pos : mm.pos;
+        // S31: con strict, si ya se fue de la punta, a esperar otra vez.
+        if (s.strict && away > 1 && !solid(front + d * 14, b.bottom + 4)) {
+          move(0);
+          st.phase = 'wait';
+          return false;
+        }
         const near = d > 0 ? m.block.x : m.block.x + m.block.width;
         if (!solid(front + d * 14, b.bottom + 4) && (away > 1.5 * T || d * (near - front) > 4 * T)) {
           move(0);
@@ -391,8 +403,11 @@ export function installPilot(plan) {
       move(0);
       return true;
     }
+    // S31: con rise, derecho hacia arriba hasta pasar esa fila.
+    const rising = s.rise !== undefined && b.bottom > s.rise * T;
     if (!grounded() || st.jumpMs > 0) {
-      seek(tx);
+      if (rising && !grounded()) move(0);
+      else seek(tx);
       if (s.double && !grounded()) doubleAtApex();
       if (s.dash) dashInAir(!!s.double);
       return false;
@@ -406,7 +421,8 @@ export function installPilot(plan) {
       return false;
     }
     startJump(s.hold);
-    seek(tx);
+    if (rising) move(0);
+    else seek(tx);
     return false;
   };
 
