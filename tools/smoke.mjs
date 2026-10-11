@@ -1615,7 +1615,8 @@ async function main() {
     }));
     await l6Cave.screenshot({ path: join(SHOTS, 'l6-gruta.png') });
     check(
-      gruta.done && gruta.respawns === 0 && gruta.feathers === gruta0.feathers + 1 && gruta0.pickups - gruta.pickups === 4 && gruta.feet === 15 && gruta.x <= 165,
+      // De vuelta arriba: los pies en la cumbre (fila 15) o un poco más arriba si justo salta (la gruta está en la 26).
+      gruta.done && gruta.respawns === 0 && gruta.feathers === gruta0.feathers + 1 && gruta0.pickups - gruta.pickups === 4 && gruta.feet <= 15 && gruta.x <= 165,
       `nivel 6: tras la cascada, la gruta: la Luz de Arasy, dos guavirá y la pluma B (rompiendo la columna), y de vuelta a la cumbre en el ascensor (${JSON.stringify({ ...gruta0, ...gruta })})`,
     );
     if (!gruta.done) console.log((await l6Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
