@@ -535,9 +535,13 @@ export const L6_FEATHER_A = {
 export const L6_FEATHER_C = {
   steps: [
     { run: 1, untilX: 300.5 },
-    { jumpTo: [303.5, 19] },
-    { jumpTo: [307.5, 14], double: true },
-    { dash: 1, from: 314.6 },
+    { jumpTo: [304, 19] },
+    // Salta parada en la copa (destino a menos de 2,5 tiles), no desde el borde.
+    { jumpTo: [306.4, 14], double: true },
+    // El dash empieza pegado a la espina: con el juego muy lento el último cuadro del dash ya va a paso de carrera y,
+    // desde 314.6, a veces terminaba intangible encima de ella. Si igual la toca, reaparece en el pindó y vuelve a saltar
+    // (sin retryFrom caminaba desde la copa hacia el dash y caía al pozo una y otra vez: 31 caídas).
+    { dash: 1, from: 315.2, retryFrom: 1 },
     { run: 1, untilX: 323 },
     { run: 1, untilX: 333 },
   ],

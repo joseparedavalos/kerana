@@ -41,6 +41,8 @@
 //   hueco, salta hacia él.
 //   S31: un paso mover con strict espera a la plataforma en la punta (no recién salida): un ascensor que sube desde
 //   el piso de al lado. jumpTo con runup (x) vuelve primero hasta esa x para tomar carrera (un salto largo).
+//   Cualquier paso con retryFrom (n): tras una caída durante ese paso, vuelve al paso n (reaparece antes de él:
+//   en una persecución, en el último pindó).
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
@@ -83,6 +85,8 @@ export function installPilot(plan) {
     st.doubled = false;
     st.dashed = false;
     st.via = 0;
+    const back = steps[st.step]?.retryFrom;
+    if (back !== undefined) st.step = back;
     return origRespawn.call(this, reason);
   };
 
