@@ -133,13 +133,13 @@ export class Chase {
     const m = this.motor;
     const refuge = m.phase === 'refuge';
     // En el refugio va y viene en el borde, aullando; en el aviso se adelanta.
-    const pace = refuge ? Math.sin(this.scene.time.now / 260) * 10 : 0;
+    const pace = refuge ? Math.sin(this.scene.time.now / CFG.aoAoPaceMs) * CFG.aoAoPacePx : 0;
     const target = m.edgeX + (m.warn ? CFG.aoAoLungePx : CFG.aoAoOffsetPx) + pace;
     const x = this.aoAo.x + (target - this.aoAo.x) * CFG.aoAoLerp;
     this.placeAoAo(x, body.bottom);
     if (refuge) this.aoAo.setFlipX(pace < 0);
     else this.aoAo.setFlipX(false);
-    if (Math.random() < dtMs / 120) this.deps.dust.emitParticleAt(x - 10, this.aoAo.y - 2, 1);
+    if (Math.random() < dtMs / CFG.aoAoDustEveryMs) this.deps.dust.emitParticleAt(x - GAMEPLAY.aoAo.width / 4, this.aoAo.y - 2, 1);
     // Aúlla al entrar al aviso y cada tanto mientras dura (o mientras Kerana está en el pindó).
     this.howlMs += dtMs;
     if ((m.warn && !this.wasWarn) || ((m.warn || refuge) && this.howlMs >= CFG.howlEveryMs)) {
@@ -153,7 +153,7 @@ export class Chase {
   private placeAoAo(x: number, keranaFeet: number | null): void {
     const from = (keranaFeet ?? this.aoAoY) - 8 * TILE;
     const ground = this.deps.surfaceBelow(x, from);
-    if (ground !== null && ground < from + 16 * TILE) this.aoAoY += (ground - this.aoAoY) * 0.35;
+    if (ground !== null && ground < from + 16 * TILE) this.aoAoY += (ground - this.aoAoY) * CFG.aoAoYLerp;
     this.aoAo.setPosition(x, this.aoAoY);
   }
 
@@ -165,7 +165,7 @@ export class Chase {
     }
     // Más fuerte cuanto más cerca del borde, y late.
     const near = Phaser.Math.Clamp(1 - m.gapPx / CFG.warnPx, 0, 1);
-    const pulse = 0.7 + 0.3 * Math.abs(Math.sin(this.scene.time.now / 120));
+    const pulse = 0.7 + 0.3 * Math.abs(Math.sin(this.scene.time.now / CFG.warnPulseMs));
     this.band.setVisible(true).setAlpha(CFG.warnAlpha * (0.35 + 0.65 * near) * pulse);
   }
 }

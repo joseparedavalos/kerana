@@ -601,8 +601,14 @@ export const GAMEPLAY = {
     /** Ao Ao: centro del cuerpo respecto del borde (px) al correr y al avisar (se adelanta, con la boca abierta). */
     aoAoOffsetPx: 6,
     aoAoLungePx: 34,
-    /** Suavizado de la posición de Ao Ao (0 a 1 por frame). */
+    /** Suavizado de la posición de Ao Ao (0 a 1 por frame): en x y en y (sigue el terreno de su columna). */
     aoAoLerp: 0.18,
+    aoAoYLerp: 0.35,
+    /** En el refugio va y viene en el borde: amplitud (px) y período (ms por radián). */
+    aoAoPacePx: 10,
+    aoAoPaceMs: 260,
+    /** Polvo a sus pies mientras corre: en promedio una partícula cada tanto (ms). */
+    aoAoDustEveryMs: 120,
     /** Aullidos durante el aviso y en el refugio (ms entre aullidos). */
     howlEveryMs: 1600,
     /** Sacudón al largar (el sobresalto). */
@@ -612,6 +618,8 @@ export const GAMEPLAY = {
     warnBandPx: 90,
     warnColor: 0xb8322a,
     warnAlpha: 0.55,
+    /** Latido de la franja (ms por radián). */
+    warnPulseMs: 120,
     /** Al terminar, Ao Ao se vuelve por donde vino a esta velocidad (px/s) y se desvanece (ms). */
     leaveSpeed: 120,
     leaveFadeMs: 1400,
