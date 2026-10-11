@@ -61,6 +61,13 @@ export function installPilot(plan) {
   const kb = scene.input.keyboard;
   const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), attack: kb.addKey(88), dash: kb.addKey(67) };
   const held = { left: false, right: false, jump: false, attack: false, dash: false };
+  // S32: un plan anterior en la misma página pudo dejar teclas apretadas (la flecha del último `run`): se sueltan.
+  for (const k of Object.values(keys)) {
+    if (!k.isDown) continue;
+    k.isDown = false;
+    k.isUp = true;
+    k.emit('up', k);
+  }
   const set = (name, on) => {
     if (held[name] === on) return;
     const k = keys[name];

@@ -651,7 +651,7 @@ export const L7_MAIN = {
     { run: 1, untilX: 395.6 },
     { run: -1, untilX: 378.6 },
     { mover: [374, 66], dir: -1, exit: 'walk', exitDir: 1 },
-    { run: 1, untilX: 425.6 },
+    { run: 1, untilX: 423.5 },
     { charge: 1 },
     { bounce: [428, 59], landX: 431, landTop: 52 },
     { run: 1, untilX: 437.0 },

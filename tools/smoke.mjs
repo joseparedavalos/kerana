@@ -1817,7 +1817,7 @@ async function main() {
     check(run7.done && (await l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)), `nivel 7: el piloto llega a la arena de Luisón por la ruta principal (${run7.respawns} caídas)`);
     const l7Left = await l7Pickups();
     // Quedan las plumas, lo del sótano (secreto), la guavirá del balcón alto (salto doble, a un costado) y la de la antesala.
-    const l7Off = ['guavira@104', 'guavira@107', 'luz_arasy@106', 'pluma@108', 'pluma@160', 'pluma@466', 'guavira@77', 'guavira@486'];
+    const l7Off = ['guavira@97', 'guavira@107', 'luz_arasy@106', 'pluma@108', 'pluma@160', 'pluma@466', 'guavira@77', 'guavira@486'];
     check(l7Left.every((k) => l7Off.includes(k)), `nivel 7: la ruta principal recoge todo lo del camino; quedan solo las plumas, lo del sótano y dos guavirá a un costado (${JSON.stringify(l7Left)})`);
     // La oscuridad como mecánica: la piedra de la torre (onda por la ventana), las tres rejas abiertas por faroles y piedra,
     // el farol del otro lado del pozo (onda) encendido, y los faroles de la ronda ya apagados (temporizados).
@@ -1855,8 +1855,8 @@ async function main() {
     const cellar0 = await l7Cellar.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       d.player.body.reset(99.5 * 16, 60 * 16 - 1);
-      // Lo del sótano (x 100-109, bajo la calle): con el guardado de la corrida anterior puede haber menos.
-      return { feathers: d.scene.feathers, pickups: d.scene.pickups.filter((p) => p.active && p.x > 100 * 16 && p.x < 110 * 16 && p.y > 62 * 16).map((p) => p.kind) };
+      // Lo del sótano (x 97-109, bajo la calle): con el guardado de la corrida anterior puede haber menos.
+      return { feathers: d.scene.feathers, pickups: d.scene.pickups.filter((p) => p.active && p.x > 96 * 16 && p.x < 110 * 16 && p.y > 62 * 16).map((p) => p.kind) };
     });
     await sleep(300);
     await l7Cellar.evaluate(installPilot, L7_SECRET);
@@ -1865,7 +1865,7 @@ async function main() {
       done: window.__KERANA_PILOT__.done,
       respawns: window.__KERANA_PILOT__.respawns,
       feathers: window.__KERANA_DEBUG__.scene.feathers,
-      pickups: window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active && p.x > 100 * 16 && p.x < 110 * 16 && p.y > 62 * 16).map((p) => p.kind),
+      pickups: window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active && p.x > 96 * 16 && p.x < 110 * 16 && p.y > 62 * 16).map((p) => p.kind),
       feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16),
       timeMs: Math.round(window.__KERANA_PILOT__.timeMs),
     }));
