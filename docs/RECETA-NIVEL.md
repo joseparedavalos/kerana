@@ -1,6 +1,6 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3, en S27 con l4 y en S30 con l5)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3, en S27 con l4, en S30 con l5 y en S31 con l6)
 
-El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto). Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
+El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto); lo de l4, en §12 (S27, puzzles de piedras y rejas); lo de l5, en §13 (S30, diseño vertical y hongos); lo de l6, en §14 (S31, **cómo se diseña un tramo de persecución**, el cerro en zigzag y la gruta tras la cascada). Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
 
 ---
 
@@ -139,6 +139,9 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] *(S30)* En un nivel vertical, cada salto tiene decidido qué hay debajo: pozo (corazón) o red (tiempo); ninguna caída larga saltea contenido (§13.1). Pilas de plataformas a ≥ 8 filas.
 - [ ] *(S30)* Hongos: el de un uso sube ≈ 107 px (un empujón), no 136; ninguno con espinas pegadas al sombrero (tocones) (§13.2).
 - [ ] *(S30)* Un escalón ajeno no saltea un puzzle: la simulación con la reja cerrada y sin cada hongo o plataforma del puzzle (`NOMOVER`, `LOCK`).
+- [ ] *(S31)* Persecución (si el nivel tiene una): un solo tramo de ≈ 120 tiles con dos pindó, nada que haga esperar adentro, todo legible con 16 tiles por delante, un fuego pegado a cada punta; el smoke prueba sin `god` que quieta avisa antes de alcanzarla y que vuelve al pindó (§14.1).
+- [ ] *(S31)* Ninguna plataforma con una parada metida en un piso (deja un escalón de una fila por el que baja a través de Kerana) (§14.2).
+- [ ] *(S31)* Los atajos de salto doble + dash calculados con la física del juego (subiendo 6 filas, salto + doble + dash avanza ≈ 171 px): la pieza que debe usarse no se saltea por un pelo (`tests/l6.test.ts`, la cumbre 2).
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -515,3 +518,89 @@ l5 se hizo con el mismo orden de trabajo (§1). El generador parte del commit ba
 
 La de S25-S28 no estaba en el repo; se rehízo en el scratchpad (`tmp/sim/reach.sim.ts`, corre con Vitest y una configuración propia para usar el **motor real** de Kerana, `PlayerMotor`, con la física de Arcade a 60 Hz). Lo que agregó: viajar en las plataformas verticales (pararse en una da todo su recorrido; antes solo se subía saltando de franja en franja), el hongo de un uso con un empujón, los camalotes de l2 como piso, el tajo cargado (40 × 28 a media altura) para las piedras, y opciones para quitar plataformas y hongos (`NOMOVER`) y cerrar las rejas (`LOCK`). Resultado en l5: con los tres dones, los 16 premios; sin dash, ni la pluma C ni nada después del salto largo; con las rejas cerradas, nada después de la reja salvo con la piedra; sin las ramas del compás, ninguna repisa.
 
+---
+
+## 14. Lo que agregó l6 (S31): la persecución, el cerro en zigzag y la gruta tras la cascada
+
+l6 se hizo con el mismo orden de trabajo (§1). El generador parte del commit base de la sesión (`3aa745d`) solo para copiar la antesala y la arena (x 226-289 del l6 viejo, a x 452-515 y 30 filas más abajo: `rect BossArena x=476 y=31`; Ao Ao se ubica por la arena, sin cambios). Kerana llega con todo el vocabulario. Lo nuevo es **la persecución** (`rect ChaseZone`), el único cambio de ritmo del juego: el resto se recorre siempre al paso del jugador.
+
+**Medidas de l6:** 516 × 66 (antes 290 × 26). Ruta principal con el piloto: **antes ≈ 27 s, después ≈ 128 s**. La persecución: ≈ 16 s del piloto (corre sin subirse a los pindó). La gruta (lugar secreto): ≈ 15 s desde la cumbre 1 hasta volver a ella.
+
+| # | Tiles | Qué pide | Cadencia |
+|---|---|---|---|
+| A1 | x 0-33 | nido de fardo, escalón de 3 con la manada arriba | la meseta x 30-33 |
+| A2 | x 34-69 | la escalera de lajas: cuatro, de a dos, 3 filas más arriba cada vez (sobre una red) | el paso x 70 |
+| A3 | x 70-103 | columna de roca 3 × 4 (tajo cargado), el pozo de la piedra (bajar, piedra, hongo y salto doble) | **fuego x 105** |
+| B1 | x 56-112, fila 45 → 23 | hongo de un uso + salto doble al puente; la segunda escalera de lajas hacia la izquierda; karakara en la repisa | la repisa |
+| B2 | x 60-150, fila 17 | un escalón al filo; manada, rocas que caen, nido; grieta con viento en contra (karakara); par de balsas sobre un pozo (karakara); escalón con manada | la cumbre 1 |
+| B3 | x 151-206 | hongo dormido (tajo cargado) → par de balsas sobre la cascada; cría en la cumbre 2 (x 187) | la cumbre 2 |
+| B4 | x 207-265 | ascensor → balsa → balsa (karakara y taitetu en la cumbre 3); par de balsas con karakara | **fuego x 262** |
+| C | x 266-386 | LA PERSECUCIÓN: terrazas, cerco, pindó 1; lajas que se quiebran, taitetu, pindó 2; terrazas, pozo con karakara, el paso | **fuego x 392** |
+| D | x 393-451 | cadena de bajada (ascensor, balsa, ascensor, balsa), cría en la repisa, par de balsas | **antesala x 452** |
+
+### 14.1 Cómo se diseña un tramo de persecución
+
+**Qué hace el código** (`src/systems/chaseLogic.ts`, lógica pura con tests; `Chase.ts` lo dibuja; valores en `GAMEPLAY.chase`):
+
+- `rect ChaseZone x y w h [speed]`: el borde izquierdo de la zona es la largada y el derecho la llegada (centro del cuerpo de Kerana). Al cruzar la largada, aullido y sacudón (el sobresalto) y el borde izquierdo de la vista empieza a avanzar desde donde estaba la cámara (no salta).
+- El borde avanza a `speed` (72 px/s, la mitad de lo que corre Kerana). Si Kerana se adelanta más de `aheadFrac` (0,6) de la vista, el borde la sigue: **siempre ve 16 tiles por delante** y correr más rápido no deja atrás a Ao Ao.
+- **Aviso antes de la consecuencia:** a menos de `warnPx` (112 px) del borde, franja roja que late en el lado izquierdo de la pantalla, Ao Ao se adelanta con la boca abierta y aúlla. Parada, el aviso dura (112 − 0) / 72 ≈ **1,6 s** antes de que la alcance.
+- **La consecuencia:** el cuerpo toca el borde → `damage.chase` (1 corazón) y vuelve **al último pindó del tramo** con el borde `restartLeadPx` (240 px) detrás. Antes del primer pindó, **la persecución se reinicia entera** (vuelve a la largada y larga otra vez al cruzarla, con su aullido): la largada hace de primer refugio. Una caída (pozo, espinas) dentro del tramo hace lo mismo: el último suelo firme podría estar detrás del borde.
+- **Refugio:** parada en la copa de un pindó del tramo, el borde se detiene (Ao Ao va y viene en el borde aullando). Se descansa lo que haga falta.
+- Con 0 corazones (o "volver al fuego" desde la pausa), la persecución vuelve a empezar desde la largada. Terminada, no se repite.
+- **La cámara:** `CameraController.lockScrollX(x)` pone los límites de la cámara a un ancho de vista desde `x`; el seguimiento en y (lerp y zona muerta) sigue igual. Al terminar vuelven los límites del mapa y la cámara alcanza a Kerana con su lerp. La arena del jefe pone sus propios límites (BossArena) y las dos cosas nunca coinciden. Ningún otro nivel tiene `ChaseZone`: para ellos no cambia nada.
+
+**Reglas de diseño (l6):**
+
+1. **Un tramo, no medio nivel:** 121 tiles en tres tramos de 35-40 tiles (7-10 s cada uno) separados por dos pindó. El piloto lo cruza en ≈ 16 s sin subirse a los pindó; alguien que se detiene en cada uno tarda más, y está bien.
+2. **Nada que espere adentro:** ni plataformas móviles, ni viento, ni rejas temporizadas. Todo es fijo o pasa cuando Kerana pasa: las rocas caen 0,8 s después de que pasó (castigan al que duda), las lajas que se quiebran caen 0,6 s después de pisarlas (castigan al que se queda), el cerco de fardo se rompe de un tajo o se salta (3 filas). La persecución pide no detenerse; una pieza que obliga a esperar contradice la cámara.
+3. **Que se lea hacia dónde ir:** 16 tiles por delante siempre; las bajadas de hasta 6 filas (la cámara sigue en y y ve ≈ 11 filas por debajo); pozos de 4 y 5; el tronco del pindó se ve desde lejos. Nada de saltos a ciegas.
+4. **El pindó, a un salto:** la copa (un solo sentido) 3 filas sobre el piso. El cartel del pindó va en el primero (no antes de la largada: arruinaría el sobresalto).
+5. **Los fuegos pegados:** el de antes, a menos de 5 tiles de la largada (con 0 corazones no se repite medio nivel) y con la Luz de Arasy al lado; el de después, pasando el paso de roca.
+6. **La ruta alta va hacia adelante y sale de un pindó:** la decisión se toma con la cámara quieta. Del pindó 1, salto doble a una cornisa con techo a 3 filas (no se salta adentro) y una sola espina (solo el dash); la pluma; y se cae a la ruta baja más adelante. Equivocarse (la espina) devuelve al pindó 1.
+7. **Enemigos en la llegada y de frente:** el taitetu de la llegada de las lajas embiste hacia Kerana (tajo o salto), el karakara sobre la llegada del pozo de 5. Nada detrás de ella: detrás está Ao Ao.
+8. **El final se entiende:** un paso de roca bajo un techo (Ao Ao es grande y no entra); Ao Ao aúlla, se da vuelta y se va desvaneciendo; la cámara vuelve a seguir a Kerana.
+9. **Piloto:** `run` cruza la persecución como un jugador que no se detiene; las lajas que se quiebran, con `jumpTo` (el `solid` del piloto no las ve). El smoke prueba además, sin `god`, que quieta primero avisa y después la alcanza, y que en el pindó el borde se detiene y vuelve a él.
+
+### 14.2 El cerro en zigzag: dos escaleras de lajas
+
+- **Escalera de lajas:** plataformas de 3 que recorren 5, a 50 px/s con 1,2 s de espera (5,6 s), cada una **3 filas más arriba** que la anterior (el salto llega a 4 de una plataforma de un solo sentido) y con **1 tile de hueco** donde se juntan. Se dibujan alternando la punta (la impar en su origen, la par en su otra punta con el recorrido hacia la anterior): así se juntan de a dos, siempre en una espera (`tests/l6.test.ts`). Es otra forma de subir que los ascensores de l5: se sube en diagonal, de costado.
+- **Una hacia cada lado:** A2 sube a la derecha sobre la quebrada; B1 vuelve a la izquierda por encima del paso; el filo pasa por encima de las dos. El jugador ve dónde estuvo. Debajo de cada escalera, **una red con salida a 3 filas**: el fondo de la quebrada (escalón a la meseta) y el techo de la peña (3 filas bajo el rellano de la laja 5).
+- **7 filas libres** entre la laja más alta y lo que pasa por encima (el filo): saltando, la cabeza sube 6,6 filas sobre los pies (3,96 del salto + 2,6 del cuerpo). Con 6, el salto de la laja 8 a la repisa rozaba el filo y, con el juego lento, se quedaba corto.
+- **Nada de alero en un salto obligatorio:** probé subir de la repisa al filo con el salto doble pegada a su punta (6 filas); con la inercia, Kerana se corre unos 7 px hacia la punta mientras sube y se golpea la cabeza contra la cara de abajo del filo (y cae a la red: 20 s). Un escalón de un solo sentido 3 filas sobre la repisa, a la altura de la cara de abajo del filo, y desde ahí 3 filas más: ningún alero en el camino.
+- **Una plataforma que para sobre un piso deja un escalón:** probé un ascensor con la parada de abajo encima de la repisa; cuando sube, queda un hueco de una fila y, si Kerana está ahí, la plataforma baja a través de ella (es de un solo sentido) y no la levanta. Se sacó. Las plataformas van al lado de un piso, nunca metidas en él.
+
+### 14.3 El pozo de la piedra y los hongos
+
+- **Puzzle (forma 1 de S27, en vertical):** la reja cierra el paso; su piedra (permanente) está abajo, en la cámara de un pozo de 10 filas; se baja, se golpea la piedra y se sale con el hongo y el salto doble (rebote 8,5 < 10 < rebote + doble 11,3). Roca sobre la reja: no se salta. Con la reja cerrada no hay otro camino (el techo de la peña separa el paso de lo de arriba). Al pozo se entra hacia su fondo, lejos del hongo: al caer derivando sobre el hongo, rebota (con el juego lento el rebote sube más, 144 px a 30 Hz, y llega al borde sin el salto doble).
+- **Sin muesca en el techo:** el rebote + salto doble roza el techo del paso y pasa igual el borde por 38 px. La muesca que había abierto agujereaba la red de arriba (caerse de la laja 5 mandaba de vuelta al pozo).
+- **Hongo de un uso → puente:** el puente a 8 filas del sombrero (un empujón, 6,7, no llega; con el salto doble, 9,7, sí) y a 9 del piso (el salto doble llega a 7 de una plataforma de un solo sentido). Con el puente a 9 filas del sombrero el margen era de 11 px.
+- **Hongo dormido → balsa:** la balsa 8 filas sobre el piso del hongo (el salto doble llega a 7): sin el tajo cargado no se sube.
+
+### 14.4 El lugar secreto: la gruta tras la cascada
+
+- **Forma propia:** no es un pilar, una cueva en la ladera, un interior con reja ni un claro al que se cae por un hueco: es una **cornisa detrás del agua**. La cascada (`rect Waterfall`, por código: velo translúcido, hilos que caen y espuma; delante de Kerana y sin choque) cae del borde de la cumbre 1, donde todos se detienen a despertar el hongo dormido; a través del agua se ven la cornisa y las luciérnagas. El ascensor que sube y baja al lado de la cascada es la otra pista.
+- **Se entra cayendo** por el borde de la cumbre (la caída deja en la cornisa) y **se sale con el ascensor**. Adentro: la Luz de Arasy, dos guavirá y la pluma B sobre una columna de fardo, con el techo justo encima: no hay lugar para pararse arriba; se rompe la columna (tajo normal) y la pluma cae.
+- **Proporción:** ≈ 15 s por la pluma B, una Luz de Arasy y dos guavirá (l4 y l5 dan algo más por 36-64 s, casi todo espera).
+
+### 14.5 Errores de S31 y su corrección
+
+1. **Taitetu dibujados dentro de la roca** (en la fila del piso): los enemigos van en la fila de arriba del piso.
+2. **El puente del hongo de un uso a 9 filas del sombrero:** 11 px de margen (155 contra 144). A 8.
+3. **La muesca sobre el pozo** agujereaba la red de B1 (§14.3): cerrada.
+4. **El pasillo de la pluma C con 2 filas libres** (Kerana mide 2,6): 3.
+5. **La cámara del fondo de la gruta** abría un agujero desde la superficie de la cumbre: se sacó; la pluma pasó a la columna de fardo.
+6. **El ascensor metido en la repisa** (§14.2): se sacó.
+7. **La grieta con viento de 6 de ancho:** saltando al final de la calma se caía adentro. 5.
+8. **El piloto en el juego lento** (tres navegadores a la vez o la CPU frenada, ≈ 10 FPS): se pasa ≈ 2 tiles de donde frena. El `run` al rellano saltaba el "hueco" de la laja 5 cuando no estaba (`noGapJump` y frenar antes); al ascensor de la cascada se subía "recién salido", ya una fila arriba, y caía al pozo (`strict` en el paso `mover`: solo llegando o esperando con ≥ 0,4 s); la salida del ascensor saltaba en una ventana de 10 px (un `jumpTo` aparte).
+9. **`jumpTo` a un fondo bajo un alero:** el piloto saltaba en el lugar. El destino va en la columna del pozo.
+10. **La cumbre 2 se alcanzaba sin el hongo dormido:** desde la punta del ascensor de la cascada, salto + salto doble en el ápice + dash avanza ≈ 171 px subiendo 6 filas, y la cumbre estaba a 162. La simulación exagerada lo marcó (no sirve para decidirlo: vuela sin límite) y la física del juego lo confirmó. Cumbre 2 tiles más allá (194 px); `tests/l6.test.ts` lo vigila con la misma integración que Arcade.
+11. **El salto al filo junto al alero** (§14.2): un escalón en vez del salto doble.
+12. **6 filas libres sobre la laja 8** (§14.2): el filo pasó a 2 de grueso (7 libres).
+13. **El fuego de la antesala no era el último:** `boss=1` empieza en el fuego de id más alto y los ids salen por filas; el fuego 1 (fila 44) quedaba más abajo que la antesala (fila 41) y `boss=1` empezaba en el patio. Antesala y arena 4 filas más abajo. En un nivel con partes más bajas que la antesala, mirar esto.
+14. **Nada pesado en paralelo con el smoke:** tests, `tsc` u otros pilotos al mismo tiempo bajan los FPS y traban pilotos que andan bien (una corrida se trabó en l3 y l4 así). Y un fallo que se repite con los mismos números (11 caídas, ≈ 202 s) no es carga: es un camino del piloto. Para saber si es de la sesión, correr el mismo plan sobre el commit base en un worktree (así se vio que el de l5 venía de S30).
+
+### 14.6 Cómo se comprobó el alcance
+
+- **Cada premio, en el juego:** el plan principal recoge las cinco guavirá del camino y la Luz de Arasy del fuego 2 (y la guavirá de la antesala); el del secreto, la Luz de Arasy, dos guavirá y la pluma B de la gruta; dos planes cortos, la pluma A (tajo cargado en la quebrada) y la pluma C (la ruta alta de la persecución, sin que Ao Ao la alcance). Todos en el smoke: 13 de 13.
+- **Lo que no debe alcanzarse, con el modelo exagerado de la red** (aire sin límite horizontal, plataformas móviles como piso en todo su recorrido; script del scratchpad, fuera del repo): con la reja cerrada no se pasa del paso (x 99); sin el hongo de un uso no se sale del patio; sin el hongo del pozo no se sale del pozo; sin romper las rocas no se pasa la columna del paso ni se llega a la pluma A. Cuando el modelo "llega" volando por un túnel o sobre un hueco de 20 tiles (sin salto doble al puente, sin despertar el hongo dormido a la cumbre 2), se decide con la física del juego: el puente está a 8 filas del sombrero del hongo de un uso (un empujón sube 6,7) y la cumbre 2, fuera del salto doble + dash (arriba).

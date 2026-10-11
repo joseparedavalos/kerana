@@ -40,7 +40,7 @@
 //   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
 //   hueco, salta hacia él.
 //   S31: un paso mover con strict espera a la plataforma en la punta (no recién salida): un ascensor que sube desde
-//   el piso de al lado.
+//   el piso de al lado. jumpTo con runup (x) vuelve primero hasta esa x para tomar carrera (un salto largo).
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
@@ -400,6 +400,15 @@ export function installPilot(plan) {
     if (grounded() && Math.abs(b.bottom - row * T) <= 3 && Math.abs(b.center.x - tx) < T) {
       move(0);
       return true;
+    }
+    // S31: con runup (x), primero vuelve hasta ahí para tomar carrera (también después de una caída: reaparece en el borde).
+    if (s.runup !== undefined && st.phase === 'start' && grounded() && st.jumpMs <= 0) {
+      const back = s.runup * T;
+      if (Math.sign(tx - back) * (b.center.x - back) > 3) {
+        seek(back);
+        return false;
+      }
+      st.phase = 'go';
     }
     if (!grounded() || st.jumpMs > 0) {
       seek(tx);

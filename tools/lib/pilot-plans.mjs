@@ -384,11 +384,19 @@ export const L5_MAIN = {
     { run: 1, untilX: 148 },
     { bounce: [151, 15], onto: [155, 16], reach: 5 },
     { mover: [155, 16], dir: 1, exit: 'none' },
-    { mover: [165, 10], at: 'end', dir: 1, exit: 'walk' },
+    // S31: saltando (hay 1 tile de hueco entre la punta de la balsa y la copa 5): bajando caminando, a veces quedaba en
+    // el borde, la balsa se iba y caía por el hueco (2 de 5 corridas del smoke en S31, también con el código de S30).
+    { mover: [165, 10], at: 'end', dir: 1, exit: 'jump', landX: 170.5 },
     { run: 1, untilX: 174.5 },
     { charge: 1 },
+    // S31: el hueco del ascensor del claro (x 194-196) con un salto a la copa 6: el run apuntaba a veces al ascensor que
+    // bajaba y caía con él al claro (y el paso terminaba adentro, en x 204,5).
+    { run: 1, untilX: 192.4 },
+    { jumpTo: [198.5, 14] },
     { run: 1, untilX: 202.5 },
-    { jumpTo: [219, 14], double: true, dash: true },
+    // S31: con carrera desde x 201,5 (si el paso anterior la dejaba en el borde, saltaba desde quieta, no llegaba y
+    // reaparecía en el mismo borde: 176 caídas en una corrida).
+    { jumpTo: [219, 14], double: true, dash: true, runup: 201.5 },
     { mover: [224, 14], dir: 1, exit: 'walk' },
     { run: 1, untilX: 236 },
     { jumpTo: [239, 30] },
