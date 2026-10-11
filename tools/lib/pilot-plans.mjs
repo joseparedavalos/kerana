@@ -419,7 +419,7 @@ export const L5_SECRET = {
 
 // l6 · Guairá (S31). Ruta principal: la manada, la escalera de lajas, la columna de roca (tajo cargado), el pozo de la
 // piedra (bajar, golpear la piedra, hongo y salto doble), el hongo de un uso del patio, la segunda escalera de lajas
-// hacia la izquierda, el filo (salto doble), la grieta con viento (en la calma), el par de balsas del filo, el hongo
+// hacia la izquierda, el escalón al filo, la grieta con viento (en la calma), el par de balsas del filo, el hongo
 // dormido y el par de balsas sobre la cascada, la cadena ascensor → balsa → balsa, el par de balsas al fuego 2, LA
 // PERSECUCIÓN (por la ruta baja: el cerco, las lajas que se quiebran, la manada, las terrazas), la cadena de bajada, el
 // último par de balsas y la antesala.

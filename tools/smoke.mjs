@@ -15,7 +15,7 @@ const TILE = 16;
 // Piezas de l5 (S30, cabecera de tools/levels/l5.txt).
 const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4 };
 // Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
-const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 5, cria: 2, chasePindos: 2 };
+const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2 };
 
 function findBrowser() {
   const candidates = [process.env.CHROME_PATH];
@@ -1485,9 +1485,11 @@ async function main() {
         const c = s.chase;
         const w = window.__L6_CHASE__;
         if (!c) return;
+        // Los límites de la cámara quedan en el borde en el mismo cuadro (worldView recién se actualiza al dibujar).
         if (c.motor.phase === 'running') {
           w.started = true;
-          w.maxLag = Math.max(w.maxLag, Math.abs(s.cameras.main.worldView.x - c.motor.edgeX));
+          const bnd = s.cameras.main.getBounds();
+          w.maxLag = Math.max(w.maxLag, Math.abs(bnd.x - c.motor.edgeX), Math.abs(bnd.width - 640));
         }
         if (c.motor.phase === 'done') w.ended = true;
       });
@@ -1508,7 +1510,7 @@ async function main() {
     }
     const l6Chase = await l6Run.evaluate(() => ({ ...window.__L6_CHASE__, boundsW: window.__KERANA_DEBUG__.scene.cameras.main.getBounds().width, mapW: window.__KERANA_DEBUG__.scene.map.widthInPixels }));
     check(
-      l6Chase.started && l6Chase.ended && l6Chase.maxLag < 2 && l6Chase.boundsW === l6Chase.mapW,
+      l6Chase.started && l6Chase.ended && l6Chase.maxLag < 0.01 && l6Chase.boundsW === l6Chase.mapW,
       `nivel 6: la persecución larga, la cámara va al borde que avanza y al terminar vuelve a seguir a Kerana (${JSON.stringify(l6Chase)})`,
     );
     console.log(`  l6 (ruta principal): ${(run6.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run6.splits)}`);
