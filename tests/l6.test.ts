@@ -242,9 +242,11 @@ describe('l6: la persecución de Ao Ao (S31)', () => {
     let spikes = 0;
     for (let x = 306; x < fx; x++) if (hazards(x, fy)) spikes++;
     expect(spikes).toBe(1);
-    // A la cornisa se llega desde la copa del pindó 1 (6 filas: salto doble), no desde la ruta baja (9 filas).
-    expect(22 - 13).toBeGreaterThan(7);
-    expect(19 - 13).toBeLessThanOrEqual(7);
+    // A la cornisa se llega desde la copa del pindó 1 con el salto doble (5 filas: con un salto, 4), no desde la ruta baja
+    // (8 filas: el salto doble llega a 7 de una plataforma de un solo sentido).
+    const ledge = fy + 1;
+    expect(19 - ledge).toBe(5);
+    expect(22 - ledge).toBeGreaterThan(7);
   });
 });
 

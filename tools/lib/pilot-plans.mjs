@@ -521,14 +521,14 @@ export const L6_FEATHER_A = {
   ],
 };
 
-// Pluma C de l6 (S31): durante la persecución, la ruta alta. Del pindó 1, salto doble a la cornisa; bajo el techo, el
+// Pluma C de l6 (S31): durante la persecución, la ruta alta. Del pindó 1, salto doble a la cornisa (5 filas); bajo el techo, el
 // dash por encima de la espina; la pluma; y se deja caer a la llegada de las lajas que se quiebran. Empieza en el último
 // rellano antes de la persecución (x 263, fila 16): larga la persecución.
 export const L6_FEATHER_C = {
   steps: [
     { run: 1, untilX: 300.5 },
     { jumpTo: [303.5, 19] },
-    { jumpTo: [307.5, 13], double: true },
+    { jumpTo: [307.5, 14], double: true },
     { dash: 1, from: 314.6 },
     { run: 1, untilX: 323 },
     { run: 1, untilX: 333 },

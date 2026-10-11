@@ -709,22 +709,23 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 |---|---|
 | Lugar | Cordillera del Ybytyruzú (Guairá): roca, pastizales de altura y palmeras pindó |
 | Hora | Atardecer con tormenta; los relámpagos iluminan la escena |
-| Tamaño | ≈ 320 × 30 tiles (incluye la persecución) |
+| Tamaño | 516 × 66 tiles (S31, incluye la persecución) |
 | Idea nueva | La persecución y los refugios (pindó) |
 | Enemigos | `taitetu`, `ao_ao_cria`, `karakara` |
-| Peligros | Rocas que caen (aviso: sombra); viento de cumbre |
+| Peligros | Rocas que caen (aviso: sombra); viento de cumbre; lajas que se quiebran |
 | Música | Tambores rápidos y cuerdas tensas; el aullido "ao, ao" como motivo |
 | Jefe | Ao Ao |
 | Don | Corazón del cerro (+1 corazón; 7 en total) |
 
-**Recorrido**
+**Recorrido** (S31: rediseño con la receta, `docs/RECETA-NIVEL.md` §14; el detalle con x está en la cabecera de `tools/levels/l6.txt`). El cerro se sube en zigzag y se baja huyendo.
 
-- **A. El ascenso (≈ 70 tiles).** Taitetu en manada. *Pluma 1:* en una cornisa sobre la manada.
-- **B. Las cumbres (≈ 70 tiles).** Viento, relámpagos y karakara. *Pluma 2:* en una cumbre a la que se llega con viento a favor.
-- **Checkpoint 1.**
-- **C. La persecución (≈ 90 tiles)** [Núcleo]. La cámara avanza sola; Ao Ao y su manada vienen detrás. Quedarse atrás del borde izquierdo cuesta 1 corazón y devuelve a Kerana al último pindó. **Pindó = refugio:** mientras Kerana está en lo alto de un pindó, la cámara se detiene y la manada da vueltas al pie aullando; en el mito, el pindó tiene un hechizo contra su ferocidad. **Luz de Arasy** antes de la persecución. *Pluma 3:* durante la persecución, en una ruta alternativa arriesgada.
-  - *Alternativa si se recorta:* un tramo normal con la manada patrullando.
-- **Checkpoint 2 (antesala).**
+- **A. La falda y el paso bajo la peña (x 0–112).** Manada de taitetu en la meseta. **La escalera de lajas:** cuatro plataformas que se juntan de a dos, cada una 3 filas más arriba, sobre una quebrada cuyo fondo es una red. Una columna de roca agrietada de 3 × 4 cierra el paso y cae entera con el tajo cargado. **El pozo de la piedra** (puzzle): una reja cierra el paso; su piedra está abajo, en la cámara de un pozo de 10 filas, y se sale con el hongo y el salto doble. El patio: fuego 1 y un hongo de un uso que, con el salto doble, sube al puente. *Pluma 1:* en el fondo de la quebrada, tras una columna de roca agrietada (tajo cargado).
+- **B. La segunda escalera, el filo y las cumbres (x 56–265).** Otra escalera de lajas, hacia la izquierda, sobre el techo de la peña; al filo por un escalón. El filo pasa por encima de las dos escaleras: viento de cumbre en contra sobre una grieta (se salta en la calma), un par de balsas sobre un pozo, karakara y manadas. Las cumbres: un hongo dormido lanza a un par de balsas sobre la garganta de la cascada; ascensor → balsa → balsa; par de balsas. *Pluma 2 (lugar secreto):* **la gruta tras la cascada**: el agua cae del borde de la cumbre 1 y detrás hay una cornisa y una gruta con la Luz de Arasy, dos guavirá y la pluma sobre una columna de fardo bajo el techo. Se entra cayendo por el borde; se vuelve con el ascensor de al lado de la cascada.
+- **Checkpoint 2** (la Luz de Arasy justo antes).
+- **C. La persecución (121 tiles)** [Núcleo; recortada en S4, recuperada en S31]. La cámara avanza sola (72 px/s, la mitad de lo que corre Kerana) y Ao Ao corre en el borde izquierdo de la pantalla. Si Kerana se adelanta, la cámara la sigue: siempre se ven 16 tiles por delante. Quedarse cerca del borde avisa (franja roja, aullido, Ao Ao se adelanta) más de un segundo antes; tocarlo cuesta 1 corazón y devuelve a Kerana al último pindó (antes del primero, a la largada: la persecución vuelve a empezar). **Pindó = refugio:** mientras Kerana está en lo alto de un pindó la cámara se detiene y Ao Ao va y viene en el borde aullando; en el mito, el pindó tiene un hechizo contra su ferocidad. Tres tramos: terrazas y un cerco de fardo; lajas que se quiebran sobre un pozo y un taitetu que embiste; terrazas, un pozo con karakara y el paso de roca donde Ao Ao no entra. *Pluma 3:* la ruta alta arriesgada, del pindó 1 a una cornisa con una espina bajo un techo (dash).
+  - Con 0 corazones, Kerana vuelve al checkpoint 2 y la persecución empieza de nuevo. Terminada, no se repite.
+- **D. A la meseta.** Checkpoint 3, una cadena de bajada (ascensor, balsa, ascensor, balsa) y un último par de balsas.
+- **Checkpoint 4 (antesala).**
 - **Arena: la meseta.** Dos pindó (uno a cada lado) y dos rocas grandes.
 
 **Jefe: Ao Ao**. 15 golpes.
@@ -1235,8 +1236,9 @@ La luz de la onda del tajo cargado enciende un Switch hasta 6 tiles adelante aun
 | `Sign` | Punto | `textKey` |
 | `BossArena` | Rectángulo | `boss` |
 | `LevelExit` | Rectángulo | — |
-| `ChaseZone` | Rectángulo | `speed` (persecución de N6) |
+| `ChaseZone` | Rectángulo | `speed` (px/s; por defecto `GAMEPLAY.chase.speed`): persecución de N6 (S31). La cámara avanza sola desde el borde izquierdo de la zona hasta el derecho; los `Pindo` de adentro son los refugios |
 | `Pindo` | Rectángulo | — (refugio de N6) |
+| `Waterfall` | Rectángulo | — (S31): cascada por código, delante de Kerana y sin choque |
 
 - **Autotile:** si el tileset del bioma sigue el orden de 16 variantes descrito en `docs/ASSETS.md`, el script elige bordes y esquinas automáticamente; si no, usa un solo tile y el autor decora en Tiled.
 
@@ -1331,7 +1333,7 @@ Si el gasto supera la meta (ver el semáforo en `docs/PLAN.md`), se recorta en e
 
 1. ~~Jefe secreto Tau.~~ **[Recortado en S4; vuelve en S12c como jefe final para todos, §7]**
 2. ~~Traducción al inglés.~~ **[Recortado en S4; vuelve en S12d: el juego está completo en inglés (`src/i18n/en.ts`)]**
-3. Persecución del Ao Ao (queda solo la arena). **[RECORTADO desde S4: idem]**
+3. ~~Persecución del Ao Ao (queda solo la arena).~~ **[Recortado en S4; vuelve en S31: el tramo C de l6, §6.6]**
 4. ~~Tercera fase de los jefes 3 a 6.~~ **[Marcado como recortado en S4, pero no se aplicó: Moñái, Jasy Jatere, Kurupi y Ao Ao tienen 3 fases (S8–S11; revisado en S16, docs/REVIEW.md)]**
 5. Controles táctiles. **[RECORTADO desde S3: idem]**
 6. Parallax de 3 capas (queda 1). **[RECORTADO desde S3: idem]**
