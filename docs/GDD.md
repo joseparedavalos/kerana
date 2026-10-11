@@ -751,23 +751,25 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 
 | | |
 |---|---|
-| Lugar | Asunción de noche: calles del centro con faroles y, al final, el Cementerio de la Recoleta (mausoleos, ángeles de piedra, cruces de hierro) |
+| Lugar | Asunción de noche: las calles y los tejados del centro, la catedral con su campanario y, al final, el Cementerio de la Recoleta (mausoleos, criptas, cruces de hierro) |
 | Hora | Medianoche, luna llena entre nubes, niebla |
-| Tamaño | ≈ 280 × 30 tiles |
-| Idea nueva | Luz y oscuridad: Kerana lleva un halo de luz, los faroles lo amplían y los póra solo son vulnerables iluminados |
+| Tamaño | 540 × 70 tiles (S32) |
+| Idea nueva | Luz y oscuridad **como mecánica**: los faroles son disparadores (abren rejas, despiertan andamios y losas, llaman ascensores); unos se apagan solos; la onda del tajo cargado los enciende de lejos. Los póra solo se ven y se golpean con luz |
 | Enemigos | `pora`, `jagua_hu`, `mbopi` |
-| Peligros | Oscuridad total en algunos tramos; rejas con puntas |
+| Peligros | Oscuridad total en la torre, el sótano y el camposanto; pozos; espinas |
 | Música | Campanas lejanas, violín y arpa en tono menor |
 | Jefe | Luisón |
 | Don | — (final) |
 
-**Recorrido**
+**Recorrido** (S32: rediseño con la receta, `docs/RECETA-NIVEL.md` §15; el detalle con x está en la cabecera de `tools/levels/l7.txt`). El nivel más largo y exigente antes de Yvága: tres secciones, cada una con su idea.
 
-- **A. Las calles (≈ 70 tiles).** Faroles que se encienden al tocarlos (hacen de checkpoint y de luz); mbopi. *Pluma 1:* sobre un balcón.
-- **B. La entrada al camposanto (≈ 70 tiles).** Póra que atraviesan paredes; rejas. *Pluma 2:* en un rincón que solo se ve al encender un farol.
+- **Los faroles** (S32). `point Lantern` con `target=<id>` da energía a una reja o a una plataforma mientras está encendido (como un Switch); con `ms=<n>` se apaga solo, parpadeando el último segundo y medio, y se vuelve a encender tocándolo. Se encienden al tocarlos, con el sable o con la onda del tajo cargado (de lejos y a través de una pared). Apagados muestran una brasa, para encontrarlos en la oscuridad. Dos reglas: **nunca un salto a ciegas** (en la oscuridad, todo pozo de más de 4 tiles tiene una plataforma que lo cruza o un farol que alumbra la llegada) y **nunca sin forma de volver a encender la luz** (cada farol temporizado está sobre un piso, al lado de donde se lo necesita).
+- **A. Las calles (x 0–152, noche con luna).** El farol del portón abre la reja del zaguán (se enseña sin riesgo, con cartel). En el patio, un farol de pared que solo se toca parada en el andamio lo despierta. Los tejados: huecos con mbopi, un patio de luz con un toldo que devuelve al tejado, jagua hũ. El mercado: un par de carros sobre la zanja, la lona de mercado (toldo de un uso) y el salto doble sobre el muro del cabildo. *Pluma 1 (lugar secreto):* **el sótano de la casona**: una puerta de fardo en la fachada deja escapar la luz de un farol encendido; adentro, una escalera, el sótano oscuro bajo la calle, un póra, el piso podrido (tablones que se quiebran sobre un pozo), dos guavirá, la Luz de Arasy y la pluma. Se sale por la trampilla de la vereda.
 - **Checkpoint 1.**
-- **C. El laberinto de mausoleos (≈ 80 tiles).** Oscuridad; techos de mausoleos; jagua hũ. **Luz de Arasy** en el tramo más oscuro. *Pluma 3:* en lo alto de un mausoleo.
-- **Checkpoint 2 (antesala).** Un farol y un guavirá.
+- **B. La catedral (x 153–291).** **Puzzle 1:** el farol de la puerta de la torre solo se toca parada en el andamio, que la sube hasta la ventana: la piedra se ve adentro y solo la onda la alcanza; la piedra abre la reja de abajo. *Pluma 2:* en el balcón del obispado, bajo un techo bajo y tras una espina (dash). **La ronda del farolero** (zona de ritmo): la torre por dentro, a oscuras; cinco ascensores que llama un farol temporizado: al encenderlo, el ascensor baja y espera; cuando el farol se apaga, sube con Kerana. Si no se subió a tiempo, se vuelve a encender. Póra y mbopi en la subida. Los tejados de la catedral: tres ascensores que bajan y dos pares de balsas.
+- **Checkpoint 2.**
+- **C. El camposanto (x 292–479, todo oscuro).** La fosa: un farol despierta la losa que la cruza. El farol del otro lado: la onda lo enciende desde el borde de un pozo y su luz muestra dónde caer (un póra encima solo se ve con esa luz). **Puzzle 2, la cripta:** la reja del panteón la abre un farol de la cripta, tras una pared de roca y un póra; se baja por una fosa abierta y el farol de abajo despierta el ascensor que vuelve a subir. **Luz de Arasy** junto al checkpoint 3. Un toldo plegado (dormido) al pie de un mausoleo de 8 filas, un par de losas sobre la fosa común, la capilla. *Pluma 3:* la columna del ángel: desde el ascensor, la onda enciende el farol de la hornacina de la capilla y el ascensor sube a la cornisa.
+- **Checkpoint 4 (antesala).** Un farol y un guavirá.
 - **Arena: la plaza central del cementerio.** Mausoleos a los lados (sus techos son plataformas) y lápidas.
 - **Tono:** respetuoso. Luisón es quien perturba la paz; al liberarlo, las velas del cementerio se encienden solas.
 
@@ -1231,7 +1233,7 @@ La luz de la onda del tajo cargado enciende un Switch hasta 6 tiles adelante aun
 | `WindZone` | Rectángulo | `forceX`, `periodMs` |
 | `SleepFog` | Rectángulo | — |
 | `DarkZone` | Rectángulo | — |
-| `Lantern` | Punto | `id` (farol: checkpoint y luz) |
+| `Lantern` | Punto | `lit` (empieza encendido) · S32: `target` (reja o Mover que maneja, como un Switch) · `ms` (se apaga solo; 0 o nada = permanente) |
 | `FallingHazard` | Punto | `delayMs` (estalactita, teja, roca) |
 | `Sign` | Punto | `textKey` |
 | `BossArena` | Rectángulo | `boss` |
