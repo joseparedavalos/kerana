@@ -315,6 +315,8 @@ export const L4_SECRET = {
     { run: 1, wait: [224, 30], untilX: 233.6 },
     { mover: [242, 36], dir: 1, exit: 'walk' },
     { jumpTo: [252, 30], double: true },
+    // Hasta la pared: la pluma está en x 252 y, si cae en x 251, solo se lleva la Luz de Arasy (S31: pasó en 1 de 15 smokes).
+    { run: 1, untilX: 252.4 },
     { jumpTo: [249.5, 34] },
     { mover: [242, 36], at: 'end', dir: -1, exit: 'jump', landX: 233, double: true },
     { run: -1, untilX: 228.5 },
@@ -417,7 +419,11 @@ export const L5_SECRET = {
   aim: true,
   steps: [
     { mover: [194, 14], dir: 1, exit: 'walk' },
-    { run: 1, untilX: 202.5 },
+    // La columna de fardo, con tajo cargado desde antes de llegar (S31): corriendo, a veces llegaba antes de que el tajo
+    // la rompiera, la tomaba por una pared y, con el salto doble del guardado, saltaba el muro del claro (pozo en x 231).
+    { run: 1, untilX: 200.8 },
+    { charge: 1 },
+    { run: 1, untilX: 203.2 },
     { run: -1, untilX: 193.6 },
     { bounce: [191, 35], landX: 188, landTop: 28 },
     { jumpTo: [193.6, 36] },
