@@ -581,6 +581,65 @@ export const GAMEPLAY = {
     trunkWidth: 5,
   },
 
+  /**
+   * Persecución de Ao Ao (GDD §6.6, S31; `src/systems/chaseLogic.ts`). En un `rect ChaseZone` la cámara avanza sola y
+   * Ao Ao corre en el borde izquierdo. Quedarse cerca del borde avisa (franja roja, aullido, Ao Ao se adelanta);
+   * tocarlo cuesta `damage.chase` y devuelve a Kerana al último pindó del tramo (o a la largada, si todavía ninguno).
+   * En lo alto de un pindó el borde se detiene. Kerana corre a `player.runSpeed` (150).
+   */
+  chase: {
+    /** Velocidad del borde (px/s) si el `rect ChaseZone` no trae `speed`. */
+    speed: 72,
+    /** Kerana puede adelantarse hasta esta fracción de la vista; más allá, el borde la sigue (ve 16 tiles por delante). */
+    aheadFrac: 0.6,
+    /** Franja de aviso desde el borde (px): parada, ≈ 1,5 s antes de que la alcance. */
+    warnPx: 112,
+    /** La alcanza cuando el lado izquierdo del cuerpo llega a esta distancia del borde (px). */
+    catchPx: 0,
+    /** Al volver a un pindó, el borde queda esta distancia detrás de él (px). */
+    restartLeadPx: 240,
+    /** Ao Ao: centro del cuerpo respecto del borde (px) al correr y al avisar (se adelanta, con la boca abierta). */
+    aoAoOffsetPx: 6,
+    aoAoLungePx: 34,
+    /** Suavizado de la posición de Ao Ao (0 a 1 por frame): en x y en y (sigue el terreno de su columna). */
+    aoAoLerp: 0.18,
+    aoAoYLerp: 0.35,
+    /** En el refugio va y viene en el borde: amplitud (px) y período (ms por radián). */
+    aoAoPacePx: 10,
+    aoAoPaceMs: 260,
+    /** Polvo a sus pies mientras corre: en promedio una partícula cada tanto (ms). */
+    aoAoDustEveryMs: 120,
+    /** Aullidos durante el aviso y en el refugio (ms entre aullidos). */
+    howlEveryMs: 1600,
+    /** Sacudón al largar (el sobresalto). */
+    startShakeMs: 320,
+    startShakeIntensity: 0.008,
+    /** Franja roja del aviso: ancho (px de la vista), color y opacidad máxima. */
+    warnBandPx: 90,
+    warnColor: 0xb8322a,
+    warnAlpha: 0.55,
+    /** Latido de la franja (ms por radián). */
+    warnPulseMs: 120,
+    /** Al terminar, Ao Ao se vuelve por donde vino a esta velocidad (px/s) y se desvanece (ms). */
+    leaveSpeed: 120,
+    leaveFadeMs: 1400,
+  },
+
+  /**
+   * Cascada (S31, el salto de l6): decoración por código delante de Kerana, sin choque. Detrás puede haber una cornisa.
+   */
+  waterfall: {
+    color: 0xcfe8f0,
+    alpha: 0.5,
+    /** Hilos de agua que caen (cantidad por tile de ancho, velocidad en px/s y largo en px). */
+    streaksPerTile: 3,
+    streakSpeed: 150,
+    streakLength: 22,
+    streakAlpha: 0.75,
+    /** Espuma al pie (partículas por segundo). */
+    foamPerSec: 14,
+  },
+
   /** Vacas sueltas de Capiatá (extra del nivel 4): caminan despacio, mugen y sirven de plataforma. */
   cow: {
     width: 30,
@@ -927,6 +986,8 @@ export const GAMEPLAY = {
     water: 1,
     /** Daño al salir de un encierro con la red de seguridad (S23): como una caída a un pozo. */
     trap: 1,
+    /** Ao Ao alcanza a Kerana en la persecución (S31): como una caída a un pozo. */
+    chase: 1,
   },
 
   /**

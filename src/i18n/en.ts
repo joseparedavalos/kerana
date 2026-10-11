@@ -75,7 +75,7 @@ export const en: Record<TextKey, string> = {
   'hint.l4.double': '{jump} again in mid-air: double jump',
   'hint.l4.wave': 'A stone sealed in the wall: only the light of the Charged Slash reaches it',
   'hint.l6.taitetu': 'A herd of taitetu: jump over them or wait up high',
-  'hint.l6.viento': 'Wind at your back: you jump farther',
+  'hint.l6.viento': 'Summit wind: jump when it dies down',
   'hint.l6.pindo': "Pindó palm: you're safe up there",
   'hint.l6.antesala': 'Ao Ao gets dizzy when it hits a rock',
   'hint.l7.faroles': 'Touch the lanterns to light them',

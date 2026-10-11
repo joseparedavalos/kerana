@@ -119,6 +119,7 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapSource: 'ascii',
     biome: 'montana',
     backgrounds: { far: 'bg_l6_far' },
+    terrainShell: 3,
     musicKey: '',
     boss: 'ao_ao',
     gift: 'heart_up',

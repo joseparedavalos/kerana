@@ -467,3 +467,18 @@ export class AoAo extends Boss {
     this.scene.time.delayedCall(GAMEPLAY.boss.hitFlashMs, () => this.body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY));
   }
 }
+
+/**
+ * Ao Ao corriendo, sin la lógica del jefe (la persecución de l6, S31): el placeholder de la carrera con el sprite real
+ * encima si existe. Mira a la derecha.
+ */
+export function addAoAoRunner(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Image {
+  ensureTextures(scene);
+  const img = scene.add.image(x, y, RUN_TEXTURE).setOrigin(0.5, 1).setDepth(5);
+  skinIfAvailable(scene, img, 'ao_ao', {
+    anim: 'ao_ao_run',
+    sourceFacesRight: true,
+    idleTimeScale: GAMEPLAY.sprites.aoAo.idleTimeScale,
+  });
+  return img;
+}

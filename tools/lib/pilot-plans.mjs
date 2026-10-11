@@ -315,6 +315,8 @@ export const L4_SECRET = {
     { run: 1, wait: [224, 30], untilX: 233.6 },
     { mover: [242, 36], dir: 1, exit: 'walk' },
     { jumpTo: [252, 30], double: true },
+    // Hasta la pared: la pluma está en x 252 y, si cae en x 251, solo se lleva la Luz de Arasy (S31: pasó en 1 de 15 smokes).
+    { run: 1, untilX: 252.4 },
     { jumpTo: [249.5, 34] },
     { mover: [242, 36], at: 'end', dir: -1, exit: 'jump', landX: 233, double: true },
     { run: -1, untilX: 228.5 },
@@ -384,11 +386,19 @@ export const L5_MAIN = {
     { run: 1, untilX: 148 },
     { bounce: [151, 15], onto: [155, 16], reach: 5 },
     { mover: [155, 16], dir: 1, exit: 'none' },
-    { mover: [165, 10], at: 'end', dir: 1, exit: 'walk' },
+    // S31: saltando (hay 1 tile de hueco entre la punta de la balsa y la copa 5): bajando caminando, a veces quedaba en
+    // el borde, la balsa se iba y caía por el hueco (2 de 5 corridas del smoke en S31, también con el código de S30).
+    { mover: [165, 10], at: 'end', dir: 1, exit: 'jump', landX: 170.5 },
     { run: 1, untilX: 174.5 },
     { charge: 1 },
+    // S31: el hueco del ascensor del claro (x 194-196) con un salto a la copa 6: el run apuntaba a veces al ascensor que
+    // bajaba y caía con él al claro (y el paso terminaba adentro, en x 204,5).
+    { run: 1, untilX: 192.4 },
+    { jumpTo: [198.5, 14] },
     { run: 1, untilX: 202.5 },
-    { jumpTo: [219, 14], double: true, dash: true },
+    // S31: con carrera desde x 201,5 (si el paso anterior la dejaba en el borde, saltaba desde quieta, no llegaba y
+    // reaparecía en el mismo borde: 176 caídas en una corrida).
+    { jumpTo: [219, 14], double: true, dash: true, runup: 201.5 },
     { mover: [224, 14], dir: 1, exit: 'walk' },
     { run: 1, untilX: 236 },
     { jumpTo: [239, 30] },
@@ -409,10 +419,136 @@ export const L5_SECRET = {
   aim: true,
   steps: [
     { mover: [194, 14], dir: 1, exit: 'walk' },
-    { run: 1, untilX: 202.5 },
+    // La columna de fardo, con tajo cargado desde antes de llegar (S31): corriendo, a veces llegaba antes de que el tajo
+    // la rompiera, la tomaba por una pared y, con el salto doble del guardado, saltaba el muro del claro (pozo en x 231).
+    { run: 1, untilX: 200.8 },
+    { charge: 1 },
+    { run: 1, untilX: 203.2 },
     { run: -1, untilX: 193.6 },
     { bounce: [191, 35], landX: 188, landTop: 28 },
     { jumpTo: [193.6, 36] },
     { mover: [194, 14], at: 'end', dir: 1, exit: 'walk' },
+  ],
+};
+
+// l6 · Guairá (S31). Ruta principal: la manada, la escalera de lajas, la columna de roca (tajo cargado), el pozo de la
+// piedra (bajar, golpear la piedra, hongo y salto doble), el hongo de un uso del patio, la segunda escalera de lajas
+// hacia la izquierda, el escalón al filo, la grieta con viento (en la calma), el par de balsas del filo, el hongo
+// dormido y el par de balsas sobre la cascada, la cadena ascensor → balsa → balsa, el par de balsas al fuego 2, LA
+// PERSECUCIÓN (por la ruta baja: el cerco, las lajas que se quiebran, la manada, las terrazas), la cadena de bajada, el
+// último par de balsas y la antesala.
+export const L6_MAIN = {
+  aim: true,
+  wind: true,
+  hitSwitches: [[88, 54]],
+  // Dejarse caer al pozo de la piedra (no saltarlo) y no saltar desde el borde del rellano si la laja 5 no está.
+  noGapJump: [
+    [89, 93],
+    [95.5, 98],
+  ],
+  splits: [
+    ['fuego 1 x 105', 105],
+    ['el filo (fila 17)', 62, 18],
+    ['cumbre 2 x 188', 188, 10],
+    ['fuego 2 x 262', 262],
+    ['fin de la persecución x 387', 387],
+    ['antesala x 452', 452],
+  ],
+  steps: [
+    { run: 1, untilX: 32.5 },
+    { mover: [34, 57], dir: 1, exit: 'none' },
+    { mover: [48, 54], at: 'end', dir: 1, exit: 'none' },
+    { mover: [52, 51], dir: 1, exit: 'none' },
+    { mover: [66, 48], at: 'end', dir: 1, exit: 'jump', landX: 71.5 },
+    { run: 1, untilX: 78.5 },
+    { charge: 1 },
+    // Salta adentro del pozo hacia su fondo (lejos del hongo, x 95) y va a la piedra.
+    { jumpTo: [93, 55] },
+    { run: -1, untilX: 89.6 },
+    { bounce: [95, 54], landX: 97.5, landTop: 45, double: true },
+    { run: 1, untilX: 106 },
+    { bounce: [110, 44], landX: 108, landTop: 36, double: true },
+    { run: -1, untilX: 97.6 },
+    { mover: [93, 35], dir: -1, exit: 'none' },
+    { mover: [79, 32], at: 'end', dir: -1, exit: 'none' },
+    { mover: [75, 29], dir: -1, exit: 'none' },
+    { mover: [61, 26], at: 'end', dir: -1, exit: 'jump', landX: 57.5 },
+    { jumpTo: [56, 20] },
+    { jumpTo: [61.5, 17] },
+    { run: 1, untilX: 126.4 },
+    { mover: [128, 17], dir: 1, exit: 'none' },
+    { mover: [139, 17], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 156.5 },
+    { charge: 1 },
+    { bounce: [158, 14], onto: [157, 7], reach: 5 },
+    { mover: [157, 7], dir: 1, exit: 'none' },
+    { mover: [180, 7], at: 'end', dir: 1, exit: 'jump', landX: 188.5 },
+    { run: 1, untilX: 205.5 },
+    { mover: [208, 9], dir: 1, exit: 'none' },
+    { mover: [217, 14], at: 'end', dir: 1, exit: 'none' },
+    { mover: [221, 14], dir: 1, exit: 'jump', landX: 231.5 },
+    { run: 1, untilX: 239.5 },
+    { mover: [241, 14], dir: 1, exit: 'none' },
+    { mover: [254, 14], at: 'end', dir: 1, exit: 'jump', landX: 259.5 },
+    { run: 1, untilX: 306.5 },
+    { jumpTo: [313.5, 22] },
+    { jumpTo: [319.5, 22] },
+    { jumpTo: [325.5, 22] },
+    { jumpTo: [331.5, 22] },
+    { run: 1, untilX: 399.5 },
+    { mover: [401, 30], dir: 1, exit: 'none' },
+    { mover: [410, 35], at: 'end', dir: 1, exit: 'none' },
+    { mover: [414, 35], dir: 1, exit: 'none' },
+    { mover: [423, 40], at: 'end', dir: 1, exit: 'jump', landX: 428.5 },
+    { run: 1, untilX: 430.4 },
+    { mover: [432, 40], dir: 1, exit: 'none' },
+    { mover: [442, 40], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilFight: true },
+  ],
+};
+
+// Lugar secreto de l6 (S31), la gruta tras la cascada, desde la cumbre 1 (x 163, fila 15): se deja caer por el borde a
+// través de la cascada hasta la cornisa, entra a la gruta (Luz de Arasy y una guavirá), rompe la columna de fardo (la
+// pluma B cae) y sigue hasta la otra guavirá; vuelve y sube en el ascensor de la cascada a la cumbre 1.
+export const L6_SECRET = {
+  aim: true,
+  // Dejarse caer por el borde de la cumbre (no saltar la garganta).
+  noGapJump: [[160, 168]],
+  steps: [
+    { run: 1, untilTop: 19 },
+    { run: -1, untilX: 157 },
+    { run: -1, untilX: 151.5 },
+    // Frena lejos del borde de la cornisa (con el juego lento se pasa) y espera el ascensor abajo.
+    { run: 1, untilX: 167.2 },
+    { mover: [171, 26], dir: 1, strict: true, exit: 'none' },
+    { jumpTo: [163.5, 15] },
+  ],
+};
+
+// Pluma A de l6 (S31): en el fondo de la quebrada (la red de la escalera de lajas), tajo cargado a la columna de roca
+// agrietada de la pared y la pluma del nicho. Empieza parada en el fondo (x 66, fila 62).
+export const L6_FEATHER_A = {
+  steps: [
+    { run: 1, untilX: 67.4 },
+    { charge: 1 },
+    { run: 1, untilX: 71.6 },
+  ],
+};
+
+// Pluma C de l6 (S31): durante la persecución, la ruta alta. Del pindó 1, salto doble a la cornisa (5 filas); bajo el techo, el
+// dash por encima de la espina; la pluma; y se deja caer a la llegada de las lajas que se quiebran. Empieza en el último
+// rellano antes de la persecución (x 263, fila 16): larga la persecución.
+export const L6_FEATHER_C = {
+  steps: [
+    { run: 1, untilX: 300.5 },
+    { jumpTo: [304, 19] },
+    // Salta parada en la copa (destino a menos de 2,5 tiles), no desde el borde.
+    { jumpTo: [306.4, 14], double: true },
+    // El dash empieza pegado a la espina: con el juego muy lento el último cuadro del dash ya va a paso de carrera y,
+    // desde 314.6, a veces terminaba intangible encima de ella. Si igual la toca, reaparece en el pindó y vuelve a saltar
+    // (sin retryFrom caminaba desde la copa hacia el dash y caía al pozo una y otra vez: 31 caídas).
+    { dash: 1, from: 315.2, retryFrom: 1 },
+    { run: 1, untilX: 323 },
+    { run: 1, untilX: 333 },
   ],
 };
