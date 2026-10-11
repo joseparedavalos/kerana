@@ -1241,7 +1241,7 @@ async function main() {
       claro.done && claro.respawns === 0 && claro.feathers === claro0.feathers + 1 && claro0.pickups - claro.pickups === 5 && claro.feet === 14 && claro.x >= 197,
       `nivel 5: el ascensor del hueco baja al claro, la Luz de Arasy, tres guavirá y la pluma B, y de vuelta a la copa (${JSON.stringify({ ...claro0, ...claro })})`,
     );
-    if (!claro.done) console.log((await l5Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    if (!claro.done || claro.respawns > 0) console.log((await l5Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
     console.log(`  l5 (el claro): ${(claro.timeMs / 1000).toFixed(1)} s de juego desde la copa 6 hasta volver a ella`);
     await l5Cave.close();
 
