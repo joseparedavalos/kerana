@@ -205,6 +205,7 @@ export class LevelScene extends Phaser.Scene {
   private readonly gateBlockers: Phaser.Geom.Rectangle[] = [];
   /** Switch golpeados en este frame (arreglo reutilizado). */
   private readonly struck: Switch[] = [];
+  private readonly struckLanterns: Lantern[] = [];
   /** Oscuridad del nivel 7 (GDD §4.8): solo en los niveles con `dark`. */
   private darkness?: Darkness;
   private backdrop!: LevelBackdrop;
@@ -790,9 +791,10 @@ export class LevelScene extends Phaser.Scene {
     if (!darkness) return;
     darkness.update(this.player.x, this.player.y - this.player.body.height / 2, deltaMs);
     for (const lantern of this.lanterns) {
-      if (lantern.lit || !Phaser.Geom.Rectangle.Overlaps(lantern.zone, this.playerRect)) continue;
-      lantern.setLit(true);
-      AudioManager.play('lantern');
+      lantern.update(deltaMs);
+      if (!Phaser.Geom.Rectangle.Overlaps(lantern.zone, this.playerRect)) continue;
+      // S32: tocarlo lo enciende y, si es temporizado, mantiene su cuenta mientras Kerana está al lado.
+      this.lightLantern(lantern);
     }
     for (const enemy of this.enemies) {
       if (!enemy.def.needsLight || enemy.purified || !enemy.active) continue;
@@ -806,7 +808,14 @@ export class LevelScene extends Phaser.Scene {
     if (!darkness) return;
     darkness.blackout = on;
     if (!on) return;
-    for (const lantern of this.lanterns) if (lantern.lit && arena.contains(lantern.zone.centerX, lantern.zone.bottom - 1)) lantern.setLit(false);
+    for (const lantern of this.lanterns) if (lantern.lit && arena.contains(lantern.zone.centerX, lantern.zone.bottom - 1)) lantern.putOut();
+    this.switchBoard.update();
+  }
+
+  /** Enciende un farol (al tocarlo, con el sable o con la onda) y pasa la energía a lo que maneja (S32). */
+  private lightLantern(lantern: Lantern, struck = false): void {
+    if (struck ? lantern.strike() : lantern.touch()) AudioManager.play('lantern');
+    if (lantern.targetId !== undefined) this.switchBoard.update();
   }
 
   /** Al liberar a Luisón, las velas del cementerio se encienden solas, una tras otra. */
@@ -899,7 +908,7 @@ export class LevelScene extends Phaser.Scene {
 
   /** Disparadores: tiempo de los temporizados, energía a sus objetivos y rejas que esperan para cerrarse. */
   private updateSwitches(deltaMs: number): void {
-    if (this.switches.length === 0 && this.gates.length === 0) return;
+    if (this.switches.length === 0 && this.gates.length === 0 && this.lanterns.length === 0) return;
     for (const sw of this.switches) sw.update(deltaMs);
     this.switchBoard.update();
     const blockers = this.gateBlockers;
@@ -918,6 +927,7 @@ export class LevelScene extends Phaser.Scene {
     if (!this.player.motor.attackHitboxActive) return;
     const rect = this.player.attackRect;
     for (const sw of swordStrikes(this.switches, rect, this.player.swingHits, this.struck)) this.hitSwitch(sw);
+    for (const lantern of swordStrikes(this.lanterns, rect, this.player.swingHits, this.struckLanterns)) this.lightLantern(lantern, true);
     for (const b of this.bouncers) {
       if (b.motor.state !== 'asleep' || this.player.hasHitThisSwing(b) || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
       this.player.markHitThisSwing(b);
@@ -927,9 +937,11 @@ export class LevelScene extends Phaser.Scene {
 
   /** La luz de la onda enciende los Switch; con `waveThroughWalls`, también los que están tras una pared. */
   private waveHitsSwitches(): void {
-    if (this.switches.length === 0) return;
+    if (this.switches.length === 0 && this.lanterns.length === 0) return;
     const lw = GAMEPLAY.lightWave;
     for (const sw of waveStrikes(this.switches, this.lightWave, lw.width, lw.height, GAMEPLAY.switches.waveThroughWalls, this.struck)) this.hitSwitch(sw);
+    // S32: la luz de la onda enciende los faroles de lejos (también tras una pared).
+    for (const lantern of waveStrikes(this.lanterns, this.lightWave, lw.width, lw.height, GAMEPLAY.switches.waveThroughWalls, this.struckLanterns)) this.lightLantern(lantern, true);
   }
 
   /**
@@ -1449,9 +1461,15 @@ export class LevelScene extends Phaser.Scene {
           this.checkpoints.push({ id, sprite, zone, active: false, lit: false, light });
           break;
         }
-        case 'Lantern':
-          if (this.darkness) this.lanterns.push(new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true));
+        case 'Lantern': {
+          if (!this.darkness) break;
+          // S32: un farol con `target` es un disparador (como un Switch); con `ms`, se apaga solo.
+          const target = objectProp(obj, 'target');
+          const lantern = new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true, Number(objectProp(obj, 'ms') ?? 0), target === undefined ? undefined : String(target));
+          this.lanterns.push(lantern);
+          if (lantern.targetId !== undefined) this.switchBoard.addSwitch(lantern.targetId, lantern.motor);
           break;
+        }
         case 'Cave':
           this.addCave(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
           break;
@@ -1566,7 +1584,7 @@ export class LevelScene extends Phaser.Scene {
         }
         case 'Bouncer': {
           const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
-          this.bouncers.push(new Bouncer(this, zone, parseBouncerKind(objectProp(obj, 'kind'))));
+          this.bouncers.push(new Bouncer(this, zone, parseBouncerKind(objectProp(obj, 'kind')), this.def.biome === 'ciudad' ? 'awning' : 'mushroom'));
           break;
         }
         case 'Mover': {
