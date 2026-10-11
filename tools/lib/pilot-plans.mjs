@@ -552,3 +552,149 @@ export const L6_FEATHER_C = {
     { run: 1, untilX: 333 },
   ],
 };
+
+// l7 · Asunción (S32). Ruta principal: la calle, el portón del zaguán (farol), el andamio del patio (farol de pared), los
+// tejados, el mercado (par de carros, lona de un uso + salto doble sobre el muro del cabildo), la plaza (columna de roca,
+// farol de la puerta → andamio 2 → la onda por la ventana enciende la piedra → reja de la torre), LA RONDA DEL FAROLERO
+// (cinco ascensores que llama un farol temporizado: con `lantern`, el piloto espera a que el farol esté encendido y con
+// tiempo), los tejados de la catedral (tres ascensores y dos pares de balsas), la fosa (farol → losa), el farol del otro
+// lado (onda), LA CRIPTA (se baja por la fosa abierta, farol → ascensor, tajo cargado a la pared de roca y el farol de la
+// reja del panteón; se sube en el ascensor), el toldo plegado (tajo cargado), el par de losas, la capilla (salto doble) y la
+// antesala.
+export const L7_MAIN = {
+  aim: true,
+  noGapJump: [
+    [193, 198],
+    [204, 208],
+    [228, 233],
+    [239, 243],
+    [263, 268],
+    [372, 378],
+    [436, 440],
+  ],
+  splits: [
+    ['fuego 1 x 148', 148],
+    ['la torre x 174', 174],
+    ['el campanario (fila 15)', 191, 16],
+    ['fuego 2 x 305', 305],
+    ['la cripta x 398', 399],
+    ['fuego 3 x 410', 410],
+  ],
+  steps: [
+    { run: 1, untilX: 49.3 },
+    { mover: [50, 60], dir: 1, exit: 'walk', lantern: [53, 59] },
+    { run: 1, untilX: 109.5 },
+    { mover: [111, 60], dir: 1, exit: 'none' },
+    { mover: [125, 60], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 136.5 },
+    { bounce: [138, 59], landX: 143.6, landTop: 60, double: true },
+    { run: 1, untilX: 158.3 },
+    { charge: 1 },
+    { run: 1, untilX: 169.3 },
+    { mover: [169, 60], dir: 1, exit: 'none', lantern: [171, 59] },
+    { charge: 1 },
+    { mover: [169, 60], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 176.5 },
+    { run: 1, untilX: 183.2 },
+    {
+      mover: [187, 51],
+      at: 'end',
+      dir: 1,
+      exit: 'walk',
+      exitDir: -1,
+      lantern: [184, 59],
+    },
+    {
+      mover: [175, 42],
+      at: 'end',
+      dir: -1,
+      exit: 'walk',
+      exitDir: 1,
+      lantern: [180, 50],
+    },
+    {
+      mover: [187, 33],
+      at: 'end',
+      dir: 1,
+      exit: 'walk',
+      exitDir: -1,
+      lantern: [184, 41],
+    },
+    {
+      mover: [175, 24],
+      at: 'end',
+      dir: -1,
+      exit: 'walk',
+      exitDir: 1,
+      lantern: [180, 32],
+    },
+    { mover: [187, 15], at: 'end', dir: 1, exit: 'walk', lantern: [184, 23] },
+    { run: 1, untilX: 194.2 },
+    { mover: [196, 15], dir: 1, exit: 'walk', strict: true, retryFrom: 20 },
+    { run: 1, untilX: 204.0 },
+    { mover: [207, 28], dir: 1, exit: 'none', retryFrom: 22, strict: true },
+    { mover: [221, 28], at: 'end', dir: 1, exit: 'walk', retryFrom: 22 },
+    { run: 1, untilX: 229.5 },
+    { mover: [231, 28], dir: 1, exit: 'walk', strict: true, retryFrom: 25 },
+    { run: 1, untilX: 239.0 },
+    { mover: [242, 41], dir: 1, exit: 'none', retryFrom: 27, strict: true },
+    { mover: [256, 41], at: 'end', dir: 1, exit: 'walk', retryFrom: 27 },
+    { run: 1, untilX: 264.3 },
+    { mover: [266, 41], dir: 1, exit: 'walk', strict: true, retryFrom: 30 },
+    { run: 1, untilX: 310.5 },
+    { mover: [327, 60], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 347.5 },
+    { charge: 1 },
+    { run: 1, untilX: 373.4 },
+    { run: 1, untilX: 388.3 },
+    { charge: 1 },
+    { run: 1, untilX: 395.6 },
+    { run: -1, untilX: 378.6 },
+    { mover: [374, 66], dir: -1, exit: 'walk', exitDir: 1 },
+    { run: 1, untilX: 425.6 },
+    { charge: 1 },
+    { bounce: [428, 59], landX: 431, landTop: 52 },
+    { run: 1, untilX: 437.0 },
+    { mover: [439, 52], dir: 1, exit: 'none', strict: true },
+    { mover: [454, 52], at: 'end', dir: 1, exit: 'walk' },
+    { run: 1, untilX: 467.5 },
+    { jumpTo: [474, 55], double: true },
+    { run: 1, untilFight: true },
+  ],
+};
+
+// Lugar secreto de l7 (S32), el sótano de la casona, desde la calle del mercado (x 99, fila 60): rompe la puerta de fardo
+// (x 97), cruza el zaguán (el farol encendido es la luz que se ve desde la calle), baja por la escalera, salta el piso
+// podrido (tablones que se quiebran sobre un pozo), recoge dos guavirá, la Luz de Arasy y la pluma A, y sale por la
+// trampilla de la vereda (x 108-109).
+export const L7_SECRET = {
+  aim: true,
+  steps: [
+    { run: -1, untilX: 93 },
+    { run: -1, untilX: 91.7 },
+    { run: 1, untilX: 108.6 },
+    { jumpTo: [105.8, 65] },
+    { jumpTo: [107.6, 62] },
+    { jumpTo: [108.8, 60] },
+  ],
+};
+
+// Pluma B de l7 (S32): el balcón del obispado, junto al tablón del andamio 2 (x 166-168, fila 44): techo bajo y una espina;
+// el dash desde pegada a ella.
+export const L7_FEATHER_B = {
+  steps: [
+    { run: -1, untilX: 166 },
+    { dash: -1, from: 164.6 },
+    { run: -1, untilX: 160.6 },
+  ],
+};
+
+// Pluma C de l7 (S32): parada en el ascensor del ángel (x 469-471, fila 60), el tajo cargado: la onda enciende el farol de
+// la hornacina de la capilla (el sable no llega) y el ascensor (toggle) sube a la cornisa de la pluma.
+export const L7_FEATHER_C = {
+  steps: [
+    { charge: 1 },
+    { mover: [469, 60], dir: -1, exit: 'walk' },
+    { run: -1, untilX: 466.2 },
+  ],
+};
