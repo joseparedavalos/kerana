@@ -41,8 +41,6 @@
 //   hueco, salta hacia él.
 //   S31: un paso mover con strict espera a la plataforma en la punta (no recién salida): un ascensor que sube desde
 //   el piso de al lado.
-//   S31: jumpTo con rise (fila) sube derecho, sin ir hacia x, hasta tener los pies más arriba de esa fila (junto a un
-//   alero, como la punta del filo de l6, ir hacia la repisa mientras sube es golpearse la cabeza).
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
@@ -403,11 +401,8 @@ export function installPilot(plan) {
       move(0);
       return true;
     }
-    // S31: con rise, derecho hacia arriba hasta pasar esa fila.
-    const rising = s.rise !== undefined && b.bottom > s.rise * T;
     if (!grounded() || st.jumpMs > 0) {
-      if (rising && !grounded()) move(0);
-      else seek(tx);
+      seek(tx);
       if (s.double && !grounded()) doubleAtApex();
       if (s.dash) dashInAir(!!s.double);
       return false;
@@ -421,8 +416,7 @@ export function installPilot(plan) {
       return false;
     }
     startJump(s.hold);
-    if (rising) move(0);
-    else seek(tx);
+    seek(tx);
     return false;
   };
 

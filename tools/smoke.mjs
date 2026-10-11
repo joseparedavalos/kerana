@@ -1492,9 +1492,14 @@ async function main() {
         if (c.motor.phase === 'done') w.ended = true;
       });
     });
+    const l6Pickups = () => l6Run.evaluate(() => window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).map((p) => `${p.kind}@${Math.floor(p.x / 16)}`).sort());
     await l6Run.evaluate(installPilot, L6_MAIN);
     for (let t = 0; t < 600000 && !(await pilot(l6Run)).done; t += 500) await sleep(500);
     const run6 = await pilot(l6Run);
+    // Todo lo del camino queda recogido (las guavirá, la Luz de Arasy del fuego 2); quedan las tres plumas y lo de la gruta.
+    const l6Left = await l6Pickups();
+    const l6Off = ['guavira@151', 'guavira@161', 'luz_arasy@164', 'pluma@154', 'pluma@322', 'pluma@71'];
+    check(l6Left.every((k) => l6Off.includes(k)), `nivel 6: la ruta principal recoge todo lo del camino; quedan solo las plumas y lo de la gruta (${JSON.stringify(l6Left)})`);
     check(run6.done && run6.respawns === 0, `nivel 6: Kerana cruza Guairá entera sin caer y sin que Ao Ao la alcance (${JSON.stringify(run6)})`);
     if (run6.respawns > 0) console.log((await l6Run.evaluate(() => window.__KERANA_PILOT__.log)).filter((l) => l.startsWith('caída') || l.startsWith('paso')).slice(-40).join('\n'));
     if (!run6.done) {

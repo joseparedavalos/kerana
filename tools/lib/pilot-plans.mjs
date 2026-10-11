@@ -459,8 +459,8 @@ export const L6_MAIN = {
     { mover: [79, 32], at: 'end', dir: -1, exit: 'none' },
     { mover: [75, 29], dir: -1, exit: 'none' },
     { mover: [61, 26], at: 'end', dir: -1, exit: 'jump', landX: 57.5 },
-    // Junto a la punta del filo: sube derecho y recién arriba va hacia él (si no, se golpea contra el alero).
-    { jumpTo: [61.5, 17], double: true, rise: 17 },
+    { jumpTo: [56, 20] },
+    { jumpTo: [61.5, 17] },
     { run: 1, untilX: 126.4 },
     { mover: [128, 17], dir: 1, exit: 'none' },
     { mover: [139, 17], at: 'end', dir: 1, exit: 'walk' },
