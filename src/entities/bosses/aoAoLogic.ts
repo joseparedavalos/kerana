@@ -50,11 +50,16 @@ export interface Refuge {
  * a la altura de la copa (± `tolerance`) y dentro de su ancho.
  */
 export function onRefuge(feetX: number, feetY: number, grounded: boolean, refuges: readonly Refuge[], tolerance: number): boolean {
-  if (!grounded) return false;
+  return refugeUnder(feetX, feetY, grounded, refuges, tolerance) !== null;
+}
+
+/** El pindó en cuya copa está parada Kerana (la persecución vuelve a él, S31), o null. */
+export function refugeUnder(feetX: number, feetY: number, grounded: boolean, refuges: readonly Refuge[], tolerance: number): Refuge | null {
+  if (!grounded) return null;
   for (const r of refuges) {
-    if (feetX >= r.left && feetX <= r.right && Math.abs(feetY - r.top) <= tolerance) return true;
+    if (feetX >= r.left && feetX <= r.right && Math.abs(feetY - r.top) <= tolerance) return r;
   }
-  return false;
+  return null;
 }
 
 /** Crías que llama el aullido: 2 en la fase 2, 3 en la furia (fase 3). `phase` empieza en 0. */

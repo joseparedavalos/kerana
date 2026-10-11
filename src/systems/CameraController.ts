@@ -1,14 +1,17 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
+import { VIEW } from './View';
 
 // Seguimiento con lerp, zona muerta, anticipación hacia donde mira y límites del mapa.
 export class CameraController {
   private lookX = 0;
+  /** Persecución (S31): borde izquierdo fijo de la vista en x, o null (seguimiento normal). */
+  private lockedX: number | null = null;
 
   constructor(
     private readonly camera: Phaser.Cameras.Scene2D.Camera,
     target: Phaser.GameObjects.GameObject & { x: number; y: number },
-    bounds: { width: number; height: number },
+    private readonly bounds: { width: number; height: number },
   ) {
     const c = GAMEPLAY.camera;
     camera.setBounds(0, 0, bounds.width, bounds.height);
@@ -26,4 +29,19 @@ export class CameraController {
     this.camera.setFollowOffset(-this.lookX, 0);
   }
 
+  /**
+   * Persecución (S31): fija el borde izquierdo de la vista en `x` (px del mundo) con límites de un ancho de vista;
+   * el seguimiento en y sigue igual. Con null vuelven los límites del mapa y la cámara alcanza a Kerana con su lerp.
+   * Solo lo usa la persecución: la arena de un jefe pone sus propios límites (BossArena) y nunca coinciden.
+   */
+  lockScrollX(x: number | null): void {
+    if (x === null) {
+      if (this.lockedX === null) return;
+      this.lockedX = null;
+      this.camera.setBounds(0, 0, this.bounds.width, this.bounds.height);
+      return;
+    }
+    this.lockedX = x;
+    this.camera.setBounds(x, 0, VIEW.width, this.bounds.height);
+  }
 }

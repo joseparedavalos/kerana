@@ -9,7 +9,7 @@ import { getLevel, WORLD_LEVELS } from '../data/levels';
 import { endingSlides } from '../data/story';
 import type { BossId, LevelDef, LevelId } from '../data/types';
 import { createBoss, type Boss, type BossContext } from '../entities/bosses';
-import { onRefuge, type Refuge } from '../entities/bosses/aoAoLogic';
+import { onRefuge, refugeUnder, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
 import { createEnemy } from '../entities/enemies';
@@ -40,6 +40,8 @@ import { BossArena } from '../systems/BossArena';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
 import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } from '../systems/trapLogic';
 import { CameraController } from '../systems/CameraController';
+import { Chase } from '../systems/Chase';
+import { Waterfall } from '../entities/Waterfall';
 import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
 import { EventBus, GameEvents } from '../systems/EventBus';
@@ -56,7 +58,7 @@ import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
 
-type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap';
+type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap' | 'chase';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
 type TileLayerName = (typeof TILE_LAYERS)[number];
 
@@ -184,6 +186,12 @@ export class LevelScene extends Phaser.Scene {
   private crumbles: Crumble[] = [];
   /** Copas de pindó (GDD §6.6): refugio de Ao Ao. */
   private refuges: Refuge[] = [];
+  /** Persecución de Ao Ao (S31): el tramo del mapa (`rect ChaseZone`), su controlador y la largada (adónde vuelve antes del primer pindó). */
+  private chaseZone?: { rect: Phaser.Geom.Rectangle; speed: number };
+  private chase?: Chase;
+  private readonly chaseStart = new Phaser.Math.Vector2();
+  /** Cascadas (S31): decoración delante de Kerana. */
+  private waterfalls: Waterfall[] = [];
   /** Vacas sueltas de Capiatá: plataformas que caminan. */
   private cows: Cow[] = [];
   private cowGroup?: Phaser.Physics.Arcade.Group;
@@ -249,6 +257,9 @@ export class LevelScene extends Phaser.Scene {
     this.bouncers = [];
     this.crumbles = [];
     this.refuges = [];
+    this.chaseZone = undefined;
+    this.chase = undefined;
+    this.waterfalls = [];
     this.cows = [];
     this.cowGroup = undefined;
     this.movers = [];
@@ -424,6 +435,16 @@ export class LevelScene extends Phaser.Scene {
       width: this.map.widthInPixels,
       height: this.map.heightInPixels,
     });
+    if (this.chaseZone) {
+      this.chase = new Chase(this, this.chaseZone.rect, this.chaseZone.speed, this.refuges, {
+        camera: this.cameras.main,
+        cameraCtl: this.cameraCtl,
+        surfaceBelow: (x, fromY) => this.surfaceBelow(x, fromY),
+        dust: this.dust,
+        shake: (ms, intensity) => this.shake(ms, intensity),
+        mapWidth: this.map.widthInPixels,
+      });
+    }
 
     // El registro es el estado inicial: UI puede arrancar después de que estos eventos ya se emitieron.
     this.registry.set('hearts', { current: this.player.health.current, max: this.player.health.max });
@@ -481,6 +502,7 @@ export class LevelScene extends Phaser.Scene {
     this.reportPlayerStateSfx();
     this.updateSlashFx();
     this.cameraCtl.update(this.player.motor.facing);
+    if (this.updateChase(delta)) return;
     this.updateEnemies(delta);
     this.updateCarriers(delta);
     this.updateMainumby(delta);
@@ -501,6 +523,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateJungle(delta, body);
     this.updateProjectiles();
     this.updateWind(delta, body);
+    for (const w of this.waterfalls) w.update(delta);
     this.updateHypnosisIcon(delta);
     this.updateSleep(body);
     this.updateFallingHazards(delta);
@@ -523,7 +546,42 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private restartFromCheckpoint(): void {
+    this.chase?.reset();
     this.player.respawnAt(this.checkpointPos.x, this.checkpointPos.y);
+  }
+
+  /**
+   * Persecución (S31): avanza el borde y, si Ao Ao alcanza a Kerana, la hace volver (como una caída: `respawn`).
+   * Devuelve true si este frame terminó en una vuelta (el resto del update espera al siguiente).
+   */
+  private updateChase(deltaMs: number): boolean {
+    const chase = this.chase;
+    if (!chase) return false;
+    const body = this.player.body;
+    const grounded = body.blocked.down || body.touching.down;
+    const refuge = refugeUnder(body.center.x, body.bottom, grounded, this.refuges, GAMEPLAY.pindo.feetTolerancePx);
+    const event = chase.update(deltaMs, body, refuge);
+    // La largada: adónde vuelve si la alcanza antes del primer pindó. El último suelo firme, pero siempre antes de la
+    // línea (si no, volvería a largar en el mismo cuadro, sin respiro).
+    if (event === 'started') {
+      this.chaseStart.copy(this.safeGround);
+      const before = chase.zone.left - this.map.tileWidth * 1.5;
+      const y = this.chaseStart.x > before ? this.surfaceBelow(before, this.chaseStart.y - this.map.tileHeight * 4) : null;
+      if (y !== null) this.chaseStart.set(before, y);
+    }
+    if (event !== 'caught') return false;
+    this.respawn('chase');
+    return true;
+  }
+
+  /** Adónde vuelve Kerana tras una caída: el último suelo firme o, en la persecución, el último pindó o la largada. */
+  private respawnSpot(): Phaser.Math.Vector2 {
+    if (!this.chase?.active) return this.safeGround;
+    const x = this.chase.restart();
+    const refuge = x === null ? undefined : this.chase.refuges.find((r) => (r.left + r.right) / 2 === x);
+    if (x !== null && refuge) this.safeGround.set(x, refuge.top);
+    else this.safeGround.copy(this.chaseStart);
+    return this.safeGround;
   }
 
   /** Mainumby sigue a Kerana con un retraso suave, flotando sobre su hombro (GDD §4.5). */
@@ -1436,6 +1494,14 @@ export class LevelScene extends Phaser.Scene {
           this.addPindo(new Phaser.Geom.Rectangle(x, y, w, h));
           break;
         }
+        case 'ChaseZone': {
+          const rect = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          this.chaseZone = { rect, speed: Number(objectProp(obj, 'speed') ?? GAMEPLAY.chase.speed) };
+          break;
+        }
+        case 'Waterfall':
+          this.waterfalls.push(new Waterfall(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)), FX_PARTICLE));
+          break;
         case 'Pickup': {
           const kind = String(objectProp(obj, 'kind') ?? 'guavira') as PickupKind;
           if (kind === 'pluma') {
@@ -1716,7 +1782,10 @@ export class LevelScene extends Phaser.Scene {
       this.hitStop(GAMEPLAY.hitStop.onHurtMs);
     }
     if (this.player.health.isDead) this.koRespawn();
-    else this.player.respawnAt(this.safeGround.x, this.safeGround.y);
+    else {
+      const spot = this.respawnSpot();
+      this.player.respawnAt(spot.x, spot.y);
+    }
     EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
     EventBus.emit(GameEvents.playerRespawned, reason);
   }
@@ -1724,6 +1793,7 @@ export class LevelScene extends Phaser.Scene {
   /** 0 corazones (GDD §3.6): "Kerana cae" y reaparece en el último fuego con vida completa. */
   private koRespawn(): void {
     this.resetBossFight();
+    this.chase?.reset();
     if (SaveManager.current.settings.flashes) this.cameras.main.flash(300, 0, 0, 0);
     this.player.koRespawn(this.checkpointPos.x, this.checkpointPos.y);
   }
