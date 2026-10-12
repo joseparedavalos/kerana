@@ -24,7 +24,7 @@ import { Crumble } from '../entities/hazards/Crumble';
 import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
-import { Lantern } from '../entities/Lantern';
+import { Lantern, type LanternMount } from '../entities/Lantern';
 import { LightWaveMotor } from '../entities/LightWaveMotor';
 import { Gate } from '../entities/Gate';
 import { Mover } from '../entities/Mover';
@@ -1465,7 +1465,8 @@ export class LevelScene extends Phaser.Scene {
           if (!this.darkness) break;
           // S32: un farol con `target` es un disparador (como un Switch); con `ms`, se apaga solo.
           const target = objectProp(obj, 'target');
-          const lantern = new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true, Number(objectProp(obj, 'ms') ?? 0), target === undefined ? undefined : String(target));
+          const mount = this.lanternMount(obj, x, y);
+          const lantern = new Lantern(this, x, y, this.darkness, objectProp(obj, 'lit') === true, Number(objectProp(obj, 'ms') ?? 0), target === undefined ? undefined : String(target), mount);
           this.lanterns.push(lantern);
           if (lantern.targetId !== undefined) this.switchBoard.addSwitch(lantern.targetId, lantern.motor);
           break;
@@ -1679,6 +1680,28 @@ export class LevelScene extends Phaser.Scene {
         ease: 'Sine.easeInOut',
       });
     }
+  }
+
+  /**
+   * S33: cómo está montado un farol (`mount=post|wall|niche`; el aplique, con `wall=right|left`, el lado del muro).
+   * El aplique busca la cara del muro (el tile del farol, si es muro, o el de al lado) y sube el brazo hasta que la
+   * placa y la escuadra queden sobre muro firme (no sobre una reja). Solo dibujo: la zona y la luz no cambian.
+   */
+  private lanternMount(obj: Phaser.Types.Tilemaps.TiledObject, x: number, feetY: number): LanternMount {
+    const kind = objectProp(obj, 'mount');
+    if (kind === 'niche') return { kind: 'niche' };
+    if (kind !== 'wall') return { kind: 'post' };
+    const T = this.map.tileWidth;
+    const side = objectProp(obj, 'wall') === 'left' ? -1 : 1;
+    const lc = GAMEPLAY.lantern;
+    let armY = feetY - lc.postHeight;
+    const col = Math.floor(x / T);
+    const inWall = this.tileAt('Ground', x, armY);
+    const wallX = (side > 0 ? (inWall ? col : col + 1) : inWall ? col + 1 : col) * T;
+    const probe = wallX + side * 2;
+    const firm = (y: number) => this.tileAt('Ground', probe, y + 3) && this.tileAt('Ground', probe, y - lc.sconceBrace - 2);
+    for (let lift = 0; lift < lc.sconceLift && !firm(armY); lift++) armY--;
+    return { kind: 'wall', wallX, side, armY };
   }
 
   private tileAt(layer: TileLayerName, x: number, y: number): boolean {

@@ -757,6 +757,17 @@ export const GAMEPLAY = {
     /** S32: brasa del farol apagado (radio en px y alfa), para encontrarlo en la oscuridad. */
     emberRadius: 2,
     emberAlpha: 0.55,
+    /**
+     * S33: aplique de pared (`mount=wall`): el farol cuelga de un brazo corto, sin poste. `sconceArm` = del muro al
+     * centro del farol (px); `sconceBrace` = alto de la escuadra sobre el brazo; `sconceLift` = cuánto puede subir el
+     * brazo (px) para encontrar muro firme (sobre una reja). Solo dibujo: la zona para tocarlo y la luz no se mueven.
+     */
+    sconceArm: 8,
+    sconceBrace: 6,
+    sconceLift: 24,
+    /** S33: nicho (`mount=niche`, farol dentro de un muro que se ve desde fuera): hueco en arco, ancho y alto en px. */
+    nicheWidth: 14,
+    nicheHeight: 26,
   },
 
   /**
