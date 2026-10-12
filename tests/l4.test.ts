@@ -197,7 +197,10 @@ describe('rejas que se cierran solas: nadie queda encerrado (S27)', () => {
     const before = new Set(open.trappedSpans.map((n) => key(open.spans[n])));
     const out: string[] = [];
     for (const gate of objs.filter((o) => o.type === 'Gate')) {
-      const sw = objs.filter((o) => o.type === 'Switch' && String(o.props.target) === String(gate.props.id));
+      // S32: un farol con `target` también es un disparador (su punto está en el centro del tile y al pie).
+      const sw = objs
+        .filter((o) => (o.type === 'Switch' || o.type === 'Lantern') && String(o.props.target) === String(gate.props.id))
+        .map((o) => (o.type === 'Lantern' ? { ...o, x: o.x - T / 2, y: o.y - T } : o));
       if (!sw.some((s) => Number(s.props.ms ?? 0) > 0)) continue;
       const closed = { ...grid, cells: grid.cells.slice() };
       for (let y = gate.y / T; y < (gate.y + gate.height) / T; y++) closed.cells[y * map.width + gate.x / T] = TrapCell.Solid;

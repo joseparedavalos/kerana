@@ -754,6 +754,9 @@ export const GAMEPLAY = {
     touchWidth: 20,
     touchHeight: 40,
     postHeight: 34,
+    /** S32: brasa del farol apagado (radio en px y alfa), para encontrarlo en la oscuridad. */
+    emberRadius: 2,
+    emberAlpha: 0.55,
   },
 
   /**

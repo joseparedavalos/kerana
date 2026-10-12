@@ -39,6 +39,10 @@
 //   [[x, y]…] sigue rebotando de hongo en hongo (cada uno, el de la lista) antes de ir a landX; con reach (tiles,
 //   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
 //   hueco, salta hacia él.
+//   S32: strict con un número (ms) pide que a la plataforma le quede al menos esa espera en la punta (subirse a una
+//   balsa recién llegada con el juego lento).
+//   S32: un paso mover con lantern: [x, y] espera además a que ese farol temporizado esté encendido con ≥ 1 s de cuenta
+//   (la ronda del farolero de l7: el farol llama al ascensor y, al apagarse, el ascensor se va); apagado, va a tocarlo.
 //   S31: un paso mover con strict espera a la plataforma en la punta (no recién salida): un ascensor que sube desde
 //   el piso de al lado. jumpTo con runup (x) vuelve primero hasta esa x para tomar carrera (un salto largo).
 //   Cualquier paso con retryFrom (n): tras una caída durante ese paso, vuelve al paso n (reaparece antes de él:
@@ -57,6 +61,13 @@ export function installPilot(plan) {
   const kb = scene.input.keyboard;
   const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), attack: kb.addKey(88), dash: kb.addKey(67) };
   const held = { left: false, right: false, jump: false, attack: false, dash: false };
+  // S32: un plan anterior en la misma página pudo dejar teclas apretadas (la flecha del último `run`): se sueltan.
+  for (const k of Object.values(keys)) {
+    if (!k.isDown) continue;
+    k.isDown = false;
+    k.isUp = true;
+    k.emit('up', k);
+  }
   const set = (name, on) => {
     if (held[name] === on) return;
     const k = keys[name];
@@ -245,6 +256,12 @@ export function installPilot(plan) {
     if (!c) return undefined;
     return { motor: c.motor, get block() { return cowBlock(c); } };
   };
+  // S32: farol (l7) cuyo poste está en la celda (x, y): encendido y con al menos 1 s de cuenta (o permanente).
+  const lanternAt = ([x, y]) => (scene.lanterns ?? []).find((ln) => Math.floor(ln.zone.centerX / T) === x && Math.floor((ln.zone.bottom - 1) / T) === y);
+  const lanternReady = (cell) => {
+    const l = lanternAt(cell);
+    return !l || (l.lit && (l.motor.permanent || l.motor.msLeft > 1000));
+  };
   const moverAt = ([x, y]) => scene.movers.find((mv) => inZone(mv.zone, [x, y])) ?? cowAt([x, y]);
   // El jakare que sale del agua en la celda (x, y) está abajo, recién hundido (S24, jakare guasu).
   const lurkerDown = ([x, y]) => {
@@ -255,9 +272,11 @@ export function installPilot(plan) {
   // la punta (un ascensor que sube desde el piso de al lado: recién salido ya está una fila arriba y se pasa por debajo).
   const atEnd = (m, at, strict = false) => {
     const mm = m.motor;
+    // S32: strict numérico = espera mínima que le tiene que quedar (ms); true = 400.
+    const left = typeof strict === 'number' ? strict : 400;
     // (Con strict: llegando, o esperando en la punta con tiempo para subirse.)
-    if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1) && (!strict || (mm.dir === 1 ? mm.pos >= mm.length - 1 : mm.waitLeftMs > 400));
-    return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1) && (!strict || (mm.dir === -1 ? mm.pos <= 1 : mm.waitLeftMs > 400));
+    if (at === 'end') return mm.pos >= mm.length - T && (mm.dir === -1 || mm.pos >= mm.length - 1) && (!strict || (mm.dir === 1 ? mm.pos >= mm.length - 1 : mm.waitLeftMs > left));
+    return mm.pos <= T && (mm.dir === 1 || mm.pos <= 1) && (!strict || (mm.dir === -1 ? mm.pos <= 1 : mm.waitLeftMs > left));
   };
   // Parada sobre esa plataforma: con el centro encima (rozarla de costado parada en el piso no cuenta) y sin pisar el
   // suelo de al lado. S24: con el juego lento el paso anterior terminaba tarde y Kerana frenaba con el centro sobre la
@@ -313,6 +332,13 @@ export function installPilot(plan) {
           tapAttack();
           return false;
         }
+        // S32: con lantern: [x, y], el farol temporizado que llama a la plataforma (la ronda de l7) tiene que estar
+        // encendido y con tiempo para subirse; si se apagó, Kerana lo vuelve a tocar (está parada a su lado, o parada en la plataforma, como el andamio de la torre).
+        if (s.lantern && !lanternReady(s.lantern)) {
+          const l = lanternAt(s.lantern);
+          if (!l.lit) seek(l.zone.centerX);
+          return false;
+        }
         if (onThis(m, b)) {
           st.phase = 'ride';
           return false;
@@ -323,7 +349,7 @@ export function installPilot(plan) {
         // S25: con `calm`, espera a que amaine el viento del encuentro (zona de ritmo de l3).
         if (s.calm && !windCalm(s.calm)) return false;
         // Sale a 40-60 px/s: recién salida de la punta se la alcanza caminando.
-        if (atEnd(m, at, !!s.strict)) st.phase = 'board';
+        if (atEnd(m, at, s.strict ?? false)) st.phase = 'board';
         return false;
       }
       case 'board': {
@@ -334,7 +360,11 @@ export function installPilot(plan) {
           return false;
         }
         if (!grounded()) {
-          seek(mid);
+          // S32: frena antes, con la distancia de frenado en el aire (a pocos FPS, seek se pasaba de una balsa de 4).
+          const vx = b.velocity.x;
+          const left = mid - b.center.x;
+          if (Math.sign(left) === Math.sign(vx) && Math.abs(left) <= (vx * vx) / 2400 + 8) move(0);
+          else seek(mid);
           return false;
         }
         // Plataforma encima de la cabeza (S23: el ascensor del tronco baja hasta sobre Kerana): se sube saltando desde abajo.

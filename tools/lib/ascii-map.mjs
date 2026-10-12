@@ -182,6 +182,12 @@ function checkSwitchLinks(objects, warnings) {
     if (!ids.has(String(target))) throw new Error(`Switch en ${where}: no hay reja ni Mover con id "${target}".`);
     used.add(String(target));
   }
+  // S32: un farol con `target` también es un disparador (l7).
+  for (const o of objects.filter((o) => o.type === 'Lantern' && val(o, 'target') !== undefined)) {
+    const target = String(val(o, 'target'));
+    if (!ids.has(target)) throw new Error(`Farol en (${(o.x - TILE / 2) / TILE}, ${o.y / TILE - 1}): no hay reja ni Mover con id "${target}".`);
+    used.add(target);
+  }
   for (const o of objects.filter((o) => o.type === 'Gate' && !used.has(String(val(o, 'id'))))) {
     warnings.push(`Reja en (${o.x / TILE}, ${o.y / TILE}) sin ningún Switch: queda cerrada.`);
   }

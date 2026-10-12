@@ -1,6 +1,6 @@
-# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3, en S27 con l4, en S30 con l5 y en S31 con l6)
+# RECETA · Cómo rediseñar un nivel (S19, hecha sobre l1; corregida en S22, S23 y S24 con l2, en S25 con l3, en S27 con l4, en S30 con l5, en S31 con l6 y en S32 con l7)
 
-El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto); lo de l4, en §12 (S27, puzzles de piedras y rejas); lo de l5, en §13 (S30, diseño vertical y hongos); lo de l6, en §14 (S31, **cómo se diseña un tramo de persecución**, el cerro en zigzag y la gruta tras la cascada). Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
+El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 para l2 (Ñeembucú), con la segunda pasada de S23 sobre l2. Sirve para rediseñar l3 a l7 sin inventar el método: cambian los datos del nivel, no los pasos. Vocabulario (grupo de ritmo, cadencia, celda, portal, los cinco componentes): `docs/REVIEW.md` §0. Lo que l2 agregó o corrigió está en §8 (S22), §9 (S23, huecos sin salida y enemigos en los saltos) y §10 (S24, probar las protecciones como juega una persona y la zona de ritmo); lo de l3, en §11 (S25, el viento como ritmo, cadenas largas y el lugar secreto); lo de l4, en §12 (S27, puzzles de piedras y rejas); lo de l5, en §13 (S30, diseño vertical y hongos); lo de l6, en §14 (S31, **cómo se diseña un tramo de persecución**, el cerro en zigzag y la gruta tras la cascada); lo de l7, en §15 (S32, **la oscuridad como mecánica**: faroles disparadores, la ronda del farolero y el sótano); y en §16, lo que haría distinto si empezara de nuevo. Marcado *(S22)*, *(S23)*, *(S24)* o *(S25)* donde cambió una regla.
 
 ---
 
@@ -142,6 +142,7 @@ l1 enseña; los demás pueden exigir desde el principio.
 - [ ] *(S31)* Persecución (si el nivel tiene una): un solo tramo de ≈ 120 tiles con dos pindó, nada que haga esperar adentro, todo legible con 16 tiles por delante, un fuego pegado a cada punta; el smoke prueba sin `god` que quieta avisa antes de alcanzarla y que vuelve al pindó (§14.1).
 - [ ] *(S31)* Ninguna plataforma con una parada metida en un piso (deja un escalón de una fila por el que baja a través de Kerana) (§14.2).
 - [ ] *(S31)* Los atajos de salto doble + dash calculados con la física del juego (subiendo 6 filas, salto + doble + dash avanza ≈ 171 px): la pieza que debe usarse no se saltea por un pelo (`tests/l6.test.ts`, la cumbre 2).
+- [ ] *(S32)* En un nivel oscuro: ningún salto a ciegas (todo pozo más ancho que el halo tiene una plataforma o un farol que alumbra la llegada) y cada farol temporizado sobre un piso donde se lo vuelve a tocar (`tests/l7.test.ts`). Ningún farol junto a una plataforma `mode=run` que la mande sin Kerana (§15.1).
 - [ ] `npm run maps`, `npm run build`, `npm test` y tres `npm run smoke` seguidos.
 - [ ] Ningún otro `.txt` ni valor de `gameplay.ts` tocado (`git status`).
 - [ ] Cabecera del `.txt`, GDD §6.x y PLAN actualizados.
@@ -605,3 +606,95 @@ l6 se hizo con el mismo orden de trabajo (§1). El generador parte del commit ba
 
 - **Cada premio, en el juego:** el plan principal recoge las cinco guavirá del camino y la Luz de Arasy del fuego 2 (y la guavirá de la antesala); el del secreto, la Luz de Arasy, dos guavirá y la pluma B de la gruta; dos planes cortos, la pluma A (tajo cargado en la quebrada) y la pluma C (la ruta alta de la persecución, sin que Ao Ao la alcance). Todos en el smoke: 13 de 13.
 - **Lo que no debe alcanzarse, con el modelo exagerado de la red** (aire sin límite horizontal, plataformas móviles como piso en todo su recorrido; script del scratchpad, fuera del repo): con la reja cerrada no se pasa del paso (x 99); sin el hongo de un uso no se sale del patio; sin el hongo del pozo no se sale del pozo; sin romper las rocas no se pasa la columna del paso ni se llega a la pluma A. Cuando el modelo "llega" volando por un túnel o sobre un hueco de 20 tiles (sin salto doble al puente, sin despertar el hongo dormido a la cumbre 2), se decide con la física del juego: el puente está a 8 filas del sombrero del hongo de un uso (un empujón sube 6,7) y la cumbre 2, fuera del salto doble + dash (arriba).
+
+---
+
+## 15. Lo que agregó l7 (S32): la oscuridad como mecánica, la ronda del farolero y el sótano
+
+l7 se hizo con el mismo orden de trabajo (§1). El generador parte del commit base de la sesión (`f609053`) solo para copiar la antesala y la arena (x 220-279 del l7 viejo, a x 480-539 y 40 filas más abajo: `rect BossArena x=500 y=41`; Luisón se ubica por la arena, sin cambios). Es el último nivel antes de Yvága: el más largo y el más exigente, con tres secciones (las calles, la catedral, el camposanto).
+
+**Medidas de l7:** 540 × 70 (antes 280 × 30). Ruta principal con el piloto: **antes ≈ 30 s** (por tramos, porque el piloto se trababa en las rejas con puntas: 10,1 s del inicio a x 89 + ≈ 5 s de x 89 a x 122 + 15,3 s de x 122 a la arena), **después ≈ 176 s** (176,3 a 176,4 s en las tres corridas finales del smoke, con 1 o 2 caídas del piloto en los pares de balsas de la catedral; sin caídas, ≈ 170 s). El sótano (lugar secreto): ≈ 6-18 s del piloto desde la calle del mercado hasta volver a ella (más si la trampilla no se encuentra a la primera).
+
+| # | Tiles | Qué pide | Cadencia |
+|---|---|---|---|
+| A1 | x 0-40 | nido, mbopi, el farol del portón abre la reja del zaguán (cartel) | el zaguán |
+| A2 | x 41-64 | el farol de pared despierta el andamio 1 (solo se toca desde el andamio) | el tejado 1, fila 46 |
+| A3 | x 53-97 | chimenea agrietada, hueco con mbopi (patio de luz con toldo debajo), pozo de 5 con mbopi, jagua hũ | la caída a la calle |
+| A4 | x 98-152 | par de carros con mbopi, cajón, jagua hũ, lona de un uso + salto doble sobre el muro del cabildo | **fuego x 148** |
+| B1 | x 153-171 | columna de roca (tajo cargado); farol de la puerta → andamio 2 → la piedra por la ventana (onda) → reja de la torre | la torre |
+| R | x 173-189, fila 60 → 15 | LA RONDA DEL FAROLERO: cinco ascensores que llama un farol temporizado, póra y mbopi | el campanario |
+| B2 | x 191-291, fila 15 → 54 | tres ascensores que bajan y dos pares de balsas de 4 (jagua hũ, mbopi y póra) | la bajada |
+| C1 | x 292-349 | fuego 2; la fosa (el farol despierta la losa); jagua hũ, mausoleo | el borde del pozo |
+| C2 | x 349-397 | el farol del otro lado (onda) y el pozo con un póra; LA CRIPTA (puzzle 2) | el panteón |
+| C3 | x 398-479 | fuego 3 y la Luz de Arasy, lápida agrietada, toldo plegado (tajo cargado), par de losas con mbopi, jagua hũ, la capilla | **antesala x 480** |
+
+### 15.1 La oscuridad como mecánica, no como filtro
+
+**Qué hace el código** (`Darkness`, `Lantern`, `lightLogic`; valores en `GAMEPLAY.darkness` y `GAMEPLAY.lantern`):
+
+- El ambiente oscuro depende de **dónde está Kerana** (su centro dentro de un `rect DarkZone`), no de dónde está cada cosa: adentro, toda la pantalla se ve a oscuras salvo las luces. El halo de Kerana alumbra **72 px (4,5 tiles)**; un farol encendido, **88 px (5,5 tiles)**.
+- **La luz no la tapan los tiles:** un farol encendido dentro de un cuarto cerrado alumbra también la calle de afuera. Se usó a favor: la luz que se escapa por la puerta de fardo del sótano es la pista del secreto.
+- **El farol como disparador (S32):** `point Lantern … target=<id>` da energía a una reja o a un `Mover` mientras está encendido, por el mismo tablero que los Switch (`SwitchBoard`: varios disparadores sobre un objetivo, OR); `ms=<n>` lo apaga solo con el mismo aviso que una piedra temporizada (parpadea los últimos 1,5 s). Tocarlo lo enciende **solo si está apagado** (quedarse al lado no le renueva la cuenta: si no, la ronda se volvía esperar parada); el sable y la onda sí la renuevan. La onda lo enciende de lejos y a través de una pared, como a una piedra. Apagado muestra una brasa (`emberRadius`, `emberAlpha`): sin ella, un farol apagado en una `DarkZone` no se veía y no había a qué apuntar. `npm run maps` cuenta los faroles con `target` como disparadores de sus rejas.
+
+**Qué hizo que la oscuridad importara** (cuatro formas, todas en el camino principal o en una pluma):
+
+1. **Una plataforma que solo existe con luz:** el farol despierta la losa de la fosa (`mode=run`, origen del otro lado: viene a buscarla). Sin luz no hay en qué saltar: imposible saltar a ciegas.
+2. **Un salto que se calcula con un farol encendido:** el pozo de 5 del camposanto mide más que el halo; en la llegada hay un farol que solo enciende la onda desde el borde, y su luz muestra dónde caer (y el póra que flota encima).
+3. **Un enemigo que solo se ve con luz:** el póra (ya existía: sin luz se ve al 35 % y el sable lo atraviesa). En la cripta y en la ronda aparece cuando se enciende el farol de al lado.
+4. **Luz como pista:** el farol encendido del sótano, que se ve desde la calle.
+
+**Las dos reglas, comprobadas en `tests/l7.test.ts`:**
+
+- **Nunca un salto a ciegas:** en una `DarkZone`, todo pozo de más de 4 tiles (el halo) tiene una plataforma que lo cruza (con huecos de hasta 3 entre plataformas) o un farol que alumbra la llegada. El test recorre todos los bordes del mapa.
+- **Nunca sin forma de volver a encender la luz:** cada farol temporizado está parado sobre un piso, en el rellano donde se lo necesita; si se apaga con Kerana lejos, la plataforma vuelve a su origen (al lado del farol) o espera ahí.
+
+**El error que más tiempo costó: un farol pegado a una plataforma `mode=run` la manda sin Kerana.** Al encenderse, la plataforma sale en el acto; el jugador toca el farol un paso antes de subirse y la ve irse (y el andamio del patio, con su pozo al pie, lo dejaba caer adentro). Dos arreglos: **el farol de pared** (x 53 y x 171,2), que solo se toca parada en la plataforma (se arranca con ella encima), y **la plataforma que viene a buscarla** (origen del otro lado: la losa de la fosa, los ascensores de la ronda). Un `point` acepta x con decimales para ponerlo entre dos tiles.
+
+### 15.2 La zona de ritmo: la ronda del farolero
+
+- **No repite las anteriores:** l2 y l3 piden paciencia (esperar al jakare, al viento), l4 apuro (la teja), l5 rebotar en el lugar, l6 no detenerse. Esta pide **llevar la luz**: el jugador marca el tempo encendiendo cada farol y la luz se le acaba si se demora.
+- **Cómo se arma:** la torre por dentro (oscura), rellanos de 9 tiles (x 178-186) cada 9 filas, cinco ascensores `mode=toggle` dibujados **arriba** (su origen), alternando el lado. El farol del rellano de abajo (`ms=3600`) los llama: encendido, el ascensor baja (9 filas a 60 px/s, 2,4 s) y espera; al apagarse, sube con Kerana. Quedan **≈ 1,2 s para subirse** después de que llega, mientras el farol ya parpadea: el parpadeo dice "se va". Si no se subió, sube vacío; se vuelve a tocar el farol. `tests/l7.test.ts` simula farol y ascensor con el mismo tablero del juego.
+- **Por qué vertical:** con salto doble y dash, Kerana cruza ≈ 13 tiles a la misma altura (salto + doble en el ápice ≈ 1,07 s de aire a 150 px/s, más el dash): una ronda horizontal con huecos de 8 se salteaba. Entre rellanos hay 9 filas y el salto doble sube 6,8: no se saltea (test).
+- **Primera versión, rellanos de 3 tiles:** el piloto (y cualquiera) se pasaba del rellano al frenar y caía al piso de la torre. Con 9 tiles el farol queda en el medio del camino.
+
+### 15.3 Puzzles más elaborados que los de l4: cadenas de tres o cuatro pasos
+
+- **La torre (B1):** farol de pared → el andamio sube → por la ventana se ve la piedra, a 2 tiles de la pared (el sable llega a 34 px del centro de Kerana; la piedra está a ≥ 40) → la onda la enciende → se abre la reja de abajo → se baja en el andamio (que sigue yendo y viniendo) y se entra. Piedra permanente: no encierra. La primera versión ponía la reja a media altura de la torre: desde la repisa interior se llegaba al segundo rellano y se salteaban dos tramos de la ronda.
+- **La cripta (C2):** la reja del panteón se ve cerrada desde arriba; se baja por una fosa abierta (el ascensor, sin energía, está abajo); el farol de abajo despierta el ascensor (`mode=run`) y alumbra la cripta (un póra); una pared de roca (tajo cargado) tapa el farol de la reja (la onda también lo enciende a través de la roca, que se rompe igual). Se vuelve a subir en el ascensor. Ningún paso encierra: los faroles son permanentes y están donde se aterriza.
+- `tests/l4.test.ts` ("rejas que se cierran solas") ahora cuenta también los faroles con `target`.
+
+### 15.4 El lugar secreto: el sótano de la casona
+
+- **Forma propia:** no es un pilar, una cueva en la ladera, un interior con reja, un claro ni una gruta tras el agua: es **un sótano bajo la calle**, al que se entra por una puerta de fardo en la fachada de la casona (al pie de donde se cae del tejado 3) y del que se sale por **una trampilla** en la vereda, más adelante (un tablón de un solo sentido: desde la calle se pisa, desde abajo se atraviesa).
+- **Descubrible:** la luz del farol encendido del zaguán sale a la calle, con luciérnagas; adentro, oscuridad, un farol para encender, un póra y el piso podrido (tablones que se quiebran sobre un pozo).
+- **Proporción:** ≈ 6-18 s del piloto (que sabe dónde está la trampilla) por la pluma A, la Luz de Arasy y dos guavirá: es el desvío más corto de los siete, pero el sótano está a oscuras y se recorre con el halo, encendiendo el farol; un jugador que lo descubre tarda bastante más.
+
+### 15.5 Errores de S32 y su corrección
+
+1. **El farol junto a una plataforma `mode=run`** (§15.1): farol de pared o plataforma que viene a buscarla.
+2. **La reja de la torre a media altura** dejaba saltear la ronda (§15.3).
+3. **La ronda con rellanos de 3 tiles** (§15.2).
+4. **Las cadenas de bajada de l6, copiadas en los tejados de la catedral**, tiraban al piloto en uno de cada dos o tres intentos (al pasar de una balsa de 3 a otra el salto se pasaba). Se cambiaron por ascensor → rellano → par de balsas **de 4** (receta §3: sobre un pozo, un tile más ancha), con 2,4 s de espera. Y el piloto frena en el aire con la distancia de frenado (`board`), no al llegar al centro: a pocos FPS, `seek` se pasaba dos tiles.
+5. **Un enemigo justo encima del encuentro de dos balsas** empujaba a Kerana (aun con `god=1`) fuera de la balsa de llegada. Los mbopi y póra de los pares pasaron a la llegada (se ven desde la balsa y se los corta al bajar).
+6. **El sótano con DarkZone sobre la calle:** el rectángulo cubría también la calle del mercado (de día, oscura). Dos rectángulos: la casona por dentro y el sótano bajo la calle.
+7. **El escalón del sótano bajo la caída:** quien entraba caía sobre el escalón y no al piso. Los escalones, contra la pared opuesta a la entrada; y la salida, por la trampilla (el salto del escalón al zaguán, con el techo bajo, fallaba).
+8. **El nido de fardo pegado al toldo plegado:** el salto sobre el nido dejaba a Kerana parada encima del toldo dormido, y el tajo cargado no lo alcanzaba (la onda sale hacia adelante, no hacia abajo). El nido, a la salida del panteón; y el piloto se para 4 tiles antes del toldo: a 9 FPS (smoke) se deslizó 3 tiles mientras cargaba el tajo y terminó encima del toldo (una corrida trabada). Y el toldo plegado estaba **sobre un pozo** (el suelo terminaba un tile antes): el test de encierros no lo marca (un pozo es una salida); se vio porque el piloto caía al cargar el tajo.
+9. **Piloto:** al instalar un plan suelta las teclas que dejó apretadas el anterior en la misma página (la flecha del último `run`: en el smoke, la pluma C empezaba caminando y Kerana se bajaba del ascensor del ángel mientras cargaba el tajo); `strict` con un número (ms); frenar en el aire con la distancia de frenado al saltar a una plataforma; y pasos `mover` con `lantern: [x, y]` (espera a que el farol temporizado esté encendido con ≥ 1 s de cuenta y, si está apagado, va a tocarlo; también para el farol de pared del andamio, que se toca parada en él).
+
+### 15.6 Cómo se comprobó el alcance
+
+- **Cada premio, en el juego:** el plan principal recoge todo lo del camino (quedan las plumas, lo del sótano y dos guavirá a un costado: la del balcón alto de A3 y la de la antesala); el del sótano, la pluma A, la Luz de Arasy y dos guavirá; dos planes cortos, la pluma B (dash) y la C (onda + ascensor del ángel). Todo en el smoke.
+- **Lo que solo la onda alcanza**, con los números del juego (`tests/l7.test.ts`): el sable llega a 34 px del centro de Kerana, la luz de la onda a 117; la piedra de la torre y el farol de la capilla quedan fuera del sable y dentro de la onda.
+- **Encierros:** `tests/trap.test.ts` (salto doble) no encuentra ninguno; las salidas del sótano son los escalones y la trampilla, las de la cripta el ascensor (el modelo lo toma como piso en todo su recorrido).
+
+---
+
+## 16. Si empezara de nuevo (S32, con los siete niveles rediseñados)
+
+1. **Medir el alcance real antes de dibujar, y dejar la simulación en el repo.** Las alturas del salto (63,3 px, no 67), del doble, del hongo de un uso (107, no 136) y lo que cruza el salto doble + dash (≈ 13 tiles a la misma altura) se descubrieron tarde y nivel por nivel. La simulación de alcance se rehízo tres veces en el scratchpad; un `tools/reach.mjs` con la física de `PlayerMotor` y los tests que la usan habrían ahorrado sesiones.
+2. **Diseñar para el piloto desde la primera pieza.** Casi todo el tiempo de cada sesión se fue en que el piloto cruce de plataforma a plataforma con el juego lento: plataformas de 4 en vez de 3 sobre los pozos, esperas de 1,5 s o más en los traspasos, ascensores que paran al ras de un piso y nunca un traspaso en el aire. Son las mismas reglas que hacen un nivel amable para una persona.
+3. **Una pieza nueva por nivel, enseñada primero sin riesgo, y todo lo demás exigido.** Funcionó en l2-l7 (camalotes, viento, piedras y rejas, hongos, persecución, faroles). Lo que no hay que reinventar: los pares de balsas que se juntan en una espera, los ascensores alternados y la red debajo de cada salto.
+4. **Las reglas de seguridad como tests desde el principio:** encierros, rejas que se cierran solas, saltos a ciegas, enemigos con camino libre, ciclos sincronizados. Cada una apareció después de un error de Jose jugando; escritas antes, habrían evitado la segunda pasada de l2.
+5. **Pensar el nivel como recorrido con tres ideas, no como pasillo.** l5 (vertical), l6 (zigzag + persecución) y l7 (calles, torre, camposanto) se sienten más largos que su ancho; l1-l3 crecieron a lo ancho primero y después hubo que doblarlos.
+6. **Un vocabulario de piezas por bioma desde el inicio** (toldos en la ciudad, lajas en el cerro, camalotes en el estero) en vez de colores de placeholder: el hongo se vistió de toldo recién en el último nivel.
+7. **El tiempo objetivo como dato de cada sesión, medido con el mismo piloto y en las mismas condiciones** (un navegador solo, sin nada en paralelo): las cifras de antes y después se compararon con criterios distintos en cada nivel.

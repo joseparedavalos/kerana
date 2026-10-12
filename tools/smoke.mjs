@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET, L5_MAIN, L5_SECRET, L6_FEATHER_A, L6_FEATHER_C, L6_MAIN, L6_SECRET } from './lib/pilot-plans.mjs';
+import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET, L5_MAIN, L5_SECRET, L6_FEATHER_A, L6_FEATHER_C, L6_MAIN, L6_SECRET, L7_FEATHER_B, L7_FEATHER_C, L7_MAIN, L7_SECRET } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -16,6 +16,8 @@ const TILE = 16;
 const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4 };
 // Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
 const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2 };
+// Piezas de l7 (S32, cabecera de tools/levels/l7.txt).
+const L7_COUNTS = { movers: 21, vertical: 12, lanterns: 21, triggers: 12, timed: 5, gates: 3, normal: 1, once: 1, sleep: 1, crumbles: 1, rocks: 4, brittle: 7, mbopi: 8, pora: 6, jagua: 6 };
 
 function findBrowser() {
   const candidates = [process.env.CHROME_PATH];
@@ -1752,12 +1754,161 @@ async function main() {
     check(poraLit, 'nivel 7: con el halo de Kerana el póra queda iluminado y vulnerable');
     await l7aPage.close();
 
+
+    // 1j0) l7 de punta a punta (S32): el piloto cruza Asunción por la ruta principal (el portón y el andamio del patio, los
+    // tejados, el mercado, la plaza y la piedra de la torre, LA RONDA DEL FAROLERO, los tejados de la catedral, la fosa, el
+    // farol del otro lado, la cripta, el toldo plegado, las losas y la capilla) y después la liberación hasta "Nivel
+    // completado". El guardado (gifts=all) trae el tajo cargado, el salto doble y el dash.
+    const l7Run = await open('/?debug=1&level=7&god=1&gifts=all');
+    await l7Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l7RunInfo = await l7Run.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const groups = new Set(s.breakables.map((b) => b.group));
+      const kinds = s.bouncers.reduce((acc, b) => ({ ...acc, [b.motor.kind]: (acc[b.motor.kind] ?? 0) + 1 }), {});
+      return {
+        movers: s.movers.length,
+        vertical: s.movers.filter((m) => m.motor.spec.dy !== 0).length,
+        oneWay: s.movers.every((m) => !m.solid),
+        lanterns: s.lanterns.length,
+        triggers: s.lanterns.filter((l) => l.targetId !== undefined).length,
+        timed: s.lanterns.filter((l) => !l.motor.permanent).length,
+        switches: s.switches.length,
+        gates: s.gates.length,
+        bouncers: kinds,
+        crumbles: s.crumbles.length,
+        rocks: [...groups].filter((g) => g[0].kind === 'rock').length,
+        brittle: [...groups].filter((g) => g[0].kind === 'brittle').length,
+        checkpoints: s.checkpoints.length,
+        feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
+        enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
+        traps: s.trapCells ? s.trapCells.reduce((n, v) => n + v, 0) : 0,
+      };
+    });
+    const C7 = L7_COUNTS;
+    check(
+      l7RunInfo.movers === C7.movers &&
+        l7RunInfo.vertical === C7.vertical &&
+        l7RunInfo.oneWay &&
+        l7RunInfo.lanterns === C7.lanterns &&
+        l7RunInfo.triggers === C7.triggers &&
+        l7RunInfo.timed === C7.timed &&
+        l7RunInfo.switches === 1 &&
+        l7RunInfo.gates === C7.gates &&
+        l7RunInfo.bouncers.normal === C7.normal &&
+        l7RunInfo.bouncers.once === C7.once &&
+        l7RunInfo.bouncers.sleep === C7.sleep &&
+        l7RunInfo.crumbles === C7.crumbles &&
+        l7RunInfo.rocks === C7.rocks &&
+        l7RunInfo.brittle === C7.brittle &&
+        l7RunInfo.checkpoints === 4 &&
+        l7RunInfo.feathers === 3 &&
+        l7RunInfo.enemies.mbopi === C7.mbopi &&
+        l7RunInfo.enemies.pora === C7.pora &&
+        l7RunInfo.enemies.jagua_hu === C7.jagua &&
+        l7RunInfo.traps === 0,
+      `nivel 7: ${C7.movers} plataformas de un solo sentido (${C7.vertical} verticales), ${C7.lanterns} faroles (${C7.triggers} disparadores, ${C7.timed} temporizados), 1 piedra y ${C7.gates} rejas, toldos de las tres variantes, ${C7.rocks} rocas y ${C7.brittle} fardos, 4 fuegos, 3 plumas, ${C7.mbopi} mbopi, ${C7.pora} póra, ${C7.jagua} jagua hũ, ningún encierro (${JSON.stringify(l7RunInfo)})`,
+    );
+    const l7Pickups = () => l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).map((p) => `${p.kind}@${Math.floor(p.x / 16)}`).sort());
+    await l7Run.evaluate(installPilot, L7_MAIN);
+    for (let t = 0; t < 900000 && !(await pilot(l7Run)).done; t += 500) await sleep(500);
+    const run7 = await pilot(l7Run);
+    check(run7.done && (await l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)), `nivel 7: el piloto llega a la arena de Luisón por la ruta principal (${run7.respawns} caídas)`);
+    const l7Left = await l7Pickups();
+    // Quedan las plumas, lo del sótano (secreto), la guavirá del balcón alto (salto doble, a un costado) y la de la antesala.
+    const l7Off = ['guavira@97', 'guavira@107', 'luz_arasy@106', 'pluma@108', 'pluma@160', 'pluma@466', 'guavira@77', 'guavira@486'];
+    check(l7Left.every((k) => l7Off.includes(k)), `nivel 7: la ruta principal recoge todo lo del camino; quedan solo las plumas, lo del sótano y dos guavirá a un costado (${JSON.stringify(l7Left)})`);
+    // La oscuridad como mecánica: la piedra de la torre (onda por la ventana), las tres rejas abiertas por faroles y piedra,
+    // el farol del otro lado del pozo (onda) encendido, y los faroles de la ronda ya apagados (temporizados).
+    const l7Dark = await l7Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const lamp = (x) => s.lanterns.find((l) => Math.floor(l.zone.centerX / 16) === x);
+      return {
+        stone: s.switches[0].state,
+        gatesOpen: s.gates.filter((g) => g.isOpen).length,
+        farLamp: lamp(355).lit,
+        ronda: s.lanterns.filter((l) => !l.motor.permanent).map((l) => l.lit),
+      };
+    });
+    check(l7Dark.stone === 'on' && l7Dark.gatesOpen === 3 && l7Dark.farLamp && l7Dark.ronda.every((on) => !on), `nivel 7: la piedra de la torre encendida, las tres rejas abiertas, el farol del otro lado del pozo encendido con la onda y los de la ronda apagados solos (${JSON.stringify(l7Dark)})`);
+    if (run7.respawns > 0) console.log((await l7Run.evaluate(() => window.__KERANA_PILOT__.log)).filter((l) => l.startsWith('caída') || l.startsWith('paso')).slice(-40).join('\n'));
+    if (!run7.done) {
+      await l7Run.screenshot({ path: join(SHOTS, 'l7-piloto-atascado.png') });
+      console.log((await l7Run.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
+    console.log(`  l7 (ruta principal): ${(run7.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run7.splits)}`);
+    await l7Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const l7RunDone = () => l7Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && s.isActive('LevelComplete'); });
+    for (let i = 0; i < PRESS_MAX && !(await l7RunDone()); i++) {
+      await l7Run.keyboard.press('Space');
+      await sleep(300);
+    }
+    check(await l7RunDone(), 'nivel 7 recorrido → liberación → Nivel completado');
+    await l7Run.close();
+
+    // 1j1) l7, el lugar secreto (S32): el sótano de la casona. Desde la calle del mercado rompe la puerta de fardo, baja,
+    // salta el piso podrido y recoge dos guavirá, la Luz de Arasy y la pluma A; sale por la trampilla de la vereda.
+    const l7Cellar = await open('/?debug=1&level=7&god=1&gifts=all');
+    await l7Cellar.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const cellar0 = await l7Cellar.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      d.player.body.reset(99.5 * 16, 60 * 16 - 1);
+      // Lo del sótano (x 97-109, bajo la calle): con el guardado de la corrida anterior puede haber menos.
+      return { feathers: d.scene.feathers, pickups: d.scene.pickups.filter((p) => p.active && p.x > 96 * 16 && p.x < 110 * 16 && p.y > 62 * 16).map((p) => p.kind) };
+    });
+    await sleep(300);
+    await l7Cellar.evaluate(installPilot, L7_SECRET);
+    for (let t = 0; t < 150000 && !(await pilot(l7Cellar)).done; t += 500) await sleep(500);
+    const cellar = await l7Cellar.evaluate(() => ({
+      done: window.__KERANA_PILOT__.done,
+      respawns: window.__KERANA_PILOT__.respawns,
+      feathers: window.__KERANA_DEBUG__.scene.feathers,
+      pickups: window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active && p.x > 96 * 16 && p.x < 110 * 16 && p.y > 62 * 16).map((p) => p.kind),
+      feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16),
+      timeMs: Math.round(window.__KERANA_PILOT__.timeMs),
+    }));
+    await l7Cellar.screenshot({ path: join(SHOTS, 'l7-sotano.png') });
+    check(
+      cellar.done && cellar.respawns === 0 && cellar.feathers === cellar0.feathers + 1 && cellar0.pickups.includes('luz_arasy') && cellar.pickups.length === 0 && cellar.feet === 60,
+      `nivel 7: el sótano de la casona: dos guavirá, la Luz de Arasy y la pluma A, y de vuelta a la calle por la trampilla (${JSON.stringify({ before: cellar0, after: cellar })})`,
+    );
+    if (!cellar.done) console.log((await l7Cellar.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    console.log(`  l7 (el sótano): ${(cellar.timeMs / 1000).toFixed(1)} s de juego desde la calle del mercado hasta volver a ella`);
+    await l7Cellar.close();
+
+    // 1j2) l7, las plumas B y C (S32). B: el balcón del obispado, el dash por encima de la espina bajo el techo bajo. C: desde
+    // el ascensor del ángel, la onda enciende el farol encerrado en la capilla y el ascensor sube a la cornisa.
+    const l7Feathers = await open('/?debug=1&level=7&god=1&gifts=all');
+    await l7Feathers.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l7FeatherRun = async (x, row, plan) => {
+      const before = await l7Feathers.evaluate(([px, r]) => {
+        const d = window.__KERANA_DEBUG__;
+        d.player.body.reset(px * 16, r * 16 - 1);
+        return d.scene.feathers;
+      }, [x, row]);
+      await sleep(300);
+      await l7Feathers.evaluate(installPilot, plan);
+      for (let t = 0; t < 90000 && !(await pilot(l7Feathers)).done; t += 250) await sleep(250);
+      const after = await l7Feathers.evaluate(() => ({ done: window.__KERANA_PILOT__.done, respawns: window.__KERANA_PILOT__.respawns, feathers: window.__KERANA_DEBUG__.scene.feathers }));
+      if (!after.done || after.respawns > 0) console.log((await l7Feathers.evaluate(() => window.__KERANA_PILOT__.log)).slice(-20).join('\n'));
+      return { before, ...after };
+    };
+    const l7B = await l7FeatherRun(167.5, 44, L7_FEATHER_B);
+    check(l7B.done && l7B.respawns === 0 && l7B.feathers === l7B.before + 1, `nivel 7: la pluma B, en el balcón del obispado (dash) (${JSON.stringify(l7B)})`);
+    const l7C = await l7FeatherRun(470, 60, L7_FEATHER_C);
+    check(l7C.done && l7C.respawns === 0 && l7C.feathers === l7C.before + 1, `nivel 7: la pluma C, la onda enciende el farol de la capilla y el ascensor del ángel sube (${JSON.stringify(l7C)})`);
+    await l7Feathers.close();
+
     // 1k) Nivel 7 con boss=1: arena de Luisón, apagón (fase 2), sombra de Tau (fase 3), velas, final y créditos.
     const l7Page = await open('/?debug=1&level=7&boss=1&god=1');
     await l7Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const l7x = await l7Page.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(l7x > 220 * TILE && l7x < 240 * TILE, `nivel 7 con boss=1 empieza en la antesala (x ${Math.round(l7x / TILE)} tiles)`);
+    // S32: la antesala de l7 está en x 480-499 (la arena empieza en x 500).
+    check(l7x > 480 * TILE && l7x < 500 * TILE, `nivel 7 con boss=1 empieza en la antesala (x ${Math.round(l7x / TILE)} tiles)`);
     await walkIntoArena(l7Page, 15000, true);
     check(await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 7: la arena de Luisón se cierra');
     await sleep(4000);
