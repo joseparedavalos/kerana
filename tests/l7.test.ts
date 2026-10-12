@@ -83,6 +83,36 @@ describe('l7: los faroles como disparadores (S32)', () => {
   });
 });
 
+describe('l7: cada farol se ve natural (S33)', () => {
+  const mountOf = (l: (typeof lanterns)[number]) => String(l.props.mount ?? 'post');
+  const cell = (l: (typeof lanterns)[number]) => [Math.floor(l.x / T), l.y / T - 1] as const;
+
+  it('el de pie está en la calle: suelo debajo y aire en su tile y el de arriba (el poste no se mete en un muro)', () => {
+    for (const l of lanterns.filter((o) => mountOf(o) === 'post')) {
+      const [tx, ty] = cell(l);
+      const ok = (ground(tx, ty + 1) || platforms(tx, ty + 1)) && !ground(tx, ty) && !ground(tx, ty - 1);
+      expect([tx, ty, ok]).toEqual([tx, ty, true]);
+    }
+  });
+
+  it('el aplique cuelga de un muro que está a su lado; el nicho, dentro de un muro', () => {
+    const walls = lanterns.filter((o) => mountOf(o) === 'wall');
+    const niches = lanterns.filter((o) => mountOf(o) === 'niche');
+    expect([walls.length, niches.length]).toEqual([2, 1]);
+    for (const l of walls) {
+      const [tx, ty] = cell(l);
+      const side = l.props.wall === 'left' ? -1 : 1;
+      // El brazo va a la altura del poste (2 tiles), o un poco más arriba sobre una reja.
+      const ok = [ty - 1, ty - 2, ty - 3].some((y) => ground(tx, y) || ground(tx + side, y));
+      expect([tx, ty, ok]).toEqual([tx, ty, true]);
+    }
+    for (const l of niches) {
+      const [tx, ty] = cell(l);
+      expect([tx, ty, ground(tx, ty) && ground(tx, ty - 1)]).toEqual([tx, ty, true]);
+    }
+  });
+});
+
 describe('l7: la ronda del farolero (zona de ritmo, S32)', () => {
   const ronda = [1, 2, 3, 4, 5].map((k) => {
     const lamp = lanterns.find((l) => l.props.target === `ronda${k}`)!;

@@ -2,6 +2,9 @@
 # La oscuridad es la mecánica: los faroles son disparadores (point Lantern con target=<id>, como un Switch; con ms=<n>
 # se apagan solos, parpadeando antes, y se vuelven a encender tocándolos). El sable y la onda del tajo cargado también
 # los encienden (la onda, de lejos y a través de una pared). Apagados muestran una brasa. Kerana llega con todo. Filas reales.
+# S33: cómo está montado cada farol (solo dibujo): de pie con poste (por defecto, en la calle con suelo debajo),
+#   mount=wall wall=right|left (aplique: cuelga de un brazo corto en el muro de ese lado; x 53 y x 171,2) o
+#   mount=niche (un hueco en el muro, como una ventana iluminada: la hornacina de la capilla, x 476).
 # A. LAS CALLES (x 0-152, noche con luna): nido de fardo (x 13), mbopi · el farol del portón (x 26) abre la reja del
 #    zaguán (x 29, cartel) · el patio: el farol de pared (x 53) solo se toca parada en el andamio 1 (x 50-52) y lo
 #    despierta (mode=run) · los tejados (fila 44-46): chimenea agrietada, hueco con mbopi y un patio de luz con un toldo
@@ -41,7 +44,7 @@ point Lantern x=26 y=59 target=porton
 at 29,57 id=porton
 point Lantern x=44 y=59
 at 50,60 id=andamio1 mode=run speed=50 waitMs=1500
-point Lantern x=53 y=59 target=andamio1
+point Lantern x=53 y=59 target=andamio1 mount=wall wall=right
 point Lantern x=95 y=59 lit=true
 point Lantern x=98 y=67
 rect Fireflies x=97 y=55 w=2 h=2
@@ -52,7 +55,7 @@ at 125,60 speed=50 waitMs=1800
 at 138,59 kind=once
 point Lantern x=155 y=59
 at 169,60 id=andamio2 mode=run speed=50 waitMs=1500
-point Lantern x=171.2 y=59 target=andamio2
+point Lantern x=171.2 y=59 target=andamio2 mount=wall wall=right
 at 172,57 id=reja_torre
 at 174,43 target=reja_torre
 point Lantern x=184 y=59 ms=3600 target=ronda1
@@ -85,7 +88,7 @@ at 428,59 kind=sleep
 at 439,52 speed=50 waitMs=1800
 at 454,52 speed=50 waitMs=1800
 at 469,60 id=angel mode=toggle speed=60
-point Lantern x=476 y=59 target=angel
+point Lantern x=476 y=59 target=angel mount=niche
 rect DarkZone x=292 y=0 w=188 h=70
 point Lantern x=483 y=65
 point Lantern x=512 y=65 lit=true

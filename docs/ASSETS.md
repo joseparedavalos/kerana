@@ -255,7 +255,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Guavirá y Luz de Arasy (HUD y pickups) | `raw/hud/guavira.jpg`, `luz_arasy.jpg` → `ui/` | 12 de alto (S13d ☑) |
 | Pickup yvoty | — (placeholder) | 12 × 12 |
 | Fogata apagada y encendida (el parpadeo es por código) | `raw/props/fire_off.png`, `fire_on.png` → `props/` | 20 de ancho (S13d ☑) |
-| Farol apagado y encendido | `raw/props/lantern_off.png`, `lantern_on.png` → `props/` | 32 de alto (S13d ☑) |
+| Farol apagado y encendido | `raw/props/lantern_off.png`, `lantern_on.png` → `props/` | 32 de alto (S13d ☑). S33: tres montajes con el mismo arte: de pie (entero), aplique de pared (`mount=wall`: solo la cabeza, filas 0-33 del arte, colgada de un brazo dibujado por código) y nicho (`mount=niche`: la cabeza en un hueco en arco dibujado por código, cálido al encenderse) |
 | Cartel | `raw/props/sign.png` → `props/` | 22 de alto (S13d ☑) |
 | Camalote, hongo, rama, teja | `sprites/props.png` | 48 × 16 · 32 × 16 · 48 × 8 · 16 × 8 |
 | Marca de Tau (efecto) | `ui/tau_mark.png` | 16 × 16 |
