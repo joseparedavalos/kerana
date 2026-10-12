@@ -1248,6 +1248,7 @@ Arreglo visual sobre l7. No cambia colisiones, saltos, premios ni balance. Conte
 - **Nicho:** hueco en arco con marco de piedra y alféizar; el farol (solo la cabeza) apoyado adentro. Apagado, el fondo es casi negro y se ve la brasa; encendido, el fondo se pinta cálido y no recibe la luz de la escena (como una ventana iluminada).
 - **Test nuevo** (`tests/l7.test.ts`): el farol de pie tiene suelo o tablón debajo y aire en su tile y el de arriba; el aplique tiene muro al lado; el nicho está dentro del muro. Con el mapa de S32 falla en x 53, x 171,2 y x 476.
 - **Capturas** (script del scratchpad: Kerana teletransportada junto al farol, el farol apagado y encendido, el juego congelado con `game.loop.sleep()` como S20): ver la descripción del PR.
+- **Smoke:** cuatro corridas con el código final; tres OK (1, 2 y 4: l7 en 182,4 / 188,5 / 188,6 s, el sótano en 28,0 / 9,7 / 11,6 s). La 3 falló en l6 (el piloto no juntó la guavirá de x 8, al empezar): l6 no tiene oscuridad ni faroles, así que no pasa por el código de S33; en las otras tres corridas ese mismo check pasó. Una corrida entera tarda más de 10 minutos.
 - **Pendiente (no se tocó):** en el farol de pie con arte, la brasa y la luz quedan ≈ 6 px por encima del arte, ≈ 16 px sobre el vidrio (heredado de S13d/S32: `postHeight` 34 contra 32 de arte): moverlas cambiaría dónde ilumina, así que quedó así. El GDD §11.7.1 no lista `mount` ni `wall` (tampoco la x con decimales de S32).
 
 ### S13: Integración de arte y música
