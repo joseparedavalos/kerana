@@ -27,6 +27,13 @@ const KEY_LABELS: Record<string, string> = {
   SHIFT: 'Shift',
 };
 
+function wantsTouch(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (new URLSearchParams(window.location.search).get('touch') === '1') return true;
+  const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  return coarse || navigator.maxTouchPoints > 0;
+}
+
 const ACTIONS = Object.keys(KEYMAP) as Action[];
 
 export class InputManager {
@@ -86,8 +93,18 @@ export class InputManager {
     return this.pressed.get(action) ?? false;
   }
 
-  /** Nombre visible de la primera tecla de una acción. */
+  /** Nombre visible de la primera tecla de una acción. En el celular, una palabra corta. */
   label(action: Action): string {
+    if (wantsTouch()) {
+      const touch: Partial<Record<Action, string>> = {
+        left: '←',
+        right: '→',
+        jump: t('key.jump'),
+        attack: t('key.attack'),
+        dash: t('key.dash'),
+      };
+      return touch[action] ?? t('key.space');
+    }
     const name = KEYMAP[action][0];
     if (name === 'SPACE') return t('key.space');
     return KEY_LABELS[name] ?? name;
