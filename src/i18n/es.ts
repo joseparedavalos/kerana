@@ -3,6 +3,7 @@ export const es = {
   'game.title': 'KERANA',
   'game.subtitle': 'Pokõi Mbyja',
   'title.press_start': 'Pulsá {key}',
+  'title.tap': 'Tocá la pantalla',
   'title.new_game': 'Nueva partida',
   'title.continue': 'Continuar',
   'title.options': 'Opciones',

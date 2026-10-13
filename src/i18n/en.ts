@@ -5,6 +5,7 @@ export const en: Record<TextKey, string> = {
   'game.title': 'KERANA',
   'game.subtitle': 'Pokõi Mbyja',
   'title.press_start': 'Press {key}',
+  'title.tap': 'Tap the screen',
   'title.new_game': 'New game',
   'title.continue': 'Continue',
   'title.options': 'Options',
