@@ -166,9 +166,11 @@ export class LevelScene extends Phaser.Scene {
   private fallingHazards: FallingHazard[] = [];
   private dust!: Phaser.GameObjects.Particles.ParticleEmitter;
   private splashes!: Phaser.GameObjects.Particles.ParticleEmitter;
-  /** Chispas del tajo normal (S22) y si ya salieron en este tajo. */
+  /** Chispas del tajo normal y del cargado, y si ya salieron en este tajo. */
   private slashSparks!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private chargedSparks!: Phaser.GameObjects.Particles.ParticleEmitter;
   private slashSparked = false;
+  private dashTrailMs = 0;
   private splashMs = 0;
   private sinkers: Sinking[] = [];
   /** Zonas de agua baja (GDD §4.8): frenan la carrera. */
@@ -332,6 +334,17 @@ export class LevelScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(12);
+    const juice = GAMEPLAY.juice;
+    this.chargedSparks = this.add
+      .particles(0, 0, FX_PARTICLE, {
+        speed: { min: juice.chargedSpeed * 0.4, max: juice.chargedSpeed },
+        lifespan: juice.chargedLifespanMs,
+        scale: { start: juice.chargedScale, end: 0 },
+        alpha: { start: 1, end: 0 },
+        tint: [0xf2c14e, 0xfff2c0],
+        emitting: false,
+      })
+      .setDepth(13);
     this.slashSparked = false;
     // Antes del mapa: todo lo que se cree desde acá recibe la luz (los textos y la caja de diálogo, no).
     if (this.def.dark) this.darkness = new Darkness(this);
@@ -506,6 +519,7 @@ export class LevelScene extends Phaser.Scene {
     this.player.tick(delta, this.inputs);
     this.reportPlayerStateSfx();
     this.updateSlashFx();
+    this.updateDashTrail(delta);
     this.cameraCtl.update(this.player.motor.facing);
     if (this.updateChase(delta)) return;
     this.updateEnemies(delta);
@@ -685,6 +699,7 @@ export class LevelScene extends Phaser.Scene {
           return;
         }
         this.hitStop(GAMEPLAY.hitStop.onHitMs);
+        this.impactSparks(boss.markPosition(this.tmpVec));
       }
     }
     if (boss.hurtsPlayer(this.playerRect)) this.hurtPlayer(boss.markPosition(this.tmpVec).x);
@@ -1858,6 +1873,7 @@ export class LevelScene extends Phaser.Scene {
     if (!enemy.vulnerable) return;
     enemy.hit(this.player.attackDamage, this.player.motor.facing);
     this.hitStop(GAMEPLAY.hitStop.onHitMs);
+    this.impactSparks(enemy.body.center);
     AudioManager.play(enemy.purified ? 'purify' : 'hit');
   }
 
@@ -1978,8 +1994,11 @@ export class LevelScene extends Phaser.Scene {
     if (state === this.lastPlayerState) return;
     if (state === 'jump') AudioManager.play('jump');
     else if (state === 'dash') AudioManager.play('dash');
-    else if ((state === 'idle' || state === 'run') && this.lastPlayerState === 'fall') AudioManager.play('land');
-    else if (state === 'attack') {
+    else if ((state === 'idle' || state === 'run') && this.lastPlayerState === 'fall') {
+      AudioManager.play('land');
+      const body = this.player.body;
+      this.dust.emitParticleAt(body.center.x, body.bottom, GAMEPLAY.juice.landDust);
+    } else if (state === 'attack') {
       const charged = this.player.motor.chargedSwing;
       AudioManager.play(charged ? 'chargedSlash' : 'slash');
       if (charged) this.fireLightWave();
@@ -1987,22 +2006,49 @@ export class LevelScene extends Phaser.Scene {
     this.lastPlayerState = state;
   }
 
-  /** Unas pocas chispas en el arco del sable cuando el tajo normal golpea (el cargado tiene su onda). */
+  /** Chispas del sable: blancas y pocas en el tajo normal, doradas y más en el cargado. */
   private updateSlashFx(): void {
     const motor = this.player.motor;
     if (!motor.attackHitboxActive) {
       this.slashSparked = false;
       return;
     }
-    if (this.slashSparked || motor.chargedSwing) return;
+    if (this.slashSparked) return;
     this.slashSparked = true;
-    const cfg = GAMEPLAY.slashFx;
     const c = this.player.body.center;
+    const juice = GAMEPLAY.juice;
+    if (motor.chargedSwing) {
+      this.chargedSparks.explode(juice.chargedCount, c.x + motor.facing * 16, c.y);
+      const ring = this.add.circle(c.x + motor.facing * 16, c.y, 6, 0xf2c14e, 0.7).setDepth(12);
+      this.tweens.add({ targets: ring, scale: 2.4, alpha: 0, duration: 180, onComplete: () => ring.destroy() });
+      this.shake(juice.chargedShakeMs, juice.chargedShake);
+      return;
+    }
+    const cfg = GAMEPLAY.slashFx;
     for (let i = 0; i < cfg.count; i++) {
       const deg = cfg.arcFromDeg + ((cfg.arcToDeg - cfg.arcFromDeg) * i) / Math.max(1, cfg.count - 1);
       const a = Phaser.Math.DegToRad(deg);
       this.slashSparks.emitParticleAt(c.x + Math.cos(a) * cfg.radius * motor.facing, c.y + Math.sin(a) * cfg.radius, 1);
     }
+    this.shake(juice.slashShakeMs, juice.slashShake);
+  }
+
+  /** Polvo detrás de Kerana mientras hace dash. */
+  private updateDashTrail(deltaMs: number): void {
+    if (!this.player.motor.dashing) {
+      this.dashTrailMs = 0;
+      return;
+    }
+    this.dashTrailMs += deltaMs;
+    if (this.dashTrailMs < GAMEPLAY.juice.dashEveryMs) return;
+    this.dashTrailMs = 0;
+    const body = this.player.body;
+    this.dust.emitParticleAt(body.center.x - this.player.motor.facing * 10, body.center.y, 1);
+  }
+
+  /** Chispas en el punto del golpe, para que no sea solo perder vida. */
+  private impactSparks(at: Phaser.Math.Vector2): void {
+    this.slashSparks.emitParticleAt(at.x, at.y, 4);
   }
 
   private updateDebugText(): void {

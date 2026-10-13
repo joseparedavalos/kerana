@@ -36,17 +36,14 @@ Kerana dice una sola frase y el hijo sube como estrella. No hay charla.
 
 La pista del próximo jefe no está en el diálogo. Queda para más adelante, si hace falta.
 
-### Sesión 2. Partículas y peso
+### Sesión 2. Partículas y peso — hecho
 
-El sable, el tajo cargado y los dones se sienten secos. La usabilidad del cargado no se toca.
+El tajo normal suelta chispas blancas y una sacudida corta. El cargado suelta un destello dorado, más chispas y una sacudida más fuerte. La forma de cargarlo no cambió.
 
-- Destello y partículas en el tajo normal y en el cargado, distintos entre sí.
 - Polvo al aterrizar y estela en el dash.
-- El enemigo se empuja y destella al golpe, no solo pierde vida.
-- Un sonido seco por acción, si el audio ya tiene el hueco.
-- La sacudida corta sigue pudiendo apagarse.
-
-Se toca el combate y los efectos. No se tocan los textos ni el guardado.
+- Al golpear, chispas en el enemigo. El empujón y el destello blanco ya estaban.
+- Los sonidos de tajo, tajo cargado, caída y dash ya estaban.
+- La sacudida se apaga en Opciones.
 
 ### Sesión 3. Chipa en lugar de pluma
 
