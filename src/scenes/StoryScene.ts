@@ -33,6 +33,8 @@ export class StoryScene extends Phaser.Scene {
   private hint!: Phaser.GameObjects.Text;
   private skip!: Phaser.GameObjects.Text;
 
+  private skipReady = false;
+
   constructor() {
     super('Story');
   }
@@ -83,17 +85,22 @@ export class StoryScene extends Phaser.Scene {
       .setOrigin(1, 0)
       .setDepth(3)
       .setInteractive({ useHandCursor: true });
-    this.skip.on('pointerdown', () => this.finish());
+    this.skip.on('pointerdown', () => {
+      if (this.skipReady) this.finish();
+    });
+    this.time.delayedCall(600, () => {
+      this.skipReady = true;
+    });
     this.advanceSlide();
   }
 
   override update(_time: number, delta: number): void {
     this.inputs.update();
     SaveManager.addPlayTime(delta);
-    const advance = this.inputs.justPressed('jump') || this.inputs.justPressed('attack') || this.touchAdvance;
+    const advance = this.skipReady && (this.inputs.justPressed('jump') || this.inputs.justPressed('attack') || this.touchAdvance);
     this.touchAdvance = false;
 
-    if (this.inputs.isDown('pause')) {
+    if (this.skipReady && this.inputs.isDown('pause')) {
       this.holdMs += delta;
       if (this.holdMs >= HOLD_TO_SKIP_MS) {
         this.finish();
