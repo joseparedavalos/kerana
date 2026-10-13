@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PLAYER_KEY } from '../assets/manifest';
 import { FONT_FAMILY } from '../config/fonts';
 import { speakerPortraitKey } from '../data/dialogues';
 import type { DialogueLine } from '../data/types';
@@ -12,6 +13,9 @@ import { fixedOffset, VIEW } from './View';
 // liberación de cada jefe (GDD §6); quien la crea decide si pausa el resto de la escena.
 const BOX_HEIGHT = 76;
 const PORTRAIT_SIZE = 64;
+/** Primer cuadro de `kerana_idle` (kerana.json). Cabeza y hombros, mirando al texto. */
+const KERANA_IDLE_FRAME = 11;
+const KERANA_CROP = { x: 46, y: 32, w: 32, h: 32 };
 
 export class DialogueBox {
   private readonly container: Phaser.GameObjects.Container;
@@ -90,8 +94,11 @@ export class DialogueBox {
     }
     const line = this.lines[this.index];
     const scene = this.container.scene;
-    ensurePlaceholder(scene, speakerPortraitKey(line.speaker), PORTRAIT_SIZE, PORTRAIT_SIZE);
-    this.portrait.setTexture(speakerPortraitKey(line.speaker));
+    const key = speakerPortraitKey(line.speaker);
+    if (!(line.speaker === 'kerana' && showKeranaPortrait(scene, key))) {
+      ensurePlaceholder(scene, key, PORTRAIT_SIZE, PORTRAIT_SIZE);
+    }
+    this.portrait.setTexture(key);
     this.nameText.setText(t(`speaker.${line.speaker}`));
     this.fullText = t(line.textKey);
     this.shownChars = 0;
@@ -99,4 +106,36 @@ export class DialogueBox {
     this.bodyText.setText('');
     this.marker.setText('');
   }
+}
+
+const PORTRAIT_MARK = 'sprite';
+
+/** Retrato de Kerana recortado del sprite que ya está en el juego. false si todavía no cargó. */
+function showKeranaPortrait(scene: Phaser.Scene, key: string): boolean {
+  if (!scene.textures.exists(PLAYER_KEY)) return false;
+  const current = scene.textures.exists(key) ? scene.textures.get(key) : null;
+  const data = current?.customData as { mark?: string } | undefined;
+  if (data?.mark === PORTRAIT_MARK) return true;
+  if (current) scene.textures.remove(key);
+  const sheet = scene.textures.get(PLAYER_KEY);
+  const frame = sheet.get(KERANA_IDLE_FRAME);
+  const canvas = scene.textures.createCanvas(key, PORTRAIT_SIZE, PORTRAIT_SIZE);
+  if (!canvas) return false;
+  const ctx = canvas.getContext();
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, PORTRAIT_SIZE, PORTRAIT_SIZE);
+  ctx.drawImage(
+    sheet.getSourceImage() as CanvasImageSource,
+    frame.cutX + KERANA_CROP.x,
+    frame.cutY + KERANA_CROP.y,
+    KERANA_CROP.w,
+    KERANA_CROP.h,
+    0,
+    0,
+    PORTRAIT_SIZE,
+    PORTRAIT_SIZE,
+  );
+  canvas.refresh();
+  (canvas.customData as { mark?: string }).mark = PORTRAIT_MARK;
+  return true;
 }
