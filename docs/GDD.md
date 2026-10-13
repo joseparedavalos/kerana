@@ -38,6 +38,7 @@
 ## 0. Cómo usar este documento
 
 - Es la **fuente de verdad** del diseño. Si cambias una decisión, cámbiala aquí primero; el código la sigue.
+- Lo de abajo, en «Decisiones del 13 de octubre», pisa lo que digan los capítulos viejos hasta que se reescriban. El plan de trabajo está en [SESIONES.md](SESIONES.md). Lo que falta para publicar, en [PENDIENTES.md](PENDIENTES.md).
 - Etiquetas de prioridad (detalle en §12):
   - **[MVP]**: imprescindible para que el juego exista.
   - **[Núcleo]**: debería entrar; se recorta solo si el presupuesto aprieta.
@@ -45,6 +46,20 @@
 - **[Revisar]** marca datos culturales, lingüísticos o licencias creativas que el autor debe validar.
 - Todos los números de "sensación" son valores iniciales. Viven en `src/config/gameplay.ts` y se ajustan jugando.
 - **Para Claude Code:** lee este índice y **solo las secciones que cita tu sesión** en `docs/PLAN.md`.
+
+### Decisiones del 13 de octubre de 2026
+
+- La pluma es chipa. En el guardado la clave sigue siendo `feathers`.
+- El tajo cargado, el salto doble y el dash están desde el primer nivel. El corazón nuevo se gana al liberar a Mbói Tu'ĩ, Kurupí y Ao Ao.
+- El corazón cura. El tereré es una guampa de cuero y da la inmunidad. No es un cuerno ni una fruta.
+- Liberar es una frase: «Estás libre de la maldición, [nombre].» Tau no se libera: «Dormí, Tau. Y no despiertes.»
+- Kerana se levanta porque Tau sigue usando a sus hijos. Angatupyry le enciende la luz. El prólogo se puede saltar.
+- Teju Jagua tiene las siete cabezas del mismo marrón que el lomo. Los ojos siguen encendidos.
+- En el nivel 1 el piso es una franja de tres baldosas. Detrás se ve el cerro o la cueva. Hay musgo en la ladera. En la cueva no hay plantas. No hay cántaro ni piedras sueltas.
+- El cuadro de diálogo muestra la cara de Kerana, recortada de su sprite, del tamaño del cuadro.
+- Al reaparecer, la cámara llega con ella.
+- En el celular los botones se pueden mover. El ataque automático está apagado.
+- Los niveles no se acortan. No hay energía, anuncios, cofres al azar ni rachas diarias.
 
 ---
 
