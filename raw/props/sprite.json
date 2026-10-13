@@ -18,6 +18,12 @@
     },
     "lantern_on": {
       "height": 32
+    },
+    "cantaro": {
+      "height": 18
+    },
+    "piedras": {
+      "height": 10
     }
   }
 }
