@@ -79,6 +79,7 @@ export const ART_IMAGES = {
   ui_chipa_empty: 'ui/chipa_empty.png',
   ui_guavira: 'ui/guavira.png',
   ui_luz_arasy: 'ui/luz_arasy.png',
+  ui_terere: 'ui/terere.png',
   prop_sign: 'props/sign.png',
   prop_fire_off: 'props/fire_off.png',
   prop_fire_on: 'props/fire_on.png',

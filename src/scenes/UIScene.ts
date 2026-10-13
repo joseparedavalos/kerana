@@ -47,7 +47,7 @@ export class UIScene extends Phaser.Scene {
     this.heartEmpty = artOrPlaceholder(this, 'ui_heart_empty', HEART_EMPTY_PH, HEART_PH_SIZE, HEART_PH_SIZE);
     this.featherFull = artOrPlaceholder(this, 'ui_chipa', FEATHER_PH, PH_SIZE, PH_SIZE);
     this.featherEmpty = artOrPlaceholder(this, 'ui_chipa_empty', FEATHER_EMPTY_PH, PH_SIZE, PH_SIZE);
-    const luz = artOrPlaceholder(this, 'ui_luz_arasy', LUZ_PH, PH_SIZE, PH_SIZE);
+    const luz = artOrPlaceholder(this, 'ui_terere', LUZ_PH, PH_SIZE, PH_SIZE);
 
     const featherY = MARGIN + HEART_SPACING;
     this.featherIcon = this.add.image(MARGIN, featherY, this.featherEmpty.key).setOrigin(0, 0).setScale(this.featherEmpty.scale);
@@ -57,8 +57,9 @@ export class UIScene extends Phaser.Scene {
 
     const luzY = featherY + 14;
     this.luzIcon = this.add.image(MARGIN, luzY, luz.key).setOrigin(0, 0).setScale(luz.scale).setVisible(false);
-    this.luzBarBg = this.add.rectangle(MARGIN + 14, luzY + 5, BAR_WIDTH, 4).setOrigin(0, 0.5).setStrokeStyle(1, 0xf2eee3).setVisible(false);
-    this.luzBarFill = this.add.rectangle(MARGIN + 15, luzY + 5, BAR_WIDTH - 2, 2, 0xc8c8e6).setOrigin(0, 0.5).setVisible(false);
+    const luzBarX = MARGIN + this.luzIcon.displayWidth + 4;
+    this.luzBarBg = this.add.rectangle(luzBarX, luzY + 5, BAR_WIDTH, 4).setOrigin(0, 0.5).setStrokeStyle(1, 0xf2eee3).setVisible(false);
+    this.luzBarFill = this.add.rectangle(luzBarX + 1, luzY + 5, BAR_WIDTH - 2, 2, 0xc8c8e6).setOrigin(0, 0.5).setVisible(false);
 
     // Barra del jefe (GDD §6.0): nombre, epíteto y vida, abajo al centro.
     const { width, height } = VIEW;
