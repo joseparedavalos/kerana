@@ -1,6 +1,8 @@
 # Pendientes para publicar
 
-Decisiones del 13 de octubre de 2026. Primero Google Play; Steam después.
+El plan completo está en [docs/SESIONES.md](SESIONES.md).
+
+Decisiones del 13 de octubre de 2026. Primero Google Play. Steam después.
 
 ## Hecho
 
