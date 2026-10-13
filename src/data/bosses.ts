@@ -29,8 +29,6 @@ export interface BossDef {
 /** Teju Jagua: 7 cabezas × 2 golpes (GDD §6.1). */
 export const TEJU_JAGUA_HEADS = 7;
 export const TEJU_JAGUA_HITS_PER_HEAD = 2;
-/** Colores del arcoíris para las 7 cabezas. */
-export const TEJU_JAGUA_COLORS = [0xe04848, 0xf08a30, 0xf2d04e, 0x5cc85c, 0x4a8fe0, 0x5a4ac8, 0xa050d0] as const;
 
 const TEJU_HP = TEJU_JAGUA_HEADS * TEJU_JAGUA_HITS_PER_HEAD;
 
