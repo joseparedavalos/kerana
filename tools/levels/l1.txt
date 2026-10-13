@@ -38,22 +38,8 @@ point FallingHazard x=230 y=8 delayMs=800
 point FallingHazard x=209 y=16 delayMs=800
 point FallingHazard x=220 y=16 delayMs=800
 point FallingHazard x=224 y=25 delayMs=800
-# Adorno de la cueva. No choca.
-point Dress x=16 y=11 kind=cantaro
-point Dress x=20 y=11 kind=piedras
-point Dress x=33 y=11 kind=cantaro
-point Dress x=42 y=11 kind=piedras
-point Dress x=72 y=8 kind=piedras
-point Dress x=83 y=8 kind=cantaro
-point Dress x=97 y=8 kind=piedras
-point Dress x=133 y=8 kind=piedras
-point Dress x=202 y=13 kind=cantaro
-point Dress x=216 y=13 kind=piedras
-point Dress x=228 y=13 kind=cantaro
-point Dress x=222 y=21 kind=piedras
-point Dress x=238 y=21 kind=cantaro
-point Dress x=268 y=30 kind=piedras
-point Dress x=300 y=30 kind=cantaro
+# Musgo sobre el piso. No choca.
+moss
 # Bajo tierra (fondo de cueva): la cueva inicial, la cueva de C con la antesala y la caverna, y la cámara de la pluma C
 rect Cave x=0 y=0 w=45 h=34
 rect Cave x=190 y=0 w=124 h=34

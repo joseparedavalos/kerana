@@ -45,7 +45,7 @@ export function parseAscii(text) {
   const sep = lines.findIndex((l) => l.trim() === '---');
   if (sep < 0) throw new Error('Falta la línea "---" que separa la cabecera de la grilla.');
 
-  const result = { name: '', width: 0, height: 0, biome: 'cerro', enemies: {}, signs: {}, rects: [], points: [], ats: [], grid: [], warnings: [] };
+  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, enemies: {}, signs: {}, rects: [], points: [], ats: [], grid: [], warnings: [] };
 
   for (const rawLine of lines.slice(0, sep)) {
     const line = rawLine.trim();
@@ -65,6 +65,9 @@ export function parseAscii(text) {
       }
       case 'biome':
         result.biome = rest[0];
+        break;
+      case 'moss':
+        result.moss = true;
         break;
       case 'enemy':
         for (const [ch, kind] of Object.entries(parsePairs(rest))) {
@@ -238,6 +241,12 @@ export function buildTiledMap(parsed, options = {}) {
           break;
         case '#':
           data.Ground[i] = gid(autotile ? TILES.groundBase + groundMask(grid, x, y) : TILES.groundBase + 15);
+          // Matas de musgo en el aire, pegadas al piso. No chocan.
+          if (parsed.moss && y > 0 && grid[y - 1][x] === '.') {
+            const n = (x * 5 + y * 3) % 11;
+            const tuft = n === 0 ? TILES.grass : n === 4 ? TILES.flowers : n === 8 ? TILES.stones : 0;
+            if (tuft) data.Background[(y - 1) * width + x] = gid(tuft);
+          }
           break;
         case '=': {
           const l = grid[y][x - 1] === '=';

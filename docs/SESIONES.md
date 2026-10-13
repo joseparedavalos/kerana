@@ -63,7 +63,7 @@ Un nivel por vez, antes de la ficha de la tienda. Nada de esto choca ni cambia e
 
 | Nivel | Lugar | Borde | Objetos | Estado |
 |---|---|---|---|---|
-| 1 | Paraguarí, cueva | piedra con musgo | cántaro y piedras | hecho |
+| 1 | Paraguarí, cueva | musgo sobre la piedra | ninguno: el cántaro y las piedras no se entendían | hecho |
 | 2 | Ñeembucú, estero | pasto y juncos | canoa y nido | |
 | 3 | Misiones, campo | pasto y una flor | tacurú y alambrado | |
 | 4 | Capiatá, pueblo | baldosa y alero | hamaca y silla | |

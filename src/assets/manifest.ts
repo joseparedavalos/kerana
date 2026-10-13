@@ -85,8 +85,6 @@ export const ART_IMAGES = {
   prop_fire_on: 'props/fire_on.png',
   prop_lantern_off: 'props/lantern_off.png',
   prop_lantern_on: 'props/lantern_on.png',
-  prop_cantaro: 'props/cantaro.png',
-  prop_piedras: 'props/piedras.png',
 } as const;
 export type ArtKey = keyof typeof ART_IMAGES;
 
