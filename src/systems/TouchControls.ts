@@ -1,25 +1,25 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import type { Action, InputManager } from './InputManager';
-import { fixedOffset, VIEW } from './View';
+import { VIEW } from './View';
 
-const BUTTON = 52;
-const PAD = 14;
-const ALPHA = 0.45;
-const ALPHA_DOWN = 0.8;
+const SIZE = 36;
+const GAP = 8;
+const EDGE = 12;
+const ALPHA = 0.38;
+const ALPHA_DOWN = 0.85;
 
 interface VirtualButton {
   action: Action;
-  zone: Phaser.GameObjects.Zone;
   bg: Phaser.GameObjects.Arc;
   label: Phaser.GameObjects.Text;
   pointerId: number | null;
 }
 
 /**
- * Botones en pantalla para celular. Viven en la escena UI (la de arriba) para recibir el toque,
- * y escriben en el mismo InputManager que el teclado.
- * Se muestran con pantalla táctil, puntero grueso, o `?touch=1` (para probar en la PC).
+ * Botones del celular, en la misma capa que los corazones.
+ * Izquierda: moverse. Derecha: saltar, atacar y dash.
+ * Se ven en pantalla táctil, o en la PC si la URL lleva `?touch=1`.
  */
 export class TouchControls {
   private readonly buttons: VirtualButton[] = [];
@@ -41,33 +41,33 @@ export class TouchControls {
   }
 
   private createButtons(): void {
-    const hud = fixedOffset(this.scene.cameras.main);
-    const y = hud.y + VIEW.height - PAD - BUTTON / 2;
-    this.addButton('left', hud.x + PAD + BUTTON / 2, y, '◀');
-    this.addButton('right', hud.x + PAD + BUTTON * 1.7, y, '▶');
-    this.addButton('dash', hud.x + VIEW.width - PAD - BUTTON * 2.55, y, 'C', 0.78);
-    this.addButton('attack', hud.x + VIEW.width - PAD - BUTTON * 1.45, y, 'X');
-    this.addButton('jump', hud.x + VIEW.width - PAD - BUTTON / 2, y, 'A');
-    this.addButton('pause', hud.x + VIEW.width - PAD - 16, hud.y + PAD + 16, 'II', 0.55);
+    const y = VIEW.height - EDGE - SIZE / 2;
+    const step = SIZE + GAP;
+    this.addButton('left', EDGE + SIZE / 2, y, '◀');
+    this.addButton('right', EDGE + SIZE / 2 + step, y, '▶');
+
+    const jumpX = VIEW.width - EDGE - SIZE / 2;
+    this.addButton('jump', jumpX, y, '▲');
+    this.addButton('attack', jumpX - step, y, 'X');
+    this.addButton('dash', jumpX - step * 2, y, 'C');
   }
 
-  private addButton(action: Action, x: number, y: number, symbol: string, scale = 1): void {
-    const size = BUTTON * scale;
+  private addButton(action: Action, x: number, y: number, symbol: string): void {
     const bg = this.scene.add
-      .circle(x, y, size / 2, 0x1b1a2e, ALPHA)
-      .setStrokeStyle(2, 0xf2eee3, 0.7)
-      .setScrollFactor(0)
+      .circle(x, y, SIZE / 2, 0x1b1a2e, ALPHA)
+      .setStrokeStyle(1, 0xf2eee3, 0.85)
       .setDepth(1000);
     const label = this.scene.add
-      .text(x, y, symbol, { fontFamily: FONT_FAMILY, fontSize: `${Math.round(16 * scale)}px`, color: '#F2EEE3' })
+      .text(x, y, symbol, { fontFamily: FONT_FAMILY, fontSize: '14px', color: '#F2EEE3' })
       .setOrigin(0.5)
-      .setScrollFactor(0)
       .setDepth(1001);
-    const zone = this.scene.add.zone(x, y, size + 10, size + 10).setScrollFactor(0).setDepth(1002).setInteractive();
-    const btn: VirtualButton = { action, zone, bg, label, pointerId: null };
-    zone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    const hit = new Phaser.Geom.Circle(SIZE / 2, SIZE / 2, SIZE / 2 + 6);
+    bg.setInteractive(hit, Phaser.Geom.Circle.Contains);
+    const btn: VirtualButton = { action, bg, label, pointerId: null };
+    bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       btn.pointerId = pointer.id;
       bg.setFillStyle(0xf2eee3, ALPHA_DOWN);
+      label.setColor('#1B1A2E');
       this.input.setVirtual(action, true);
     });
     this.buttons.push(btn);
@@ -77,6 +77,7 @@ export class TouchControls {
     if (btn.pointerId === null) return;
     btn.pointerId = null;
     btn.bg.setFillStyle(0x1b1a2e, ALPHA);
+    btn.label.setColor('#F2EEE3');
     this.input.setVirtual(btn.action, false);
   }
 
@@ -85,7 +86,6 @@ export class TouchControls {
     this.scene.input.off('pointerupoutside', this.onUp);
     for (const btn of this.buttons) {
       this.release(btn);
-      btn.zone.destroy();
       btn.bg.destroy();
       btn.label.destroy();
     }
