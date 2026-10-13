@@ -209,6 +209,8 @@ export const en: Record<TextKey, string> = {
   'level_complete.freed': '{name} is free',
   'level_complete.gift': 'Gift received: {gift}',
   'level_complete.feathers': 'Chipas: {current}/{max}',
+  'level_complete.next': 'Next',
+  'level_complete.map': 'Back to the map',
   'level_complete.continue_hint': 'Press {key} to go back to the map',
 
   // Créditos (GDD §8.9).

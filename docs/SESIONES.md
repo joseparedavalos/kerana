@@ -49,14 +49,9 @@ El tajo normal suelta chispas blancas y una sacudida corta. El cargado suelta un
 
 La chipa de José reemplaza a la pluma en el nivel, en el contador y bajo cada nodo del mapa. El guardado sigue llamándose `feathers`, así que las partidas no se borran. El final de las 21 se mantiene.
 
-### Sesión 4. Pantalla de nivel completado
+### Sesión 4. Pantalla de nivel completado — hecho
 
-Depende de la sesión 3.
-
-- El hijo liberado, el don y las chipas se ven juntos, no solo como tres líneas.
-- Botón grande de Siguiente, además de Volver al mapa.
-- Siguiente entra al próximo nivel desbloqueado. En el último, sigue a Yvága como ahora.
-- Deja lugar para sumar otras zonas del Paraguay más adelante, sin rehacer la pantalla.
+El hijo liberado, el don y las chipas se ven juntos. El botón grande Siguiente entra al próximo nivel. En el último sigue a Yvága. Volver al mapa queda aparte. Si más adelante se suma otra zona a la lista, Siguiente la toma sola.
 
 ### Sesión 5. Controles del celular
 
