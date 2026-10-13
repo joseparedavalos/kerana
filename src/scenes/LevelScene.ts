@@ -606,6 +606,7 @@ export class LevelScene extends Phaser.Scene {
   private restartFromCheckpoint(): void {
     this.chase?.reset();
     this.player.respawnAt(this.checkpointPos.x, this.checkpointPos.y);
+    this.cameraCtl.snap();
   }
 
   /**
@@ -1885,6 +1886,7 @@ export class LevelScene extends Phaser.Scene {
       const spot = this.respawnSpot();
       this.player.respawnAt(spot.x, spot.y);
     }
+    this.cameraCtl.snap();
     EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
     EventBus.emit(GameEvents.playerRespawned, reason);
   }
@@ -1895,6 +1897,7 @@ export class LevelScene extends Phaser.Scene {
     this.chase?.reset();
     if (SaveManager.current.settings.flashes) this.cameras.main.flash(300, 0, 0, 0);
     this.player.koRespawn(this.checkpointPos.x, this.checkpointPos.y);
+    this.cameraCtl.snap();
   }
 
   private updateEnemies(deltaMs: number): void {
