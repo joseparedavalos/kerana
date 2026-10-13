@@ -1,13 +1,17 @@
 import Phaser from 'phaser';
 import { artOrPlaceholder } from '../../assets/art';
 import type { ArtKey } from '../../assets/manifest';
-import { ensurePlaceholder } from '../../utils/placeholder';
 
 export type PickupKind = 'guavira' | 'luz_arasy' | 'pluma' | 'yvoty';
 
 const SIZE = 12;
-/** Íconos de raw/hud por tipo; lo que no tiene arte (yvoty) sigue con su placeholder. */
-const ART: Partial<Record<PickupKind, ArtKey>> = { guavira: 'ui_heart_full', luz_arasy: 'ui_terere', pluma: 'ui_chipa' };
+/** El corazón cura. El tereré da inmunidad. La chipa se junta. La flor del estero también cura, así que se ve igual que el corazón. */
+const ART: Record<PickupKind, ArtKey> = {
+  guavira: 'ui_heart_full',
+  luz_arasy: 'ui_terere',
+  pluma: 'ui_chipa',
+  yvoty: 'ui_heart_full',
+};
 
 // Guavirá se ve como corazón (cura). La inmunidad se ve como tereré. El tipo interno no cambia.
 export class Pickup extends Phaser.Physics.Arcade.Sprite {
@@ -21,8 +25,7 @@ export class Pickup extends Phaser.Physics.Arcade.Sprite {
   constructor(scene: Phaser.Scene, x: number, y: number, kind: PickupKind, index = -1) {
     const placeholder = `pickup_${kind}`;
     const art = ART[kind];
-    const look = art ? artOrPlaceholder(scene, art, placeholder, SIZE, SIZE) : { key: placeholder, scale: 1 };
-    if (!art) ensurePlaceholder(scene, placeholder, SIZE, SIZE);
+    const look = artOrPlaceholder(scene, art, placeholder, SIZE, SIZE);
     super(scene, x, y, look.key);
     this.kind = kind;
     this.index = index;
