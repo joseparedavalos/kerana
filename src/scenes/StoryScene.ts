@@ -157,7 +157,7 @@ export class StoryScene extends Phaser.Scene {
     this.text.setY(bottom ? height - BAND_BOTTOM_TEXT_Y : height / 2);
   }
 
-  /** Sprites del prólogo, parados sobre la franja del texto. Las hojas miran a la izquierda. */
+  /** Sprites del prólogo, parados sobre la franja del texto. Kerana y Tau miran a la derecha. */
   private addFigures(kind: NonNullable<StorySlide['figures']>, width: number, height: number): Phaser.GameObjects.GameObject[] {
     const feet = height - BAND_BOTTOM_HEIGHT + 6;
     const parts: Phaser.GameObjects.GameObject[] = [];
@@ -165,18 +165,20 @@ export class StoryScene extends Phaser.Scene {
     const grass = this.add.rectangle(0, feet - 4, width, 3, 0x3f6b3a).setOrigin(0, 0).setDepth(0);
     parts.push(ground, grass);
 
-    const keranaX = kind === 'taken' ? width * 0.68 : kind === 'wake' ? width * 0.42 : width * 0.3;
+    const keranaX = kind === 'taken' ? width * 0.58 : kind === 'wake' ? width * 0.42 : width * 0.3;
+    // Las hojas de Kerana y de Tau miran a la derecha. En el rapto se miran.
     const keranaFacesRight = kind !== 'taken';
     const kerana = this.placeFigure(PLAYER_KEY, `${PLAYER_KEY}_idle`, keranaX, feet, keranaFacesRight);
     if (kerana) parts.push(kerana);
 
     if (kind === 'taken') {
-      const tau = this.placeFigure('tau_disguise', 'tau_disguise_idle', width * 0.32, feet, true);
+      // El cuadro de Tau es más chico: sin este factor queda a la mitad de Kerana.
+      const tau = this.placeFigure('tau_disguise', 'tau_disguise_idle', width * 0.38, feet, true, 1.08);
       if (tau) parts.push(tau);
     }
 
     if (kind === 'wake' && kerana) {
-      const handX = kerana.x + kerana.displayWidth * 0.28;
+      const handX = kerana.x + (kerana.flipX ? -1 : 1) * kerana.displayWidth * 0.16;
       const handY = kerana.y - kerana.displayHeight * 0.42;
       const glow = this.add.ellipse(handX, handY, 28, 18, 0xf2c14e, 0.35).setDepth(0);
       const core = this.add.circle(handX, handY, 4, 0xfff2c0).setDepth(0);
@@ -186,18 +188,25 @@ export class StoryScene extends Phaser.Scene {
     return parts;
   }
 
-  /** Un sprite ya cargado, a la escala del título. Si falta Kerana, usa el placeholder. */
-  private placeFigure(key: string, anim: string, x: number, feet: number, facesRight: boolean): Phaser.GameObjects.Sprite | null {
+  /** Un sprite ya cargado. Las hojas miran a la derecha: `flipX` solo si tiene que mirar a la izquierda. */
+  private placeFigure(
+    key: string,
+    anim: string,
+    x: number,
+    feet: number,
+    facesRight: boolean,
+    scale?: number,
+  ): Phaser.GameObjects.Sprite | null {
     const animated = this.textures.exists(key) && this.anims.exists(anim);
     const texture = animated ? key : key === PLAYER_KEY && this.textures.exists(PLAYER_PLACEHOLDER_KEY) ? PLAYER_PLACEHOLDER_KEY : null;
     if (!texture) return null;
-    const sprite = this.add.sprite(x, feet, texture).setOrigin(0.5, 1).setDepth(0).setFlipX(facesRight);
+    const sprite = this.add.sprite(x, feet, texture).setOrigin(0.5, 1).setDepth(0).setFlipX(!facesRight);
     if (animated) {
       const meta = this.cache.json.get(key + ANIMS_SUFFIX) as { detail?: number } | undefined;
-      sprite.setScale(1.5 / (meta?.detail ?? 2));
+      sprite.setScale(scale ?? 1.5 / (meta?.detail ?? 2));
       sprite.play(anim);
     } else {
-      sprite.setScale(2);
+      sprite.setScale(scale ?? 2);
     }
     return sprite;
   }
