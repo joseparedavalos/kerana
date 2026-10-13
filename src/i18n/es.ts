@@ -1,7 +1,7 @@
 // Textos en español (voseo paraguayo, GDD §2.7).
 export const es = {
   'game.title': 'KERANA',
-  'game.subtitle': 'Pokõi Mbyja',
+  'game.subtitle': 'Pokõi ñemoñare',
   'title.press_start': 'Pulsá {key}',
   'title.tap': 'Tocá la pantalla',
   'title.new_game': 'Nueva partida',

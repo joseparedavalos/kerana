@@ -3,7 +3,7 @@ import type { TextKey } from './es';
 // Textos en inglés: simple y cálido, para 10 años en adelante. Los nombres guaraníes no se traducen.
 export const en: Record<TextKey, string> = {
   'game.title': 'KERANA',
-  'game.subtitle': 'Pokõi Mbyja',
+  'game.subtitle': 'Pokõi ñemoñare',
   'title.press_start': 'Press {key}',
   'title.tap': 'Tap the screen',
   'title.new_game': 'New game',

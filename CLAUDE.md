@@ -1,4 +1,4 @@
-# CLAUDE.md · Kerana: Pokõi Mbyja
+# CLAUDE.md · Kerana
 
 Juego de plataformas 2D para navegador inspirado en la mitología guaraní (Paraguay).
 Stack: **Phaser 4 + Vite + TypeScript**, publicado en GitHub Pages.

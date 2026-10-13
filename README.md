@@ -1,4 +1,6 @@
-# Kerana: Pokõi Mbyja
+# Kerana
+
+Pokõi ñemoñare. Kerana y las siete criaturas.
 
 Juego de plataformas 2D para navegador inspirado en la mitología guaraní del Paraguay. Kerana despierta tras siete años de sueño embrujado y recorre siete lugares del país para liberar a sus siete hijos de la maldición de Tau.
 
