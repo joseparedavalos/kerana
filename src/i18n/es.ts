@@ -207,6 +207,8 @@ export const es = {
   'level_complete.freed': '{name} liberado',
   'level_complete.gift': 'Don obtenido: {gift}',
   'level_complete.feathers': 'Chipas: {current}/{max}',
+  'level_complete.next': 'Siguiente',
+  'level_complete.map': 'Volver al mapa',
   'level_complete.continue_hint': 'Pulsá {key} para volver al mapa',
 
   // Créditos (GDD §8.9).
