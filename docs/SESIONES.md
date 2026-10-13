@@ -57,6 +57,20 @@ El hijo liberado y las chipas se ven juntos. El tajo cargado, el salto doble y e
 
 En Opciones, Mover botones: se arrastran y se agrandan, y quedan guardados. El ataque automático está apagado de fábrica y solo pega cuando el sable ya llegaría. La pausa es chica, en la esquina, y se esconde mientras el menú está abierto. El salto y el sable no cambian.
 
+## Detalle del escenario
+
+Un nivel por vez, antes de la ficha de la tienda. Nada de esto choca ni cambia el salto. Primero el borde del piso, después dos objetos sueltos.
+
+| Nivel | Lugar | Borde | Objetos | Estado |
+|---|---|---|---|---|
+| 1 | Paraguarí, cueva | piedra con musgo | cántaro y piedras | hecho |
+| 2 | Ñeembucú, estero | pasto y juncos | canoa y nido | |
+| 3 | Misiones, campo | pasto y una flor | tacurú y alambrado | |
+| 4 | Capiatá, pueblo | baldosa y alero | hamaca y silla | |
+| 5 | Canindeyú, selva | raíz y hoja | liana y tronco | |
+| 6 | Guairá, cerro | laja con pasto | palma y rocas | |
+| 7 | Asunción, noche | losa y vela | cruz y ramo seco | |
+
 ### Sesión 6. Ficha de Google Play
 
 - Ícono que se lea en chiquito: Kerana y el sable.

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { artOrPlaceholder, hasArt } from '../assets/art';
-import { ART_DETAIL, tilesetKey } from '../assets/manifest';
+import { ART_DETAIL, tilesetKey, type ArtKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -1535,6 +1535,14 @@ export class LevelScene extends Phaser.Scene {
         case 'DarkZone':
           this.darkness?.addZone({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
           break;
+        case 'Dress': {
+          const kind = String(objectProp(obj, 'kind') ?? '');
+          const key: ArtKey | '' = kind === 'cantaro' ? 'prop_cantaro' : kind === 'piedras' ? 'prop_piedras' : '';
+          if (!key) break;
+          const look = artOrPlaceholder(this, key, kind, 16, 16);
+          this.add.image(x, y, look.key).setOrigin(0.5, 1).setScale(look.scale);
+          break;
+        }
         case 'Sign': {
           const look = artOrPlaceholder(this, 'prop_sign', 'sign', SIGN_PLACEHOLDER, SIGN_PLACEHOLDER);
           this.add.image(x, y, look.key).setOrigin(0.5, 1).setScale(look.scale);
