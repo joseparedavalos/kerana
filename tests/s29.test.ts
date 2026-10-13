@@ -83,7 +83,7 @@ describe('la vaca de la vaca embrujada no camina en el aire (S29)', () => {
 describe('nada flota con el terreno como repisa (S29)', () => {
   it('en l2, l3, l4, l5 (S30) y l6 (S31) todo lo que está apoyado en el suelo pisa un tile que se dibuja', () => {
     const shelled = Object.values(LEVELS).filter((d) => d !== undefined && d.terrainShell !== undefined);
-    expect(shelled.map((d) => d!.id)).toEqual(['l2', 'l3', 'l4', 'l5', 'l6']);
+    expect(shelled.map((d) => d!.id)).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6']);
     for (const def of shelled.map((d) => d!)) {
       const map = mapOf(def.mapKey.replace(/^map_/, ''));
       expect(map, def.id).toBeDefined();
@@ -92,11 +92,14 @@ describe('nada flota con el terreno como repisa (S29)', () => {
       const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < map.width && y < map.height && ground[y * map.width + x] > 0;
       const depth = terrainDepths(solid, map.width, map.height, shell);
       const floor = terrainFloor(solid, map.width, map.height);
+      const keepFloor = def.solidFloor !== false;
       const drawn = (x: number, y: number) =>
-        isFloorTile(floor, x, y) || terrainAlpha(depth[y * map.width + x], shell, GAMEPLAY.backdrop.terrainFadeAlpha) > 0;
+        (keepFloor && isFloorTile(floor, x, y)) || terrainAlpha(depth[y * map.width + x], shell, GAMEPLAY.backdrop.terrainFadeAlpha) > 0;
       const objects = map.layers.find((l) => l.type === 'objectgroup')?.objects ?? [];
       const floating: string[] = [];
       for (const o of objects) {
+        // Zonas, no cosas apoyadas en el piso.
+        if (o.type === 'Cave' || o.type === 'BossArena' || o.type === 'Fireflies') continue;
         // El tile bajo los pies (los objetos de Tiled se anclan abajo): si es sólido, tiene que verse.
         const x = Math.floor((o.x + (o.width || 0) / 2) / T);
         const y = Math.floor(o.y / T);

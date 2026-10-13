@@ -1488,10 +1488,10 @@ export class LevelScene extends Phaser.Scene {
     const { width, height } = this.map;
     const solid = (x: number, y: number) => (ground.getTileAt(x, y)?.index ?? -1) !== -1;
     const depth = terrainDepths(solid, width, height, tiles);
-    // S29: el piso del nivel se dibuja entero hasta el borde de abajo (si no, se ve una franja con el fondo por debajo).
     const floor = terrainFloor(solid, width, height);
+    const keepFloor = this.def.solidFloor !== false;
     ground.forEachTile((tile) => {
-      if (tile.index === -1 || isFloorTile(floor, tile.x, tile.y)) return;
+      if (tile.index === -1 || (keepFloor && isFloorTile(floor, tile.x, tile.y))) return;
       const alpha = terrainAlpha(depth[tile.y * width + tile.x], tiles, GAMEPLAY.backdrop.terrainFadeAlpha);
       if (alpha <= 0) tile.setVisible(false);
       else tile.setAlpha(alpha);

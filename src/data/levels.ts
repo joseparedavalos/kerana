@@ -44,6 +44,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'cerro',
     // Subido: con el suelo tan arriba de la vista, centrado quedaban tapados los cerros.
     backgrounds: { far: 'bg_l1_far', cave: 'bg_l1_cave', shiftY: 110 },
+    terrainShell: 3,
+    solidFloor: false,
     musicKey: '',
     boss: 'teju_jagua',
     gift: 'charged_slash',

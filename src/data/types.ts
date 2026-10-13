@@ -27,8 +27,11 @@ export interface LevelDef {
   /**
    * Terreno como repisa (S28): la capa Ground se dibuja solo hasta estos tiles del aire más cercano (la última fila,
    * tenue) y más adentro se ve el fondo. Solo es dibujo: las colisiones no cambian. Sin valor, bloque macizo.
+   * El piso que llega al borde de abajo se dibuja entero, salvo `solidFloor: false`.
    */
   terrainShell?: number;
+  /** false: también el piso largo es una franja y debajo se ve el fondo. Por defecto se dibuja hasta abajo. */
+  solidFloor?: boolean;
   musicKey: string;
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;
