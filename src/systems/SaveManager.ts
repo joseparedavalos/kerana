@@ -5,6 +5,12 @@ import { langFromBrowser, langFromUrl, type Lang } from '../i18n/lang';
 // Guardado (GDD §11.9). localStorage con try/catch: si falla, el juego sigue sin guardar.
 const STORAGE_KEY = 'kerana.save.v1';
 const VERSION = 1;
+/** Tajo cargado, salto doble y dash. Se tienen desde el primer nivel (GDD §12.2). */
+const ABILITY_GIFTS: readonly GiftId[] = ['charged_slash', 'double_jump', 'dash'];
+
+function withAbilityGifts(gifts: GiftId[]): GiftId[] {
+  return ABILITY_GIFTS.reduce<GiftId[]>((list, gift) => (list.includes(gift) ? list : [...list, gift]), gifts);
+}
 
 export interface SaveSettings {
   music: number;
@@ -73,7 +79,7 @@ export function defaultSave(): SaveData {
     version: VERSION,
     unlockedLevel: 1,
     freed: [],
-    gifts: [],
+    gifts: [...ABILITY_GIFTS],
     maxHearts: GAMEPLAY.hearts.start,
     feathers: {},
     bestTimes: {},
@@ -91,7 +97,7 @@ function sanitize(raw: unknown): SaveData {
     version: VERSION,
     unlockedLevel: typeof raw.unlockedLevel === 'number' ? raw.unlockedLevel : def.unlockedLevel,
     freed: Array.isArray(raw.freed) ? (raw.freed as BossId[]) : def.freed,
-    gifts: Array.isArray(raw.gifts) ? (raw.gifts as GiftId[]) : def.gifts,
+    gifts: withAbilityGifts(Array.isArray(raw.gifts) ? (raw.gifts as GiftId[]) : []),
     maxHearts: typeof raw.maxHearts === 'number' ? raw.maxHearts : def.maxHearts,
     feathers: sanitizeFeathers(raw.feathers),
     bestTimes: isRecord(raw.bestTimes) ? (raw.bestTimes as Record<string, number>) : def.bestTimes,

@@ -43,7 +43,7 @@ export class LevelCompleteScene extends Phaser.Scene {
         .setOrigin(0.5);
       y += 28;
     }
-    if (this.def.gift) {
+    if (this.def.gift === 'heart_up') {
       this.add
         .text(width / 2, y, t('level_complete.gift', { gift: t(`gift.${this.def.gift}`) }), {
           fontFamily: FONT_FAMILY,
