@@ -483,7 +483,7 @@ Tres fuegos (x 101, x 184 y la antesala): el nivel es un tercio más ancho que l
 **Jefe: Teju Jagua**. 7 cabezas × 2 golpes (14 golpes).
 
 - Presentación: siete pares de ojos de fuego se encienden uno a uno en la oscuridad. Barra: "Teju Jagua · Guardián de las cavernas y los frutos".
-- El cuerpo no se mueve: en el mito, sus propias cabezas lo condenan a la inacción. Pelean las cabezas, cada una de un color del arcoíris, como cuentan algunas versiones.
+- El cuerpo no se mueve: en el mito, sus propias cabezas lo condenan a la inacción. Pelean las cabezas, del mismo color que el cuerpo. Los ojos siguen encendidos.
 - Cada cabeza vencida no muere: **se duerme** (cierra los ojos y se retira a la sombra).
 
 | Fase | Cuándo | Ataque | Aviso | Ventana |

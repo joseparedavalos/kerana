@@ -210,6 +210,8 @@ export function buildTiledMap(parsed, options = {}) {
 
   const objects = [];
   let nextId = 1;
+  const caves = (parsed.rects ?? []).filter((r) => r.cls === 'Cave');
+  const inCave = (x, y) => caves.some((r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h);
   const prop = (name, value) => ({ name, type: typeof value === 'number' ? (Number.isInteger(value) ? 'int' : 'float') : typeof value === 'boolean' ? 'bool' : 'string', value });
   const addObject = (cls, x, y, w, h, props = {}, isPoint = false) => {
     const obj = { id: nextId++, name: '', type: cls, x, y, width: w, height: h, rotation: 0, visible: true };
@@ -241,8 +243,8 @@ export function buildTiledMap(parsed, options = {}) {
           break;
         case '#':
           data.Ground[i] = gid(autotile ? TILES.groundBase + groundMask(grid, x, y) : TILES.groundBase + 15);
-          // Matas de musgo en el aire, pegadas al piso. No chocan.
-          if (parsed.moss && y > 0 && grid[y - 1][x] === '.') {
+          // Matas de musgo al aire libre. En una cueva no van: ahí no crece eso.
+          if (parsed.moss && y > 0 && grid[y - 1][x] === '.' && !inCave(x, y)) {
             const n = (x * 5 + y * 3) % 11;
             const tuft = n === 0 ? TILES.grass : n === 4 ? TILES.flowers : n === 8 ? TILES.stones : 0;
             if (tuft) data.Background[(y - 1) * width + x] = gid(tuft);
