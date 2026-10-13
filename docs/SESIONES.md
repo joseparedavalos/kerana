@@ -71,7 +71,7 @@ Un nivel por vez, antes de la ficha de la tienda. Nada de esto choca ni cambia e
 |---|---|---|---|---|
 | 1 | Paraguarí, cueva | musgo en la ladera; en la cueva, piedra gris; el piso es una franja | ninguno: el cántaro y las piedras no se entendían | hecho |
 | 2 | Ñeembucú, estero | pasto y juncos en el borde; junco junto al agua | un nido, sin choque. La canoa no se entendía y se sacó | hecho |
-| 3 | Misiones, campo | pasto y una flor | tacurú y alambrado | pendiente |
+| 3 | Misiones, campo | pasto y una flor en el borde | un tacurú y un alambrado, sin choque | hecho |
 | 4 | Capiatá, pueblo | baldosa y alero | hamaca y silla | pendiente |
 | 5 | Canindeyú, selva | raíz y hoja | liana y tronco | pendiente |
 | 6 | Guairá, cerro | laja con pasto | palma y rocas | pendiente |

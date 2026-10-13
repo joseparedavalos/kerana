@@ -31,6 +31,9 @@
 # Checkpoint 4 / antesala (x 448-477) · Arena de Moñái (x 478-517): tres árboles con copas "=" a 3 tiles del suelo
 size 518x40
 biome campo
+edge
+point Prop x=26 y=32 kind=fence
+point Prop x=36 y=32 kind=tacuru
 enemy n=nandu k=karakara t=teju_i
 sign 1=hint.l3.nandu 2=hint.l3.wind 3=hint.l3.karakara 4=hint.l3.cracked 5=hint.l3.antesala 6=hint.l3.ritmo 7=hint.l3.sleep
 rect WindZone x=33 y=26 w=9 h=7 dir=1

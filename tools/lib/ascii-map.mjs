@@ -70,6 +70,7 @@ export function parseAscii(text) {
         result.moss = true;
         break;
       case 'reeds':
+      case 'edge':
         result.reeds = true;
         break;
       case 'enemy':

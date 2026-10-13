@@ -86,6 +86,8 @@ export const ART_IMAGES = {
   prop_lantern_off: 'props/lantern_off.png',
   prop_lantern_on: 'props/lantern_on.png',
   prop_nest: 'props/nest.png',
+  prop_tacuru: 'props/tacuru.png',
+  prop_fence: 'props/fence.png',
 } as const;
 export type ArtKey = keyof typeof ART_IMAGES;
 
