@@ -20,17 +20,15 @@ interface VirtualButton {
  */
 export class TouchControls {
   private buttons: VirtualButton[] = [];
-  private visible = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly input: InputManager,
   ) {
-    // Solo en dispositivos con touch o pantallas chicas.
+    // Solo en dispositivos con touch.
     const isTouch = this.scene.sys.game.device.input.touch;
     if (!isTouch) return;
 
-    this.visible = true;
     this.createButtons();
   }
 
