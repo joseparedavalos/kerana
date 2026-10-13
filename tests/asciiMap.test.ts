@@ -137,6 +137,22 @@ describe('buildTiledMap', () => {
     for (const name of ['Ground', 'Platforms']) expect(map.layers.find((l) => l.name === name)!.data!.slice(0, 8).every((v) => v === 0)).toBe(true);
   });
 
+  it('reeds: pasto o junco en el borde, junco junto al agua, nunca la piedra', () => {
+    const map = buildTiledMap(parseAscii('size 8x2\nreeds\n---\nP.......\n####~~~#\n')) as {
+      layers: { name: string; data?: number[] }[];
+    };
+    const bg = map.layers.find((l) => l.name === 'Background')!.data!;
+    const grass = TILES.grass + 1;
+    const reed = TILES.flowers + 1;
+    const stone = TILES.stones + 1;
+    const used = bg.filter((g) => g > 0);
+    expect(used.length).toBeGreaterThan(0);
+    expect(used.every((g) => g === grass || g === reed)).toBe(true);
+    expect(used).not.toContain(stone);
+    // El suelo de x=3 linda con el agua: ahí va un junco, en el tile de arriba.
+    expect(bg[3]).toBe(reed);
+  });
+
   it('"H" va a la capa Foreground (sin colisión)', () => {
     const map = buildTiledMap(parseAscii('size 3x2\n---\nPH.\n###\n'));
     const layer = (name: string) => map.layers.find((l: { name: string }) => l.name === name) as { data: number[] };

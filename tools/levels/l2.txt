@@ -26,6 +26,9 @@
 # Checkpoint 4 / antesala (x 376-395) · Arena de Mbói Tu'i (x 396-435): islotes con camalotes
 size 436x40
 biome estero
+reeds
+point Prop x=20 y=32 kind=nest
+point Prop x=36 y=32 kind=canoe
 enemy m=mboi j=jakare n=nakurutu g=nakurutu_guasu y=jakare_guasu
 sign 1=hint.l2.camalote 2=hint.l2.shallow 3=hint.l2.jakare 4=hint.l2.nakurutu 5=hint.l2.antesala 6=hint.l2.cracked 7=hint.l2.sealed 8=hint.l2.sleep 9=hint.l2.ritmo
 # Piezas de motor (S18): piedra encerrada y balsa, plataformas, hongos

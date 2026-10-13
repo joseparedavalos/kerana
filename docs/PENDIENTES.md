@@ -25,9 +25,8 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 
 ## Ahora
 
-1. Niveles 2 a 7, el detalle del escenario. Uno por vez. La tabla está en [docs/SESIONES.md](SESIONES.md).
+1. Niveles 3 a 7, el detalle del escenario. Uno por vez. El 2 ya tiene pasto, juncos, una canoa y un nido. La tabla está en [docs/SESIONES.md](SESIONES.md).
 2. Ficha de Google Play: ícono, cinco capturas, descripción corta, edad y privacidad.
-3. El [pull request #73](https://github.com/joseparedavalos/kerana/pull/73) sigue abierto. Saca un verde pintado en la piedra. Si la cueva ya se ve gris, se cierra. Si no, se mergea.
 
 ## Para cuando vayamos a Steam
 
