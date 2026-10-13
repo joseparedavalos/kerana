@@ -137,7 +137,7 @@ Rejugabilidad: 3 plumas de mainumby por nivel, mejores tiempos [Extra] y una dia
 | 7 | Luisón | Señor de la noche y los camposantos | Cabeza de perro con una hilera de dientes, cuerpo seco, extremidades mitad garras; aúlla trepado a las lápidas | Pelea en la oscuridad; aullidos; forma de luna llena |
 
 ### 2.4 Prólogo: texto de las diapositivas [MVP]
-Una ilustración por diapositiva (o fondo oscuro con partículas mientras no haya arte). El texto aparece letra por letra.
+Una ilustración por diapositiva (o fondo oscuro con partículas mientras no haya arte). El texto aparece letra por letra. Hoy las seis diapositivas comparten tres escenas con los sprites que ya existen: Kerana bajo las estrellas, Tau disfrazado y Kerana, y Kerana con la luz en la mano.
 
 1. "Dicen los antiguos que Tupã y Arasy bajaron a la tierra y crearon los ríos, los montes y las estrellas."
 2. "Entre los primeros pueblos vivía Marangatu, y con él su hija Kerana, a quien todos llamaban la dormilona."

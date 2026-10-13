@@ -10,6 +10,11 @@ export interface StorySlide {
   eichu?: EichuPlacement;
   /** Dónde va la franja del texto sobre la imagen (por defecto, al centro). */
   band?: 'center' | 'bottom';
+  /**
+   * Figuras del prólogo, con los sprites ya cargados. `kerana`: ella sola bajo las estrellas.
+   * `taken`: Tau disfrazado y Kerana. `wake`: Kerana con la luz en la mano.
+   */
+  figures?: 'kerana' | 'taken' | 'wake';
 }
 
 /** Centro del cúmulo en fracciones de la vista y su ancho (unidades). */
@@ -37,13 +42,15 @@ export const EICHU_STARS: ReadonlyArray<{ x: number; y: number; mag: number }> =
 const EICHU_NIGHT: EichuPlacement = { x: 0.5, y: 0.2, size: 90 };
 const EICHU_FINAL: EichuPlacement = { x: 0.6, y: 0.1, size: 80 };
 
+const PROLOGUE_EICHU: EichuPlacement = { x: 0.72, y: 0.2, size: 70 };
+
 export const PROLOGUE_SLIDES: StorySlide[] = [
-  { textKey: 'story.prologue.1' },
-  { textKey: 'story.prologue.2' },
-  { textKey: 'story.prologue.3' },
-  { textKey: 'story.prologue.4' },
-  { textKey: 'story.prologue.5' },
-  { textKey: 'story.prologue.6' },
+  { textKey: 'story.prologue.1', night: true, eichu: PROLOGUE_EICHU, figures: 'kerana', band: 'bottom' },
+  { textKey: 'story.prologue.2', night: true, eichu: PROLOGUE_EICHU, figures: 'kerana', band: 'bottom' },
+  { textKey: 'story.prologue.3', night: true, figures: 'taken', band: 'bottom' },
+  { textKey: 'story.prologue.4', night: true, figures: 'taken', band: 'bottom' },
+  { textKey: 'story.prologue.5', night: true, figures: 'taken', band: 'bottom' },
+  { textKey: 'story.prologue.6', night: true, figures: 'wake', band: 'bottom' },
 ];
 
 /** Al liberar a Luisón (GDD §2.6): las siete estrellas forman Eichu y aparece Tau. Sigue Yvága. */
