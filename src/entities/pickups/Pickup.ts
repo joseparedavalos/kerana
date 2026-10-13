@@ -7,9 +7,9 @@ export type PickupKind = 'guavira' | 'luz_arasy' | 'pluma' | 'yvoty';
 
 const SIZE = 12;
 /** Íconos de raw/hud por tipo; lo que no tiene arte (yvoty) sigue con su placeholder. */
-const ART: Partial<Record<PickupKind, ArtKey>> = { guavira: 'ui_guavira', luz_arasy: 'ui_luz_arasy', pluma: 'ui_feather' };
+const ART: Partial<Record<PickupKind, ArtKey>> = { guavira: 'ui_guavira', luz_arasy: 'ui_luz_arasy', pluma: 'ui_chipa' };
 
-// Objeto recogible del mapa (GDD §4.3): guavirá, Luz de Arasy o pluma de mainumby.
+// Objeto recogible del mapa (GDD §4.3): guavirá, Luz de Arasy o chipa. El tipo interno sigue siendo `pluma`.
 export class Pickup extends Phaser.Physics.Arcade.Sprite {
   declare body: Phaser.Physics.Arcade.Body;
   readonly kind: PickupKind;

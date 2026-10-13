@@ -214,7 +214,20 @@ export class WorldMapScene extends Phaser.Scene {
     dot.setInteractive(new Phaser.Geom.Circle(5, 5, 16), Phaser.Geom.Circle.Contains);
     dot.on('pointerdown', () => this.tapNode(index));
     this.add.text(x, y + 9, String(level.order), { fontFamily: FONT_FAMILY, fontSize: '8px', color: '#F2EEE3' }).setOrigin(0.5, 0).setDepth(4);
+    this.addChipas(level, x, y);
     return { level, x, y, dot };
+  }
+
+  /** Las chipas de ese nivel, bajo el número. El guardado sigue en `feathers`. */
+  private addChipas(level: LevelDef, x: number, y: number): void {
+    const got = SaveManager.getFeathers(level.id);
+    const n = GAMEPLAY.hud.featherMax;
+    const step = 8;
+    for (let i = 0; i < n; i++) {
+      const key = got[i] ? 'ui_chipa' : 'ui_chipa_empty';
+      if (!this.textures.exists(key)) continue;
+      this.add.image(x + (i - (n - 1) / 2) * step, y + 22, key).setScale(0.28).setDepth(4);
+    }
   }
 
   private tapNode(index: number): void {

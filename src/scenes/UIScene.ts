@@ -45,14 +45,14 @@ export class UIScene extends Phaser.Scene {
     this.hearts = [];
     this.heartFull = artOrPlaceholder(this, 'ui_heart_full', HEART_FULL_PH, HEART_PH_SIZE, HEART_PH_SIZE);
     this.heartEmpty = artOrPlaceholder(this, 'ui_heart_empty', HEART_EMPTY_PH, HEART_PH_SIZE, HEART_PH_SIZE);
-    this.featherFull = artOrPlaceholder(this, 'ui_feather', FEATHER_PH, PH_SIZE, PH_SIZE);
-    this.featherEmpty = artOrPlaceholder(this, 'ui_feather_empty', FEATHER_EMPTY_PH, PH_SIZE, PH_SIZE);
+    this.featherFull = artOrPlaceholder(this, 'ui_chipa', FEATHER_PH, PH_SIZE, PH_SIZE);
+    this.featherEmpty = artOrPlaceholder(this, 'ui_chipa_empty', FEATHER_EMPTY_PH, PH_SIZE, PH_SIZE);
     const luz = artOrPlaceholder(this, 'ui_luz_arasy', LUZ_PH, PH_SIZE, PH_SIZE);
 
     const featherY = MARGIN + HEART_SPACING;
     this.featherIcon = this.add.image(MARGIN, featherY, this.featherEmpty.key).setOrigin(0, 0).setScale(this.featherEmpty.scale);
     this.featherText = this.add
-      .text(MARGIN + 14, featherY, '0/0', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#F2EEE3' })
+      .text(MARGIN + this.featherIcon.displayWidth + 4, featherY, '0/0', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#F2EEE3' })
       .setOrigin(0, 0);
 
     const luzY = featherY + 14;

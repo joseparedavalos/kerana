@@ -45,18 +45,9 @@ El tajo normal suelta chispas blancas y una sacudida corta. El cargado suelta un
 - Los sonidos de tajo, tajo cargado, caída y dash ya estaban.
 - La sacudida se apaga en Opciones.
 
-### Sesión 3. Chipa en lugar de pluma
+### Sesión 3. Chipa en lugar de pluma — hecho
 
-Hay que hacerlo antes de pulir la pantalla de completado, porque esa pantalla muestra el coleccionable.
-
-- El sprite de chipa reemplaza a la pluma en el nivel, en el HUD y en el mapa.
-- El guardado sigue usando el mismo lugar (`feathers` por dentro, o se renombra con cuidado para no borrar partidas).
-- Bajo el nodo del mapa se ven las chipas de ese nivel, no solo en el panel.
-- Contador siempre visible durante el nivel.
-- Textos: «pluma» pasa a «chipa» en español y en inglés.
-- El final de las 21 se mantiene: Mainumby y la diapositiva extra.
-
-Se toca recogida, HUD, mapa, textos y el sprite. No se toca el combate.
+La chipa de José reemplaza a la pluma en el nivel, en el contador y bajo cada nodo del mapa. El guardado sigue llamándose `feathers`, así que las partidas no se borran. El final de las 21 se mantiene.
 
 ### Sesión 4. Pantalla de nivel completado
 

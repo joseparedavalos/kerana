@@ -75,6 +75,8 @@ export const ART_IMAGES = {
   ui_heart_empty: 'ui/heart_empty.png',
   ui_feather: 'ui/feather.png',
   ui_feather_empty: 'ui/feather_empty.png',
+  ui_chipa: 'ui/chipa.png',
+  ui_chipa_empty: 'ui/chipa_empty.png',
   ui_guavira: 'ui/guavira.png',
   ui_luz_arasy: 'ui/luz_arasy.png',
   prop_sign: 'props/sign.png',
