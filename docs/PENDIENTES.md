@@ -25,7 +25,7 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 
 ## Ahora
 
-1. Niveles 3 a 7, el detalle del escenario. Uno por vez. El 2 tiene pasto, juncos y un nido. La canoa se sacó. La tabla está en [docs/SESIONES.md](SESIONES.md).
+1. Niveles 4 a 7, el detalle del escenario. Uno por vez. El 3 tiene pasto, una flor, un tacurú y un alambrado. La tabla está en [docs/SESIONES.md](SESIONES.md).
 2. Ficha de Google Play: ícono, cinco capturas, descripción corta, edad y privacidad.
 
 ## Para cuando vayamos a Steam

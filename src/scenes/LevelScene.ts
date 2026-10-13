@@ -1537,8 +1537,14 @@ export class LevelScene extends Phaser.Scene {
           this.darkness?.addZone({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
           break;
         case 'Prop': {
-          if (String(objectProp(obj, 'kind') ?? '') !== 'nest') break;
-          const look = artOrPlaceholder(this, 'prop_nest', 'nest', 18, 14);
+          const kind = String(objectProp(obj, 'kind') ?? '');
+          const spec =
+            kind === 'nest' ? { key: 'prop_nest' as const, w: 18, h: 14 }
+            : kind === 'tacuru' ? { key: 'prop_tacuru' as const, w: 20, h: 24 }
+            : kind === 'fence' ? { key: 'prop_fence' as const, w: 48, h: 18 }
+            : null;
+          if (!spec) break;
+          const look = artOrPlaceholder(this, spec.key, kind, spec.w, spec.h);
           this.add.image(x, y, look.key).setOrigin(0.5, 1).setScale(look.scale);
           break;
         }
