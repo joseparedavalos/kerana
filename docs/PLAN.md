@@ -1,5 +1,7 @@
 # Plan de producción: Kerana con US$100 de crédito
 
+Historial de las sesiones S1 en adelante. No es la lista de lo que falta: eso está en [PENDIENTES.md](PENDIENTES.md) y [SESIONES.md](SESIONES.md). Desde el 13 de octubre de 2026 el jugador ve chipa (la letra del mapa sigue siendo `F`), un corazón que cura (la letra `G`) y tereré para la inmunidad (la letra `L`). El tajo, el salto doble y el dash están desde el primer nivel.
+
 Este plan divide el juego en **15 sesiones de Claude Code en la nube** más una reserva. Cada sesión es una tarea cerrada que termina en un Pull Request (PR).
 
 - Las secciones **"Para ti (Jose)"** explican qué haces tú.

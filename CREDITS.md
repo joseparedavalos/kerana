@@ -9,7 +9,7 @@ Cada asset de terceros se anota aquí con su autor, URL y licencia.
 | Asset | Autor | URL | Licencia | Dónde se usa |
 |---|---|---|---|---|
 | Tipografía Noto Sans Mono | Google Fonts | https://fonts.google.com/noto/specimen/Noto+Sans+Mono | OFL 1.1 | Todos los textos (ASSETS §8); cubre ñ y las vocales nasales del guaraní |
-| (el resto del arte son placeholders generados por código) | | | | |
+| (el arte de Kerana, los jefes, los enemigos, la chipa y el tereré lo hizo Jose; no es de un pack de terceros) | | | | |
 
 ## Software
 

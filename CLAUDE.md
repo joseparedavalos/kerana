@@ -6,10 +6,11 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 
 ## Documentos (fuente de verdad)
 
-- `docs/PLAN.md`: qué hacer en cada sesión (S1, S2…), criterios de aceptación, estado y notas. **Empieza siempre aquí.**
-- `docs/GDD.md`: diseño del juego. Lee el índice y **solo las secciones que cita tu sesión**.
-- `docs/ASSETS.md`: sprites, tiles, fondos y audio (nombres, tamaños, pipeline).
-- Si el GDD y el código se contradicen, manda el GDD. Si el GDD es ambiguo, elige lo más simple, hazlo configurable y anótalo en el PR.
+- `docs/GDD.md`, sección «Decisiones del 13 de octubre de 2026»: pisan los capítulos viejos del GDD.
+- `docs/SESIONES.md` y `docs/PENDIENTES.md`: qué está hecho y qué sigue. Empieza por ahí si la tarea es de ahora.
+- `docs/PLAN.md`: historial de las sesiones S1 en adelante. No es la lista de lo que falta.
+- `docs/ASSETS.md`: sprites, tiles, fondos y audio.
+- Si una decisión del 13 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo.
 
 ## Cómo trabajar en una sesión
 

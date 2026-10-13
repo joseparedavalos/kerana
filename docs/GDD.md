@@ -245,9 +245,9 @@ Los textos de ayuda muestran las teclas del dispositivo que se esté usando.
 - **Buffer de salto:** si se pulsa saltar justo antes de tocar el suelo, salta al aterrizar.
 - **Caída limitada:** hay una velocidad máxima de caída.
 - **Ataque con el sable:** tajo horizontal hacia adelante, en el suelo o en el aire.
-- **Tajo cargado** (don 1): mantener atacar 0,6 s (Kerana brilla) y soltar. Tajo amplio de 3 de daño que rompe rocas agrietadas.
-- **Salto doble** (don 3): un segundo salto en el aire.
-- **Dash** (don 4): impulso horizontal corto. Kerana es intangible mientras dura. Uno por salto en el aire.
+- **Tajo cargado:** mantener atacar 0,6 s (Kerana brilla) y soltar. Tajo amplio de 3 de daño que rompe rocas agrietadas. Está desde el primer nivel.
+- **Salto doble:** un segundo salto en el aire. Está desde el primer nivel.
+- **Dash:** impulso horizontal corto. Kerana es intangible mientras dura. Uno por salto en el aire. Está desde el primer nivel.
 - **Ataque hacia abajo (pogo)** [Extra]: tajo hacia abajo en el aire que rebota sobre enemigos.
 
 ### 3.4 Parámetros iniciales [MVP]
@@ -287,7 +287,7 @@ Transiciones principales:
 - `idle`/`run` → `jump` al saltar (incluido coyote y buffer); `jump` → `fall` cuando la velocidad vertical es ≥ 0; `fall` → `idle`/`run` al aterrizar.
 - Cualquier estado móvil → `attack` (en el aire mantiene la inercia) → vuelve al estado previo.
 - `idle`/`run` → `charge` si se mantiene atacar ≥ 600 ms; al soltar, tajo cargado.
-- Cualquier estado → `dash` (si está desbloqueado y disponible) → `fall` o `idle`.
+- Cualquier estado → `dash` (si está disponible) → `fall` o `idle`.
 - Cualquier estado → `hurt` al recibir daño (≈ 250 ms de control reducido) → `fall` o `idle`.
 - 0 corazones → `ko` → reaparición.
 
@@ -338,21 +338,21 @@ Si hay que recortar (§12), los tres dones de habilidad pueden darse desde el pr
 
 ### 4.3 Objetos
 
-| Objeto | Id | Efecto | Frecuencia |
+| Objeto | Id en el mapa | Qué ve el jugador | Frecuencia |
 |---|---|---|---|
-| Guavirá | `guavira` | Cura 1 corazón | 2 a 4 por nivel; siempre uno en la antesala |
-| Luz de Arasy | `luz_arasy` | Inmunidad 8 s: Kerana brilla plateada, no recibe daño y purifica a los enemigos comunes al tocarlos. Contra los jefes solo evita el daño | 1 o 2 por nivel, antes de los tramos difíciles; nunca en arenas de jefe (salvo en modo asistido) |
-| Pluma de mainumby | `pluma` | Coleccionable (3 por nivel) | Escondidas; ver cada nivel |
+| Corazón | `guavira` | Cura 1 corazón | 2 a 4 por nivel; siempre uno en la antesala |
+| Tereré | `luz_arasy` | Inmunidad 8 s: Kerana brilla, no recibe daño y purifica a los enemigos comunes al tocarlos. Contra los jefes solo evita el daño. Es una guampa de cuero | 1 o 2 por nivel, antes de los tramos difíciles; nunca en arenas de jefe (salvo en modo asistido) |
+| Chipa | `pluma` | Coleccionable (3 por nivel). En el guardado la clave sigue siendo `feathers` | Escondidas; ver cada nivel |
 | Flor del estero | `yvoty` | Cura 1 corazón | Solo en la pelea contra Mbói Tu'i |
 
 La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) más un tinte plateado, y parpadea durante los últimos 2 s.
 
-### 4.4 Plumas y rejugabilidad [Núcleo]
+### 4.4 Chipas y rejugabilidad [Núcleo]
 
-- 3 plumas por nivel, 21 en total. Algunas requieren dones posteriores, así que conviene volver a niveles anteriores.
-- El mapa muestra las plumas de cada nivel (0/3, 1/3…).
-- Con las 21 plumas, el final suma una diapositiva de Kerana y Mainumby (§2.6).
-- Mejor tiempo por nivel [Extra].
+- 3 chipas por nivel, 21 en total. En los textos viejos de este documento se llaman plumas: es el mismo objeto, letra `F`.
+- El mapa las muestra bajo cada nodo (0/3, 1/3…).
+- Con las 21, el final suma una diapositiva de Kerana y Mainumby (§2.6).
+- Mejor tiempo por nivel [Extra]. El guardado ya lo tiene. No se muestra. Queda para Steam.
 
 ### 4.5 Mainumby, el compañero [Núcleo]
 
@@ -824,7 +824,7 @@ Una escena genérica de diapositivas (`StoryScene`) que recibe una lista de diap
 - Ilustración estilizada de la Región Oriental del Paraguay (la hace el autor; hasta entonces, fondo liso con nodos).
 - 7 nodos unidos por un camino punteado. Estados: bloqueado, disponible y completado (con estrella).
 - El cielo sobre el mapa se llena de estrellas a medida que avanzan los niveles, hasta formar Eichu.
-- Panel del nodo: nombre del lugar, subtítulo, plumas (0/3) y mejor tiempo [Extra].
+- Panel del nodo: nombre del lugar, subtítulo y chipas (0/3). El mejor tiempo [Extra] no se muestra.
 - Posición aproximada de los nodos para ubicarlos en el mapa:
 
 | Nivel | Lugar | Latitud | Longitud |
@@ -842,23 +842,23 @@ Una escena genérica de diapositivas (`StoryScene`) que recibe una lista de diap
 ### 8.5 HUD [MVP]
 
 - Arriba a la izquierda: corazones (llenos y vacíos).
-- Arriba a la derecha: plumas del nivel (0/3). Con la Luz de Arasy activa, su icono y una barra de tiempo.
+- Arriba a la derecha: chipas del nivel (0/3). Con el tereré activo, su icono y una barra de tiempo.
 - En peleas de jefe, abajo al centro: barra de vida con nombre y epíteto.
 - Los dones aparecen como iconos pequeños junto a los corazones [Núcleo].
 
 ### 8.6 Pausa y opciones [MVP / Núcleo]
 
 - **Pausa:** Continuar · Reiniciar desde el fuego · Opciones · Salir al mapa.
-- **Opciones:** volumen de música · volumen de efectos · idioma · modo asistido · sacudida de cámara (sí/no) · destellos (sí/no) · velocidad del texto · borrar partida (con confirmación).
+- **Opciones:** volumen de música · volumen de efectos · idioma · modo asistido · sacudida de cámara (sí/no) · destellos (sí/no) · velocidad del texto · mover los botones del celular · ataque automático (apagado de fábrica) · borrar partida (con confirmación).
 
 ### 8.7 Diálogos [MVP]
 
-- Caja inferior con retrato a la izquierda (96 × 96), nombre y texto letra por letra.
+- Caja inferior con la cara de Kerana a la izquierda (recorte de su sprite, 64 × 64), nombre y texto letra por letra. Un retrato pintado de 96 × 96 puede reemplazarla después.
 - Avanza con Saltar, Atacar o tocando la pantalla. El juego se pausa durante los diálogos de liberación, pero no durante las burbujas de Mainumby.
 
 ### 8.8 Nivel completado [MVP]
 
-- "¡Nivel completado!", el hijo liberado, el don obtenido, las plumas (x/3) y el tiempo [Extra]. Luego vuelve al mapa.
+- "¡Nivel completado!", el hijo liberado, las chipas (x/3) y, si ese nivel da un corazón nuevo, el corazón. El tajo, el salto doble y el dash no se anuncian: ya estaban. Botón grande Siguiente, y aparte volver al mapa. El tiempo [Extra] no se muestra.
 
 ### 8.9 Créditos [MVP]
 
@@ -1160,9 +1160,9 @@ point FallingHazard x=150 y=5 delayMs=800
 | `%` | Bloque frágil (objeto `Breakable` con `kind=brittle`, 1 tile, S22): cede al tajo normal. Se ve como un fardo de totora seca (paja clara con atadura) |
 | `P` | Inicio de Kerana (`PlayerSpawn`) |
 | `C` | Fuego o checkpoint (`Checkpoint`) |
-| `G` | Guavirá |
-| `L` | Luz de Arasy |
-| `F` | Pluma (índice según el orden de aparición: 0, 1, 2) |
+| `G` | Corazón que cura (en el mapa el id sigue siendo `guavira`) |
+| `L` | Tereré, la inmunidad (en el mapa el id sigue siendo `luz_arasy`) |
+| `F` | Chipa (en el mapa el id sigue siendo `pluma`; índice 0, 1, 2) |
 | `1`–`9` | Cartel (`Sign`) según la línea `sign` |
 | `a`–`z` | Enemigos según la línea `enemy` |
 | `S` | Camalote sobre el agua (objeto `Sinking`; los seguidos de una fila son uno) |
