@@ -45,7 +45,7 @@ export function parseAscii(text) {
   const sep = lines.findIndex((l) => l.trim() === '---');
   if (sep < 0) throw new Error('Falta la línea "---" que separa la cabecera de la grilla.');
 
-  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, enemies: {}, signs: {}, rects: [], points: [], ats: [], grid: [], warnings: [] };
+  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, reeds: false, enemies: {}, signs: {}, rects: [], points: [], ats: [], grid: [], warnings: [] };
 
   for (const rawLine of lines.slice(0, sep)) {
     const line = rawLine.trim();
@@ -68,6 +68,9 @@ export function parseAscii(text) {
         break;
       case 'moss':
         result.moss = true;
+        break;
+      case 'reeds':
+        result.reeds = true;
         break;
       case 'enemy':
         for (const [ch, kind] of Object.entries(parsePairs(rest))) {
@@ -247,6 +250,15 @@ export function buildTiledMap(parsed, options = {}) {
           if (parsed.moss && y > 0 && grid[y - 1][x] === '.' && !inCave(x, y)) {
             const n = (x * 5 + y * 3) % 11;
             const tuft = n === 0 ? TILES.grass : n === 4 ? TILES.flowers : n === 8 ? TILES.stones : 0;
+            if (tuft) data.Background[(y - 1) * width + x] = gid(tuft);
+          }
+          // Pasto y juncos en la orilla. Junto al agua, siempre un junco. Nunca la piedra.
+          if (parsed.reeds && y > 0 && grid[y - 1][x] === '.' && !inCave(x, y)) {
+            const left = grid[y][x - 1] ?? '';
+            const right = grid[y][x + 1] ?? '';
+            const water = '~S'.includes(left) || '~S'.includes(right);
+            const n = (x * 3 + y) % 6;
+            const tuft = water ? TILES.flowers : n === 0 ? TILES.grass : n === 1 ? TILES.flowers : 0;
             if (tuft) data.Background[(y - 1) * width + x] = gid(tuft);
           }
           break;

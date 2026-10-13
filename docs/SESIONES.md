@@ -70,7 +70,7 @@ Un nivel por vez, antes de la ficha de la tienda. Nada de esto choca ni cambia e
 | Nivel | Lugar | Borde | Objetos | Estado |
 |---|---|---|---|---|
 | 1 | Paraguarí, cueva | musgo en la ladera; en la cueva, piedra gris; el piso es una franja | ninguno: el cántaro y las piedras no se entendían | hecho |
-| 2 | Ñeembucú, estero | pasto y juncos | canoa y nido | pendiente |
+| 2 | Ñeembucú, estero | pasto y juncos en el borde; junco junto al agua | una canoa y un nido, sin choque | hecho |
 | 3 | Misiones, campo | pasto y una flor | tacurú y alambrado | pendiente |
 | 4 | Capiatá, pueblo | baldosa y alero | hamaca y silla | pendiente |
 | 5 | Canindeyú, selva | raíz y hoja | liana y tronco | pendiente |
@@ -108,6 +108,6 @@ El guardado ya tiene `bestTimes` por nivel. No se muestra. Queda para la sesión
 - La cámara lenta y la violencia de Katana Zero. Kerana libera, no mata.
 - La dificultad seguida de Celeste. En el teléfono un salto justo está bien. Diez seguidos, no.
 
-## Pull request que sigue abierto
+## Pull request que ya se cerró
 
-El [pull request #73](https://github.com/joseparedavalos/kerana/pull/73) saca un verde que todavía está pintado en la piedra del nivel 1. La cueva ya se ve bien sin plantas. Si sigue viéndose gris, ese PR se cierra sin mergear. Si aparece una línea verde en la roca, se mergea.
+El [pull request #73](https://github.com/joseparedavalos/kerana/pull/73) se mergeó. El verde pintado en la piedra de la cueva salió.
