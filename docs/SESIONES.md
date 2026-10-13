@@ -26,16 +26,15 @@ Esto es un plan. No se aplica nada de acá hasta que se diga.
 
 Cada sesión es un pull request. Se hace de a una, sobre `main`.
 
-### Sesión 1. Diálogos de liberación
+### Sesión 1. Diálogos de liberación — hecho
 
-Los siete siguen el mismo molde: «Che sy…», un consuelo de Kerana, y una pista del próximo jefe. Por eso suenan raros.
+Kerana dice una sola frase y el hijo sube como estrella. No hay charla.
 
-- Una frase propia por hijo, sin el «Che sy…» repetido.
-- Kerana responde distinto cada vez.
-- La pista del siguiente jefe sale de un cartel o de Mainumby, no de la boca del hijo.
-- Se toca `src/i18n/es.ts`, `src/i18n/en.ts` y, si hace falta, el cartel del inicio del nivel siguiente.
+- «Estás libre de la maldición, [nombre].» En inglés: «You are free of the curse, [name].»
+- Tau no se libera. Kerana dice: «Dormí, Tau. Y no despiertes.»
+- El prólogo dice por qué se levanta: Tau sigue usando a sus hijos, y Angatupyry le enciende la luz para ir a buscarlos. Sin político.
 
-No toca mapas ni física. Se puede probar leyendo los siete finales.
+La pista del próximo jefe no está en el diálogo. Queda para más adelante, si hace falta.
 
 ### Sesión 2. Partículas y peso
 
