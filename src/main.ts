@@ -29,7 +29,8 @@ const config: Phaser.Types.Core.GameConfig = {
     arcade: { gravity: { x: 0, y: GAMEPLAY.gravity }, debug: DEBUG.debug },
   },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  input: { gamepad: true },
+  // Un puntero por dedo: izquierda, derecha, salto, sable y dash a la vez.
+  input: { gamepad: true, activePointers: 6 },
   scene: [
     BootScene,
     PreloadScene,
