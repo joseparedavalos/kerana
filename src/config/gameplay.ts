@@ -329,6 +329,11 @@ export const GAMEPLAY = {
     bodyRowStep: 9,
     bodyScaleSize: 12,
     bodyColor: 0x3d362e,
+    /**
+     * Tinte de las cabezas y los cuellos. El dibujo es gris: multiplicar por `bodyColor` lo deja casi negro.
+     * Este valor, sobre ese gris, cae en el marrón del lomo.
+     */
+    headColor: 0x7b6d5d,
     bodyDarkColor: 0x1b1713,
     bodyGoldColor: 0xc9a24a,
     bodyGoldAlpha: 0.55,

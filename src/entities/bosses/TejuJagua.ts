@@ -251,7 +251,7 @@ export class TejuJagua extends Boss {
       })
       .setDepth(7);
 
-    // La cabeza gris del sprite sirve para las siete. Todas llevan el color del cuerpo.
+    // La cabeza gris del sprite sirve para las siete. El tinte las deja del marrón del lomo.
     const texture = HEAD_PLACEHOLDER;
     const bodyTopY = this.bodyY - CFG.bodyTop * S;
     const half = (TEJU_JAGUA_HEADS - 1) / 2;
@@ -272,7 +272,7 @@ export class TejuJagua extends Boss {
       for (let k = 0; k < CFG.neckMaxScales; k++) scales.push(scene.add.image(0, 0, NECK_SCALE_TEXTURE).setVisible(false));
       this.necks.add(scales);
       this.neckScales.push(scales);
-      const color = CFG.bodyColor;
+      const color = CFG.headColor;
       this.heads.push({
         index: i,
         img,
