@@ -136,15 +136,15 @@ export const GAMEPLAY = {
   /** Partículas del tajo normal (S22): unas pocas chispas en el arco del sable, discretas. */
   slashFx: {
     /** Chispas por tajo, repartidas en el arco. */
-    count: 5,
+    count: 9,
     /** Radio del arco (px) desde el centro del cuerpo y ángulos de inicio y fin (grados; 0 = adelante, negativo = arriba). */
-    radius: 17,
+    radius: 22,
     arcFromDeg: -70,
     arcToDeg: 45,
-    lifespanMs: 170,
+    lifespanMs: 220,
     /** Velocidad hacia afuera (px/s) y tamaño de cada chispa (escala sobre 3 px). */
-    speed: 35,
-    scale: 0.8,
+    speed: 80,
+    scale: 1.2,
     alpha: 0.85,
     tint: 0xfff4d6,
   },
@@ -152,8 +152,8 @@ export const GAMEPLAY = {
   /** Peso del golpe (sesión 2). La usabilidad del tajo cargado no cambia. La sacudida respeta Opciones. */
   juice: {
     /** Sacudida del tajo normal y del cargado (ms, intensidad de Phaser). */
-    slashShakeMs: 50,
-    slashShake: 0.0025,
+    slashShakeMs: 70,
+    slashShake: 0.004,
     chargedShakeMs: 90,
     chargedShake: 0.006,
     /** Chispas doradas del tajo cargado, distintas de las blancas del normal. */

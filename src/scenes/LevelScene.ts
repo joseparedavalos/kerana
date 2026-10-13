@@ -2025,12 +2025,31 @@ export class LevelScene extends Phaser.Scene {
       return;
     }
     const cfg = GAMEPLAY.slashFx;
+    this.slashStreak(c.x, c.y, motor.facing, cfg);
     for (let i = 0; i < cfg.count; i++) {
       const deg = cfg.arcFromDeg + ((cfg.arcToDeg - cfg.arcFromDeg) * i) / Math.max(1, cfg.count - 1);
       const a = Phaser.Math.DegToRad(deg);
       this.slashSparks.emitParticleAt(c.x + Math.cos(a) * cfg.radius * motor.facing, c.y + Math.sin(a) * cfg.radius, 1);
     }
     this.shake(juice.slashShakeMs, juice.slashShake);
+  }
+
+  /** Arco blanco del tajo normal. El cargado usa el anillo dorado, no esto. */
+  private slashStreak(x: number, y: number, facing: number, cfg: typeof GAMEPLAY.slashFx): void {
+    const g = this.add.graphics().setDepth(12);
+    g.lineStyle(4, 0xfff6d8, 1);
+    g.beginPath();
+    const steps = 7;
+    for (let i = 0; i <= steps; i++) {
+      const deg = cfg.arcFromDeg + ((cfg.arcToDeg - cfg.arcFromDeg) * i) / steps;
+      const a = Phaser.Math.DegToRad(deg);
+      const px = x + Math.cos(a) * (cfg.radius + 4) * facing;
+      const py = y + Math.sin(a) * (cfg.radius + 4);
+      if (i === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+    }
+    g.strokePath();
+    this.tweens.add({ targets: g, alpha: 0, duration: 140, onComplete: () => g.destroy() });
   }
 
   /** Polvo detrás de Kerana mientras hace dash. */
