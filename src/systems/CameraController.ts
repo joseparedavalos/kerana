@@ -10,12 +10,12 @@ export class CameraController {
 
   constructor(
     private readonly camera: Phaser.Cameras.Scene2D.Camera,
-    target: Phaser.GameObjects.GameObject & { x: number; y: number },
+    private readonly target: Phaser.GameObjects.GameObject & { x: number; y: number },
     private readonly bounds: { width: number; height: number },
   ) {
     const c = GAMEPLAY.camera;
     camera.setBounds(0, 0, bounds.width, bounds.height);
-    camera.startFollow(target, true, c.lerp, c.lerp);
+    camera.startFollow(this.target, true, c.lerp, c.lerp);
     camera.setDeadzone(c.deadzoneWidth, c.deadzoneHeight);
     camera.setRoundPixels(true);
   }
@@ -27,6 +27,20 @@ export class CameraController {
     this.lookX += (target - this.lookX) * c.lookaheadLerp;
     // En Phaser el offset se resta del objetivo: negativo = mirar hacia la derecha.
     this.camera.setFollowOffset(-this.lookX, 0);
+  }
+
+  /** Al reaparecer: la cámara llega con Kerana. Al caminar el seguimiento sigue suave. */
+  snap(): void {
+    const cam = this.camera;
+    const x = this.target.x - cam.followOffset.x;
+    const y = this.target.y - cam.followOffset.y;
+    cam.midPoint.set(x, y);
+    cam.scrollX = x - cam.width * 0.5;
+    cam.scrollY = y - cam.height * 0.5;
+    if (cam.useBounds) {
+      cam.scrollX = cam.clampX(cam.scrollX);
+      cam.scrollY = cam.clampY(cam.scrollY);
+    }
   }
 
   /**
