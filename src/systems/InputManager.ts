@@ -110,6 +110,11 @@ export class InputManager {
     return KEY_LABELS[name] ?? name;
   }
 
+  /** Un toque, sin dejar el botón apretado. No carga el tajo. */
+  pulse(action: Action): void {
+    this.virtualPressedLatch.set(action, true);
+  }
+
   /** Setea el estado de un botón virtual (mantener). */
   setVirtual(action: Action, isDown: boolean): void {
     const wasDown = this.virtualDown.get(action) ?? false;

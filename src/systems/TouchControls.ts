@@ -1,26 +1,21 @@
 import Phaser from 'phaser';
 import type { Action, InputManager } from './InputManager';
-import { VIEW } from './View';
+import { SaveManager } from './SaveManager';
+import { resolveTouchLayout, touchButtonRadius, touchButtonSize, type TouchButtonId } from './touchLayout';
 
-const MOVE = 44;
-const ACTION = 42;
-const JUMP = 52;
-const GAP = 10;
-const EDGE = 14;
 const ALPHA = 0.4;
 const ALPHA_DOWN = 0.88;
 const INK = 0xf2eee3;
 const INK_DOWN = 0x1b1a2e;
-/** Margen extra: el pulgar no tiene que acertar el centro. */
-const SLOP = 18;
 
-type Icon = 'left' | 'right' | 'jump' | 'attack' | 'dash' | 'pause';
+type Icon = TouchButtonId;
 
 interface VirtualButton {
   action: Action;
   x: number;
   y: number;
   radius: number;
+  scale: number;
   bg: Phaser.GameObjects.Arc;
   icon: Phaser.GameObjects.Graphics;
   iconKind: Icon;
@@ -38,12 +33,14 @@ export class TouchControls {
   private readonly fingers = new Map<number, { x: number; y: number }>();
   private readonly onNative: (event: TouchEvent) => void;
   private readonly onFrame: () => void;
+  private hidden = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly input: InputManager,
   ) {
     this.onNative = (event) => {
+      if (this.hidden) return;
       if (event.cancelable) event.preventDefault();
       this.fingers.clear();
       for (let i = 0; i < event.touches.length; i++) {
@@ -53,7 +50,7 @@ export class TouchControls {
       this.apply(this.fingers.values());
     };
     this.onFrame = () => {
-      if (this.fingers.size > 0) return;
+      if (this.hidden || this.fingers.size > 0) return;
       const points: { x: number; y: number }[] = [];
       const cam = this.scene.cameras.main;
       for (const pointer of this.scene.input.manager.pointers) {
@@ -72,27 +69,43 @@ export class TouchControls {
     this.scene.events.on('update', this.onFrame);
   }
 
-  private createButtons(): void {
-    const moveY = VIEW.height - EDGE - MOVE / 2;
-    this.addButton('left', EDGE + MOVE / 2, moveY, MOVE, 'left');
-    this.addButton('right', EDGE + MOVE / 2 + MOVE + GAP, moveY, MOVE, 'right');
-
-    const jumpX = VIEW.width - EDGE - JUMP / 2;
-    const jumpY = VIEW.height - EDGE - JUMP / 2;
-    this.addButton('jump', jumpX, jumpY, JUMP, 'jump');
-    this.addButton('attack', jumpX - JUMP / 2 - GAP - ACTION / 2, jumpY - 6, ACTION, 'attack');
-    this.addButton('dash', jumpX - 18, jumpY - JUMP / 2 - GAP - ACTION / 2, ACTION, 'dash');
-    this.addButton('pause', VIEW.width - EDGE - 14, EDGE + 14, 28, 'pause');
+  /** Vuelve a leer el guardado. Se usa al salir de la pausa, por si se movieron. */
+  relayout(): void {
+    this.clearButtons();
+    if (!wantsTouch()) return;
+    this.createButtons();
   }
 
-  private addButton(action: Action, x: number, y: number, size: number, icon: Icon): void {
+  /** Los esconde en la pausa para que no tapen el menú ni se queden apretados. */
+  setHidden(hidden: boolean): void {
+    this.hidden = hidden;
+    if (hidden) this.fingers.clear();
+    for (const btn of this.buttons) {
+      btn.bg.setVisible(!hidden);
+      btn.icon.setVisible(!hidden);
+      if (hidden && btn.held) {
+        btn.held = false;
+        this.input.setVirtual(btn.action, false);
+      }
+    }
+  }
+
+  private createButtons(): void {
+    const layout = resolveTouchLayout(SaveManager.current.settings.touchLayout);
+    for (const id of Object.keys(layout) as TouchButtonId[]) {
+      const place = layout[id];
+      this.addButton(id, place.x, place.y, touchButtonSize(id) * place.scale, place.scale);
+    }
+  }
+
+  private addButton(action: TouchButtonId, x: number, y: number, size: number, scale: number): void {
     const bg = this.scene.add
       .circle(x, y, size / 2, 0x1b1a2e, ALPHA)
       .setStrokeStyle(1.5, INK, 0.9)
       .setDepth(1000);
     const mark = this.scene.add.graphics().setDepth(1001);
-    drawIcon(mark, x, y, icon, INK);
-    this.buttons.push({ action, x, y, radius: size / 2 + SLOP, bg, icon: mark, iconKind: icon, held: false });
+    drawTouchIcon(mark, x, y, action, INK, scale);
+    this.buttons.push({ action, x, y, radius: touchButtonRadius(action, scale), scale, bg, icon: mark, iconKind: action, held: false });
   }
 
   /** Página → coordenadas del mundo de la UI (la cámara tiene zoom). */
@@ -121,7 +134,7 @@ export class TouchControls {
       }
       btn.held = held;
       btn.bg.setFillStyle(held ? INK : 0x1b1a2e, held ? ALPHA_DOWN : ALPHA);
-      drawIcon(btn.icon, btn.x, btn.y, btn.iconKind, held ? INK_DOWN : INK);
+      drawTouchIcon(btn.icon, btn.x, btn.y, btn.iconKind, held ? INK_DOWN : INK, btn.scale);
       this.input.setVirtual(btn.action, held);
     }
   }
@@ -132,43 +145,48 @@ export class TouchControls {
     window.removeEventListener('touchend', this.onNative, true);
     window.removeEventListener('touchcancel', this.onNative, true);
     this.scene.events.off('update', this.onFrame);
+    this.clearButtons();
+    this.fingers.clear();
+  }
+
+  private clearButtons(): void {
     for (const btn of this.buttons) {
       this.input.setVirtual(btn.action, false);
       btn.bg.destroy();
       btn.icon.destroy();
     }
     this.buttons.length = 0;
-    this.fingers.clear();
   }
 }
 
-function drawIcon(g: Phaser.GameObjects.Graphics, x: number, y: number, icon: Icon, color: number): void {
+export function drawTouchIcon(g: Phaser.GameObjects.Graphics, x: number, y: number, icon: Icon, color: number, scale = 1): void {
   g.clear();
   g.fillStyle(color, 1);
+  const s = scale;
   if (icon === 'left' || icon === 'right') {
     const dir = icon === 'left' ? -1 : 1;
-    g.fillTriangle(x + dir * 8, y, x - dir * 6, y - 8, x - dir * 6, y + 8);
+    g.fillTriangle(x + dir * 8 * s, y, x - dir * 6 * s, y - 8 * s, x - dir * 6 * s, y + 8 * s);
     return;
   }
   if (icon === 'jump') {
-    g.fillTriangle(x, y - 9, x - 8, y + 4, x + 8, y + 4);
-    g.fillRect(x - 2, y + 2, 4, 6);
+    g.fillTriangle(x, y - 9 * s, x - 8 * s, y + 4 * s, x + 8 * s, y + 4 * s);
+    g.fillRect(x - 2 * s, y + 2 * s, 4 * s, 6 * s);
     return;
   }
   if (icon === 'attack') {
-    g.fillRect(x - 2, y - 10, 4, 14);
-    g.fillTriangle(x - 2, y - 10, x + 2, y - 10, x, y - 15);
-    g.fillRect(x - 6, y + 4, 12, 3);
-    g.fillRect(x - 1.5, y + 7, 3, 4);
+    g.fillRect(x - 2 * s, y - 10 * s, 4 * s, 14 * s);
+    g.fillTriangle(x - 2 * s, y - 10 * s, x + 2 * s, y - 10 * s, x, y - 15 * s);
+    g.fillRect(x - 6 * s, y + 4 * s, 12 * s, 3 * s);
+    g.fillRect(x - 1.5 * s, y + 7 * s, 3 * s, 4 * s);
     return;
   }
   if (icon === 'dash') {
-    g.fillTriangle(x - 8, y - 6, x - 1, y, x - 8, y + 6);
-    g.fillTriangle(x - 1, y - 6, x + 6, y, x - 1, y + 6);
+    g.fillTriangle(x - 8 * s, y - 6 * s, x - 1 * s, y, x - 8 * s, y + 6 * s);
+    g.fillTriangle(x - 1 * s, y - 6 * s, x + 6 * s, y, x - 1 * s, y + 6 * s);
     return;
   }
-  g.fillRect(x - 5, y - 6, 3, 12);
-  g.fillRect(x + 2, y - 6, 3, 12);
+  g.fillRect(x - 5 * s, y - 6 * s, 3 * s, 12 * s);
+  g.fillRect(x + 2 * s, y - 6 * s, 3 * s, 12 * s);
 }
 
 function wantsTouch(): boolean {

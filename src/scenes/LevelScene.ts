@@ -488,13 +488,13 @@ export class LevelScene extends Phaser.Scene {
     }
     EventBus.on(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
     // Al volver de la pausa (y de Opciones) se relee el modo asistido: se puede cambiar en cualquier momento.
-    this.events.on(Phaser.Scenes.Events.RESUME, this.applyAssist, this);
+    this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.touchControls?.destroy();
       this.scene.stop('UI');
       SaveManager.persist();
       EventBus.off(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
-      this.events.off(Phaser.Scenes.Events.RESUME, this.applyAssist, this);
+      this.events.off(Phaser.Scenes.Events.RESUME, this.onResume, this);
     });
 
     EventBus.emit(GameEvents.levelReady, this.def.id);
@@ -502,6 +502,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   override update(_time: number, delta: number): void {
+    if (!this.dialogueBox?.active && !this.cutscene) this.tryAutoAttack();
     this.inputs.update();
     this.backdrop.update(this.darkness?.ambientColor);
     SaveManager.addPlayTime(delta);
@@ -560,8 +561,46 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private openPause(): void {
+    this.touchControls?.setHidden(true);
     this.scene.pause();
     this.scene.launch('Pause', { levelId: this.def.id });
+  }
+
+  /** Al volver de la pausa se relee el modo asistido y, si cambió, el lugar de los botones. */
+  private onResume(): void {
+    this.applyAssist();
+    this.touchControls?.relayout();
+    this.touchControls?.setHidden(false);
+  }
+
+  /** Un tajo cuando el sable ya llegaría. No se mantiene, así que no carga. */
+  private tryAutoAttack(): void {
+    if (!SaveManager.current.settings.autoAttack) return;
+    if (!this.player?.active || !this.player.motor.readyForAutoSwing) return;
+    if (this.inputs.isDown('attack')) return;
+    if (!this.enemyInReach()) return;
+    this.inputs.pulse('attack');
+  }
+
+  /** El mismo rectángulo que usa el sable normal, antes de que salga. */
+  private enemyInReach(): boolean {
+    const body = this.player.body;
+    const facing = this.player.motor.facing;
+    const w = GAMEPLAY.attack.hitboxWidth;
+    const h = GAMEPLAY.attack.hitboxHeight;
+    const cx = this.player.x + facing * (body.width / 2 + w / 2);
+    const cy = this.player.y - body.height / 2;
+    const left = cx - w / 2;
+    const right = cx + w / 2;
+    const top = cy - h / 2;
+    const bottom = cy + h / 2;
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.purified) continue;
+      const b = enemy.body;
+      if (b.right < left || b.left > right || b.bottom < top || b.top > bottom) continue;
+      return true;
+    }
+    return false;
   }
 
   private restartFromCheckpoint(): void {
