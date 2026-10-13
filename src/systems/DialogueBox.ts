@@ -98,7 +98,7 @@ export class DialogueBox {
     if (!(line.speaker === 'kerana' && showKeranaPortrait(scene, key))) {
       ensurePlaceholder(scene, key, PORTRAIT_SIZE, PORTRAIT_SIZE);
     }
-    this.portrait.setTexture(key);
+    this.portrait.setTexture(key).setDisplaySize(PORTRAIT_SIZE, PORTRAIT_SIZE);
     this.nameText.setText(t(`speaker.${line.speaker}`));
     this.fullText = t(line.textKey);
     this.shownChars = 0;
