@@ -51,7 +51,7 @@ La chipa de José reemplaza a la pluma en el nivel, en el contador y bajo cada n
 
 ### Sesión 4. Pantalla de nivel completado — hecho
 
-El hijo liberado, el don y las chipas se ven juntos. El botón grande Siguiente entra al próximo nivel. En el último sigue a Yvága. Volver al mapa queda aparte. Si más adelante se suma otra zona a la lista, Siguiente la toma sola.
+El hijo liberado y las chipas se ven juntos. El tajo cargado, el salto doble y el dash ya están desde el primer nivel: no se anuncian como premio. El corazón nuevo sí, porque ese sigue creciendo al liberar a Mbói Tu'ĩ, Kurupí y Ao Ao. El botón grande Siguiente entra al próximo nivel. En el último sigue a Yvága. Volver al mapa queda aparte.
 
 ### Sesión 5. Controles del celular
 

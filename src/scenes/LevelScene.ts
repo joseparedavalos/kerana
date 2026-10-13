@@ -775,7 +775,7 @@ export class LevelScene extends Phaser.Scene {
     this.removeArenaLuz();
     EventBus.emit(GameEvents.bossBarHide);
     this.lightCandles();
-    const gift = this.def.gift;
+    const gift = this.def.gift === 'heart_up' ? this.def.gift : null;
     const giftText = gift ? `${t('liberation.gift', { gift: t(`gift.${gift}`) })}\n${t(`gift_hint.${gift}`)}` : null;
     playLiberation({
       scene: this,
