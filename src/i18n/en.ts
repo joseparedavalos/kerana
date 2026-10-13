@@ -175,7 +175,7 @@ export const en: Record<TextKey, string> = {
 
   // Mapa del mundo (GDD §8.4).
   'map.title': 'The map',
-  'map.feathers': 'Feathers: {current}/{max}',
+  'map.feathers': 'Chipas: {current}/{max}',
   'map.locked': 'Not yet',
   'map.enter_hint': 'Press {key} to enter',
   'map.move_hint': '{left}/{right} to move',
@@ -208,7 +208,7 @@ export const en: Record<TextKey, string> = {
   'level_complete.title': 'Level complete!',
   'level_complete.freed': '{name} is free',
   'level_complete.gift': 'Gift received: {gift}',
-  'level_complete.feathers': 'Feathers: {current}/{max}',
+  'level_complete.feathers': 'Chipas: {current}/{max}',
   'level_complete.continue_hint': 'Press {key} to go back to the map',
 
   // Créditos (GDD §8.9).
