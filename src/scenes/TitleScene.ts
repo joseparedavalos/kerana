@@ -37,16 +37,24 @@ export class TitleScene extends Phaser.Scene {
     this.paintKerana(height);
     this.paintLogo(width);
 
+    const hasSave = SaveManager.hasSave();
     const hint = this.add
-      .text(width / 2, height - 46, t('title.tap'), { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2C14E' })
+      .text(width / 2, height - 46, hasSave ? '' : t('title.tap'), { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2C14E' })
       .setOrigin(0.5)
       .setDepth(5);
-    this.tweens.add({ targets: hint, alpha: 0.25, duration: 700, yoyo: true, repeat: -1 });
+    if (!hasSave) this.tweens.add({ targets: hint, alpha: 0.25, duration: 700, yoyo: true, repeat: -1 });
+
+    if (hasSave) {
+      this.sideLink(width / 2 - 70, height - 46, 'title.continue', () => this.continueGame());
+      this.sideLink(width / 2 + 70, height - 46, 'title.new_game', () => this.newGame());
+    }
 
     this.optionText = this.sideLink(64, height - 16, 'title.options', () => this.scene.start('Options', { returnScene: 'Title' }));
     this.creditText = this.sideLink(width - 64, height - 16, 'title.credits', () => this.scene.start('Credits'));
 
-    this.add.zone(width / 2, height / 2, width, height).setOrigin(0.5).setInteractive().setDepth(1).on('pointerdown', () => this.startGame());
+    if (!hasSave) {
+      this.add.zone(width / 2, height / 2, width, height).setOrigin(0.5).setInteractive().setDepth(1).on('pointerdown', () => this.startGame());
+    }
     this.refresh();
   }
 
@@ -60,6 +68,7 @@ export class TitleScene extends Phaser.Scene {
       const choice = this.choices[this.selected];
       if (choice === 'options') this.scene.start('Options', { returnScene: 'Title' });
       else if (choice === 'credits') this.scene.start('Credits');
+      else if (SaveManager.hasSave()) this.continueGame();
       else this.startGame();
     }
     this.refresh();
@@ -111,7 +120,7 @@ export class TitleScene extends Phaser.Scene {
       .text(x, y, t(key), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' })
       .setOrigin(0.5)
       .setDepth(6);
-    text.setInteractive(new Phaser.Geom.Rectangle(-40, -10, 80, 22), Phaser.Geom.Rectangle.Contains);
+    text.setInteractive(new Phaser.Geom.Rectangle(-56, -12, 112, 24), Phaser.Geom.Rectangle.Contains);
     text.on('pointerdown', () => action());
     return text;
   }
