@@ -58,7 +58,7 @@ En Opciones, Mover botones: se arrastran y se agrandan, y quedan guardados. El a
 No estaba en las cinco sesiones. También está en `main`.
 
 - Hongos con sombrero, manchas y tallo.
-- Nivel 1, el piso: se probaron un cántaro y unas piedras. Parecían un tacho. Se sacaron. En la ladera hay musgo. En la cueva no hay plantas. El piso es una franja de tres baldosas y detrás se ve el cerro o la cueva. Se pisa igual. Los niveles 2 a 6 ya eran una franja. El 7 y Yvága no.
+- Nivel 1, el piso: se probaron un cántaro y unas piedras. Parecían un tacho. Se sacaron. En la ladera hay musgo. En la cueva no hay plantas. El piso es una franja de tres baldosas y detrás se ve el cerro o la cueva. Se pisa igual. En los niveles 2 a 6 los bloques también son una cáscara, pero el piso que llega abajo del mapa se dibuja entero. El 7 y Yvága no.
 - Teju Jagua: las siete cabezas son del mismo marrón que el lomo. Los ojos siguen encendidos. No van de colores.
 - Al liberar, el cuadro muestra la cara de Kerana, recortada del sprite que ya está en el juego. Mira hacia el texto. Cabe entera: cara, vincha y hombros. No es un retrato pintado.
 - Al caer, la cámara llega con ella. Al caminar sigue suave.
