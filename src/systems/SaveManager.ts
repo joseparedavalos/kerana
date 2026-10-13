@@ -1,6 +1,7 @@
 import { GAMEPLAY } from '../config/gameplay';
 import type { BossId, GiftId, LevelDef } from '../data/types';
 import { langFromBrowser, langFromUrl, type Lang } from '../i18n/lang';
+import { resolveTouchLayout, type TouchLayout } from './touchLayout';
 
 // Guardado (GDD §11.9). localStorage con try/catch: si falla, el juego sigue sin guardar.
 const STORAGE_KEY = 'kerana.save.v1';
@@ -20,6 +21,10 @@ export interface SaveSettings {
   shake: boolean;
   flashes: boolean;
   textSpeed: 1 | 2 | 3;
+  /** Tajo solo cuando un enemigo está al alcance. Apagado de fábrica. */
+  autoAttack: boolean;
+  /** Posición y tamaño de los botones. Si falta, se usa la fábrica. */
+  touchLayout?: TouchLayout;
 }
 
 export interface SaveData {
@@ -84,7 +89,7 @@ export function defaultSave(): SaveData {
     feathers: {},
     bestTimes: {},
     playTimeMs: 0,
-    settings: { music: 1, sfx: 1, lang: langFromBrowser(globalThis.navigator?.language), assist: false, shake: true, flashes: true, textSpeed: 2 },
+    settings: { music: 1, sfx: 1, lang: langFromBrowser(globalThis.navigator?.language), assist: false, shake: true, flashes: true, textSpeed: 2, autoAttack: false },
   };
 }
 
@@ -93,6 +98,10 @@ function sanitize(raw: unknown): SaveData {
   const def = defaultSave();
   if (!isRecord(raw)) return def;
   const settings = isRecord(raw.settings) ? { ...def.settings, ...raw.settings } : def.settings;
+  settings.autoAttack = settings.autoAttack === true;
+  settings.touchLayout = isRecord(raw.settings) && isRecord((raw.settings as { touchLayout?: unknown }).touchLayout)
+    ? resolveTouchLayout((raw.settings as { touchLayout?: unknown }).touchLayout)
+    : undefined;
   return {
     version: VERSION,
     unlockedLevel: typeof raw.unlockedLevel === 'number' ? raw.unlockedLevel : def.unlockedLevel,

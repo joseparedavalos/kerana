@@ -8,7 +8,7 @@ import { setupView, VIEW } from '../systems/View';
 // Opciones (GDD §8.6): volumen, idioma, modo asistido, sacudida, destellos, velocidad del texto y borrar partida.
 type Row = { labelKey: string; valueText: () => string; onChange: (dir: 1 | -1) => void };
 
-const ROW_HEIGHT = 22;
+const ROW_HEIGHT = 20;
 const ERASE_CONFIRM_WINDOW_MS = 3000;
 
 export class OptionsScene extends Phaser.Scene {
@@ -37,7 +37,7 @@ export class OptionsScene extends Phaser.Scene {
     this.add.text(width / 2, 24, t('options.title'), { fontFamily: FONT_FAMILY, fontSize: '16px', color: '#F2C14E' }).setOrigin(0.5);
 
     this.rows = this.buildRows();
-    const startY = 60;
+    const startY = 48;
     this.texts = this.rows.map((row, i) => {
       const text = this.add
         .text(width / 2, startY + i * ROW_HEIGHT, '', { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2EEE3' })
@@ -95,6 +95,16 @@ export class OptionsScene extends Phaser.Scene {
         labelKey: 'options.assist',
         valueText: () => t(s().assist ? 'options.on' : 'options.off'),
         onChange: () => this.setting('assist', !s().assist),
+      },
+      {
+        labelKey: 'options.auto_attack',
+        valueText: () => t(s().autoAttack ? 'options.on' : 'options.off'),
+        onChange: () => this.setting('autoAttack', !s().autoAttack),
+      },
+      {
+        labelKey: 'options.buttons',
+        valueText: () => '',
+        onChange: () => this.scene.start('Buttons', { optionsReturn: this.returnScene }),
       },
       {
         labelKey: 'options.shake',

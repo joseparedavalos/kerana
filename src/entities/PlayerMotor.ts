@@ -107,6 +107,11 @@ export class PlayerMotor {
   private airDashUsed = false;
   /** Empuje externo (graznido de Mbói Tu'i): fija la velocidad horizontal mientras dura. */
   private pushMsLeft = 0;
+
+  /** El ataque automático puede pegar: no está en medio de un tajo, ni cargando, ni herida. */
+  get readyForAutoSwing(): boolean {
+    return this.attackMsLeft <= 0 && this.chargeMs <= 0 && this.hurtMsLeft <= 0;
+  }
   private pushVx = 0;
   /** Rebote pendiente de un hongo (px/s, negativa = arriba); 0 = ninguno. */
   private bounceVy = 0;

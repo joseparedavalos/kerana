@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DEBUG } from './config/debug';
 import { GAMEPLAY } from './config/gameplay';
 import { BootScene } from './scenes/BootScene';
+import { ButtonLayoutScene } from './scenes/ButtonLayoutScene';
 import { CreditsScene } from './scenes/CreditsScene';
 import { LevelCompleteScene } from './scenes/LevelCompleteScene';
 import { LevelScene } from './scenes/LevelScene';
@@ -41,6 +42,7 @@ const config: Phaser.Types.Core.GameConfig = {
     LevelCompleteScene,
     PauseScene,
     OptionsScene,
+    ButtonLayoutScene,
     CreditsScene,
     UIScene,
   ],

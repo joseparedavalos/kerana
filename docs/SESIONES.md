@@ -53,13 +53,9 @@ La chipa de José reemplaza a la pluma en el nivel, en el contador y bajo cada n
 
 El hijo liberado y las chipas se ven juntos. El tajo cargado, el salto doble y el dash ya están desde el primer nivel: no se anuncian como premio. El corazón nuevo sí, porque ese sigue creciendo al liberar a Mbói Tu'ĩ, Kurupí y Ao Ao. El botón grande Siguiente entra al próximo nivel. En el último sigue a Yvága. Volver al mapa queda aparte.
 
-### Sesión 5. Controles del celular
+### Sesión 5. Controles del celular — hecho
 
-- Poder mover y agrandar los botones, y que se guarden.
-- Ataque automático cerca del enemigo, en Opciones, apagado de fábrica.
-- El botón de pausa no tapa el juego.
-
-No cambia las reglas. Solo cómo se toca.
+En Opciones, Mover botones: se arrastran y se agrandan, y quedan guardados. El ataque automático está apagado de fábrica y solo pega cuando el sable ya llegaría. La pausa es chica, en la esquina, y se esconde mientras el menú está abierto. El salto y el sable no cambian.
 
 ### Sesión 6. Ficha de Google Play
 
