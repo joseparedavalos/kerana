@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Kerana: Pokõi Mbyja, plataformas 2D inspirado en la mitología guaraní",
+  "description": "Kerana. Pokõi ñemoñare: Kerana y las siete criaturas. Plataformas 2D inspirado en la mitología guaraní",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

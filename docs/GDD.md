@@ -1,7 +1,7 @@
-# Kerana: Pokõi Mbyja
+# Kerana
 ## Documento de Diseño del Juego (GDD)
 
-> **Título provisional.** *Pokõi mbyja* significa "siete estrellas" en guaraní. Alternativa en español: *Kerana: Las siete estrellas*. **[Revisar]**
+> **Título:** Kerana. **Subtítulo:** *Pokõi ñemoñare* (las siete criaturas).
 
 | Campo | Valor |
 |---|---|
