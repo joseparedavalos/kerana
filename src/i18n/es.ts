@@ -38,7 +38,7 @@ export const es = {
   'hint.l1.jump': '{jump}',
   'hint.l1.attack': '{attack}: cortar',
   'hint.l1.high_jump': 'Mantené {jump}',
-  'hint.l1.luz_arasy': 'Tocá para purificar',
+  'hint.l1.luz_arasy': 'El tereré purifica',
   'hint.l1.switch': '{attack}: abrir',
   'hint.l1.stalactites': '¡Corré!',
   'hint.l1.antesala': 'Algo grande respira ahí abajo…',

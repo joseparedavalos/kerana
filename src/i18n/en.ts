@@ -40,7 +40,7 @@ export const en: Record<TextKey, string> = {
   'hint.l1.jump': '{jump}',
   'hint.l1.attack': '{attack}: cut',
   'hint.l1.high_jump': 'Hold {jump}',
-  'hint.l1.luz_arasy': 'Touch to purify',
+  'hint.l1.luz_arasy': 'Tereré purifies',
   'hint.l1.switch': '{attack}: open',
   'hint.l1.stalactites': 'Run!',
   'hint.l1.antesala': 'Something big is breathing down there…',
