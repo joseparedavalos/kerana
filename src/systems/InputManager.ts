@@ -34,6 +34,9 @@ export class InputManager {
   private readonly down = new Map<Action, boolean>();
   private readonly pressedLatch = new Map<Action, boolean>();
   private readonly pressed = new Map<Action, boolean>();
+  // Inputs virtuales (botones táctiles). Se suman a las teclas.
+  private readonly virtualDown = new Map<Action, boolean>();
+  private readonly virtualPressedLatch = new Map<Action, boolean>();
 
   constructor(scene: Phaser.Scene) {
     const keyboard = scene.input.keyboard;
@@ -52,6 +55,8 @@ export class InputManager {
       this.down.set(action, false);
       this.pressed.set(action, false);
       this.pressedLatch.set(action, false);
+      this.virtualDown.set(action, false);
+      this.virtualPressedLatch.set(action, false);
     }
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy(scene));
   }
@@ -62,9 +67,14 @@ export class InputManager {
       const list = this.keys.get(action) ?? [];
       let isDown = false;
       for (const key of list) if (key.isDown) isDown = true;
+      // Combina teclado + virtual.
+      isDown = isDown || (this.virtualDown.get(action) ?? false);
       this.down.set(action, isDown);
-      this.pressed.set(action, this.pressedLatch.get(action) ?? false);
+
+      const justPressed = (this.pressedLatch.get(action) ?? false) || (this.virtualPressedLatch.get(action) ?? false);
+      this.pressed.set(action, justPressed);
       this.pressedLatch.set(action, false);
+      this.virtualPressedLatch.set(action, false);
     }
   }
 
@@ -81,6 +91,15 @@ export class InputManager {
     const name = KEYMAP[action][0];
     if (name === 'SPACE') return t('key.space');
     return KEY_LABELS[name] ?? name;
+  }
+
+  /** Setea el estado de un botón virtual (mantener). */
+  setVirtual(action: Action, isDown: boolean): void {
+    const wasDown = this.virtualDown.get(action) ?? false;
+    this.virtualDown.set(action, isDown);
+    if (isDown && !wasDown) {
+      this.virtualPressedLatch.set(action, true);
+    }
   }
 
   private destroy(scene: Phaser.Scene): void {
