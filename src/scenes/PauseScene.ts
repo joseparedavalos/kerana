@@ -30,11 +30,14 @@ export class PauseScene extends Phaser.Scene {
       { labelKey: 'pause.exit_to_map', action: () => this.exitToMap() },
     ];
     this.selected = 0;
-    this.texts = this.items.map((item, i) =>
-      this.add
+    this.texts = this.items.map((item, i) => {
+      const text = this.add
         .text(width / 2, height / 2 - 30 + i * 22, t(item.labelKey), { fontFamily: FONT_FAMILY, fontSize: '12px', color: '#F2EEE3' })
-        .setOrigin(0.5),
-    );
+        .setOrigin(0.5);
+      text.setInteractive(new Phaser.Geom.Rectangle(-90, -10, 180, 24), Phaser.Geom.Rectangle.Contains);
+      text.on('pointerdown', () => item.action());
+      return text;
+    });
     this.refresh();
   }
 

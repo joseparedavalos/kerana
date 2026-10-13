@@ -28,6 +28,7 @@ export class StoryScene extends Phaser.Scene {
   private shownChars = 0;
   private charTimerMs = 0;
   private holdMs = 0;
+  private touchAdvance = false;
   private text!: Phaser.GameObjects.Text;
   private hint!: Phaser.GameObjects.Text;
 
@@ -72,13 +73,17 @@ export class StoryScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => SaveManager.persist());
+    this.add.zone(width / 2, height / 2, width, height).setInteractive().on('pointerdown', () => {
+      this.touchAdvance = true;
+    });
     this.advanceSlide();
   }
 
   override update(_time: number, delta: number): void {
     this.inputs.update();
     SaveManager.addPlayTime(delta);
-    const advance = this.inputs.justPressed('jump') || this.inputs.justPressed('attack');
+    const advance = this.inputs.justPressed('jump') || this.inputs.justPressed('attack') || this.touchAdvance;
+    this.touchAdvance = false;
 
     if (this.inputs.isDown('pause')) {
       this.holdMs += delta;

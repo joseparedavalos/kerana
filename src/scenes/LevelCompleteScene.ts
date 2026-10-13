@@ -69,6 +69,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.tweens.add({ targets: hint, alpha: 0.3, duration: 700, yoyo: true, repeat: -1 });
+    this.add.zone(width / 2, height / 2, width, height).setInteractive().on('pointerdown', () => this.continueOn());
   }
 
   override update(): void {

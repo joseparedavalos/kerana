@@ -45,6 +45,7 @@ export class CreditsScene extends Phaser.Scene {
         color: '#CFE3F2',
       })
       .setOrigin(0.5);
+    this.add.zone(width / 2, height / 2, width, height).setInteractive().on('pointerdown', () => this.scene.start('Title'));
   }
 
   override update(): void {
