@@ -192,6 +192,8 @@ side view facing left, small 2D platformer enemy, 16-bit pixel art
 ## 4. Retratos de diálogo [Núcleo]
 Con Grok Imagine normal (no el template de sprites). Tamaño final 96 × 96 (el pipeline reduce).
 
+Hoy el diálogo no usa esos archivos. La cara de Kerana se recorta de su sprite y entra en un cuadro de 64. Un retrato pintado puede reemplazarla después, sin cambiar el texto.
+
 ```
 16-bit pixel art portrait, head and shoulders, facing right, [descripción],
 plain dark blue background (#1B1A2E), no text
@@ -235,7 +237,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 - Tiles de 16 × 16. Un PNG por bioma en `public/assets/tiles/<bioma>.png`: `cerro`, `estero`, `campo`, `pueblo`, `selva`, `montana`, `ciudad`, `cielo` (Yvága: nubes y estrellas).
 - **Contenido mínimo:** suelo (relleno y bordes) · plataforma de un solo sentido (izquierda, centro, derecha) · peligro (espinas o karaguatá) · agua (superficie y fondo, donde haga falta) · variante agrietada · decoración (pasto, flores, piedras).
-- **Terreno como repisa (S28):** en los niveles con `terrainShell` en `levels.ts` (hoy l2, l3 y l4, con 3) la capa `Ground` se dibuja solo hasta 3 tiles del aire más cercano (en las 8 direcciones); la tercera fila va tenue (`GAMEPLAY.backdrop.terrainFadeAlpha`) y más adentro no se dibuja: se ve el fondo. Las colisiones no cambian. Los bloques grandes se ven como cáscaras con el fondo adentro. **Desde S29** el piso del nivel (el tramo sólido que llega al borde de abajo del mapa, desde la fila más común donde empieza) se dibuja entero hasta abajo: no queda una franja flotando con el fondo debajo. Un tileset nuevo no necesita tiles de "relleno profundo" para estos niveles, pero sí bordes que se lean bien con el fondo detrás. l1 no lo usa (la roca oscura de las zonas `Cave` enmarca el fondo de cueva) y l5 a l7 tampoco, hasta su rediseño.
+- **Terreno como repisa (S28):** en los niveles con `terrainShell` en `levels.ts` (hoy l1 a l6, con 3) la capa `Ground` se dibuja solo hasta 3 tiles del aire más cercano (en las 8 direcciones); la tercera fila va tenue (`GAMEPLAY.backdrop.terrainFadeAlpha`) y más adentro no se dibuja: se ve el fondo. Las colisiones no cambian. **Desde S29** el piso que llega al borde de abajo del mapa se dibuja entero, salvo en l1 (`solidFloor: false`): ahí también es una franja. l7 y Yvága no usan repisa. Un tileset nuevo no necesita relleno profundo, pero sí bordes que se lean con el fondo detrás. En la cueva de l1 no hay plantas: la piedra es gris y el musgo queda en la ladera.
 - **Rompibles (S22):** la roca agrietada (`B`, tajo cargado), el fardo frágil (`%`, tajo normal) y las ataduras y hojas de la liana se dibujan por código encima del tile (`src/entities/BreakableLook.ts`, colores en `GAMEPLAY.breakable`): piedra gris azulada con grietas que laten en el dorado de la onda, y paja clara con hebras y atadura. La "variante agrietada" del tileset queda tapada. Si algún día hay arte, que mantenga la regla: la roca se ve como piedra con luz adentro y el fardo como paja; las dos distintas del suelo del bioma.
 - **Orden para autotile (opcional pero recomendado):** las 16 variantes del suelo en una grilla de 4 × 4 al inicio del tileset. Para cada tile, se suman los vecinos que también son suelo: arriba = 1, derecha = 2, abajo = 4, izquierda = 8. La suma es la posición en la grilla (fila = suma ÷ 4, columna = resto). Ejemplo: superficie con suelo a los lados y debajo = 2 + 4 + 8 = 14. Si tu tileset viene en otro orden, un pequeño `raw/tiles/<bioma>.json` puede traducir posiciones y el pipeline lo reordena.
 - **De dónde sacarlos:**
@@ -250,9 +252,9 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 | Asset | Archivo | Tamaño |
 |---|---|---|
-| Corazón lleno y vacío | `raw/hud/heart_full.jpg`, `heart_empty.jpg` → `ui/` | 12 de alto (S13d ☑) |
-| Pluma (HUD y pickup, color y gris) | `raw/hud/feather.jpg`, `feather_empty.jpg` → `ui/` | 12 de alto (S13d ☑) |
-| Guavirá y Luz de Arasy (HUD y pickups) | `raw/hud/guavira.jpg`, `luz_arasy.jpg` → `ui/` | 12 de alto (S13d ☑) |
+| Corazón lleno y vacío | `ui/heart_full.png`, `ui/heart_empty.png` | 12 de alto. El pickup `guavira` también se dibuja con el corazón lleno: cura |
+| Chipa (HUD y pickup, color y gris) | `ui/chipa.png`, `ui/chipa_empty.png` | 12 de alto. En el mapa y en el guardado sigue siendo `pluma` / `feathers` |
+| Tereré (inmunidad) | `ui/terere.png` | La guampa de cuero. El id del pickup sigue siendo `luz_arasy` |
 | Pickup yvoty | — (placeholder) | 12 × 12 |
 | Fogata apagada y encendida (el parpadeo es por código) | `raw/props/fire_off.png`, `fire_on.png` → `props/` | 20 de ancho (S13d ☑) |
 | Farol apagado y encendido | `raw/props/lantern_off.png`, `lantern_on.png` → `props/` | 32 de alto (S13d ☑). S33: tres montajes con el mismo arte: de pie (entero), aplique de pared (`mount=wall`: solo la cabeza, filas 0-33 del arte, colgada de un brazo dibujado por código) y nicho (`mount=niche`: la cabeza en un hueco en arco dibujado por código, cálido al encenderse) |
@@ -308,9 +310,9 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Tilesets (7 biomas) | Núcleo | S13 | ☐ |
 | Fondos: capa lejana (7) | MVP | S13 | ☐ |
 | Fondos: capas media y cercana (14) | Núcleo | S13 | ☐ |
-| Retratos (13) | Núcleo | S13 | ☐ |
+| Retratos (13) | Núcleo | S13 | ☐ (hoy la cara de Kerana sale de su sprite; estos retratos pintados no están) |
 | Logo y mapa del mundo | Núcleo | S13 | ☐ |
-| Iconos y props de interfaz | Núcleo | S13 | ◐ (S13d: corazones, plumas, guavirá, Luz de Arasy, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
+| Iconos y props de interfaz | Núcleo | S13 | ◐ (corazones, chipa, tereré, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
 | Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas; S20: cuerpo más chico, onda del coletazo y señal de cabeza expuesta) |
 | Música de niveles (7), liberación y final | Núcleo | S13 | ☐ |
 | Tau (disfraz y forma real) + `yvaga_far.png` y `final.png` | MVP | S12c | ☐ |

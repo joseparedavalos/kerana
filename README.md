@@ -4,11 +4,13 @@ Pokõi ñemoñare. Kerana y las siete criaturas.
 
 Juego de plataformas 2D para navegador inspirado en la mitología guaraní del Paraguay. Kerana despierta tras siete años de sueño embrujado y recorre siete lugares del país para liberar a sus siete hijos de la maldición de Tau.
 
-Hecho con Phaser 4, Vite y TypeScript, y desarrollado con Claude Code.
+Hecho con Phaser 4, Vite y TypeScript.
 
-- **Jugar:** (enlace de GitHub Pages, cuando esté activo)
-- **Diseño del juego:** [docs/GDD.md](docs/GDD.md)
-- **Plan de producción:** [docs/PLAN.md](docs/PLAN.md)
+- **Jugar:** [joseparedavalos.github.io/kerana](https://joseparedavalos.github.io/kerana/)
+- **Diseño del juego:** [docs/GDD.md](docs/GDD.md). Las decisiones del 13 de octubre pisan los capítulos viejos.
+- **Qué falta para publicar:** [docs/PENDIENTES.md](docs/PENDIENTES.md)
+- **Plan de sesiones:** [docs/SESIONES.md](docs/SESIONES.md)
+- **Plan de producción (historial):** [docs/PLAN.md](docs/PLAN.md)
 - **Assets:** [docs/ASSETS.md](docs/ASSETS.md)
 
 ## Correr en local
@@ -38,14 +40,14 @@ Funcionan siempre en `npm run dev`; en la versión publicada, solo si la URL inc
 | Parámetro | Efecto |
 |---|---|
 | `debug=1` | Hitboxes, FPS y estado de Kerana (abajo a la izquierda) |
-| `level=test` o `level=1..7` | Empieza directo en ese nivel (por ahora solo existe `test`) |
-| `boss=1` | Empieza en la antesala del jefe (desde S6) |
-| `gifts=all` | Todos los dones (desde S2/S6) |
-| `god=1` | Kerana no recibe daño (desde S2) |
+| `level=1` … `level=7`, `level=8` o `level=yvaga` | Empieza en ese nivel. `8` es Yvága. También valen `l1` y `test` |
+| `boss=1` | Empieza en la antesala del jefe |
+| `gifts=all` | Fuerza los dones. El tajo, el salto doble y el dash ya están desde el inicio |
+| `god=1` | Kerana no recibe daño |
 
-Ejemplos: `http://localhost:5173/?level=test&debug=1` · publicado: `https://<usuario>.github.io/kerana/?debug=1&level=test`
+Ejemplos: `http://localhost:5173/?level=1&debug=1` · publicado: `https://joseparedavalos.github.io/kerana/?debug=1&level=1`
 
-Controles actuales: ← → o A D para moverse; Espacio, Z o K para saltar (mantener = más alto); Enter en el título.
+En la computadora: ← → o A D para moverse; Espacio, Z o K para saltar (mantener = más alto); X o J para el sable; C, L o Shift para el dash. En el celular hay botones. Se pueden mover desde Opciones. Varios dedos funcionan a la vez.
 
 Más detalles en [docs/GDD.md §11.11](docs/GDD.md).
 

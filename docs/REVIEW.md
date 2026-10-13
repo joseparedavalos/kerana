@@ -1,5 +1,7 @@
 # REVIEW · Diagnóstico del diseño de niveles (S16)
 
+Foto del juego en la rama de S16. No describe el juego de hoy. Los nombres y las decisiones vigentes están en [GDD.md](GDD.md) (decisiones del 13 de octubre) y en [SESIONES.md](SESIONES.md).
+
 Auditoría del juego tal como está en la rama de S16 (después de S13d). No cambia código: describe lo que hay y señala los huecos.
 
 **Convenciones.** Coordenadas leídas de `tools/levels/*.txt`: `x` = columna, `fila` = fila del carácter (0 arriba). "Altura" = diferencia entre superficies donde se pisa, en tiles de 16 px. Física de `src/config/gameplay.ts` (S16, sin cambios):
