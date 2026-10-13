@@ -133,7 +133,7 @@ export const GAMEPLAY = {
     restTolerancePx: 6,
   },
 
-  /** Partículas del tajo normal (S22): unas pocas chispas en el arco del sable, discretas. El cargado no las usa. */
+  /** Partículas del tajo normal (S22): unas pocas chispas en el arco del sable, discretas. */
   slashFx: {
     /** Chispas por tajo, repartidas en el arco. */
     count: 5,
@@ -147,6 +147,24 @@ export const GAMEPLAY = {
     scale: 0.8,
     alpha: 0.85,
     tint: 0xfff4d6,
+  },
+
+  /** Peso del golpe (sesión 2). La usabilidad del tajo cargado no cambia. La sacudida respeta Opciones. */
+  juice: {
+    /** Sacudida del tajo normal y del cargado (ms, intensidad de Phaser). */
+    slashShakeMs: 50,
+    slashShake: 0.0025,
+    chargedShakeMs: 90,
+    chargedShake: 0.006,
+    /** Chispas doradas del tajo cargado, distintas de las blancas del normal. */
+    chargedCount: 14,
+    chargedSpeed: 120,
+    chargedLifespanMs: 280,
+    chargedScale: 1.3,
+    /** Polvo al tocar el suelo después de caer. */
+    landDust: 6,
+    /** Estela del dash: una partícula cada tantos ms, detrás de Kerana. */
+    dashEveryMs: 28,
   },
 
   /** Base común de jefes (GDD §11.5). */
