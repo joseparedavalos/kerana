@@ -141,22 +141,22 @@ Una ilustración por diapositiva (o fondo oscuro con partículas mientras no hay
 
 1. "Dicen los antiguos que Tupã y Arasy bajaron a la tierra y crearon los ríos, los montes y las estrellas."
 2. "Entre los primeros pueblos vivía Marangatu, y con él su hija Kerana, a quien todos llamaban la dormilona."
-3. "Tau, el espíritu del mal, se disfrazó de joven hermoso para llevársela. Angatupyry, el espíritu del bien, luchó contra él siete días y siete noches… pero Tau venció."
+3. "Tau, el espíritu del mal, se la llevó."
 4. "Arasy maldijo a Tau y a toda su descendencia. Los siete hijos de Kerana nacieron con la marca de la maldición."
 5. "Tau durmió a Kerana con un hechizo y usó a sus hijos para sembrar el miedo en toda la tierra."
-6. "Pasaron siete años. En los cerros de Paraguarí, una luz se enciende en la mano de Kerana. Kerana despierta."
+6. "Pasaron siete años. Tau seguía usando a sus hijos. En los cerros de Paraguarí, Angatupyry encendió una luz en la mano de Kerana: era hora de ir a buscarlos."
 
 ### 2.5 Arco de cada nivel
 
-| Nivel | Hijo | Bajo la marca de Tau… | Al ser liberado dice… | Pista del siguiente |
-|---|---|---|---|---|
-| 1 | Teju Jagua | Custodia la oscuridad en vez de los frutos | "¿Che sy? ¿Sos vos?" | Mbói Tu'i grita en los esteros del sur |
-| 2 | Mbói Tu'i | Su graznido ahuyenta a las ranas que protegía | "Las ranas lloraban por mí." | Moñái roba en los campos abiertos |
-| 3 | Moñái | Roba sin parar para llenar un vacío | "Robé tanto. Nada llenaba el vacío." | Jasy Jatere juega en Capiatá a la hora de la siesta |
-| 4 | Jasy Jatere | Sus juegos se volvieron crueles | "Solo quería que alguien jugara conmigo." | Kurupi nunca sale de la selva |
-| 5 | Kurupi | Usa a los animales como soldados | "La selva era mi única casa." | Ao Ao caza en el Ybytyruzú; hay que subir a un pindó |
-| 6 | Ao Ao | Un hambre que nunca se calma | "Siempre tuve hambre." | Luisón espera donde duermen los muertos, en Asunción |
-| 7 | Luisón | La tristeza de haber nacido último, en la oscuridad | "Nací último. Y nací en la oscuridad." | (Final) |
+| Nivel | Hijo | Bajo la marca de Tau… | Kerana dice… |
+|---|---|---|---|
+| 1 | Teju Jagua | Custodia la oscuridad en vez de los frutos | "Estás libre de la maldición, Teju Jagua." |
+| 2 | Mbói Tu'i | Su graznido ahuyenta a las ranas que protegía | "Estás libre de la maldición, Mbói Tu'i." |
+| 3 | Moñái | Roba sin parar para llenar un vacío | "Estás libre de la maldición, Moñái." |
+| 4 | Jasy Jatere | Sus juegos se volvieron crueles | "Estás libre de la maldición, Jasy Jatere." |
+| 5 | Kurupi | Usa a los animales como soldados | "Estás libre de la maldición, Kurupi." |
+| 6 | Ao Ao | Un hambre que nunca se calma | "Estás libre de la maldición, Ao Ao." |
+| 7 | Luisón | La tristeza de haber nacido último, en la oscuridad | "Estás libre de la maldición, Luisón." |
 
 ### 2.6 Final [MVP]
 
@@ -496,11 +496,7 @@ Tres fuegos (x 101, x 184 y la antesala): el nivel es un tercio más ancho que l
 
 **Liberación**
 
-> **Teju Jagua:** …¿Che sy? ¿Sos vos?
->
-> **Kerana:** Soy yo, che memby. Ya no tenés que cuidar esta oscuridad.
->
-> **Teju Jagua:** Mis hermanos… Tau los tiene. Mbói Tu'i grita en los esteros del sur.
+> **Kerana:** Estás libre de la maldición, Teju Jagua.
 
 **Don: tajo cargado.** Mainumby: "¡Mantené el ataque y soltalo! Así se rompen las rocas agrietadas."
 
@@ -548,11 +544,7 @@ Cuatro fuegos (x 74, x 198, x 307 y la antesala). Piezas: 22 plataformas móvile
 
 **Liberación**
 
-> **Mbói Tu'i:** Che sy… Las ranas lloraban por mí.
->
-> **Kerana:** Ahora van a cantar otra vez.
->
-> **Mbói Tu'i:** Moñái roba en los campos abiertos. Cuidado con sus cuernos.
+> **Kerana:** Estás libre de la maldición, Mbói Tu'i.
 
 ### 6.3 Nivel 3: Misiones · *Ñu: el campo abierto*
 
@@ -596,11 +588,7 @@ El suelo base está en la fila 33 y el mapa crece hacia arriba: tres ascensos si
 
 **Liberación**
 
-> **Moñái:** Che sy… Robé tanto. Nada llenaba el vacío.
->
-> **Kerana:** El cielo ya es tuyo. No hace falta robarlo.
->
-> **Moñái:** Jasy Jatere juega en Capiatá a la hora de la siesta. No le creas cuando llora.
+> **Kerana:** Estás libre de la maldición, Moñái.
 
 **Don: salto doble.** Mainumby: "¡El aire es de Moñái… y ahora también tuyo! Saltá otra vez en el aire."
 
@@ -646,11 +634,7 @@ El suelo base es la calle, en la fila 37; el mapa crece hacia arriba con tres as
 
 **Liberación**
 
-> **Jasy Jatere:** Che sy… Solo quería que alguien jugara conmigo.
->
-> **Kerana:** Vamos a jugar, che memby. Pero sin robarle el sueño a nadie.
->
-> **Jasy Jatere:** Kurupi no sale nunca de la selva. Los animales le obedecen.
+> **Kerana:** Estás libre de la maldición, Jasy Jatere.
 
 **Don: Paso de la siesta.** Mainumby: "¡Como Jasy Jatere: por un instante, nada te toca! Usalo para cruzar."
 
@@ -697,11 +681,7 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 
 **Liberación**
 
-> **Kurupi:** Che sy… La selva era mi única casa.
->
-> **Kerana:** Y lo va a seguir siendo. Pero ya no para esconderte.
->
-> **Kurupi:** Ao Ao caza en las montañas del Ybytyruzú. Si te persigue, subí a un pindó.
+> **Kerana:** Estás libre de la maldición, Kurupi.
 
 ### 6.6 Nivel 6: Guairá · *Ybytyruzú: las montañas*
 
@@ -741,11 +721,7 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 
 **Liberación**
 
-> **Ao Ao:** Che sy… Siempre tuve hambre.
->
-> **Kerana:** Ya no, che memby. Descansá.
->
-> **Ao Ao:** El último, Luisón… te espera donde duermen los muertos, en Asunción.
+> **Kerana:** Estás libre de la maldición, Ao Ao.
 
 ### 6.7 Nivel 7: Asunción · *Pyhare: la noche del camposanto*
 
@@ -785,9 +761,7 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 
 **Liberación**
 
-> **Luisón:** Che sy… Nací último. Y nací en la oscuridad.
->
-> **Kerana:** Y en la oscuridad te encontré. Vení, che memby. Tus hermanos te esperan arriba.
+> **Kerana:** Estás libre de la maldición, Luisón.
 
 Después, la risa de Tau se aleja y empieza el final (§2.6).
 
@@ -804,7 +778,7 @@ Tau dejó de ser jefe secreto (antes pedía las 21 plumas y estaba recortado, §
 - **Fase 1, el joven de la flauta:** Tau con su disfraz del mito, en las nubes; cambia de lado en un parpadeo de humo. Notas que vuelan hacia Kerana y una melodía en anillo que hipnotiza (la hipnosis de Moñái: controles invertidos). Ventana después de cada ataque.
 - **Fase 2, los ecos:** Tau sube al cielo y llama sombras de tres hijos, que repiten un ataque cada una (**reutiliza lo de los jefes**): Teju Jagua, rocas que caen con aviso; Mbói Tu'i, graznido que empuja y barrida por las nubes; Jasy Jatere, un enjambre. Después del eco baja cansado a las nubes (ventana).
 - **Fase 3, las siete estrellas:** su forma real, humo violeta con ojos rojos, flotando en lo alto. El humo cubre las nubes (aviso: subir a una estrella); la estrella más cercana a Kerana se enciende y, al terminar el humo, lo baja con su rayo junto a ella (ventana). Rayos rojos hacia Kerana, sin ventana.
-- **Cierre:** como en el mito, cuando el sabio Tume Arandu lo dejó hechizado, Tau queda sellado (la marca estalla en luz y el humo se encoge). Final verdadero (§2.6): la tierra guaraní sana, Kerana descansa junto al manantial mirando a sus hijos en Eichu al amanecer de *Ary Pyahu*, el año nuevo.
+- **Cierre:** como en el mito, cuando el sabio Tume Arandu lo dejó hechizado, Tau queda sellado. Kerana dice: «Dormí, Tau. Y no despiertes.» La marca estalla en luz y el humo se encoge. Final verdadero (§2.6): la tierra guaraní sana, Kerana descansa junto al manantial mirando a sus hijos en Eichu al amanecer de *Ary Pyahu*, el año nuevo.
 
 ---
 
