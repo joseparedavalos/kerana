@@ -52,7 +52,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     this.buildSky();
     this.buildPath();
-    this.nodes = WORLD_LEVELS.map((level) => this.buildNode(level));
+    this.nodes = WORLD_LEVELS.map((level, i) => this.buildNode(level, i));
     this.selected = this.firstSelectableIndex();
     this.refreshNodeStyles();
 
@@ -104,11 +104,24 @@ export class WorldMapScene extends Phaser.Scene {
     };
   }
 
-  private buildNode(level: LevelDef): MapNode {
+  private buildNode(level: LevelDef, index: number): MapNode {
     const { x, y } = this.projectNode(level);
     const dot = this.add.circle(x, y, 6).setStrokeStyle(1, 0xf2eee3);
+    dot.setInteractive(new Phaser.Geom.Circle(6, 6, 22), Phaser.Geom.Circle.Contains);
+    dot.on('pointerdown', () => this.tapNode(index));
     this.add.text(x, y + 10, String(level.order), { fontFamily: FONT_FAMILY, fontSize: '8px', color: '#F2EEE3' }).setOrigin(0.5, 0);
     return { level, x, y, dot };
+  }
+
+  private tapNode(index: number): void {
+    if (this.nodeState(this.nodes[index].level) === 'blocked') return;
+    if (this.selected === index) {
+      this.enterSelected();
+      return;
+    }
+    this.selected = index;
+    this.refreshNodeStyles();
+    this.updatePanel();
   }
 
   private nodeState(level: LevelDef): NodeState {

@@ -38,9 +38,14 @@ export class OptionsScene extends Phaser.Scene {
 
     this.rows = this.buildRows();
     const startY = 60;
-    this.texts = this.rows.map((_row, i) =>
-      this.add.text(width / 2, startY + i * ROW_HEIGHT, '', { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2EEE3' }).setOrigin(0.5),
-    );
+    this.texts = this.rows.map((row, i) => {
+      const text = this.add
+        .text(width / 2, startY + i * ROW_HEIGHT, '', { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2EEE3' })
+        .setOrigin(0.5);
+      text.setInteractive(new Phaser.Geom.Rectangle(-140, -10, 280, 22), Phaser.Geom.Rectangle.Contains);
+      text.on('pointerdown', () => row.onChange(1));
+      return text;
+    });
     this.refresh();
   }
 

@@ -12,7 +12,7 @@ const ALPHA_DOWN = 0.88;
 const INK = 0xf2eee3;
 const INK_DOWN = 0x1b1a2e;
 
-type Icon = 'left' | 'right' | 'jump' | 'attack' | 'dash';
+type Icon = 'left' | 'right' | 'jump' | 'attack' | 'dash' | 'pause';
 
 interface VirtualButton {
   action: Action;
@@ -57,6 +57,7 @@ export class TouchControls {
     this.addButton('jump', jumpX, jumpY, JUMP, 'jump');
     this.addButton('attack', jumpX - JUMP / 2 - GAP - ACTION / 2, jumpY - 6, ACTION, 'attack');
     this.addButton('dash', jumpX - 18, jumpY - JUMP / 2 - GAP - ACTION / 2, ACTION, 'dash');
+    this.addButton('pause', VIEW.width - EDGE - 14, EDGE + 14, 28, 'pause');
   }
 
   private addButton(action: Action, x: number, y: number, size: number, icon: Icon): void {
@@ -119,9 +120,14 @@ function drawIcon(g: Phaser.GameObjects.Graphics, x: number, y: number, icon: Ic
     g.fillRect(x - 1.5, y + 7, 3, 4);
     return;
   }
-  // Dash: dos chevrones.
-  g.fillTriangle(x - 8, y - 6, x - 1, y, x - 8, y + 6);
-  g.fillTriangle(x - 1, y - 6, x + 6, y, x - 1, y + 6);
+  if (icon === 'dash') {
+    g.fillTriangle(x - 8, y - 6, x - 1, y, x - 8, y + 6);
+    g.fillTriangle(x - 1, y - 6, x + 6, y, x - 1, y + 6);
+    return;
+  }
+  // Pausa: dos barras.
+  g.fillRect(x - 5, y - 6, 3, 12);
+  g.fillRect(x + 2, y - 6, 3, 12);
 }
 
 function wantsTouch(): boolean {
