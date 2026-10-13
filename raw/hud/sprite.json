@@ -7,6 +7,9 @@
   "size": {
     "default": {
       "height": 12
+    },
+    "terere": {
+      "height": 32
     }
   }
 }
