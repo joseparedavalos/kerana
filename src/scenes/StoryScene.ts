@@ -31,6 +31,7 @@ export class StoryScene extends Phaser.Scene {
   private touchAdvance = false;
   private text!: Phaser.GameObjects.Text;
   private hint!: Phaser.GameObjects.Text;
+  private skip!: Phaser.GameObjects.Text;
 
   constructor() {
     super('Story');
@@ -76,6 +77,13 @@ export class StoryScene extends Phaser.Scene {
     this.add.zone(width / 2, height / 2, width, height).setInteractive().on('pointerdown', () => {
       this.touchAdvance = true;
     });
+    // Saltar siempre visible: en el celular no hay botón de pausa durante la historia.
+    this.skip = this.add
+      .text(width - 12, 12, t('story.skip'), { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2C14E' })
+      .setOrigin(1, 0)
+      .setDepth(3)
+      .setInteractive({ useHandCursor: true });
+    this.skip.on('pointerdown', () => this.finish());
     this.advanceSlide();
   }
 

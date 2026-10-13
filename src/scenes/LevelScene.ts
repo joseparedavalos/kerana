@@ -102,7 +102,7 @@ const FOG_COLOR = 0xc8b8e6;
 const LIANA_COLOR = 0x3f7a3a;
 const PINDO_TRUNK_COLOR = 0x7a6248;
 const PINDO_LEAF_COLOR = 0x4f8a3a;
-const SIGN_RANGE = 20;
+const SIGN_RANGE = 40;
 /** Placeholders si falta el arte de raw/props: cartel (16 × 16) y fuego (16 × 24, cuadro 0 apagado y 4 encendido). */
 const SIGN_PLACEHOLDER = 16;
 const FIRE_PLACEHOLDER = 'checkpoint';
