@@ -1914,14 +1914,19 @@ export class LevelScene extends Phaser.Scene {
     if (this.trapWatch.step(deltaMs, body.blocked.down, this.trappedUnder(body), GAMEPLAY.trap.waitMs)) this.respawn('trap');
   }
 
-  /** Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado (nunca en un encierro). */
+  /**
+   * Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado (nunca en un encierro).
+   * S36: ni durante el dash (es intangible: cruzando las espinas de la chipa C de l4 guardaba un punto encima de ellas,
+   * y la caída siguiente la dejaba reapareciendo sobre las espinas) ni con el cuerpo sobre una espina.
+   */
   private trackSafeGround(body: Phaser.Physics.Arcade.Body): void {
-    if (!body.blocked.down || this.trapWatch.active) return;
+    if (!body.blocked.down || this.trapWatch.active || this.player.isIntangible) return;
     const tile = this.map.tileWidth;
     const below = body.bottom + 1;
     const feetY = body.bottom - 2;
     if (!this.isSolidAt(body.left + 1, below) || !this.isSolidAt(body.right - 1, below)) return;
     if (this.tileAt('Hazards', body.left - tile, feetY) || this.tileAt('Hazards', body.right + tile, feetY)) return;
+    if (this.tileAt('Hazards', body.left + 1, feetY) || this.tileAt('Hazards', body.right - 1, feetY)) return;
     this.safeGround.set(body.center.x, body.bottom);
   }
 
