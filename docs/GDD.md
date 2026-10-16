@@ -68,6 +68,8 @@
 - La liana que cuelga en la selva es adorno. No se corta. La liana que se corta sigue siendo la de siempre.
 - La canoa se sacó. Lo que cae en la pelea de Mbói Tu'ĩ es un corazón y cura.
 - Las vacas quedan de este tamaño.
+- Primero se publica en Google Play. Steam va después, con el feedback de la tienda. itch.io y Electron no son el paso siguiente.
+- Los controles táctiles ya están: botones en pantalla, varios dedos a la vez, y se pueden mover y agrandar. El punto 5 de §12.2 quedó viejo. No hace falta una sesión para construirlos.
 
 ---
 
@@ -1334,7 +1336,7 @@ Si el gasto supera la meta (ver el semáforo en `docs/PLAN.md`), se recorta en e
 2. ~~Traducción al inglés.~~ **[Recortado en S4; vuelve en S12d: el juego está completo en inglés (`src/i18n/en.ts`)]**
 3. ~~Persecución del Ao Ao (queda solo la arena).~~ **[Recortado en S4; vuelve en S31: el tramo C de l6, §6.6]**
 4. ~~Tercera fase de los jefes 3 a 6.~~ **[Marcado como recortado en S4, pero no se aplicó: Moñái, Jasy Jatere, Kurupi y Ao Ao tienen 3 fases (S8–S11; revisado en S16, docs/REVIEW.md)]**
-5. Controles táctiles. **[RECORTADO desde S3: idem]**
+5. ~~Controles táctiles.~~ **[Recortado en S3; vuelve después: botones en pantalla, varios dedos y posición guardada. Ver decisiones del 16 de octubre]**
 6. Parallax de 3 capas (queda 1). **[RECORTADO desde S3: idem]**
 7. Mainumby visible (quedan solo los carteles de texto).
 8. Plumas coleccionables.
