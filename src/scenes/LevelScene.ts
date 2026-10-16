@@ -1544,10 +1544,14 @@ export class LevelScene extends Phaser.Scene {
             : kind === 'fence' ? { key: 'prop_fence' as const, w: 48, h: 18 }
             : kind === 'chair' ? { key: 'prop_chair' as const, w: 18, h: 22 }
             : kind === 'hammock' ? { key: 'prop_hammock' as const, w: 48, h: 20 }
+            : kind === 'trunk' ? { key: 'prop_trunk' as const, w: 32, h: 12 }
+            : kind === 'liana' ? { key: 'prop_liana' as const, w: 16, h: 32 }
             : null;
           if (!spec) break;
           const look = artOrPlaceholder(this, spec.key, kind, spec.w, spec.h);
-          this.add.image(x, y, look.key).setOrigin(0.5, 1).setScale(look.scale);
+          const image = this.add.image(x, y, look.key).setScale(look.scale);
+          // La liana cuelga del techo. El resto se apoya en el piso.
+          image.setOrigin(0.5, kind === 'liana' ? 0 : 1);
           break;
         }
         case 'Sign': {

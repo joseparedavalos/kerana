@@ -25,7 +25,7 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 
 ## Ahora
 
-1. Niveles 5 a 7, el detalle del escenario. Uno por vez. El 4 tiene baldosas, aleros, una silla y una hamaca. La tabla está en [docs/SESIONES.md](SESIONES.md).
+1. Niveles 6 y 7, el detalle del escenario. Uno por vez. El 5 tiene raíces, hojas, un tronco y una liana. La tabla está en [docs/SESIONES.md](SESIONES.md).
 2. Ficha de Google Play: ícono, cinco capturas, descripción corta, edad y privacidad.
 
 ## Para cuando vayamos a Steam
