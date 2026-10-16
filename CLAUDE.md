@@ -2,18 +2,21 @@
 
 Juego de plataformas 2D para navegador inspirado en la mitología guaraní (Paraguay).
 Stack: **Phaser 4 + Vite + TypeScript**, publicado en GitHub Pages.
-El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión tiene que rendir.
+El autor (Jose) trabaja con el **límite semanal del plan Pro**: las sesiones tienen que ser eficientes, pero no hay presupuesto en dólares.
 
 ## Documentos (fuente de verdad)
 
-- `docs/GDD.md`, secciones «Decisiones del 13 de octubre de 2026» y «Decisiones del 16 de octubre de 2026»: pisan los capítulos viejos del GDD.
-- `docs/SESIONES.md` y `docs/PENDIENTES.md`: qué está hecho y qué sigue. Empieza por ahí si la tarea es de ahora. Lo de hoy está fechado el 16 de octubre.
-- `docs/PLAN.md`: historial de las sesiones S1 en adelante. No es la lista de lo que falta. Al cerrar una sesión se anota ahí, en §6.3, §7 y §8.
-- `docs/SESIONES.md`: el plan de acá a publicar. No reemplaza el historial.
-- `docs/PENDIENTES.md`: lo que falta hoy. Es la única lista de pendientes.
-- `docs/ASSETS.md`: sprites, tiles, fondos y audio.
+Una viñeta por documento: qué contiene y cuándo leerlo.
+
+- `docs/GDD.md`: el diseño. Las secciones «Decisiones del 13 de octubre de 2026» y «Decisiones del 16 de octubre de 2026» pisan los capítulos viejos. Lee solo las secciones que cite tu tarea.
+- `docs/PLAN.md`: historial de las sesiones S1 en adelante. No es la lista de pendientes. Lee tu sesión y las notas de la anterior; al cerrar, se anota en §6.3, §7 y §8.
+- `docs/SESIONES.md`: el plan hacia adelante, hasta publicar (itch.io, Google Play, Steam). Léelo si la tarea es de ahora.
+- `docs/PENDIENTES.md`: lo que falta hoy. Única lista de pendientes. Léela al empezar y al cerrar.
+- `docs/RECETA-NIVEL.md`: cómo se rediseña un nivel (salió de siete rediseños). Léela antes de tocar cualquier mapa.
+- `docs/REVIEW.md`: la auditoría de diseño de S16, como referencia histórica. No es una lista de tareas.
+- `docs/ASSETS.md`: sprites, tiles, fondos y audio. Léelo antes de tocar arte o audio.
 - Al cerrar una sesión se actualizan `PLAN.md` y `PENDIENTES.md` en el mismo cambio. Si no coinciden, manda `PENDIENTES.md`.
-- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo. El punto 5 de §12.2 está viejo: los controles táctiles ya están.
+- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo. El punto 5 de §12.2 está viejo: los controles táctiles ya están. El orden de publicación de la decisión del 16 de octubre (primero Google Play) también quedó viejo: vale el de `SESIONES.md` (itch.io, después Google Play, después Steam).
 - No regeneres `public/assets/tiles/*.png` con `tools/make-placeholder-tiles.mjs`. Pisa el piso nuevo y la decoración del borde.
 
 ## Cómo trabajar en una sesión
@@ -24,7 +27,7 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 4. Actualiza `docs/PLAN.md` (§6.3, §7 y §8) y, en el mismo cambio, `docs/PENDIENTES.md`. Si un pendiente ya no existe, sácalo de la lista.
 5. Commits pequeños en español (`feat: salto con coyote time`). Descripción del PR en español: qué cambió, **cómo probarlo** (URL con parámetros de depuración) y qué falta.
 
-## Reglas de presupuesto
+## Reglas de eficiencia
 
 - No explores todo el repo: usa la estructura de abajo y lee solo lo necesario.
 - No reescribas módulos que funcionan, salvo que la sesión lo pida.
@@ -32,7 +35,8 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 - Si una herramienta no se instala o algo bloquea después de 2 intentos, documéntalo y verifica de otra forma.
 - Si un problema se resuelve cambiando datos (`config/`, `data/`), prefiere eso a cambiar lógica.
 - No escribas JSON de Tiled a mano: los niveles se escriben en ASCII (`tools/levels/*.txt`) y se generan con `npm run maps` (GDD §11.7).
-- Verifica solo con `npm run build`, `npm test` y `npm run smoke`. Nada de pruebas manuales con navegador ni capturas de pantalla, salvo que el smoke falle (ahí sí, para diagnosticar).
+- La verificación de código es `npm run build`, `npm test` y `npm run smoke`.
+- Si la sesión cambia algo visual (arte, cómo se dibuja el terreno, el fondo, un jefe, una pieza nueva), saca capturas del antes y el después con el método de S20: Kerana teletransportada al sitio y el juego congelado con `game.loop.sleep()`. Descríbelas en el PR. Las capturas van a `tmp/`, que no se sube al repo.
 - No leas ni explores archivos que no vas a modificar.
 - Omití lo opcional salvo que la sesión lo pida explícitamente: por ejemplo, el mapa del mundo lleva fondo liso (sin Natural Earth) hasta que haya una ilustración real (GDD §8.4/ASSETS §7).
 - Si algo no crítico falla o queda incompleto, anótalo en "Notas para la próxima sesión" en vez de perseguirlo.

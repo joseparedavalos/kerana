@@ -1,7 +1,15 @@
-# Plan de sesiones: de acá a Google Play
+# Plan de sesiones: de acá a publicar
 
 Fecha: 13 de octubre de 2026. Actualizado el 16 de octubre, con lo que ya está en `main` (pull requests 82 a 87).
-Primero Google Play. Steam después, con el feedback de la tienda.
+Revisado el 16 de octubre en S34: cambia el orden de publicación.
+
+## Publicación
+
+1. **itch.io**, gratis y en navegador. Es el mismo build de GitHub Pages: sirve para juntar feedback de gente que no conoce el juego.
+2. **Google Play**, con el feedback de itch.io.
+3. **Steam**, más adelante.
+
+Los pasos que faltan para cada tienda están en [PENDIENTES.md](PENDIENTES.md).
 
 ## Decisiones cerradas
 
@@ -13,7 +21,7 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 - El corazón cura. El tereré, la guampa de cuero, da la inmunidad. No es un cuerno.
 - Portugués, demo, logros, mejores tiempos visibles, control, Deck, cápsula y trailer quedan para Steam.
 
-## Sesiones para Google Play
+## Sesiones antes de publicar
 
 Cada sesión fue un pull request sobre `main`.
 
@@ -75,7 +83,7 @@ También está en `main`. Nada de esto cambia el salto.
 
 ## Detalle del escenario
 
-Un nivel por vez, antes de la ficha de la tienda. Nada de esto choca ni cambia el salto. Primero el borde del piso, después dos objetos sueltos.
+Un nivel por vez, antes de la ficha de las tiendas. Nada de esto choca ni cambia el salto. Primero el borde del piso, después dos objetos sueltos.
 
 | Nivel | Lugar | Borde | Objetos | Estado |
 |---|---|---|---|---|
@@ -87,27 +95,36 @@ Un nivel por vez, antes de la ficha de la tienda. Nada de esto choca ni cambia e
 | 6 | Guairá, cerro | laja con pasto | palma y rocas | pendiente |
 | 7 | Asunción, noche | losa y vela | cruz y ramo seco | pendiente |
 
-### Sesión 6. Ficha de Google Play — pendiente
+### Sesión 6. Página de itch.io — pendiente
+
+- El build de navegador subido a itch.io, gratis.
+- Página del juego: capturas y descripción.
+- Las capturas y la descripción sirven después para Google Play.
+
+### Sesión 7. Ficha de Google Play — pendiente
+
+Con el feedback de itch.io.
 
 - Ícono que se lea en chiquito: Kerana y el sable.
 - 5 capturas: título, un nivel, un jefe, el mapa, la pantalla de completado.
 - Descripción corta: «Plataformas pixel art. Liberá a los siete hijos de Kerana en el Paraguay.»
 - Edad, privacidad, y que se juega sin internet.
+- Empaquetado para Android.
 
-Esto se arma cuando el detalle de los niveles 2 a 7 ya se siente bien, o cuando José diga que alcanza con el 1.
+Esto se arma cuando el detalle de los niveles 2 a 7 ya se siente bien, o cuando José diga que alcanza con el 1. La prueba cerrada de Google Play (12 testers, 14 días) conviene arrancarla antes: ver [PENDIENTES.md](PENDIENTES.md).
 
-## Después de publicar
+## Después: Steam
 
-Cuando haya feedback de Google Play:
+Más adelante, con el feedback de itch.io y de Google Play:
 
 | Sesión | Qué | Estado |
 |---|---|---|
-| 7 | Demo de Steam: nivel 1 y un pedazo del 2, con Wishlist al final | pendiente |
-| 8 | Logros y mejores tiempos en el mapa, para el speedrun | pendiente |
-| 9 | Control, Steam Deck, cápsula y trailer | pendiente |
-| 10 | Portugués | pendiente |
+| 8 | Demo de Steam: nivel 1 y un pedazo del 2, con Wishlist al final | pendiente |
+| 9 | Logros y mejores tiempos en el mapa, para el speedrun | pendiente |
+| 10 | Control, Steam Deck, cápsula y trailer | pendiente |
+| 11 | Portugués | pendiente |
 
-El guardado ya tiene `bestTimes` por nivel. No se muestra. Queda para la sesión 8.
+El guardado ya tiene `bestTimes` por nivel. No se muestra. Queda para la sesión 9.
 
 ## Qué no entra
 
