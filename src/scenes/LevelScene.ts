@@ -1542,6 +1542,8 @@ export class LevelScene extends Phaser.Scene {
             kind === 'nest' ? { key: 'prop_nest' as const, w: 18, h: 14 }
             : kind === 'tacuru' ? { key: 'prop_tacuru' as const, w: 20, h: 24 }
             : kind === 'fence' ? { key: 'prop_fence' as const, w: 48, h: 18 }
+            : kind === 'chair' ? { key: 'prop_chair' as const, w: 18, h: 22 }
+            : kind === 'hammock' ? { key: 'prop_hammock' as const, w: 48, h: 20 }
             : null;
           if (!spec) break;
           const look = artOrPlaceholder(this, spec.key, kind, spec.w, spec.h);
