@@ -14,4 +14,5 @@ export const GameEvents = {
   bossHpChanged: 'boss:hp_changed', // (fraction: number) 1 → 0
   bossBarHide: 'boss:bar_hide', // sin datos
   restartFromCheckpoint: 'level:restart_from_checkpoint', // sin datos: Pause pide reaparecer en el último fuego
+  returnForChipas: 'level:return_for_chipas', // sin datos: Pause pide volver a buscar las chipas que faltan (S36)
 } as const;
