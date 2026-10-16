@@ -1,4 +1,4 @@
-# Plan de producción: Kerana con US$100 de crédito
+# Plan de producción: Kerana
 
 Historial de las sesiones S1 en adelante. No es la lista de lo que falta: eso está en [PENDIENTES.md](PENDIENTES.md) y [SESIONES.md](SESIONES.md). Desde el 13 de octubre de 2026 el jugador ve chipa (la letra del mapa sigue siendo `F`), un corazón que cura (la letra `G`) y tereré para la inmunidad (la letra `L`). El tajo, el salto doble y el dash están desde el primer nivel.
 
@@ -12,10 +12,10 @@ Este plan divide el juego en **15 sesiones de Claude Code en la nube** más una 
 ## 1. Estrategia en una mirada
 
 - **Una sesión = una fila de este plan = un PR.** El prompt es corto porque todo el detalle está aquí.
-- **Modelo:** Sonnet 5 por defecto. Según los precios oficiales por millón de tokens, Opus 5.5 cuesta el doble (US$4 de entrada y US$20 de salida, frente a US$2 y US$10 de Sonnet 5). Opus 5.5 conviene como mucho para S1 (la arquitectura) o para un bug que Sonnet no resuelva.
-- **Mide después de cada sesión** y aplica el semáforo (§6).
-- **Lo que no cuesta crédito lo haces tú:** ajustar valores en `gameplay.ts`, pulir mapas en Tiled, generar arte en Grok y escribir diálogos.
-- **El crédito no aplica a "Projects" ni a "Routines".** Usa sesiones normales en claude.ai/code.
+- **Modelo:** Opus 5.5 en todas las sesiones.
+- **Costo:** el crédito de US$100 se agotó el 5 de octubre de 2026 (S13c). Desde S13d las sesiones usan el límite semanal del plan Pro de Jose. No hay presupuesto en dólares, pero el límite es semanal: las sesiones tienen que ser eficientes.
+- **Registro:** cada sesión anota en §6.3 la fecha, el modelo y, como costo, "plan Pro". El semáforo y las metas por sesión (§6.1 y §6.2) están cerrados; quedan como registro.
+- **Lo que no gasta el límite lo haces tú:** ajustar valores en `gameplay.ts`, pulir mapas en Tiled, generar arte en Grok y escribir diálogos.
 - **Sesiones de una en una, nunca en paralelo:** dos sesiones tocando los mismos archivos generan conflictos.
 
 ---
@@ -35,7 +35,7 @@ Este plan divide el juego en **15 sesiones de Claude Code en la nube** más una 
 ## 3. Para ti: el ciclo de cada sesión
 
 1. **Comprueba que el PR anterior esté fusionado.** Cada sesión parte de `main`; si no fusionaste, la nueva sesión no verá los cambios anteriores.
-2. **Inicia la sesión:** claude.ai/code → repo `kerana` → modelo (**Sonnet 5**; Opus 5.5 opcional en S1) → si aparece el selector de modo, elige que acepte ediciones automáticamente → prompt:
+2. **Inicia la sesión:** claude.ai/code → repo `kerana` → modelo (**Opus 5.5**) → si aparece el selector de modo, elige que acepte ediciones automáticamente → prompt:
    ```
    Ejecuta la sesión S1 de docs/PLAN.md.
    ```
@@ -44,7 +44,7 @@ Este plan divide el juego en **15 sesiones de Claude Code en la nube** más una 
 4. **Crea el PR** desde la sesión (botón **Create PR**, o pídele "crea el PR").
 5. **Revisa en GitHub:** pestaña **Files changed** para mirar y **Conversation** para leer el resumen y "cómo probarlo". Luego **Merge pull request** → **Confirm merge**.
 6. **Prueba:** en 1 o 2 minutos el juego se actualiza en tu enlace de GitHub Pages (§4); o localmente (§5) para ajustar valores con recarga instantánea.
-7. **Anota el crédito** en el registro (§6.3): puedes editar este archivo desde GitHub con el ícono del lápiz.
+7. **Anota la sesión** en el registro (§6.3) si Claude no lo hizo: fecha, modelo y "plan Pro". Puedes editar este archivo desde GitHub con el ícono del lápiz.
 
 ### 3.1 Cómo pedir un arreglo (barato)
 Si vuelves horas después, **abre una sesión nueva y corta** en lugar de continuar una larga: al reanudar una sesión larga se vuelve a procesar todo su historial.
@@ -95,7 +95,9 @@ Build y tests deben pasar. Crea el PR.
 
 ## 6. Presupuesto
 
-### 6.1 Metas por sesión (estimaciones gruesas; se recalibran después de S1 y S2)
+**Cerrado el 5 de octubre de 2026.** El crédito de US$100 se agotó con S13c. Desde S13d las sesiones usan el límite semanal del plan Pro, sin presupuesto en dólares. Las metas (§6.1) y el semáforo (§6.2) ya no son reglas: quedan como registro. El registro (§6.3) se sigue llenando.
+
+### 6.1 Metas por sesión [CERRADO el 5 de octubre de 2026: historia, no regla]
 
 | Sesión | Contenido | Meta (US$) | Meta acumulada |
 |---|---|---|---|
@@ -128,14 +130,16 @@ Build y tests deben pasar. Crea el PR.
 
 S5, S14 y S15 dejan de ser sesiones aparte: la música pasa a S13 y la QA la hace Jose jugando (checklist de S15).
 
-### 6.2 Semáforo
+### 6.2 Semáforo [CERRADO el 5 de octubre de 2026: historia, no regla]
 Compara lo **gastado acumulado** con la **meta acumulada**:
 
 - **Verde** (igual o por debajo de la meta): seguir.
 - **Amarillo** (hasta 20 % por encima): aplicar los recortes 1 a 3 del GDD §12.2.
 - **Rojo** (más de 20 % por encima): recortes 1 a 6; fusionar S14 con S15; los arreglos pequeños, a mano en Cursor.
 
-### 6.3 Registro (lo llenas tú)
+### 6.3 Registro
+
+Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las columnas de crédito y semáforo quedan con «—».
 
 | Sesión | Fecha | Modelo | Crédito antes | Crédito después | Costo | Acumulado | Semáforo |
 |---|---|---|---|---|---|---|---|
@@ -178,6 +182,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S31 | 2026-10-10 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S32 | 2026-10-11 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S33 | 2026-10-12 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S34 | 2026-10-16 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -267,6 +272,7 @@ Compara lo **gastado acumulado** con la **meta acumulada**:
 | S31 | Hecha | rama `claude/jolly-galileo-0e8pvb` | Rediseño de l6 con la receta y la persecución de Ao Ao (fuera del plan, plan Pro): `rect ChaseZone` (la cámara avanza sola a 72 px/s y sigue a Kerana si se adelanta; aviso con franja roja y aullido ≈ 1,6 s antes; Ao Ao la alcanza = 1 corazón y vuelta al último pindó; en el pindó el borde se detiene; lógica pura con tests; la cámara se fija en x con los límites, sin tocar l1-l5, l7 ni yvaga), recorte 3 del GDD §12.2 recuperado; l6 a 516 × 66: el cerro en zigzag (dos escaleras de lajas, una hacia cada lado), el pozo de la piedra (reja y piedra abajo, hongo + salto doble), 24 plataformas de un solo sentido (4 verticales), hongos de las tres variantes, 11 saltos con enemigo, 7 grupos de rompibles (columnas que caen enteras), la persecución de 121 tiles con dos pindó y la ruta alta de la pluma C (dash), lugar secreto (la gruta tras la cascada, `rect Waterfall`). Piloto: ≈ 27 s → ≈ 128 s. Build, tests, maps y smoke (3 seguidos) OK |
 | S32 | Hecha | rama `claude/beautiful-ramanujan-w0ovvv` | Rediseño de l7 con la receta: la oscuridad como mecánica (fuera del plan, plan Pro). Faroles como disparadores (`target` como un Switch, `ms` temporizados, el sable y la onda los encienden, brasa al estar apagados), toldos y lonas en vez de hongos en la ciudad; l7 a 540 × 70 en tres secciones (las calles, la catedral, el camposanto): 21 plataformas de un solo sentido (12 verticales), la ronda del farolero (zona de ritmo: cinco ascensores que llama un farol temporizado), dos puzzles de farol/piedra y reja en cadena (la torre, la cripta) más el portón del zaguán, 13 saltos con enemigo, 11 grupos de rompibles, toldos de las tres variantes, lugar secreto (el sótano de la casona). Piloto: ≈ 30 s → ≈ 176 s. Build, tests, maps y smoke (3 seguidos) OK |
 | S33 | Hecha | rama `claude/ecstatic-ptolemy-n6oxwc` | Faroles de l7 que se ven naturales (fuera del plan, plan Pro): variante de aplique de pared (`mount=wall`: el farol cuelga de un brazo corto con escuadra, sin poste) y de nicho (`mount=niche`: hueco en arco en el muro que se ilumina como una ventana); de los 21 faroles, 2 pasan a aplique (el del patio, x 53, y el de la puerta de la torre, x 171,2) y 1 a nicho (la hornacina de la capilla, x 476); los otros 18 siguen de pie. Ningún farol se movió; la zona para tocarlos, la luz y la lógica no cambian. Test nuevo: el de pie tiene suelo debajo y aire en su tile. Build, tests, maps y smoke (3 seguidos) OK |
+| S34 | Hecha | rama `claude/exciting-cray-qpegsd` | Documentación (fuera del plan, plan Pro): §1 al día (Opus 5.5, plan Pro, sin presupuesto en dólares), metas y semáforo (§6.1, §6.2) cerrados como registro; CLAUDE.md sin el crédito fijo, con capturas del antes y el después para lo visual (método de S20, en `tmp/`) y una viñeta por documento (suma RECETA-NIVEL.md y REVIEW.md); publicación en orden itch.io → Google Play → Steam en SESIONES.md, con los pasos de cada tienda en PENDIENTES.md. Sin cambios de código, mapas ni assets. Build y tests OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -1252,6 +1258,27 @@ Arreglo visual sobre l7. No cambia colisiones, saltos, premios ni balance. Conte
 - **Capturas** (script del scratchpad: Kerana teletransportada junto al farol, el farol apagado y encendido, el juego congelado con `game.loop.sleep()` como S20): ver la descripción del PR.
 - **Smoke:** cuatro corridas con el código final; tres OK (1, 2 y 4: l7 en 182,4 / 188,5 / 188,6 s, el sótano en 28,0 / 9,7 / 11,6 s). La 3 falló en l6 (el piloto no juntó la guavirá de x 8, al empezar): l6 no tiene oscuridad ni faroles, así que no pasa por el código de S33; en las otras tres corridas ese mismo check pasó. Una corrida entera tarda más de 10 minutos.
 - **Pendiente (no se tocó):** en el farol de pie con arte, la brasa y la luz quedan ≈ 6 px por encima del arte, ≈ 16 px sobre el vidrio (heredado de S13d/S32: `postHeight` 34 contra 32 de arte): moverlas cambiaría dónde ilumina, así que quedó así. El GDD §11.7.1 no lista `mount` ni `wall` (tampoco la x con decimales de S32).
+
+### S34: Documentación al día: plan Pro, capturas, una fuente por cosa y publicación (fuera del plan original; plan Pro)
+Sesión de documentación. No toca código, mapas ni assets: solo `CLAUDE.md`, `docs/PLAN.md`, `docs/SESIONES.md` y `docs/PENDIENTES.md`. Contexto: parte de la documentación quedó desactualizada y algunas reglas chocaban con cómo trabaja Jose.
+
+**Lee:** `CLAUDE.md` · este archivo (§1 y §6) · `docs/SESIONES.md` · `docs/PENDIENTES.md` · GDD, «Decisiones del 13 de octubre de 2026» y «Decisiones del 16 de octubre de 2026».
+
+**Tarea 1, el presupuesto de crédito ya no existe:** el crédito de US$100 se agotó el 5 de octubre (S13c); desde S13d las sesiones usan el límite semanal del plan Pro y corren con Opus 5.5. §1 lo dice; §6.1 y §6.2 quedan cerrados con la fecha, sin borrar los números; §6.3 se sigue llenando con fecha, modelo y "plan Pro". En `CLAUDE.md`, el presupuesto fijo de crédito pasa a ser el límite semanal del plan Pro: sesiones eficientes, sin presupuesto en dólares.
+
+**Tarea 2, las capturas vuelven:** la verificación de código sigue siendo build, tests y smoke. Cuando una sesión cambia algo visual (arte, cómo se dibuja el terreno, el fondo, un jefe, una pieza nueva), capturas del antes y el después con el método de S20 (`game.loop.sleep()`, Kerana teletransportada), descritas en el PR, en `tmp/`. Fueron lo que hizo útiles S20, S21, S26, S28 y S33.
+
+**Tarea 3, una sola fuente de verdad por cosa:** en `CLAUDE.md`, una viñeta por documento (GDD, PLAN, SESIONES, PENDIENTES, RECETA-NIVEL, REVIEW, ASSETS) con qué contiene y cuándo leerlo. La regla de cerrar sesión queda igual.
+
+**Tarea 4, publicación:** primero itch.io gratis, en navegador; después Google Play, con el feedback de itch.io; Steam más adelante. `SESIONES.md` lo dice; `PENDIENTES.md` lista, sin resolverlos, los pasos de itch.io y de Google Play.
+
+**Criterios:** solo esos cuatro archivos · build y tests pasan (el smoke no hace falta) · PR · S34 en §6.3, §7 y §8, y `PENDIENTES.md` en el mismo cambio.
+
+**Notas para la próxima sesión (S34 → la que siga):**
+
+- **Choque con el GDD:** la «Decisión del 16 de octubre» del GDD todavía dice «Primero se publica en Google Play… itch.io y Electron no son el paso siguiente». S34 no podía tocar el GDD. `CLAUDE.md` deja escrito que en eso vale `SESIONES.md`; conviene corregir esa línea del GDD en la próxima sesión que lo toque.
+- **Google Play, la prueba cerrada:** 12 testers durante 14 días continuos para cuentas personales creadas después del 13 de noviembre de 2023. Conviene arrancarla temprano: corre sola mientras se trabaja en otra cosa.
+- **Sin tocar:** §2 a §5 de este archivo siguen hablando de "crédito" en algunos pasos de preparación (son historia del arranque); la línea de "15 sesiones" de arriba también. Solo se corrigió lo que da instrucciones vigentes: el título (ya no dice US$100), §1, el modelo y el registro en §3.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.

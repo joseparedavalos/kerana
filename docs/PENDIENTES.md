@@ -3,7 +3,7 @@
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
 Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87).
 
-Primero Google Play. Steam después, con el feedback de la tienda.
+Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
 ## Hecho
 
@@ -25,11 +25,34 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 - El detalle del escenario de los niveles 1 a 5 está hecho. No choca y no cambia el salto. La canoa se sacó: no se entendía. La tabla está en [docs/SESIONES.md](SESIONES.md).
 - El piso se redibujó, solo el dibujo. Pasto con hojas de alto distinto donde hay tierra, piedra en la cueva, revoque en el pueblo y adoquín en la ciudad. Se pisa igual.
 - Las vacas quedan de este tamaño. Agrandarlas un poco ensucia el pixel.
+- La documentación está al día (S34): plan Pro y Opus 5.5 sin presupuesto en dólares, capturas del antes y el después para lo visual, una viñeta por documento en `CLAUDE.md` y el orden de publicación.
 
 ## Ahora
 
 1. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
-2. Ficha de Google Play: ícono, cinco capturas, descripción corta, edad y privacidad.
+2. Publicar en itch.io (los pasos, abajo).
+3. Google Play, con el feedback de itch.io (los pasos, abajo).
+4. Corregir en el GDD la «Decisión del 16 de octubre» que dice «primero Google Play; itch.io no es el paso siguiente». Hasta entonces vale [SESIONES.md](SESIONES.md).
+
+## itch.io
+
+Sin resolver todavía:
+
+- Subir el build de navegador (el mismo `dist/` de GitHub Pages).
+- Página del juego.
+- Capturas.
+- Descripción.
+
+## Google Play
+
+Sin resolver todavía:
+
+- **Prueba cerrada obligatoria:** 12 testers durante 14 días continuos, para cuentas personales creadas después del 13 de noviembre de 2023. Conviene arrancarla temprano: el plazo corre solo mientras se trabaja en otra cosa.
+- Cuenta de desarrollador: US$25, pago único, con verificación de identidad.
+- Empaquetado para Android.
+- Política de privacidad.
+- Clasificación de contenido.
+- Íconos y capturas.
 
 ## Para cuando vayamos a Steam
 
