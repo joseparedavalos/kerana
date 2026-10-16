@@ -183,6 +183,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S32 | 2026-10-11 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S33 | 2026-10-12 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S34 | 2026-10-16 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S35 | 2026-10-16 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -273,6 +274,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S32 | Hecha | rama `claude/beautiful-ramanujan-w0ovvv` | Rediseño de l7 con la receta: la oscuridad como mecánica (fuera del plan, plan Pro). Faroles como disparadores (`target` como un Switch, `ms` temporizados, el sable y la onda los encienden, brasa al estar apagados), toldos y lonas en vez de hongos en la ciudad; l7 a 540 × 70 en tres secciones (las calles, la catedral, el camposanto): 21 plataformas de un solo sentido (12 verticales), la ronda del farolero (zona de ritmo: cinco ascensores que llama un farol temporizado), dos puzzles de farol/piedra y reja en cadena (la torre, la cripta) más el portón del zaguán, 13 saltos con enemigo, 11 grupos de rompibles, toldos de las tres variantes, lugar secreto (el sótano de la casona). Piloto: ≈ 30 s → ≈ 176 s. Build, tests, maps y smoke (3 seguidos) OK |
 | S33 | Hecha | rama `claude/ecstatic-ptolemy-n6oxwc` | Faroles de l7 que se ven naturales (fuera del plan, plan Pro): variante de aplique de pared (`mount=wall`: el farol cuelga de un brazo corto con escuadra, sin poste) y de nicho (`mount=niche`: hueco en arco en el muro que se ilumina como una ventana); de los 21 faroles, 2 pasan a aplique (el del patio, x 53, y el de la puerta de la torre, x 171,2) y 1 a nicho (la hornacina de la capilla, x 476); los otros 18 siguen de pie. Ningún farol se movió; la zona para tocarlos, la luz y la lógica no cambian. Test nuevo: el de pie tiene suelo debajo y aire en su tile. Build, tests, maps y smoke (3 seguidos) OK |
 | S34 | Hecha | rama `claude/exciting-cray-qpegsd` | Documentación (fuera del plan, plan Pro): §1 al día (Opus 5.5, plan Pro, sin presupuesto en dólares), metas y semáforo (§6.1, §6.2) cerrados como registro; CLAUDE.md sin el crédito fijo, con capturas del antes y el después para lo visual (método de S20, en `tmp/`) y una viñeta por documento (suma RECETA-NIVEL.md y REVIEW.md); publicación en orden itch.io → Google Play → Steam en SESIONES.md, con los pasos de cada tienda en PENDIENTES.md. Sin cambios de código, mapas ni assets. Build y tests OK |
+| S35 | Hecha | rama `claude/gifted-wozniak-mms72f` | Documentación (fuera del plan, plan Pro): el GDD dice el orden de publicación correcto (itch.io → Google Play → Steam), con la razón; sale el pendiente de S34 sobre ese choque; las decisiones del 13 y del 16 de octubre que cambian una dirección previa quedan listadas en las notas para que Jose las confirme; la expansión del Chaco entra en PENDIENTES.md como idea sin fecha. Sin cambios de código, mapas ni assets. Build y tests OK |
 | S13 | Pendiente | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -1279,6 +1281,37 @@ Sesión de documentación. No toca código, mapas ni assets: solo `CLAUDE.md`, `
 - **Choque con el GDD:** la «Decisión del 16 de octubre» del GDD todavía dice «Primero se publica en Google Play… itch.io y Electron no son el paso siguiente». S34 no podía tocar el GDD. `CLAUDE.md` deja escrito que en eso vale `SESIONES.md`; conviene corregir esa línea del GDD en la próxima sesión que lo toque.
 - **Google Play, la prueba cerrada:** 12 testers durante 14 días continuos para cuentas personales creadas después del 13 de noviembre de 2023. Conviene arrancarla temprano: corre sola mientras se trabaja en otra cosa.
 - **Sin tocar:** §2 a §5 de este archivo siguen hablando de "crédito" en algunos pasos de preparación (son historia del arranque); la línea de "15 sesiones" de arriba también. Solo se corrigió lo que da instrucciones vigentes: el título (ya no dice US$100), §1, el modelo y el registro en §3.
+
+### S35: Orden de publicación en el GDD, revisión de las decisiones y la idea del Chaco (fuera del plan original; plan Pro)
+Sesión de documentación. No toca código, mapas ni assets: solo `docs/GDD.md` y `docs/PENDIENTES.md` (y este archivo, para registrarla). Contexto: la «Decisión del 16 de octubre» que ponía Google Play primero la escribió otra herramienta, a partir de una sugerencia propia, y quedó anotada como decisión del autor. Jose confirmó el 16 de octubre, más tarde, que el orden es itch.io, después Google Play y Steam más adelante.
+
+**Lee:** GDD, «Decisiones del 13 de octubre de 2026» y «Decisiones del 16 de octubre de 2026» · `docs/SESIONES.md` · `docs/PENDIENTES.md`.
+
+**Tarea 1, el orden de publicación:** corregir esa línea del GDD (itch.io primero, después Google Play con el feedback, Steam más adelante) y sacar de `PENDIENTES.md` el pendiente que dejó S34 sobre el choque. La razón: itch.io se publica en el día, sin revisión ni cuota, y el juego ya es web; Google Play pide cuenta de desarrollador verificada, empaquetado para Android, política de privacidad, clasificación de contenido y una prueba cerrada de 12 testers durante 14 días continuos para cuentas personales. Primero itch.io da jugadores reales antes y no gasta esos 14 días en una versión que todavía va a cambiar.
+
+**Tarea 2, revisar el resto de las decisiones:** recorrer las del 13 y las del 16 de octubre y listar en las notas cuáles cambian algo que Jose venía haciendo de otra manera, sin corregir ninguna. No hace falta adivinar quién escribió qué.
+
+**Tarea 3, la expansión del Chaco:** en `PENDIENTES.md`, como idea sin fecha ni sesión: dos niveles en el Chaco paraguayo (espinal seco, quebracho, el Impenetrable), con Pombero y Malavisión como jefes; campaña aparte que se juega después de vencer a Tau (la línea principal cierra con Tau); puede exigir desde el primer minuto, sin la obligación de enseñar de l1.
+
+**Criterios:** solo el GDD y `PENDIENTES.md` (más este archivo) · build y tests pasan (el smoke no hace falta) · PR · S35 en §6.3, §7 y §8, y `PENDIENTES.md` en el mismo cambio.
+
+**Notas para la próxima sesión (S35 → la que siga):**
+
+- **Decisiones que cambian una dirección previa (para que Jose las confirme o las descarte; ninguna se tocó).** Del 13 de octubre:
+  1. *La pluma es chipa.* El GDD (§1.5 y los niveles) y S17 las tenían como plumas de mainumby, ligadas al colibrí compañero.
+  2. *El tajo cargado, el salto doble y el dash desde el primer nivel.* La tabla de dones daba cada uno al liberar a Teju Jagua, Moñái y Jasy Jatere, y la regla de las plumas pide que al menos una por nivel requiera un don posterior (N1 a N4): con todo desde el inicio esa regla ya no se cumple. En §12.2 «dones desde el inicio» era el último recorte, no un objetivo.
+  3. *Liberar es una frase.* El pilar 1 («hay reencuentro») y el paso 3 de la secuencia de liberación («diálogo breve de reencuentro») pedían una charla; S4 hizo diálogos de liberación.
+  4. *El corazón cura y el tereré, una guampa de cuero, da la inmunidad.* La inmunidad era la Luz de Arasy (el id sigue siendo `luz_arasy`, y §12.2 la nombra entre lo que nunca se recorta).
+  5. *El cuadro de diálogo muestra la cara de Kerana recortada del sprite.* S13 y ASSETS preveían retratos pintados de 96 × 96 (el GDD todavía deja abierto que uno pintado la reemplace).
+  6. *En el celular los botones se mueven; el ataque automático está apagado.* El táctil estaba recortado (§12.2 punto 5, S5 eliminada) y el ataque automático no estaba en el diseño.
+  7. *Kerana se levanta porque Tau sigue usando a sus hijos; Angatupyry le enciende la luz.* Cambia el motivo del despertar en el prólogo respecto de §1.1 («despierta… con un sable de luz en la mano»), que no daba razón.
+
+  Del 16 de octubre:
+  8. *Los controles táctiles ya están; el punto 5 de §12.2 quedó viejo.* Igual que el 6: revierte un recorte.
+  9. *El orden de publicación* (ya corregido en esta sesión). Antes, §11 («Futuro») ponía itch.io como el paso natural (zip HTML5) y Steam con Electron o Tauri.
+
+  Las demás no cambian una dirección previa: confirman lo que ya estaba (niveles largos, sin energía ni anuncios, vacas de este tamaño, sin Unity, pixel art de 16 px) o registran arte y detalle hechos en el día (piso redibujado, detalle de los niveles 1 a 5, liana de adorno, canoa sacada, cabezas de Teju Jagua del mismo marrón, piso de l1 en franja, cámara al reaparecer).
+- **Sin tocar:** `CLAUDE.md` todavía dice que el orden de la decisión del 16 de octubre quedó viejo y que vale `SESIONES.md`. Ya no hay choque; conviene sacar esa frase en la próxima sesión que toque `CLAUDE.md`. La línea «Futuro [Extra]» de §11 del GDD (itch.io, Steam con Electron o Tauri, móvil con Capacitor) no se tocó.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
