@@ -6,11 +6,12 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 
 ## Documentos (fuente de verdad)
 
-- `docs/GDD.md`, sección «Decisiones del 13 de octubre de 2026»: pisan los capítulos viejos del GDD.
-- `docs/SESIONES.md` y `docs/PENDIENTES.md`: qué está hecho y qué sigue. Empieza por ahí si la tarea es de ahora.
+- `docs/GDD.md`, secciones «Decisiones del 13 de octubre de 2026» y «Decisiones del 16 de octubre de 2026»: pisan los capítulos viejos del GDD.
+- `docs/SESIONES.md` y `docs/PENDIENTES.md`: qué está hecho y qué sigue. Empieza por ahí si la tarea es de ahora. Lo de hoy está fechado el 16 de octubre.
 - `docs/PLAN.md`: historial de las sesiones S1 en adelante. No es la lista de lo que falta.
 - `docs/ASSETS.md`: sprites, tiles, fondos y audio.
-- Si una decisión del 13 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo.
+- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo.
+- No regeneres `public/assets/tiles/*.png` con `tools/make-placeholder-tiles.mjs`. Pisa el piso nuevo y la decoración del borde.
 
 ## Cómo trabajar en una sesión
 
