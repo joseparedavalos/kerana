@@ -137,6 +137,20 @@ describe('buildTiledMap', () => {
     for (const name of ['Ground', 'Platforms']) expect(map.layers.find((l) => l.name === name)!.data!.slice(0, 8).every((v) => v === 0)).toBe(true);
   });
 
+  it('town: baldosa en el llano y alero donde el techo se corta', () => {
+    const map = buildTiledMap(parseAscii('size 8x2\ntown\n---\nP......#\n####...#\n')) as {
+      layers: { name: string; data?: number[] }[];
+    };
+    const bg = map.layers.find((l) => l.name === 'Background')!.data!;
+    const baldosa = TILES.grass + 1;
+    const alero = TILES.flowers + 1;
+    // x=1 es piso seguido: la baldosa va en el tile de arriba.
+    expect(bg[1]).toBe(baldosa);
+    // x=3 linda con el aire: el alero va al lado, no arriba.
+    expect(bg[8 + 4]).toBe(alero);
+    expect(bg.every((g) => g === 0 || g === baldosa || g === alero)).toBe(true);
+  });
+
   it('reeds: pasto o junco en el borde, junco junto al agua, nunca la piedra', () => {
     const map = buildTiledMap(parseAscii('size 8x2\nreeds\n---\nP.......\n####~~~#\n')) as {
       layers: { name: string; data?: number[] }[];

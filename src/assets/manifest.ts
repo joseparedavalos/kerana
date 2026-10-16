@@ -88,6 +88,8 @@ export const ART_IMAGES = {
   prop_nest: 'props/nest.png',
   prop_tacuru: 'props/tacuru.png',
   prop_fence: 'props/fence.png',
+  prop_chair: 'props/chair.png',
+  prop_hammock: 'props/hammock.png',
 } as const;
 export type ArtKey = keyof typeof ART_IMAGES;
 

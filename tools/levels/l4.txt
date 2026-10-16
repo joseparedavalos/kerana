@@ -37,6 +37,9 @@
 # Fuego 4 / antesala (x 462-481) · Arena de Jasy Jatere (x 482-521): la plaza de S17 (jasyJatere.spots), con dos nieblas
 size 522x44
 biome pueblo
+town
+point Prop x=16 y=36 kind=chair
+point Prop x=32 y=36 kind=hammock
 enemy j=jagua a=abejas v=vaca e=vaca_embrujada
 sign 1=hint.l4.double 2=hint.l4.museo 3=hint.l4.fog 4=hint.l4.bees 5=hint.l4.dash 6=hint.l4.tejas 7=hint.l4.antesala 8=hint.l4.wave 9=hint.l4.jagua
 at 37,32 target=porton_museo
