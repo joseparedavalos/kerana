@@ -8,9 +8,12 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 
 - `docs/GDD.md`, secciones «Decisiones del 13 de octubre de 2026» y «Decisiones del 16 de octubre de 2026»: pisan los capítulos viejos del GDD.
 - `docs/SESIONES.md` y `docs/PENDIENTES.md`: qué está hecho y qué sigue. Empieza por ahí si la tarea es de ahora. Lo de hoy está fechado el 16 de octubre.
-- `docs/PLAN.md`: historial de las sesiones S1 en adelante. No es la lista de lo que falta.
+- `docs/PLAN.md`: historial de las sesiones S1 en adelante. No es la lista de lo que falta. Al cerrar una sesión se anota ahí, en §6.3, §7 y §8.
+- `docs/SESIONES.md`: el plan de acá a publicar. No reemplaza el historial.
+- `docs/PENDIENTES.md`: lo que falta hoy. Es la única lista de pendientes.
 - `docs/ASSETS.md`: sprites, tiles, fondos y audio.
-- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo.
+- Al cerrar una sesión se actualizan `PLAN.md` y `PENDIENTES.md` en el mismo cambio. Si no coinciden, manda `PENDIENTES.md`.
+- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo. El punto 5 de §12.2 está viejo: los controles táctiles ya están.
 - No regeneres `public/assets/tiles/*.png` con `tools/make-placeholder-tiles.mjs`. Pisa el piso nuevo y la decoración del borde.
 
 ## Cómo trabajar en una sesión
@@ -18,7 +21,7 @@ El autor (Jose) trabaja con un **presupuesto fijo de crédito**: cada sesión ti
 1. Lee tu sesión en `docs/PLAN.md` y las "Notas para la próxima sesión" de la sesión anterior.
 2. Haz **exactamente ese alcance**. Lo que no quepa, anótalo; no lo improvises.
 3. Antes de terminar, deben pasar `npm run build` y `npm test`.
-4. Actualiza `docs/PLAN.md`: marca la sesión en la tabla de estado y escribe "Notas para la próxima sesión" (decisiones, pendientes, assets faltantes).
+4. Actualiza `docs/PLAN.md` (§6.3, §7 y §8) y, en el mismo cambio, `docs/PENDIENTES.md`. Si un pendiente ya no existe, sácalo de la lista.
 5. Commits pequeños en español (`feat: salto con coyote time`). Descripción del PR en español: qué cambió, **cómo probarlo** (URL con parámetros de depuración) y qué falta.
 
 ## Reglas de presupuesto
