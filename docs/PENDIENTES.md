@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 13 de octubre de 2026, de noche, contra lo que ya está en `main`.
+Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87).
 
 Primero Google Play. Steam después, con el feedback de la tienda.
 
@@ -15,17 +15,20 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 - La chipa reemplaza a la pluma. El guardado no se borra.
 - Al terminar un nivel se ven el hijo, el don y las chipas, con un botón grande de Siguiente.
 - El tajo cargado, el salto doble y el dash están desde el primer nivel. El corazón nuevo sigue creciendo.
-- El corazón cura. El tereré, la guampa de cuero, da la inmunidad.
+- El corazón cura. El tereré, la guampa de cuero, da la inmunidad. Lo que cae en la pelea de Mbói Tu'ĩ también es un corazón.
 - Los hongos tienen sombrero, manchas y tallo.
 - Los botones del celular se mueven y se agrandan. Varios dedos a la vez. El ataque automático está apagado.
 - En el nivel 1 el piso es una franja. Hay musgo en la ladera y no hay plantas en la cueva. El cántaro y las piedras se sacaron.
 - Las cabezas de Teju Jagua son del mismo marrón que el lomo.
 - El diálogo muestra la cara de Kerana, dentro del cuadro.
 - Al reaparecer, la cámara llega con ella.
+- El detalle del escenario de los niveles 1 a 5 está hecho. No choca y no cambia el salto. La canoa se sacó: no se entendía. La tabla está en [docs/SESIONES.md](SESIONES.md).
+- El piso se redibujó, solo el dibujo. Pasto con hojas de alto distinto donde hay tierra, piedra en la cueva, revoque en el pueblo y adoquín en la ciudad. Se pisa igual.
+- Las vacas quedan de este tamaño. Agrandarlas un poco ensucia el pixel.
 
 ## Ahora
 
-1. Niveles 6 y 7, el detalle del escenario. Uno por vez. El 5 tiene raíces, hojas, un tronco y una liana. La tabla está en [docs/SESIONES.md](SESIONES.md).
+1. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
 2. Ficha de Google Play: ícono, cinco capturas, descripción corta, edad y privacidad.
 
 ## Para cuando vayamos a Steam
@@ -41,3 +44,5 @@ Primero Google Play. Steam después, con el feedback de la tienda.
 - Energía, anuncios, cofres al azar y rachas diarias.
 - Cambiar cómo se carga el tajo.
 - Portugués antes de terminar el juego en el Paraguay.
+- Pasar el juego a Unity para mejorar el piso. Phaser alcanza: la diferencia es el dibujo.
+- El estilo pintado con curvas. Kerana sigue en pixel art de 16 píxeles.

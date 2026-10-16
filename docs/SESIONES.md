@@ -1,6 +1,6 @@
 # Plan de sesiones: de acá a Google Play
 
-Fecha: 13 de octubre de 2026. Revisado esa misma noche, con lo que ya está en `main`.
+Fecha: 13 de octubre de 2026. Actualizado el 16 de octubre, con lo que ya está en `main` (pull requests 82 a 87).
 Primero Google Play. Steam después, con el feedback de la tienda.
 
 ## Decisiones cerradas
@@ -62,7 +62,16 @@ No estaba en las cinco sesiones. También está en `main`.
 - Teju Jagua: las siete cabezas son del mismo marrón que el lomo. Los ojos siguen encendidos. No van de colores.
 - Al liberar, el cuadro muestra la cara de Kerana, recortada del sprite que ya está en el juego. Mira hacia el texto. Cabe entera: cara, vincha y hombros. No es un retrato pintado.
 - Al caer, la cámara llega con ella. Al caminar sigue suave.
-- El piso, solo el dibujo: pasto con hojas de alto distinto donde hay tierra, piedra en la cueva, revoque en el pueblo y adoquín en la ciudad. Se pisa igual.
+
+## 16 de octubre de 2026
+
+También está en `main`. Nada de esto cambia el salto.
+
+- El piso se redibujó en las baldosas 0 a 15 de cada bioma. Donde hay tierra (estero, campo, selva, cerro de Guairá) el borde tiene hojas de alto distinto y la tierra tiene manchas. La cueva de Paraguarí sigue siendo piedra. El pueblo es revoque con una tapa. La ciudad es adoquín. El cielo queda suave. Las baldosas de la 16 en adelante no se tocaron: plataformas, agua, espinas y la decoración del borde.
+- No regenerar esos PNG con `tools/make-placeholder-tiles.mjs`. Los pisa.
+- Detalle del escenario, niveles 1 a 5, en la tabla de abajo. Los objetos sueltos no chocan. La liana de la selva es adorno y cuelga: no es la liana que se corta. La canoa del estero se sacó.
+- Lo que cae en la pelea de Mbói Tu'ĩ cura, y se ve como corazón.
+- Las vacas quedan de este tamaño. Un poco más grandes, el pixel queda irregular. El doble se vería nítido, pero sube el lomo y cambia el salto.
 
 ## Detalle del escenario
 

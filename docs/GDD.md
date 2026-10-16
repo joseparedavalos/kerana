@@ -38,7 +38,7 @@
 ## 0. Cómo usar este documento
 
 - Es la **fuente de verdad** del diseño. Si cambias una decisión, cámbiala aquí primero; el código la sigue.
-- Lo de abajo, en «Decisiones del 13 de octubre», pisa lo que digan los capítulos viejos hasta que se reescriban. El plan de trabajo está en [SESIONES.md](SESIONES.md). Lo que falta para publicar, en [PENDIENTES.md](PENDIENTES.md).
+- Lo de abajo, en «Decisiones del 13 de octubre» y «Decisiones del 16 de octubre», pisa lo que digan los capítulos viejos hasta que se reescriban. El plan de trabajo está en [SESIONES.md](SESIONES.md). Lo que falta para publicar, en [PENDIENTES.md](PENDIENTES.md).
 - Etiquetas de prioridad (detalle en §12):
   - **[MVP]**: imprescindible para que el juego exista.
   - **[Núcleo]**: debería entrar; se recorta solo si el presupuesto aprieta.
@@ -60,6 +60,14 @@
 - Al reaparecer, la cámara llega con ella.
 - En el celular los botones se pueden mover. El ataque automático está apagado.
 - Los niveles no se acortan. No hay energía, anuncios, cofres al azar ni rachas diarias.
+
+### Decisiones del 16 de octubre de 2026
+
+- El piso se redibujó. Solo el dibujo, en las baldosas 0 a 15. El salto no cambia. Pasto con hojas donde hay tierra, piedra en la cueva, revoque en el pueblo, adoquín en la ciudad. Sigue siendo pixel art de 16 píxeles. No hace falta Unity.
+- El detalle del escenario de los niveles 1 a 5 está hecho y no choca. La tabla está en [SESIONES.md](SESIONES.md). Siguen el 6 y el 7.
+- La liana que cuelga en la selva es adorno. No se corta. La liana que se corta sigue siendo la de siempre.
+- La canoa se sacó. Lo que cae en la pelea de Mbói Tu'ĩ es un corazón y cura.
+- Las vacas quedan de este tamaño.
 
 ---
 
