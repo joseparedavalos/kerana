@@ -68,7 +68,7 @@
 - La liana que cuelga en la selva es adorno. No se corta. La liana que se corta sigue siendo la de siempre.
 - La canoa se sacó. Lo que cae en la pelea de Mbói Tu'ĩ es un corazón y cura.
 - Las vacas quedan de este tamaño.
-- Primero se publica en Google Play. Steam va después, con el feedback de la tienda. itch.io y Electron no son el paso siguiente.
+- Primero se publica en itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante. itch.io se publica en el día, sin revisión ni cuota, y el juego ya es web; Google Play pide cuenta de desarrollador verificada, empaquetado para Android, política de privacidad, clasificación de contenido y una prueba cerrada de 12 testers durante 14 días continuos. Primero itch.io da jugadores reales antes y no gasta esos 14 días en una versión que todavía va a cambiar (corregido en S35: la versión anterior decía Google Play primero, y el autor no lo había decidido así).
 - Los controles táctiles ya están: botones en pantalla, varios dedos a la vez, y se pueden mover y agrandar. El punto 5 de §12.2 quedó viejo. No hace falta una sesión para construirlos.
 
 ---

@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87).
+Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87). Al día con S35.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -26,13 +26,13 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - El piso se redibujó, solo el dibujo. Pasto con hojas de alto distinto donde hay tierra, piedra en la cueva, revoque en el pueblo y adoquín en la ciudad. Se pisa igual.
 - Las vacas quedan de este tamaño. Agrandarlas un poco ensucia el pixel.
 - La documentación está al día (S34): plan Pro y Opus 5.5 sin presupuesto en dólares, capturas del antes y el después para lo visual, una viñeta por documento en `CLAUDE.md` y el orden de publicación.
+- El GDD dice el orden de publicación correcto: itch.io, después Google Play, después Steam (S35).
 
 ## Ahora
 
 1. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
 2. Publicar en itch.io (los pasos, abajo).
 3. Google Play, con el feedback de itch.io (los pasos, abajo).
-4. Corregir en el GDD la «Decisión del 16 de octubre» que dice «primero Google Play; itch.io no es el paso siguiente». Hasta entonces vale [SESIONES.md](SESIONES.md).
 
 ## itch.io
 
@@ -60,6 +60,12 @@ Sin resolver todavía:
 - Logros y mejores tiempos en el mapa. El guardado ya los tiene. No se muestran.
 - Cápsula, trailer que abra con gameplay, control y Steam Deck.
 - Portugués.
+
+## Ideas sin fecha
+
+Sin sesión asignada. No son pendientes para publicar.
+
+- **Expansión del Chaco, después de publicar.** Dos niveles nuevos en el Chaco paraguayo (espinal seco, quebracho, el Impenetrable), con Pombero y Malavisión como jefes. Es una campaña aparte que se juega después de vencer a Tau, no parte de la historia de los siete hijos: la línea principal cierra con Tau. En una expansión el jugador ya sabe jugar, así que puede exigir desde el primer minuto, sin la obligación de enseñar que tuvo l1.
 
 ## No entra
 
