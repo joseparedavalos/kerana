@@ -62,6 +62,7 @@ No estaba en las cinco sesiones. También está en `main`.
 - Teju Jagua: las siete cabezas son del mismo marrón que el lomo. Los ojos siguen encendidos. No van de colores.
 - Al liberar, el cuadro muestra la cara de Kerana, recortada del sprite que ya está en el juego. Mira hacia el texto. Cabe entera: cara, vincha y hombros. No es un retrato pintado.
 - Al caer, la cámara llega con ella. Al caminar sigue suave.
+- El piso, solo el dibujo: pasto con hojas de alto distinto donde hay tierra, piedra en la cueva, revoque en el pueblo y adoquín en la ciudad. Se pisa igual.
 
 ## Detalle del escenario
 
