@@ -16,7 +16,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `docs/REVIEW.md`: la auditoría de diseño de S16, como referencia histórica. No es una lista de tareas.
 - `docs/ASSETS.md`: sprites, tiles, fondos y audio. Léelo antes de tocar arte o audio.
 - Al cerrar una sesión se actualizan `PLAN.md` y `PENDIENTES.md` en el mismo cambio. Si no coinciden, manda `PENDIENTES.md`.
-- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo. El punto 5 de §12.2 está viejo: los controles táctiles ya están. El orden de publicación de la decisión del 16 de octubre (primero Google Play) también quedó viejo: vale el de `SESIONES.md` (itch.io, después Google Play, después Steam).
+- Si una decisión del 13 o del 16 de octubre y un capítulo viejo se contradicen, manda la decisión. Si el código ya la cumple, no la reviertas para obedecer el capítulo viejo. El punto 5 de §12.2 está viejo: los controles táctiles ya están.
 - No regeneres `public/assets/tiles/*.png` con `tools/make-placeholder-tiles.mjs`. Pisa el piso nuevo y la decoración del borde.
 
 ## Cómo trabajar en una sesión
