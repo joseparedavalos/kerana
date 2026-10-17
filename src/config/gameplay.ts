@@ -739,6 +739,35 @@ export const GAMEPLAY = {
     color: 0x3a3a48,
   },
 
+  /** El paso de la ofrenda (S36): cortina de raíces antes de la antesala; la abren las tres chipas del nivel. */
+  offering: {
+    /** Frente a la puerta: hasta esta distancia (px) a su izquierda Mainumby habla y se entrega la ofrenda. */
+    nearPx: 40,
+    /** Desde que empieza la ofrenda hasta que se abre (ms): las chipas vuelan y la tablita brilla. */
+    offerMs: 1500,
+    flyMs: 450,
+    flyStaggerMs: 160,
+    /** Lo que tardan las raíces en recogerse (ms) y la fracción del alto que queda arriba. */
+    retractMs: 600,
+    openScale: 0.06,
+    /** Tablita: a esta altura sobre el piso (px, a los ojos de Kerana), íconos de este tamaño y separación. */
+    plaqueHeightPx: 34,
+    plaqueRisePx: 24,
+    slotSize: 10,
+    slotSpacing: 12,
+    lineAbovePx: 12,
+    boardColor: 0x7a5636,
+    boardEdge: 0x3a2616,
+    rootColor: 0x4a3220,
+    rootLight: 0x7a5a38,
+    leafColor: 0x4f7a34,
+    /** La cortina se dibuja este tanto (px) más ancha que el paso a cada lado. */
+    rootPadPx: 4,
+    rootWavePx: 9,
+    rootWaveAmp: 1.4,
+    leafEveryPx: 18,
+  },
+
   /** Variantes del hongo (`Bouncer kind=once|sleep`); el rebote es el mismo (`jungle.bounceVelocity`). */
   bouncerVariants: {
     /** De un solo uso: tiempo desinflado antes de volver (ms). */

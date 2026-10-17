@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87). Al día con S35.
+Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87). Al día con S36.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -26,13 +26,15 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - El piso se redibujó, solo el dibujo. Pasto con hojas de alto distinto donde hay tierra, piedra en la cueva, revoque en el pueblo y adoquín en la ciudad. Se pisa igual.
 - Las vacas quedan de este tamaño. Agrandarlas un poco ensucia el pixel.
 - La documentación está al día (S34): plan Pro y Opus 5.5 sin presupuesto en dólares, capturas del antes y el después para lo visual, una viñeta por documento en `CLAUDE.md` y el orden de publicación.
-- El GDD dice el orden de publicación correcto: itch.io, después Google Play, después Steam (S35).
+- El GDD dice el orden de publicación correcto: itch.io, después Google Play, después Steam (S35). `CLAUDE.md` y la línea «Futuro» del GDD, también (S36).
+- Las tres chipas del nivel abren el paso a la antesala (S36). Una cortina de raíces con una tablita que muestra cuántas lleva Kerana; Mainumby dice cuántas faltan; con las tres se entregan y el paso se abre. Desde la pausa se puede volver a buscar las que faltan. Las partidas viejas con el hijo ya libre encuentran el paso abierto. La chipa A de l2 y la C de l3 piden ahora un desvío de verdad. El ascensor de la chipa C de l7 va y viene: si se iba sin Kerana, la chipa se perdía.
 
 ## Ahora
 
 1. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
-2. Publicar en itch.io (los pasos, abajo).
-3. Google Play, con el feedback de itch.io (los pasos, abajo).
+2. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
+3. Publicar en itch.io (los pasos, abajo).
+4. Google Play, con el feedback de itch.io (los pasos, abajo).
 
 ## itch.io
 

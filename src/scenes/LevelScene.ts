@@ -27,6 +27,7 @@ import { WindZone } from '../entities/hazards/WindZone';
 import { Lantern, type LanternMount } from '../entities/Lantern';
 import { LightWaveMotor } from '../entities/LightWaveMotor';
 import { Gate } from '../entities/Gate';
+import { OfferingDoor } from '../entities/OfferingDoor';
 import { Mover } from '../entities/Mover';
 import type { MoverMode } from '../entities/MoverMotor';
 import { Switch } from '../entities/Switch';
@@ -38,6 +39,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
+import { canReturnForChipas, chipaReturnTarget, OfferingMotor, offeringLineKey, offeringStartsOpen, type ChipaReturnPoint } from '../systems/offeringLogic';
 import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } from '../systems/trapLogic';
 import { CameraController } from '../systems/CameraController';
 import { Chase } from '../systems/Chase';
@@ -202,6 +204,9 @@ export class LevelScene extends Phaser.Scene {
   /** Plataformas móviles, rejas y disparadores (S18). */
   private movers: Mover[] = [];
   private gates: Gate[] = [];
+  /** S36: el paso de la ofrenda (cortina de raíces antes de la antesala) y adónde se vuelve a buscar cada chipa. */
+  private offering?: { door: OfferingDoor; motor: OfferingMotor };
+  private chipaReturns: ChipaReturnPoint[] = [];
   private switches: Switch[] = [];
   private switchBoard = new SwitchBoard();
   /** Cuerpos que pueden viajar sobre una plataforma móvil o una vaca (se arma en cada frame, sin asignar). */
@@ -269,6 +274,8 @@ export class LevelScene extends Phaser.Scene {
     this.cowGroup = undefined;
     this.movers = [];
     this.gates = [];
+    this.offering = undefined;
+    this.chipaReturns = [];
     this.switches = [];
     this.switchBoard = new SwitchBoard();
     this.darkness = undefined;
@@ -435,6 +442,10 @@ export class LevelScene extends Phaser.Scene {
       this.physics.add.collider(this.player, g.block);
       this.physics.add.collider(this.enemies, g.block, undefined, (enemy) => isGroundedEnemy(enemy), this);
     }
+    if (this.offering) {
+      this.physics.add.collider(this.player, this.offering.door.block);
+      this.physics.add.collider(this.enemies, this.offering.door.block, undefined, (enemy) => isGroundedEnemy(enemy), this);
+    }
     for (const id of this.switchBoard.missingTargets()) console.warn(`[SWITCH] no hay reja ni Mover con id "${id}".`);
     this.switchBoard.update();
     const lw = GAMEPLAY.lightWave;
@@ -487,6 +498,8 @@ export class LevelScene extends Phaser.Scene {
       };
     }
     EventBus.on(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
+    EventBus.on(GameEvents.returnForChipas, this.returnForChipas, this);
+    this.registry.set('chipaReturn', false);
     // Al volver de la pausa (y de Opciones) se relee el modo asistido: se puede cambiar en cualquier momento.
     this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -494,6 +507,8 @@ export class LevelScene extends Phaser.Scene {
       this.scene.stop('UI');
       SaveManager.persist();
       EventBus.off(GameEvents.restartFromCheckpoint, this.restartFromCheckpoint, this);
+      EventBus.off(GameEvents.returnForChipas, this.returnForChipas, this);
+      this.registry.set('chipaReturn', false);
       this.events.off(Phaser.Scenes.Events.RESUME, this.onResume, this);
     });
 
@@ -555,6 +570,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateCheckpoints();
     this.flickerCheckpoints();
     this.updateSigns();
+    this.updateOffering(delta);
     this.updateLuzArasyHud();
     this.updateLevelExit();
     if (this.debugText) this.updateDebugText();
@@ -1695,6 +1711,22 @@ export class LevelScene extends Phaser.Scene {
           if (id !== undefined) this.switchBoard.addTarget(String(id), gate);
           break;
         }
+        case 'Offering': {
+          // S36: abierta de entrada si el hijo de este nivel ya está libre (partidas de antes de la ofrenda).
+          const rect = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          const open = offeringStartsOpen(this.def.boss, SaveManager.current.freed);
+          // `front`: fila de los pies frente a la puerta, si se llega desde más alto que su pie (l4, l6, l7).
+          const front = objectProp(obj, 'front');
+          const frontY = front === undefined ? rect.bottom : (Number(front) + 1) * this.map.tileHeight;
+          const door = new OfferingDoor(this, rect, GAMEPLAY.hud.featherMax, open, TEXT_STYLE, frontY);
+          door.setCarried(this.feathers);
+          for (const part of door.plaqueParts) this.darkness?.glow(part);
+          this.offering = { door, motor: new OfferingMotor(open) };
+          break;
+        }
+        case 'ChipaReturn':
+          this.chipaReturns.push({ chipa: Number(objectProp(obj, 'chipa') ?? 0), x, y });
+          break;
         case 'Switch': {
           const target = String(objectProp(obj, 'target') ?? '');
           const sw = new Switch(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)), target, Number(objectProp(obj, 'ms') ?? 0));
@@ -1882,14 +1914,19 @@ export class LevelScene extends Phaser.Scene {
     if (this.trapWatch.step(deltaMs, body.blocked.down, this.trappedUnder(body), GAMEPLAY.trap.waitMs)) this.respawn('trap');
   }
 
-  /** Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado (nunca en un encierro). */
+  /**
+   * Guarda la posición si Kerana pisa suelo firme con ambos pies y sin peligros al lado (nunca en un encierro).
+   * S36: ni durante el dash (es intangible: cruzando las espinas de la chipa C de l4 guardaba un punto encima de ellas,
+   * y la caída siguiente la dejaba reapareciendo sobre las espinas) ni con el cuerpo sobre una espina.
+   */
   private trackSafeGround(body: Phaser.Physics.Arcade.Body): void {
-    if (!body.blocked.down || this.trapWatch.active) return;
+    if (!body.blocked.down || this.trapWatch.active || this.player.isIntangible) return;
     const tile = this.map.tileWidth;
     const below = body.bottom + 1;
     const feetY = body.bottom - 2;
     if (!this.isSolidAt(body.left + 1, below) || !this.isSolidAt(body.right - 1, below)) return;
     if (this.tileAt('Hazards', body.left - tile, feetY) || this.tileAt('Hazards', body.right + tile, feetY)) return;
+    if (this.tileAt('Hazards', body.left + 1, feetY) || this.tileAt('Hazards', body.right - 1, feetY)) return;
     this.safeGround.set(body.center.x, body.bottom);
   }
 
@@ -2041,6 +2078,56 @@ export class LevelScene extends Phaser.Scene {
 
   private updateSigns(): void {
     for (const sign of this.signs) sign.text.setVisible(Phaser.Geom.Rectangle.Overlaps(sign.zone, this.playerRect));
+  }
+
+  /**
+   * El paso de la ofrenda (S36): frente a la puerta cerrada, Mainumby dice cuántas chipas lleva Kerana; con las tres,
+   * las entrega y las raíces se recogen. La pausa ofrece volver a buscar las que faltan (`returnForChipas`).
+   */
+  private updateOffering(deltaMs: number): void {
+    const offering = this.offering;
+    if (!offering) return;
+    const { door, motor } = offering;
+    const cfg = GAMEPLAY.offering;
+    const body = this.player.body;
+    const zone = door.zone;
+    const near = body.right >= zone.left - cfg.nearPx && body.left <= zone.right && body.bottom > zone.top && body.top < zone.bottom;
+    const event = motor.step(deltaMs, near, this.feathers, GAMEPLAY.hud.featherMax, cfg.offerMs);
+    if (event === 'offer') {
+      door.playOffering(body.center.x, body.center.y);
+      AudioManager.play('feather');
+    } else if (event === 'opened') {
+      door.open();
+      AudioManager.play('leaves');
+    }
+    const talking = motor.state === 'offering' || (near && motor.state === 'closed');
+    if (talking) {
+      const key = offeringLineKey(motor.state, this.feathers);
+      const text = key === 'offering.open' ? t(key) : `${t(key, { current: this.feathers })}\n${t('offering.back')}`;
+      if (door.line.text !== text) door.line.setText(text);
+    }
+    door.line.setVisible(talking);
+    const can = canReturnForChipas(motor, chipaReturnTarget(this.chipaReturns, SaveManager.getFeathers(this.def.id)));
+    if (this.registry.get('chipaReturn') !== can) this.registry.set('chipaReturn', can);
+  }
+
+  /**
+   * Desde la pausa (S36): Kerana reaparece donde empieza el tramo de la primera chipa que falta (el fuego de antes o el
+   * inicio), con ese fuego como checkpoint. Las chipas ya recogidas no reaparecen: solo hay que ir a buscar las otras.
+   */
+  private returnForChipas(): void {
+    const target = chipaReturnTarget(this.chipaReturns, SaveManager.getFeathers(this.def.id));
+    if (!target) return;
+    this.chase?.reset();
+    for (const cp of this.checkpoints) {
+      cp.active = Math.abs(cp.zone.centerX - target.x) < 1 && Math.abs(cp.zone.bottom - target.y) < 1;
+      this.setFire(cp, cp.active || cp.lit);
+    }
+    this.checkpointPos.set(target.x, target.y);
+    this.safeGround.set(target.x, target.y);
+    this.trapWatch.reset();
+    this.player.respawnAt(target.x, target.y);
+    this.cameraCtl.snap();
   }
 
   /** Congela la acción un instante para dar peso al golpe (GDD §4.1). */
