@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 17 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 92). Al día con S37.
+Revisado el 17 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 93). Al día con S38.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -30,6 +30,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Las tres chipas del nivel abren el paso a la antesala (S36). Una cortina de raíces con una tablita que muestra cuántas lleva Kerana; Mainumby dice cuántas faltan; con las tres se entregan y el paso se abre. Desde la pausa se puede volver a buscar las que faltan. Las partidas viejas con el hijo ya libre encuentran el paso abierto. La chipa A de l2 y la C de l3 piden ahora un desvío de verdad. El ascensor de la chipa C de l7 va y viene: si se iba sin Kerana, la chipa se perdía.
 
 - Hay música (S37): diez piezas generadas por código (título, mapa, cada nivel y Yvága) y una variante tensa para cada jefe. Fundidos, más baja en los diálogos, pausa sin foco y arranque con el primer toque. Volumen de música y de efectos por separado en Opciones. Todo aviso de jefe suena, y suenan la puerta de las chipas, los disparadores, las rejas, las plataformas, las lianas, la roca que pide el tajo cargado, la red de seguridad, el salto doble y los menús.
+- «Nivel completado» responde siempre (S38). Desde el 13 de octubre, la segunda vez que aparecía sin recargar la página (después de l2) no hacía caso al clic ni a las teclas y el juego quedaba trabado. Los textos de los menús responden al clic en todo su ancho (antes, la mitad derecha de los largos no). El smoke prueba los botones con el ratón.
 
 ## Ahora
 
