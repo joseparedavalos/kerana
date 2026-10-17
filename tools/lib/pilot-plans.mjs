@@ -574,6 +574,7 @@ export const L5_CHIPAS = {
     [L5_MAIN.steps, 4, 46],
     [L5_SECRET.steps],
     [L5_MAIN.steps, 46, 49],
+    { stop: 223.2 },
     { bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true },
     { jumpTo: [234, 26] },
     { run: 1, untilX: 236 },
@@ -899,6 +900,10 @@ L7_CHIPAS.steps = chain(
   [L7_SECRET.steps],
   // El mercado, la lona, la plaza y el andamio 2 con la onda por la ventana de la torre.
   [L7_MAIN.steps, 2, 12],
+  // Mientras se carga el tajo, el andamio ya baja: una vuelta más y, arriba, al tablón del balcón.
+  { mover: [169, 60], at: 'origin', dir: 1, exit: 'walk', exitDir: -1 },
+  // Quieta en el tablón, como empieza la prueba suelta del balcón (llegando a la carrera, se pasaba hasta la espina).
+  { stop: 167.5 },
   [L7_FEATHER_B.steps],
   // De vuelta, con el centro entre x 161,3 y 162,5 (a ±6 px del punto, el piloto no toca la espina).
   { dash: 1, from: 161.9 },
