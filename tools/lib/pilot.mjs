@@ -39,6 +39,7 @@
 //   [[x, y]…] sigue rebotando de hongo en hongo (cada uno, el de la lista) antes de ir a landX; con reach (tiles,
 //   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
 //   hueco, salta hacia él.
+//   S36: bounce con afterDouble termina recién después del salto doble. { stop: x } se para quieta en esa x.
 //   S32: strict con un número (ms) pide que a la plataforma le quede al menos esa espera en la punta (subirse a una
 //   balsa recién llegada con el juego lento).
 //   S32: un paso mover con lantern: [x, y] espera además a que ese farol temporizado esté encendido con ≥ 1 s de cuenta
@@ -48,7 +49,8 @@
 //   Cualquier paso con retryFrom (n): tras una caída durante ese paso, vuelve al paso n (reaparece antes de él:
 //   en una persecución, en el último pindó).
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
-//   origen o esperando ahí) y untilMover: [x, y] (termina al quedar parada sobre esa plataforma).
+//   origen o esperando ahí; S36: con waitAt: 'end', en la otra punta) y untilMover: [x, y] (termina al quedar parada
+//   sobre esa plataforma).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
 //                                                     hongo que ocupa (x, y): si wait, espera a que esa plataforma
 //                                                     esté en esa punta; pisa el hongo y en el aire va hacia la
@@ -292,7 +294,11 @@ export function installPilot(plan) {
       if (st.phase === 'start' && s.wait) {
         move(0);
         const mm = moverAt(s.wait).motor;
-        const ready = (mm.dir === -1 && mm.pos < 1.5 * T) || (mm.pos < 1 && mm.waitLeftMs > 800);
+        // S36: con waitAt 'end', a que esté por llegar a la otra punta o esperando ahí (el ascensor de la cámara de l1, abajo).
+        const ready =
+          s.waitAt === 'end'
+            ? (mm.dir === 1 && mm.pos > mm.length - 1.5 * T) || (mm.pos >= mm.length - 1 && mm.waitLeftMs > 800)
+            : (mm.dir === -1 && mm.pos < 1.5 * T) || (mm.pos < 1 && mm.waitLeftMs > 800);
         if (!ready) return false;
       }
       st.phase = 'run';
@@ -307,6 +313,7 @@ export function installPilot(plan) {
       return false;
     }
     if (s.charge !== undefined) return doCharge(s);
+    if (s.stop !== undefined) return doStop(s);
     // { dash: 1 | -1 } es un paso; jumpTo y bounce también pueden llevar dash: true (en el aire).
     if (typeof s.dash === 'number') return doDash(s);
     if (s.jumpTo !== undefined) return doJumpTo(s, b);
@@ -502,6 +509,15 @@ export function installPilot(plan) {
     }
   };
 
+  // S36: { stop: x } camina hasta esa x, frena a tiempo y termina quieta en el piso (antes de un tajo cargado que
+  // tiene que salir desde ahí: el farol de la capilla de l7 queda fuera de la onda si Kerana se desliza un tile).
+  const doStop = (s) => {
+    const dx = s.stop * T - body().center.x;
+    const vx = body().velocity.x;
+    move(Math.abs(dx) > 6 + (vx * vx) / 4000 ? Math.sign(dx) : 0);
+    return grounded() && Math.abs(dx) <= 6 && Math.abs(body().velocity.x) <= 5;
+  };
+
   const doCharge = (s) => {
     switch (st.phase) {
       case 'start':
@@ -590,7 +606,9 @@ export function installPilot(plan) {
           else seek(s.landX * T);
           if (s.double && !grounded()) doubleAtApex();
           if (s.dash) dashInAir(!!s.double, s.hold ? Math.sign(s.landX * T - b.center.x) : 0);
-          if (grounded() && (s.landTop === undefined || b.bottom <= s.landTop * T + 2) && Math.abs(b.center.x - s.landX * T) < T) return true;
+          // S36: con afterDouble, recién después del salto doble (la chipa A de l5: al tocar el hongo de un uso el paso
+          // terminaba en ese cuadro, antes del rebote y del salto doble).
+          if (grounded() && (s.landTop === undefined || b.bottom <= s.landTop * T + 2) && Math.abs(b.center.x - s.landX * T) < T && (!s.afterDouble || st.doubled)) return true;
         }
         // Volvió al piso sin llegar (hongo de un uso desinflado): a esperar otra vez.
         if (grounded() && body().velocity.y >= 0 && !cap.isStoodOn(b) && b.bottom > cap.zone.top + 4) st.phase = 'start';

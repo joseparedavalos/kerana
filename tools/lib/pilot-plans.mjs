@@ -1,5 +1,21 @@
 // Planes del piloto automático (tools/lib/pilot.mjs), en tiles. Uno por nivel y ruta; ver docs/RECETA-NIVEL.md.
 
+// S36: arma un plan con tramos de otros. Cada tramo es un paso suelto o [pasos, desde, hasta] (un slice de un plan):
+// los `retryFrom` de cada tramo (índices dentro de su plan) se corren a la posición que el tramo ocupa en el nuevo.
+function chain(...parts) {
+  const out = [];
+  for (const part of parts) {
+    if (!Array.isArray(part)) {
+      out.push(part);
+      continue;
+    }
+    const [steps, from = 0, to = steps.length] = part;
+    const at = out.length;
+    for (const step of steps.slice(from, to)) out.push(step.retryFrom === undefined ? step : { ...step, retryFrom: step.retryFrom - from + at });
+  }
+  return out;
+}
+
 // l1 · Paraguarí (S19). Ruta baja = la principal: salta el hoyo del hongo (x 146-147), Luz de Arasy, cuatro
 // teju'i y el hongo de x 177. Ruta alta: se deja caer al hoyo, rebota y va por las repisas de la fila 8.
 const L1_COMMON = {
@@ -37,6 +53,29 @@ const L1_COMMON = {
 
 export const L1_LOW = L1_COMMON;
 export const L1_HIGH = { ...L1_COMMON, noGapJump: [...L1_COMMON.noGapJump, [143, 147]] };
+
+// S36: l1 con las tres chipas antes de la puerta de la ofrenda. A: la piedra temporizada de la cueva (x 27), salto
+// doble a la repisa y al nicho (si la reja se cerró, la piedra de adentro la abre), y vuelta por la punta izquierda de
+// la repisa. B: la ruta alta (L1_HIGH). C: en la galería 2, la onda a través de la roca enciende la piedra de la
+// cámara; el ascensor baja, se entra a la cámara por la reja y salto doble a la repisa de la chipa.
+export const L1_CHIPAS = {
+  ...L1_HIGH,
+  hitSwitches: [...L1_COMMON.hitSwitches, [27, 11], [39, 5]],
+  steps: [
+    // La piedra se golpea volviendo desde la derecha: bajando del bloque, Kerana cae ya pasada (en el aire no golpea).
+    { run: 1, untilX: 29.5 },
+    { run: -1, untilX: 28.6 },
+    { jumpTo: [30, 6], double: true },
+    { run: 1, untilX: 40.3 },
+    { run: -1, untilX: 24.5 },
+    ...L1_COMMON.steps.slice(0, 5),
+    { charge: -1 },
+    { mover: [200, 22], dir: -1, exit: 'walk' },
+    { run: -1, untilX: 194 },
+    { jumpTo: [190, 26], double: true },
+    { run: 1, untilFight: true },
+  ],
+};
 
 // l2 · Ñeembucú (S22, segunda pasada en S23). Ruta principal: roca agrietada, cadenas de camalotes (jakare en la 2),
 // piedra encerrada y balsa, par de balsas (mbói en la llegada), hongo -> balsa alta, atajo del fardo con el hongo de la
@@ -135,6 +174,34 @@ export const L2_COPA = {
   ],
 };
 
+// S36: l2 con las tres chipas antes de la puerta de la ofrenda. A: al empezar, salto doble a la roca de la izquierda y
+// salto doble + dash a la cima del pilar; se baja del otro lado y se rompe la roca agrietada desde ahí. B: la copa
+// del palmar (L2_COPA) desde la cima del albardón, saltando el pozo. C: desde la cima del ascenso 2, salto doble + dash a
+// la repisa de la chipa y salto a la orilla.
+export const L2_CHIPAS = {
+  ...L2_MAIN,
+  noGapJump: [[16, 18], ...L2_MAIN.noGapJump, ...L2_COPA.noGapJump],
+  steps: [
+    { run: -1, untilX: 7.2 },
+    { jumpTo: [4.5, 27], double: true },
+    { jumpTo: [15, 22], double: true, dash: true },
+    // Del otro lado del pilar, el tajo cargado rompe la roca agrietada entera (lo comprueba el smoke).
+    { run: 1, untilX: 19.5 },
+    { run: -1, untilX: 18.2 },
+    { charge: -1 },
+    // De la piedra encerrada (x 90,5) a la cima del albardón (x 149).
+    ...L2_MAIN.steps.slice(2, 13),
+    { jumpTo: [155.5, 18] },
+    ...L2_COPA.steps,
+    // Del fuego 2 a la cima del ascenso 2.
+    ...L2_MAIN.steps.slice(14, 24),
+    { jumpTo: [265.5, 12], double: true, dash: true },
+    { jumpTo: [261, 33] },
+    // La cadena más larga, la zona de ritmo y la antesala.
+    ...L2_MAIN.steps.slice(26),
+  ],
+};
+
 // l3 · Misiones (S25). Ruta principal: tacurú agrietado, ñandú, par de balsas, pencas de la loma, grieta, viento en
 // contra (espera la calma), par de balsas, hongo -> repisa -> ascensor, vuelta por la barra y la rama alta, meseta (zanja y
 // tacurú agrietado), hongo
@@ -213,6 +280,43 @@ export const L3_SECRET = {
     { run: 1, wait: [181, 26], untilX: 186 },
     { run: 1, untilTop: 29 },
     { run: -1, untilX: 178 },
+  ],
+};
+
+// S36: l3 con las tres chipas antes de la puerta de la ofrenda. A: la piedra temporizada de la loma (x 117), bajar por el
+// borde y entrar al nicho de la ladera antes de que se cierre (la piedra de adentro lo reabre). B: la cueva del viento
+// (L3_SECRET) desde la repisa del ascenso 2, y de vuelta al hongo. C: en la copa 3, tajo cargado al hongo dormido y
+// rebote a la copa alta.
+export const L3_CHIPAS = {
+  ...L3_MAIN,
+  ride: true,
+  hitSwitches: [
+    [117, 20],
+    [117, 32],
+  ],
+  noGapJump: [...(L3_SECRET.noGapJump ?? [])],
+  steps: [
+    // Hasta la loma (pencas en zigzag).
+    ...L3_MAIN.steps.slice(0, 10),
+    // La piedra de la loma (la golpea al pasar) y un salto medido al pie del nicho: corriendo, caía 5 a 10 tiles más
+    // allá y la reja (3 s) se cerraba antes de volver.
+    { run: 1, untilX: 116.8 },
+    { jumpTo: [121.5, 33] },
+    { run: -1, untilX: 118.0 },
+    { run: 1, untilX: 154.5 },
+    // Par de balsas y hongo del ascenso 2 a la repisa.
+    ...L3_MAIN.steps.slice(11, 15),
+    ...L3_SECRET.steps,
+    L3_MAIN.steps[14],
+    // Ascensor, la barra, la rama alta, la meseta, el hongo dormido y las pencas del ascenso 3.
+    ...L3_MAIN.steps.slice(15, 28),
+    { run: 1, untilX: 275.5 },
+    { charge: -1 },
+    { bounce: [273, 10], landX: 277, landTop: 4 },
+    // De la copa alta a la copa 3 con un salto medido: corriendo, saltaba el borde y caía en la cañada.
+    { jumpTo: [279.5, 11] },
+    // La cadena de seis, la zona de ritmo y la antesala.
+    ...L3_MAIN.steps.slice(29),
   ],
 };
 
@@ -324,6 +428,32 @@ export const L4_SECRET = {
   ],
 };
 
+// S36: l4 con las tres chipas antes de la puerta de la ofrenda. A: en el patio del jagua, la onda a través de la reja y la
+// pared enciende la piedra del nicho. B: el potrero de la vaca guasu (L4_SECRET) desde la repisa del ascenso 2, que
+// termina en el segundo ascensor. C: arriba del campanario, el dash por encima de las dos espinas y de vuelta.
+export const L4_CHIPAS = {
+  ...L4_MAIN,
+  noGapJump: [...L4_MAIN.noGapJump, ...L4_SECRET.noGapJump],
+  steps: chain(
+    // Hasta el patio del jagua.
+    [L4_MAIN.steps, 0, 8],
+    { run: 1, untilX: 95 },
+    { charge: 1 },
+    { run: 1, untilX: 98.5 },
+    // Ascenso 1, mercado, despensa, zanja, terraza y el ascensor dormido hasta la repisa.
+    [L4_MAIN.steps, 8, 24],
+    [L4_SECRET.steps],
+    // Techo del galpón, casa Z, plaza, campanario.
+    [L4_MAIN.steps, 25, 36],
+    { run: -1, untilX: 307.4 },
+    { dash: -1, from: 306.6 },
+    // De vuelta, desde donde quedó (pegada a la pared): con from 303,6 el cuerpo ya tocaba la primera espina.
+    { dash: 1 },
+    // La cadena de bajada, la galería de las tejas y la antesala.
+    [L4_MAIN.steps, 36],
+  ),
+};
+
 // l5 · Canindeyú (S30). Ruta principal: el túnel de raíces (dash), la cadena de hongos sobre el karaguatá, las ramas que
 // se quiebran sobre el pozo, el hongo dormido al pie del tronco, la cadena de cinco ascensores, la rama larga hacia la
 // izquierda (mbói en el hueco, la reja de raíces: hongo dormido → rama alta con la piedra), la zona de ritmo (el compás
@@ -429,6 +559,27 @@ export const L5_SECRET = {
     { jumpTo: [193.6, 36] },
     { mover: [194, 14], at: 'end', dir: 1, exit: 'walk' },
   ],
+};
+
+// S36: l5 con las tres chipas antes de la puerta de la ofrenda. A: en la cadena de hongos, el hongo de un uso con salto
+// doble en el ápice, y de ahí al tercer hongo. B: el claro (L5_SECRET) desde la copa 6. C: después del salto largo, el
+// hongo de la copa 7, salto doble y dash por encima de la columna de espinas, y del otro lado a la rama baja.
+export const L5_CHIPAS = {
+  ...L5_MAIN,
+  steps: chain(
+    [L5_MAIN.steps, 0, 3],
+    { bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true, afterDouble: true },
+    { bounce: [53, 90], landX: 61, landTop: 92 },
+    // Las ramas del pozo, el tronco, los ascensores, la reja de raíces, el compás y el dosel hasta la copa 6.
+    [L5_MAIN.steps, 4, 46],
+    [L5_SECRET.steps],
+    [L5_MAIN.steps, 46, 49],
+    { bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true },
+    { jumpTo: [234, 26] },
+    { run: 1, untilX: 236 },
+    // La bajada: ramas que se quiebran, la cortina de karaguatá, los tres ascensores y la antesala.
+    [L5_MAIN.steps, 51],
+  ),
 };
 
 // l6 · Guairá (S31). Ruta principal: la manada, la escalera de lajas, la columna de roca (tajo cargado), el pozo de la
@@ -553,6 +704,32 @@ export const L6_FEATHER_C = {
   ],
 };
 
+// S36: l6 con las tres chipas antes de la puerta de la ofrenda. A: antes de la escalera de lajas, al fondo de la
+// quebrada, tajo cargado a la columna de roca y la chipa; de vuelta a la meseta con salto doble. B: la gruta tras la
+// cascada (L6_SECRET), saltando el hongo dormido de la cumbre 1 a la ida y a la vuelta. C: la ruta alta de la persecución
+// (L6_FEATHER_C).
+export const L6_CHIPAS = {
+  ...L6_MAIN,
+  noGapJump: [...L6_MAIN.noGapJump, ...L6_SECRET.noGapJump],
+  steps: chain(
+    [L6_MAIN.steps, 0, 1],
+    { jumpTo: [50, 62] },
+    [L6_FEATHER_A.steps],
+    { run: -1, untilX: 37 },
+    { jumpTo: [32, 57], double: true },
+    // La escalera de lajas, el pozo de la piedra, el patio, la segunda escalera, el filo y la cumbre 1.
+    [L6_MAIN.steps, 1, 23],
+    { jumpTo: [161, 15] },
+    [L6_SECRET.steps],
+    { jumpTo: [156.5, 15] },
+    // El hongo dormido, las cumbres y el fuego 2.
+    [L6_MAIN.steps, 23, 34],
+    [L6_FEATHER_C.steps],
+    // La bajada a la meseta y la antesala.
+    [L6_MAIN.steps, 39],
+  ),
+};
+
 // l7 · Asunción (S32). Ruta principal: la calle, el portón del zaguán (farol), el andamio del patio (farol de pared), los
 // tejados, el mercado (par de carros, lona de un uso + salto doble sobre el muro del cabildo), la plaza (columna de roca,
 // farol de la puerta → andamio 2 → la onda por la ventana enciende la piedra → reja de la torre), LA RONDA DEL FAROLERO
@@ -663,6 +840,17 @@ export const L7_MAIN = {
   ],
 };
 
+// S36: l7 con las tres chipas antes de la puerta de la ofrenda. A: el sótano de la casona (L7_SECRET) desde la calle del
+// mercado. B: arriba del andamio 2, después de encender la piedra de la torre, el balcón del obispado (dash ida y vuelta)
+// y de nuevo al andamio. C: parada en el ascensor del ángel, la onda enciende el farol de la capilla; de la cornisa se
+// baja por el lado del mausoleo a la calle.
+export const L7_CHIPAS = {
+  ...L7_MAIN,
+  noGapJump: [...L7_MAIN.noGapJump, [462, 464.5]],
+  // Los pasos, al final del archivo: usan L7_SECRET, L7_FEATHER_B y L7_FEATHER_C, que se definen más abajo.
+  steps: [],
+};
+
 // Lugar secreto de l7 (S32), el sótano de la casona, desde la calle del mercado (x 99, fila 60): rompe la puerta de fardo
 // (x 97), cruza el zaguán (el farol encendido es la luz que se ve desde la calle), baja por la escalera, salta el piso
 // podrido (tablones que se quiebran sobre un pozo), recoge dos guavirá, la Luz de Arasy y la pluma A, y sale por la
@@ -671,7 +859,9 @@ export const L7_SECRET = {
   aim: true,
   steps: [
     { run: -1, untilX: 93 },
-    { run: -1, untilX: 91.7 },
+    // S36: sobre el hueco de la escalera (x 87-91): frenando en 91,7 a veces quedaba en el borde del piso, no caía y
+    // seguía por la calle (por eso fallaba el chequeo del sótano también en main).
+    { run: -1, untilX: 90.6 },
     { run: 1, untilX: 108.6 },
     { jumpTo: [105.8, 65] },
     { jumpTo: [107.6, 62] },
@@ -684,7 +874,9 @@ export const L7_SECRET = {
 export const L7_FEATHER_B = {
   steps: [
     { run: -1, untilX: 166 },
-    { dash: -1, from: 164.6 },
+    // S36: el dash cruza la espina si arranca con el centro entre x 164,5 y 165,7 (el piloto frena a ±6 px): desde 164,6,
+    // a veces ya la tocaba.
+    { dash: -1, from: 165.1 },
     { run: -1, untilX: 160.6 },
   ],
 };
@@ -698,3 +890,26 @@ export const L7_FEATHER_C = {
     { run: -1, untilX: 466.2 },
   ],
 };
+
+// S36: el resto de L7_CHIPAS (usa L7_SECRET, L7_FEATHER_B y L7_FEATHER_C, definidos arriba).
+L7_CHIPAS.steps = chain(
+  [L7_MAIN.steps, 0, 2],
+  { run: 1, untilX: 99 },
+  [L7_SECRET.steps],
+  // El mercado, la lona, la plaza y el andamio 2 con la onda por la ventana de la torre.
+  [L7_MAIN.steps, 2, 12],
+  [L7_FEATHER_B.steps],
+  // De vuelta, con el centro entre x 161,3 y 162,5 (a ±6 px del punto, el piloto no toca la espina).
+  { dash: 1, from: 161.9 },
+  { run: 1, untilX: 167.5 },
+  // Abajo en el andamio, la torre (la ronda del farolero), los tejados de la catedral, el camposanto y la cripta.
+  [L7_MAIN.steps, 12, 49],
+  // Parada en el ascensor del ángel, sin pasarse de x 470: más a la derecha, la onda no llega al farol de la capilla.
+  { run: 1, untilX: 469 },
+  { stop: 469.8 },
+  [L7_FEATHER_C.steps],
+  // De la cornisa al techo del mausoleo con un salto medido (corriendo, se pasaba y caía en la fosa común) y a la calle.
+  { jumpTo: [460, 52] },
+  { run: 1, untilX: 467.5 },
+  [L7_MAIN.steps, 49],
+);

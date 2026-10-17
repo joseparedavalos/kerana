@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_HIGH, L1_LOW, L2_COPA, L2_HIGH, L2_MAIN, L3_MAIN, L3_SECRET, L4_MAIN, L4_SECRET, L5_MAIN, L5_SECRET, L6_FEATHER_A, L6_FEATHER_C, L6_MAIN, L6_SECRET, L7_FEATHER_B, L7_FEATHER_C, L7_MAIN, L7_SECRET } from './lib/pilot-plans.mjs';
+import { L1_CHIPAS, L1_HIGH, L2_CHIPAS, L2_COPA, L2_HIGH, L3_CHIPAS, L3_SECRET, L4_CHIPAS, L4_SECRET, L5_CHIPAS, L5_SECRET, L6_CHIPAS, L6_FEATHER_A, L6_FEATHER_C, L6_SECRET, L7_CHIPAS, L7_FEATHER_B, L7_FEATHER_C, L7_SECRET } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -92,6 +92,31 @@ async function main() {
       await sleep(100);
     }
     await page.keyboard.up('ArrowRight');
+  }
+
+  // S36: el nivel como la primera vez: sin sus chipas y con su hijo sin liberar (la puerta de la ofrenda, cerrada).
+  async function freshLevel(page, levelId, bossId) {
+    await page.evaluate(
+      (id, boss) => {
+        const save = JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}');
+        save.freed = (save.freed ?? []).filter((b) => b !== boss);
+        save.feathers = { ...(save.feathers ?? {}), [id]: [false, false, false] };
+        localStorage.setItem('kerana.save.v1', JSON.stringify(save));
+        window.__KERANA_READY__ = false;
+      },
+      levelId,
+      bossId,
+    );
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 20000 });
+    await sleep(500);
+  }
+  // S36: el recorrido principal junta las tres chipas y la puerta de la ofrenda queda abierta.
+  async function chipasState(page) {
+    return page.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      return { hud: s.feathers, door: s.offering?.motor.state ?? 'sin puerta' };
+    });
   }
 
   try {
@@ -204,7 +229,8 @@ async function main() {
     check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
     await sleep(300);
     await title.screenshot({ path: join(SHOTS, 'level-complete.png') });
-    await title.keyboard.press('Enter');
+    // Desde 01eec5e, Enter (Siguiente) entra al nivel 2; Pausa vuelve al mapa.
+    await title.keyboard.press('Escape');
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
     check(true, 'Nivel completado → Mapa');
     const freed = await title.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
@@ -235,6 +261,7 @@ async function main() {
     const l1Page = await open('/?debug=1&level=1&god=1');
     await l1Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l1Page, 'l1', 'teju_jagua');
     const l1Info = await l1Page.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
       return {
@@ -250,7 +277,7 @@ async function main() {
       l1Info.movers === 3 && l1Info.gates === 3 && l1Info.switches === 5 && l1Info.bouncers === 'ready,ready,asleep' && l1Info.feathers === 3,
       `nivel 1: 3 plataformas, 3 rejas, 5 piedras (S28: la segunda del nicho de la pluma A), hongos de un uso y dormido, 3 plumas (${JSON.stringify(l1Info)})`,
     );
-    await l1Page.evaluate(installPilot, L1_LOW);
+    await l1Page.evaluate(installPilot, L1_CHIPAS);
     const pilot = (page) => page.evaluate(() => {
       const p = window.__KERANA_PILOT__;
       return { done: p.done, step: p.step, timeMs: Math.round(p.timeMs), splits: p.splits, respawns: p.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16) };
@@ -258,6 +285,8 @@ async function main() {
     // Tope de reloj amplio: el headless a veces va a ≈ 35 fps; el piloto avanza por pasos del juego.
     for (let t = 0; t < 240000 && !(await pilot(l1Page)).done; t += 500) await sleep(500);
     const run1 = await pilot(l1Page);
+    const chipas1 = await chipasState(l1Page);
+    check(run1.done && chipas1.hud === 3 && chipas1.door === 'open', `nivel 1: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas1)})`);
     check(run1.done && run1.respawns === 0, `nivel 1: Kerana cruza el nivel entero sin caer a un pozo (${JSON.stringify(run1)})`);
     if (!run1.done) {
       await l1Page.screenshot({ path: join(SHOTS, 'l1-piloto-atascado.png') });
@@ -322,6 +351,102 @@ async function main() {
     await l1Back.screenshot({ path: join(SHOTS, 'l1-camara.png') });
     await l1Back.close();
 
+    // 1b5) S36: la puerta de la ofrenda, en l1. Con dos chipas y Teju Jagua sin liberar, frente a la puerta no se pasa,
+    // Mainumby dice cuántas lleva y la pausa ofrece volver a buscar la que falta: Kerana reaparece en el fuego de antes de
+    // ella (x 101). Con la tercera, la puerta se abre y se pasa. Con el hijo ya libre (partida de antes), abierta de entrada.
+    const ofr = await open('/?debug=1&level=1&god=1');
+    await ofr.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(300);
+    const ofrSave = (freed, chipas) =>
+      ofr.evaluate(
+        (f, c) => {
+          const save = JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}');
+          save.freed = f ? [...new Set([...(save.freed ?? []), 'teju_jagua'])] : (save.freed ?? []).filter((b) => b !== 'teju_jagua');
+          save.feathers = { ...(save.feathers ?? {}), l1: c };
+          localStorage.setItem('kerana.save.v1', JSON.stringify(save));
+          window.__KERANA_READY__ = false;
+        },
+        freed,
+        chipas,
+      );
+    const ofrReload = async () => {
+      await ofr.reload({ waitUntil: 'load' });
+      await ofr.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 20000 });
+      await sleep(500);
+    };
+    const ofrAt = (x, row) =>
+      ofr.evaluate(
+        (px, r) => {
+          const d = window.__KERANA_DEBUG__;
+          d.player.body.reset(px * 16 + 8, (r + 1) * 16 - 1);
+          d.scene.cameraCtl.snap();
+        },
+        x,
+        row,
+      );
+    const ofrState = () =>
+      ofr.evaluate(() => {
+        const d = window.__KERANA_DEBUG__;
+        const o = d.scene.offering;
+        return {
+          x: +(d.player.x / 16).toFixed(1),
+          feet: Math.round(d.player.body.bottom / 16) - 1,
+          hud: d.scene.feathers,
+          door: o?.motor.state,
+          line: o?.door.line.visible ? o.door.line.text : '',
+          canReturn: d.scene.registry.get('chipaReturn') === true,
+        };
+      });
+    await ofrSave(false, [true, false, true]);
+    await ofrReload();
+    await ofrAt(244, 30);
+    await sleep(300);
+    await ofr.keyboard.down('ArrowRight');
+    for (let t = 0; t < 8000 && !(await ofrState()).canReturn; t += 200) await sleep(200);
+    await sleep(800);
+    const ofrClosed = await ofrState();
+    await ofr.keyboard.up('ArrowRight');
+    await ofr.screenshot({ path: join(SHOTS, 'ofrenda-cerrada.png') });
+    check(
+      ofrClosed.door === 'closed' && ofrClosed.x < 249 && ofrClosed.hud === 2 && ofrClosed.line.includes('2') && ofrClosed.canReturn,
+      `puerta de la ofrenda: con dos chipas no se pasa, Mainumby dice cuántas lleva y la pausa ofrece volver (${JSON.stringify(ofrClosed)})`,
+    );
+    // Pausa → "Volver a buscar chipas" (el segundo ítem cuando aparece).
+    await ofr.keyboard.press('Escape');
+    await ofr.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Pause') ?? false, { timeout: 5000 });
+    await sleep(300);
+    const pauseItems = await ofr.evaluate(() => window.__KERANA_GAME__.scene.getScene('Pause').items.map((i) => i.labelKey));
+    await ofr.keyboard.press('ArrowDown');
+    await sleep(150);
+    await ofr.keyboard.press('Enter');
+    for (let t = 0; t < 5000 && (await ofr.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Pause') ?? false)); t += 100) await sleep(100);
+    await sleep(500);
+    const ofrBack = await ofrState();
+    check(
+      pauseItems[1] === 'pause.chipa_return' && Math.abs(ofrBack.x - 101.5) < 1 && ofrBack.feet === 8 && ofrBack.canReturn,
+      `puerta de la ofrenda: "Volver a buscar chipas" deja a Kerana en el fuego de antes de la que falta (${JSON.stringify({ pauseItems, ...ofrBack })})`,
+    );
+    // La que faltaba (la B, en la ruta alta) y de vuelta a la puerta: la ofrenda la abre.
+    await ofrAt(163, 4);
+    for (let t = 0; t < 3000 && (await ofrState()).hud < 3; t += 100) await sleep(100);
+    await ofrAt(244, 30);
+    await sleep(300);
+    await ofr.keyboard.down('ArrowRight');
+    for (let t = 0; t < 20000 && (await ofrState()).x < 252; t += 200) await sleep(200);
+    await ofr.keyboard.up('ArrowRight');
+    const ofrOpen = await ofrState();
+    await ofr.screenshot({ path: join(SHOTS, 'ofrenda-abierta.png') });
+    check(
+      ofrOpen.hud === 3 && ofrOpen.door === 'open' && ofrOpen.x >= 252 && !ofrOpen.canReturn,
+      `puerta de la ofrenda: con las tres chipas Kerana las entrega y el paso se abre (${JSON.stringify(ofrOpen)})`,
+    );
+    // Partida de antes de S36: Teju Jagua ya libre y ninguna chipa guardada. La puerta no la deja encerrada.
+    await ofrSave(true, [false, false, false]);
+    await ofrReload();
+    const ofrOld = await ofrState();
+    check(ofrOld.door === 'open' && ofrOld.hud === 0, `puerta de la ofrenda: con el hijo ya libre (partida vieja) está abierta de entrada (${JSON.stringify(ofrOld)})`);
+    await ofr.close();
+
     // 1c) Nivel 2: el mapa carga, ?boss=1 lleva a la antesala y Mbói Tu'i ataca.
     const l2Page = await open('/?debug=1&level=2&boss=1&god=1');
     await l2Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
@@ -365,6 +490,7 @@ async function main() {
     const l2Run = await open('/?debug=1&level=2&god=1');
     await l2Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l2Run, 'l2', 'mboi_tui');
     const l2Info = await l2Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
       const groups = new Set(s.breakables.map((b) => b.group));
@@ -441,9 +567,11 @@ async function main() {
         }
       });
     });
-    await l2Run.evaluate(installPilot, L2_MAIN);
+    await l2Run.evaluate(installPilot, L2_CHIPAS);
     for (let t = 0; t < 420000 && !(await pilot(l2Run)).done; t += 500) await sleep(500);
     const run2 = await pilot(l2Run);
+    const chipas2 = await chipasState(l2Run);
+    check(run2.done && chipas2.hud === 3 && chipas2.door === 'open', `nivel 2: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas2)})`);
     const rhythm = await l2Run.evaluate(() => window.__RHYTHM__);
     check(rhythm.exposed > 0 && rhythm.apart === 0, `nivel 2: los jakare guasu asoman solo con las balsas de su encuentro juntas (${JSON.stringify(rhythm)})`);
     check(run2.done && run2.respawns === 0, `nivel 2: Kerana cruza el estero entero sin caer al agua (${JSON.stringify(run2)})`);
@@ -669,6 +797,7 @@ async function main() {
     const l3Run = await open('/?debug=1&level=3&god=1');
     await l3Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l3Run, 'l3', 'monai');
     const l3Info = await l3Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
       const groups = new Set(s.breakables.map((b) => b.group));
@@ -694,7 +823,7 @@ async function main() {
         l3Info.vertical === 3 &&
         l3Info.switches === 2 &&
         l3Info.gates === 1 &&
-        l3Info.bouncers === 'ready,ready,ready,asleep,ready' &&
+        l3Info.bouncers === 'asleep,ready,ready,ready,asleep,ready' &&
         l3Info.rocks === 2 &&
         l3Info.brittle === 5 &&
         l3Info.wind === 12 &&
@@ -702,7 +831,7 @@ async function main() {
         l3Info.feathers === 3 &&
         l3Info.enemies.karakara === 9 &&
         l3Info.traps === 0,
-      `nivel 3: 19 plataformas (3 verticales), 2 piedras y 1 reja, 5 hongos (S26: el del pozo de salida de la cueva), 2 tacurúes agrietados y 5 fardos, 12 zonas de viento, 4 fuegos, 3 plumas, 9 karakara, ningún encierro (${JSON.stringify(l3Info)})`,
+      `nivel 3: 19 plataformas (3 verticales), 2 piedras y 1 reja, 6 hongos (S26: el del pozo de salida de la cueva; S36: el dormido de la copa 3), 2 tacurúes agrietados y 5 fardos, 12 zonas de viento, 4 fuegos, 3 plumas, 9 karakara, ningún encierro (${JSON.stringify(l3Info)})`,
     );
     // Zona de ritmo: mientras corre el piloto, el viento en contra de cada encuentro sopla cuando las balsas llegan y
     // amaina con ellas juntas (lo mismo que tests/rhythm.test.ts, ahora en el juego).
@@ -729,9 +858,11 @@ async function main() {
         });
       });
     });
-    await l3Run.evaluate(installPilot, L3_MAIN);
+    await l3Run.evaluate(installPilot, L3_CHIPAS);
     for (let t = 0; t < 420000 && !(await pilot(l3Run)).done; t += 500) await sleep(500);
     const run3 = await pilot(l3Run);
+    const chipas3 = await chipasState(l3Run);
+    check(run3.done && chipas3.hud === 3 && chipas3.door === 'open', `nivel 3: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas3)})`);
     check(run3.done && run3.respawns === 0, `nivel 3: Kerana cruza el campo entero sin caer (${JSON.stringify(run3)})`);
     if (!run3.done) {
       await l3Run.screenshot({ path: join(SHOTS, 'l3-piloto-atascado.png') });
@@ -865,6 +996,7 @@ async function main() {
     const l4Run = await open('/?debug=1&level=4&god=1');
     await l4Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l4Run, 'l4', 'jasy_jatere');
     const l4Info = await l4Run.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -894,7 +1026,8 @@ async function main() {
     check(
       l4Info.charge &&
         l4Info.double &&
-        !l4Info.dash &&
+        // Decisión del 13 de octubre: el dash también está desde el primer nivel.
+        l4Info.dash &&
         l4Info.movers === 20 &&
         l4Info.vertical === 4 &&
         l4Info.oneWay &&
@@ -915,9 +1048,11 @@ async function main() {
         l4Info.traps === 0,
       `nivel 4: 20 plataformas de un solo sentido (4 verticales), 7 piedras (1 temporizada) y 4 rejas, 3 vacas (1 guasu), 3 rocas agrietadas y 6 fardos, 13 tejas, 4 nieblas, 4 fuegos, 3 plumas, 4 jagua, 4 panales, 1 vaca embrujada, ningún encierro (${JSON.stringify(l4Info)})`,
     );
-    await l4Run.evaluate(installPilot, L4_MAIN);
+    await l4Run.evaluate(installPilot, L4_CHIPAS);
     for (let t = 0; t < 480000 && !(await pilot(l4Run)).done; t += 500) await sleep(500);
     const run4 = await pilot(l4Run);
+    const chipas4 = await chipasState(l4Run);
+    check(run4.done && chipas4.hud === 3 && chipas4.door === 'open', `nivel 4: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas4)})`);
     check(run4.done && run4.respawns === 0, `nivel 4: Kerana cruza Capiatá entera sin caer (${JSON.stringify(run4)})`);
     if (!run4.done) {
       await l4Run.screenshot({ path: join(SHOTS, 'l4-piloto-atascado.png') });
@@ -988,9 +1123,9 @@ async function main() {
       `nivel 4: la onda enciende la piedra encerrada en la pared y la reja del nicho se abre: pluma A (${JSON.stringify({ ...niche0, ...niche })})`,
     );
     await l4Niche.close();
-    // Pluma C: bajo el techo bajo del campanario (no se salta adentro), dos espinas (x 304-305) y la pluma pegada a la
-    // pared (x 303). Desde la baldosa libre (x 306), el dash (51 px intangible) llega a la pluma; otro dash vuelve a la
-    // baldosa libre. Con tres espinas no llegaba (hacían falta 58 px): las espinas devuelven a Kerana (respawn).
+    // Pluma C: bajo el techo bajo del campanario (no se salta adentro), una espina (x 304; S36: eran dos, con 4 px de
+    // margen para el dash, y ahora la chipa es obligatoria) y la pluma pegada a la pared (x 303). Desde la baldosa libre
+    // (x 306), el dash (51 px intangible) llega a la pluma; otro dash vuelve. Tocar la espina devuelve a Kerana (respawn).
     const l4Bell = await open('/?debug=1&level=4&god=1&gifts=all');
     await l4Bell.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
@@ -1026,7 +1161,7 @@ async function main() {
     const bellOut = await l4Bell.evaluate(() => ({ x: +(window.__KERANA_DEBUG__.player.x / 16).toFixed(2), feet: window.__KERANA_DEBUG__.player.body.bottom / 16, respawns: window.__RESPAWNS__ }));
     check(
       bell0.dash && bellIn.feathers === bell0.feathers + 1 && bellIn.respawns === 0 && bellOut.respawns === 0 && bellOut.x > 306 && bellOut.feet === 8,
-      `nivel 4: con el dash, Kerana cruza las dos espinas del campanario, cobra la pluma C y vuelve sin tocarlas (${JSON.stringify({ ...bell0, bellIn, bellOut })})`,
+      `nivel 4: con el dash, Kerana cruza la espina del campanario, cobra la pluma C y vuelve sin tocarla (${JSON.stringify({ ...bell0, bellIn, bellOut })})`,
     );
     await l4Bell.close();
 
@@ -1150,6 +1285,7 @@ async function main() {
     const l5Run = await open('/?debug=1&level=5&god=1');
     await l5Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l5Run, 'l5', 'kurupi');
     const l5Info = await l5Run.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -1197,9 +1333,11 @@ async function main() {
         l5Info.traps === 0,
       `nivel 5: ${L5_COUNTS.movers} plataformas de un solo sentido (${L5_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos (${L5_COUNTS.normal} normales, ${L5_COUNTS.once} de un uso, ${L5_COUNTS.sleep} dormidos), ${L5_COUNTS.crumbles} ramas que se quiebran, ${L5_COUNTS.rocks} rocas y ${L5_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L5_COUNTS.kuati} kuati, ${L5_COUNTS.kai} ka'i, ${L5_COUNTS.mboi} mbói, ningún encierro (${JSON.stringify(l5Info)})`,
     );
-    await l5Run.evaluate(installPilot, L5_MAIN);
+    await l5Run.evaluate(installPilot, L5_CHIPAS);
     for (let t = 0; t < 600000 && !(await pilot(l5Run)).done; t += 500) await sleep(500);
     const run5 = await pilot(l5Run);
+    const chipas5 = await chipasState(l5Run);
+    check(run5.done && chipas5.hud === 3 && chipas5.door === 'open', `nivel 5: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas5)})`);
     check(run5.done && run5.respawns === 0, `nivel 5: Kerana cruza Canindeyú entera sin caer (${JSON.stringify(run5)})`);
     if (run5.respawns > 0) console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log)).filter((l) => l.startsWith('caída') || l.startsWith('paso')).slice(-40).join('\n'));
     if (!run5.done) {
@@ -1265,7 +1403,7 @@ async function main() {
       if (!after.done || after.respawns > 0) console.log((await l5Feathers.evaluate(() => window.__KERANA_PILOT__.log)).slice(-20).join('\n'));
       return { before, ...after };
     };
-    const featherA = await featherRun(35.5, 92, { steps: [{ bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true }] });
+    const featherA = await featherRun(35.5, 92, { steps: [{ bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true, afterDouble: true }] });
     check(featherA.done && featherA.respawns === 0 && featherA.feathers === featherA.before + 1, `nivel 5: la pluma A se cobra rebotando en el hongo de un uso de la cadena (${JSON.stringify(featherA)})`);
     // Cae sobre el hongo desde arriba (sin cruzar el hueco del ascensor de la copa 7, que puede estar abajo).
     const featherC = await featherRun(228, 11, { steps: [{ bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true }] });
@@ -1426,6 +1564,7 @@ async function main() {
     const l6Run = await open('/?debug=1&level=6&god=1');
     await l6Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l6Run, 'l6', 'ao_ao');
     const l6Info = await l6Run.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -1501,9 +1640,11 @@ async function main() {
       });
     });
     const l6Pickups = () => l6Run.evaluate(() => window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).map((p) => `${p.kind}@${Math.floor(p.x / 16)}`).sort());
-    await l6Run.evaluate(installPilot, L6_MAIN);
+    await l6Run.evaluate(installPilot, L6_CHIPAS);
     for (let t = 0; t < 600000 && !(await pilot(l6Run)).done; t += 500) await sleep(500);
     const run6 = await pilot(l6Run);
+    const chipas6 = await chipasState(l6Run);
+    check(run6.done && chipas6.hud === 3 && chipas6.door === 'open', `nivel 6: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas6)})`);
     // Todo lo del camino queda recogido (las guavirá, la Luz de Arasy del fuego 2); quedan las tres plumas y lo de la gruta.
     const l6Left = await l6Pickups();
     const l6Off = ['guavira@151', 'guavira@161', 'luz_arasy@164', 'pluma@154', 'pluma@322', 'pluma@71'];
@@ -1762,6 +1903,7 @@ async function main() {
     const l7Run = await open('/?debug=1&level=7&god=1&gifts=all');
     await l7Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l7Run, 'l7', 'luison');
     const l7RunInfo = await l7Run.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -1811,9 +1953,11 @@ async function main() {
       `nivel 7: ${C7.movers} plataformas de un solo sentido (${C7.vertical} verticales), ${C7.lanterns} faroles (${C7.triggers} disparadores, ${C7.timed} temporizados), 1 piedra y ${C7.gates} rejas, toldos de las tres variantes, ${C7.rocks} rocas y ${C7.brittle} fardos, 4 fuegos, 3 plumas, ${C7.mbopi} mbopi, ${C7.pora} póra, ${C7.jagua} jagua hũ, ningún encierro (${JSON.stringify(l7RunInfo)})`,
     );
     const l7Pickups = () => l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).map((p) => `${p.kind}@${Math.floor(p.x / 16)}`).sort());
-    await l7Run.evaluate(installPilot, L7_MAIN);
+    await l7Run.evaluate(installPilot, L7_CHIPAS);
     for (let t = 0; t < 900000 && !(await pilot(l7Run)).done; t += 500) await sleep(500);
     const run7 = await pilot(l7Run);
+    const chipas7 = await chipasState(l7Run);
+    check(run7.done && chipas7.hud === 3 && chipas7.door === 'open', `nivel 7: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas7)})`);
     check(run7.done && (await l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)), `nivel 7: el piloto llega a la arena de Luisón por la ruta principal (${run7.respawns} caídas)`);
     const l7Left = await l7Pickups();
     // Quedan las plumas, lo del sótano (secreto), la guavirá del balcón alto (salto doble, a un costado) y la de la antesala.
@@ -1962,11 +2106,17 @@ async function main() {
     await sleep(500);
     await walkIntoArena(tauPage, 8000);
     check(await tauPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'Yvága: la arena de Tau se cierra');
-    await sleep(4000);
-    const tau1 = await tauPage.evaluate(() => {
-      const b = window.__KERANA_DEBUG__.scene.boss;
-      return { state: b.brain.state, form: b.form, stars: b.stars.length };
-    });
+    // S36: por estado (con 4 s fijos, con la máquina cargada seguía en 'waiting').
+    const tauState = () =>
+      tauPage.evaluate(() => {
+        const b = window.__KERANA_DEBUG__.scene.boss;
+        return { state: b.brain.state, form: b.form, stars: b.stars.length };
+      });
+    let tau1 = await tauState();
+    for (let t = 0; t < 20000 && tau1.state === 'waiting'; t += 250) {
+      await sleep(250);
+      tau1 = await tauState();
+    }
     check(tau1.state !== 'waiting' && tau1.form === 'disguise' && tau1.stars === 7, `Tau fase 1: el joven de la flauta ataca (${JSON.stringify(tau1)})`);
     await tauPage.screenshot({ path: join(SHOTS, 'tau-1.png') });
     const tau2 = await tauPage.evaluate(async () => {
@@ -2240,13 +2390,20 @@ async function main() {
       });
     const start = await pos();
     await page.keyboard.down('ArrowRight');
-    await sleep(500);
-    const running = await pos();
+    // S36: por estado (con 500 ms fijos fallaba con la máquina cargada: 22 px en vez de 30).
+    let running = await pos();
+    for (let t = 0; t < 4000 && !(running.x > start.x + 30 && running.state === 'run'); t += 100) {
+      await sleep(100);
+      running = await pos();
+    }
     await page.keyboard.up('ArrowRight');
     check(running.x > start.x + 30 && running.state === 'run', `corre (x ${Math.round(start.x)} → ${Math.round(running.x)}, ${running.state})`);
     await page.keyboard.down('Space');
-    await sleep(150);
-    const jumping = await pos();
+    let jumping = await pos();
+    for (let t = 0; t < 2000 && !(jumping.y < start.y - 10 && jumping.state === 'jump'); t += 50) {
+      await sleep(50);
+      jumping = await pos();
+    }
     await page.keyboard.up('Space');
     check(jumping.y < start.y - 10 && jumping.state === 'jump', `salta (y ${Math.round(start.y)} → ${Math.round(jumping.y)}, ${jumping.state})`);
     await sleep(1000);
