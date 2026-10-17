@@ -37,6 +37,16 @@ function findBrowser() {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Audio (S37): qué pista pidió la escena, cuál suena y si hubo errores.
+const audioState = (page) => page.evaluate(() => window.__KERANA_AUDIO__?.state() ?? null);
+async function waitMusic(page, key, maxMs = 8000) {
+  let s = await audioState(page);
+  for (let t = 0; t < maxMs && s?.playing !== key; t += 100) {
+    await sleep(100);
+    s = await audioState(page);
+  }
+  return s;
+}
 // Pulsaciones (cada 300 ms) para pasar la liberación hasta "Nivel completado": el bucle corta apenas llega.
 // Con 60 (≈ 18 s) a veces no alcanzaba cuando el headless iba lento (falló una vez en l7, S18).
 const PRESS_MAX = 150;
@@ -150,6 +160,23 @@ async function main() {
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Title') ?? false, { timeout: 20000 });
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'title.png') });
+    // S37: antes del primer gesto el navegador no deja sonar: la pista queda pedida y nada se rompe.
+    const preGesture = await audioState(title);
+    check(preGesture?.wanted === 'title' && preGesture.playing === null && !preGesture.gestured, `música: el título pide su pista y espera el primer gesto (${JSON.stringify(preGesture)})`);
+    // Las diez pistas y sus peleas se generan, parejas, sin recortar y por debajo de los efectos.
+    const rendered = await title.evaluate(() => window.__KERANA_AUDIO__.renderAll());
+    const levels = rendered.tracks.map((tr) => tr.rms);
+    const spreadDb = 20 * Math.log10(Math.max(...levels) / Math.min(...levels));
+    check(
+      rendered.tracks.length === 20 && rendered.tracks.every((tr) => tr.seconds > 8 && tr.peak <= 1 && Number.isFinite(tr.rms)) && spreadDb < 1.5,
+      `música: 10 pistas y 10 variantes de jefe generadas, parejas (${spreadDb.toFixed(2)} dB entre la más fuerte y la más suave)`,
+    );
+    const sfxLevels = await title.evaluate(() => window.__KERANA_AUDIO__.sfxRms(['jump', 'slash', 'hit', 'hurt', 'bossWarn']));
+    const quietestSfx = Math.min(...sfxLevels.map((x) => x.rms));
+    const musicLevel = Math.max(...levels) * rendered.musicGain;
+    // Al menos 3 dB por debajo del efecto más suave de los que avisan.
+    const belowDb = 20 * Math.log10(quietestSfx / musicLevel);
+    check(belowDb >= 3, `música por debajo de los efectos: ${belowDb.toFixed(1)} dB bajo el más suave (música ${musicLevel.toFixed(4)} RMS, efecto ${quietestSfx.toFixed(4)})`);
     const inStory = () => title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false);
     // "Nueva partida" (primer ítem del menú); se repite si el menú todavía no escuchaba.
     for (let t = 0; t < 10000 && !(await inStory()); t += 1000) {
@@ -158,17 +185,27 @@ async function main() {
     }
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false, { timeout: 10000 });
     check(true, 'Título → Nueva partida → Prólogo');
+    await title.bringToFront();
+    const storyMusic = await waitMusic(title, 'title');
+    check(
+      storyMusic?.playing === 'title' && storyMusic.gestured && storyMusic.renderer === 'worker',
+      `música: con la primera tecla arranca el canto de Eichu, generado fuera del hilo del juego (${storyMusic?.context}, ${storyMusic?.renderer})`,
+    );
     // Mantener Pausa salta el prólogo entero: se mantiene hasta que aparece el mapa (con 700 ms fijos fallaba en máquinas lentas).
     await title.keyboard.down('Escape');
     for (let t = 0; t < 5000 && !(await title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false)); t += 100) await sleep(100);
     await title.keyboard.up('Escape');
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
     check(true, 'Prólogo → Mapa');
+    const mapMusic = await waitMusic(title, 'map');
+    check(mapMusic?.playing === 'map', `música: el mapa cambia de pista (${JSON.stringify(mapMusic?.started)})`);
     await sleep(300);
     await title.screenshot({ path: join(SHOTS, 'map.png') });
     await title.keyboard.press('Enter'); // entra al nodo 1 (Paraguarí)
     await title.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     check(true, 'Mapa → nivel 1 listo');
+    const l1Music = await waitMusic(title, 'l1');
+    check(l1Music?.playing === 'l1' && l1Music.context === 'running', `música: el nivel 1 suena con la suya (${l1Music?.context})`);
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
     // Fondos (S12e, S13a): l1_cave solo dentro de las zonas Cave y l1_far solo fuera; en la boca, los dos con un degradado.
@@ -245,11 +282,21 @@ async function main() {
     // nivel: si una pulsación caía justo cuando aparecía "Nivel completado", pasaba al mapa y la siguiente volvía a
     // entrar a l1 (falló 2 de 5 corridas; reproducido: Kerana de vuelta en x 9 y Teju Jagua con 12 de vida).
     const inDialogue = () => title.evaluate(() => window.__KERANA_DEBUG__?.scene.dialogueBox?.active ?? false);
+    let duckedInDialogue = false;
+    let liberationMusic = 'sin ver';
     for (let i = 0; i < PRESS_MAX && !(await isActive('LevelComplete')); i++) {
-      if (await inDialogue()) await title.keyboard.press('Space');
+      if (await inDialogue()) {
+        const s = await audioState(title);
+        duckedInDialogue ||= s?.ducked === true;
+        liberationMusic = String(s?.wanted);
+        await title.keyboard.press('Space');
+      }
       await sleep(300);
     }
     check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
+    check(duckedInDialogue && liberationMusic === 'null', `música: baja con el diálogo y calla en la liberación (${liberationMusic})`);
+    const completeMusic = await waitMusic(title, 'map');
+    check(completeMusic?.playing === 'map' && !completeMusic.ducked, 'música: "Nivel completado" vuelve a la del mapa, sin el volumen bajo del diálogo');
     await sleep(300);
     await title.screenshot({ path: join(SHOTS, 'level-complete.png') });
     // Desde 01eec5e, Enter (Siguiente) entra al nivel 2; Pausa vuelve al mapa.
@@ -269,6 +316,8 @@ async function main() {
     check(bx > 250 * TILE && bx < 274 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
     await walkIntoArena(bossPage);
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
+    const bossMusic = await waitMusic(bossPage, 'l1_boss');
+    check(bossMusic?.playing === 'l1_boss', `música: la pelea cambia a la variante tensa (${JSON.stringify(bossMusic?.started)})`);
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
     await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
     await bossPage.screenshot({ path: join(SHOTS, 'bg-l1-caverna.png') });
@@ -2502,6 +2551,10 @@ async function main() {
     await new Promise((r) => server.httpServer.close(r));
   }
 
+  // S37: ningún error de audio (los avisa AudioManager con "[audio]" o "[MÚSICA FALTANTE]").
+  const audioWarnings = warnings.filter((w) => w.startsWith('[audio]') || w.includes('[MÚSICA FALTANTE]'));
+  if (audioWarnings.length) errors.push(`audio: ${[...new Set(audioWarnings)].join(' · ')}`);
+  else console.log('✓ sin errores de audio en consola');
   const missing = warnings.filter((w) => w.includes('[ASSET FALTANTE]'));
   if (missing.length) console.log(`Assets faltantes (placeholders): ${[...new Set(missing)].join(', ')}`);
   if (errors.length) {

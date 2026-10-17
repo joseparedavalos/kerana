@@ -84,7 +84,19 @@ export abstract class Boss {
     protected readonly ctx: BossContext,
   ) {
     this.brain = new BossBrain(def, { telegraphScale: assistTelegraphScale(ctx.assist) });
+    // Cuenta los sonidos del jefe: si un aviso empieza sin ninguno, suena el de respaldo (S37).
+    const { sfx, sfxAt } = ctx;
+    ctx.sfx = (key) => {
+      this.sounds++;
+      sfx(key);
+    };
+    ctx.sfxAt = (key, x) => {
+      this.sounds++;
+      sfxAt(key, x);
+    };
   }
+
+  private sounds = 0;
 
   /** Modo asistido cambiado en plena partida: vale desde el próximo aviso. */
   setAssist(on: boolean): void {
@@ -104,7 +116,12 @@ export abstract class Boss {
 
   update(deltaMs: number): void {
     const t = this.brain.step(deltaMs);
-    if (t) this.onTransition(t);
+    if (t) {
+      const before = this.sounds;
+      this.onTransition(t);
+      // Todo aviso se ve y se oye (GDD §5.1): el sonido propio del jefe, el del ataque o el genérico.
+      if (t.state === 'telegraph' && this.sounds === before) this.ctx.sfx(t.attack?.warnSfx ?? 'bossWarn');
+    }
     this.updateVisuals(deltaMs);
   }
 

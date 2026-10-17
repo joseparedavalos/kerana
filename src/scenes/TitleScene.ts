@@ -4,6 +4,7 @@ import { queueBackgrounds } from '../assets/backgrounds';
 import { FONT_FAMILY } from '../config/fonts';
 import { PROLOGUE_SLIDES } from '../data/story';
 import { t } from '../i18n';
+import { AudioManager } from '../systems/AudioManager';
 import { addEichu, addNightSky } from '../systems/Backdrops';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
@@ -31,6 +32,7 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     setupView(this);
     SaveManager.load();
+    AudioManager.music('title');
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.paintSky(width, height);
@@ -62,9 +64,12 @@ export class TitleScene extends Phaser.Scene {
     this.inputs.update();
     if (this.inputs.justPressed('left') || this.inputs.justPressed('up')) {
       this.selected = (this.selected - 1 + this.choices.length) % this.choices.length;
+      AudioManager.play('uiMove');
     } else if (this.inputs.justPressed('right') || this.inputs.justPressed('down')) {
       this.selected = (this.selected + 1) % this.choices.length;
+      AudioManager.play('uiMove');
     } else if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) {
+      AudioManager.play('uiConfirm');
       const choice = this.choices[this.selected];
       if (choice === 'options') this.scene.start('Options', { returnScene: 'Title' });
       else if (choice === 'credits') this.scene.start('Credits');

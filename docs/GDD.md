@@ -991,22 +991,26 @@ Colores de referencia para la interfaz y para guiar la generación de arte:
 - **Pueblo y ciudad (N4, N7):** arpa paraguaya y guitarra, más melancólicas de noche.
 - **Jefes:** una base común más intensa, con una variación por jefe si el presupuesto lo permite.
 - Alternativa económica: chiptune con timbres de flauta y percusión.
+- **Lo que suena hoy (S37):** música generada por código con ZzFX, en la línea de la alternativa económica pero con los timbres de arriba. Arpa paraguaya y guitarra en el título, el mapa, Capiatá (polca perezosa, guitarra en 3/4 contra el arpa en 6/8) y Asunción (guarania lenta en menor, con una campana del camposanto). Takuapu, mbaraka, angu'a (tambor) y mimby (flauta de caña guaraní, grave y sin soplido) en los cerros, el estero, la selva y la montaña; en Misiones, un órgano por las reducciones jesuíticas. Yvága, escala de tonos enteros con coro sobre un tritono y campanas: hermoso y ajeno. Nada de zampoña ni huayno, que son de los Andes.
+- **Jefes (S37):** una variante más tensa de la pista del nivel, no una pieza aparte: la misma melodía 15 % más rápida, con tambor en cada pulso, takuapu en cada contratiempo y un bajo que late en la tónica. El jugador sigue en el mismo lugar y la pelea se reconoce como de ese lugar; la base común del punto anterior es la capa que se suma. Tau usa la variante de Yvága.
 
 ### 10.2 Música
 
-| Pantalla | Pista | Prioridad |
-|---|---|---|
-| Título y mapa | "Canto de Eichu" (tranquila, nocturna) | MVP |
-| Niveles | Una pista genérica de aventura | MVP |
-| Niveles | Una pista por nivel (7) | Núcleo |
-| Jefes | Una pista de jefe común | MVP |
-| Liberación | Remate corto ascendente (5 a 8 s) | Núcleo |
-| Final y créditos | Tema de Kerana | Núcleo |
+| Pantalla | Pista | Prioridad | Estado (S37) |
+|---|---|---|---|
+| Título y mapa | "Canto de Eichu" (tranquila, nocturna) | MVP | Hecho: el título, el prólogo y los créditos usan el Canto de Eichu; el mapa y «Nivel completado» tienen su caminata |
+| Niveles | Una pista genérica de aventura | MVP | Superado por la de cada nivel |
+| Niveles | Una pista por nivel (7) | Núcleo | Hecho, más Yvága |
+| Jefes | Una pista de jefe común | MVP | Hecho como variante tensa de cada nivel (§10.1) |
+| Liberación | Remate corto ascendente (5 a 8 s) | Núcleo | Falta: la música calla y suena el efecto `liberation` |
+| Final y créditos | Tema de Kerana | Núcleo | Falta: suena el Canto de Eichu |
 
-Formato: **MP3** (compatible con todos los navegadores). Volúmenes parejos entre pistas. Ver licencias en `docs/ASSETS.md`.
+Formato: hoy, **generada por código** (`src/data/music.ts`), sin archivos ni licencias. Si más adelante llegan grabaciones, en **MP3** (compatible con todos los navegadores). Volúmenes parejos entre pistas: cada pista se normaliza sola, y la música queda por debajo de los efectos, que avisan. Ver `docs/ASSETS.md` §9.
 
 ### 10.3 Efectos de sonido
 Primero se generan **por código con ZzFX** (sin archivos); más adelante se pueden reemplazar por grabaciones.
+
+Hechos todos menos la carga en bucle (a propósito: un zumbido continuo mientras se mantiene el botón cansa, y la carga ya se ve). S37 sumó el salto doble, el fin de la Luz de Arasy, la interfaz, el aviso genérico de jefe, la puerta de las chipas, los disparadores, las rejas, las plataformas que arrancan, la liana que se corta, la roca que pide el tajo cargado y la red de seguridad.
 
 Lista: salto · salto doble · aterrizaje · tajo · carga (bucle) · tajo cargado · golpe a enemigo · purificación · daño a Kerana · curación · Luz de Arasy (inicio y fin) · pluma · fuego que se enciende · dash · interfaz (mover, aceptar, volver) · aviso genérico de jefe · jefe herido · liberación (arpegio ascendente) · graznido de Mbói Tu'i · silbido de Jasy Jatere · zumbido de abejas · aullido "ao, ao" · aullido de Luisón · viento · salpicadura · roca que se rompe · rama que cruje.
 
@@ -1015,6 +1019,8 @@ Lista: salto · salto doble · aterrizaje · tajo · carga (bucle) · tajo carga
 - `AudioManager` único: música con fundido entre pistas y efectos centralizados por clave (`sfx.play('jump')`).
 - Respeta los volúmenes de Opciones y se pausa al perder el foco de la ventana.
 - En móvil, el audio arranca tras el primer toque (regla de los navegadores).
+- **Hecho en S37.** Cada escena pide su pista (`AudioManager.music('l3')`); la misma pista sigue sin cortarse, otra entra con fundido. Con un diálogo abierto la música baja y vuelve al cerrarlo. Antes del primer toque o tecla la pista queda pedida y arranca con el gesto. Volumen de música y de efectos por separado en Opciones, guardados con los ajustes. Si falta una pista o algo falla, el juego sigue en silencio y lo avisa en consola (`[MÚSICA FALTANTE]`, `[audio]`).
+- **Todo aviso de jefe suena (S37):** si el jefe no hace un sonido propio al empezar el aviso, suena el del ataque (`warnSfx` en `src/data/bosses.ts`) o el aviso genérico `bossWarn`.
 
 ---
 

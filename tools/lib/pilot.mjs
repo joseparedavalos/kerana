@@ -497,6 +497,14 @@ export function installPilot(plan) {
       seek(tx);
       return false;
     }
+    // S37: si el salto anterior no llegó y cayó a un piso (sin caída), el doble y el dash se vuelven a intentar. Antes
+    // quedaban gastados hasta el paso siguiente: con el juego lento, un doble perdido en el paso 1 de l2 dejaba a Kerana
+    // saltando simple bajo la repisa durante los 420 s del límite.
+    if ((st.doubled || st.dashed) && st.jumpMs <= 0 && st.jumpCool <= 0) {
+      st.log.push(`reintenta el salto en x ${(b.center.x / T).toFixed(1)}`);
+      st.doubled = false;
+      st.dashed = false;
+    }
     startJump(s.hold);
     seek(tx);
     return false;

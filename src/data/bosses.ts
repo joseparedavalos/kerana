@@ -1,3 +1,4 @@
+import type { SfxKey } from '../systems/sfxPresets';
 import type { BossId } from './types';
 
 // Jefes (GDD §11.6). Cada fase dura mientras hp / hpMax > untilHpRatio.
@@ -9,6 +10,11 @@ export interface AttackDef {
   recoverMs: number;
   /** En la recuperación el jefe se puede golpear (la "ventana" del GDD). Por defecto, sí. */
   punishable?: boolean;
+  /**
+   * Sonido del aviso (S37). Solo suena si el jefe no hizo ya un sonido propio al empezar el aviso; sin esto,
+   * suena `bossWarn`. Así todo aviso de jefe se ve y se oye (GDD §5.1).
+   */
+  warnSfx?: SfxKey;
 }
 
 export interface BossPhaseDef {
@@ -109,7 +115,7 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         attacks: [
           { id: 'peck', weight: 2, telegraphMs: 1000, activeMs: 450, recoverMs: 1500 },
           { id: 'squawk', weight: 1, telegraphMs: 800, activeMs: 1500, recoverMs: 1000 },
-          { id: 'spit', weight: 1, telegraphMs: 600, activeMs: 1200, recoverMs: 400, punishable: false },
+          { id: 'spit', weight: 1, telegraphMs: 600, activeMs: 1200, recoverMs: 400, punishable: false, warnSfx: 'bubbles' },
         ],
       },
       // Fase 3: enroscado en el islote central; picotazos rápidos y graznido doble.
@@ -275,7 +281,7 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         idleMs: 800,
         attacks: [
           { id: 'clods', weight: 2, telegraphMs: 600, activeMs: 900, recoverMs: 400, punishable: false },
-          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 1500 },
+          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 1500, warnSfx: 'luisonHowl' },
         ],
       },
       // Fase 2 (luna llena): crece y acelera. El aullido apaga las luces; embiste desde la oscuridad
@@ -285,7 +291,7 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         idleMs: 700,
         attacks: [
           { id: 'charge', weight: 2, telegraphMs: 1000, activeMs: 900, recoverMs: 1200 },
-          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 500, punishable: false },
+          { id: 'howl', weight: 1, telegraphMs: 1000, activeMs: 300, recoverMs: 500, punishable: false, warnSfx: 'luisonHowl' },
           { id: 'clods', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 300, punishable: false },
         ],
       },
@@ -313,8 +319,8 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
         untilHpRatio: 14 / TAU_HP,
         idleMs: 800,
         attacks: [
-          { id: 'notes', weight: 2, telegraphMs: 700, activeMs: 1200, recoverMs: 1300 },
-          { id: 'melody', weight: 1, telegraphMs: 900, activeMs: 900, recoverMs: 1500 },
+          { id: 'notes', weight: 2, telegraphMs: 700, activeMs: 1200, recoverMs: 1300, warnSfx: 'whistle' },
+          { id: 'melody', weight: 1, telegraphMs: 900, activeMs: 900, recoverMs: 1500, warnSfx: 'whistle' },
         ],
       },
       // Fase 2, los ecos: sube al cielo y una sombra de un hijo repite su ataque (Teju Jagua: rocas;

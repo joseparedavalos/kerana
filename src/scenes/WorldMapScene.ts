@@ -4,6 +4,7 @@ import { WORLD_LEVELS } from '../data/levels';
 import type { LevelDef } from '../data/types';
 import { t } from '../i18n';
 import { GAMEPLAY } from '../config/gameplay';
+import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
@@ -55,6 +56,7 @@ export class WorldMapScene extends Phaser.Scene {
 
   create(): void {
     setupView(this);
+    AudioManager.music('map');
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     // Con Tau sellado, la tierra guaraní sana y el mapa recupera sus colores (GDD §7).
@@ -85,7 +87,10 @@ export class WorldMapScene extends Phaser.Scene {
       else if (this.inputs.justPressed('left')) this.moveSelection(selectable, -1);
       if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) this.enterSelected();
     }
-    if (this.inputs.justPressed('pause')) this.scene.start('Title');
+    if (this.inputs.justPressed('pause')) {
+      AudioManager.play('uiBack');
+      this.scene.start('Title');
+    }
   }
 
   private frame(): { ox: number; oy: number; drawW: number; drawH: number; spanx: number; spanlat: number; xs: number } {
@@ -259,6 +264,7 @@ export class WorldMapScene extends Phaser.Scene {
   private moveSelection(selectable: number[], dir: 1 | -1): void {
     const pos = selectable.indexOf(this.selected);
     const nextPos = Phaser.Math.Clamp(pos + dir, 0, selectable.length - 1);
+    if (selectable[nextPos] !== this.selected) AudioManager.play('uiMove');
     this.selected = selectable[nextPos];
     this.refreshNodeStyles();
     this.updatePanel();
@@ -293,6 +299,7 @@ export class WorldMapScene extends Phaser.Scene {
   private enterSelected(): void {
     const node = this.nodes[this.selected];
     if (!node || this.nodeState(node.level) === 'blocked') return;
+    AudioManager.play('uiConfirm');
     this.scene.start('Level', { levelId: node.level.id });
   }
 }

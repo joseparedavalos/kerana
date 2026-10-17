@@ -5,6 +5,7 @@ import { speakerPortraitKey } from '../data/dialogues';
 import type { DialogueLine } from '../data/types';
 import { t } from '../i18n';
 import { ensurePlaceholder } from '../utils/placeholder';
+import { AudioManager } from './AudioManager';
 import { SaveManager } from './SaveManager';
 import { charsToShow } from './textReveal';
 import { fixedOffset, VIEW } from './View';
@@ -61,6 +62,8 @@ export class DialogueBox {
     this.index = -1;
     this.onComplete = onComplete;
     this.container.setVisible(true);
+    // La música baja mientras se lee (S37).
+    AudioManager.duck(true);
     this.advanceLine();
   }
 
@@ -80,6 +83,7 @@ export class DialogueBox {
   }
 
   destroy(): void {
+    if (this.active) AudioManager.duck(false);
     this.container.destroy();
   }
 
@@ -87,6 +91,7 @@ export class DialogueBox {
     this.index++;
     if (this.index >= this.lines.length) {
       this.container.setVisible(false);
+      AudioManager.duck(false);
       const done = this.onComplete;
       this.onComplete = null;
       done?.();

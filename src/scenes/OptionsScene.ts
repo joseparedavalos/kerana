@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
+import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager, type SaveSettings } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
@@ -55,12 +56,17 @@ export class OptionsScene extends Phaser.Scene {
       this.eraseArmedUntil = 0;
       this.refresh();
     }
-    if (this.inputs.justPressed('down')) this.selected = (this.selected + 1) % this.rows.length;
-    else if (this.inputs.justPressed('up')) this.selected = (this.selected - 1 + this.rows.length) % this.rows.length;
-    else if (this.inputs.justPressed('right')) this.rows[this.selected].onChange(1);
+    if (this.inputs.justPressed('down')) {
+      this.selected = (this.selected + 1) % this.rows.length;
+      AudioManager.play('uiMove');
+    } else if (this.inputs.justPressed('up')) {
+      this.selected = (this.selected - 1 + this.rows.length) % this.rows.length;
+      AudioManager.play('uiMove');
+    } else if (this.inputs.justPressed('right')) this.rows[this.selected].onChange(1);
     else if (this.inputs.justPressed('left')) this.rows[this.selected].onChange(-1);
     else if (this.inputs.justPressed('confirm')) this.rows[this.selected].onChange(1);
     else if (this.inputs.justPressed('pause')) {
+      AudioManager.play('uiBack');
       this.scene.start(this.returnScene);
       return;
     }
@@ -70,6 +76,9 @@ export class OptionsScene extends Phaser.Scene {
 
   private setting<K extends keyof SaveSettings>(key: K, value: SaveSettings[K]): void {
     SaveManager.updateSettings({ [key]: value } as Partial<SaveSettings>);
+    // Los volúmenes se oyen al cambiarlos: la música enseguida, y un efecto de muestra.
+    if (key === 'music') AudioManager.refreshVolumes();
+    AudioManager.play('uiConfirm');
   }
 
   private buildRows(): Row[] {

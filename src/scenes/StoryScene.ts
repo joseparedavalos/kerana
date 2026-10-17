@@ -3,6 +3,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { ANIMS_SUFFIX, PLAYER_KEY, PLAYER_PLACEHOLDER_KEY } from '../assets/manifest';
 import type { StorySlide } from '../data/story';
 import { queueBackgrounds } from '../assets/backgrounds';
+import { AudioManager } from '../systems/AudioManager';
 import { addDawn, addEichu, addNightSky } from '../systems/Backdrops';
 import { t } from '../i18n';
 import { SaveManager } from '../systems/SaveManager';
@@ -56,6 +57,9 @@ export class StoryScene extends Phaser.Scene {
 
   create(): void {
     setupView(this);
+    // El prólogo y el final, con el canto de Eichu; la llegada de Tau ya suena a Yvága.
+    const next = (this.nextData as { levelId?: string } | undefined)?.levelId;
+    AudioManager.music(next === 'yvaga' ? 'yvaga' : 'title');
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);

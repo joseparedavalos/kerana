@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
+import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
 import { formatPlayTime, SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
@@ -15,6 +16,7 @@ export class CreditsScene extends Phaser.Scene {
 
   create(): void {
     setupView(this);
+    AudioManager.music('title');
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);

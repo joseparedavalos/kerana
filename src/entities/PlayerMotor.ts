@@ -98,6 +98,11 @@ export class PlayerMotor {
   private jumpCuttable = false;
   /** Ya usó el salto doble en este vuelo. */
   private airJumpUsed = false;
+
+  /** Ya usó el salto doble en este vuelo (para su sonido). */
+  get airJumped(): boolean {
+    return this.airJumpUsed;
+  }
   private attackMsLeft = 0;
   private hurtMsLeft = 0;
   private dashMsLeft = 0;
