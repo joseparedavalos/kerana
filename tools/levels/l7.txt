@@ -32,7 +32,8 @@
 #    fuego 3 (x 410) y la Luz de Arasy · lápida agrietada (x 414), toldo plegado (dormido, x 428) al pie del mausoleo 4 (8 filas)
 #    · par de losas de 4 sobre la fosa común (x 439-457) con mbopi, jagua hũ en la llegada · la capilla (x 472-478,
 #    5 filas: salto doble). Pluma C, la columna del ángel: desde el ascensor (x 469-471) la onda enciende el farol de la
-#    hornacina de la capilla (x 476; el sable no llega) y el ascensor (toggle) sube a la cornisa (fila 41)
+#    hornacina de la capilla (x 476; el sable no llega) y el ascensor sube a la cornisa (fila 41); va y viene mientras el
+#    farol esté encendido (mode=run, S36: con toggle se quedaba arriba y, si subía sin Kerana, la pluma se perdía)
 # Antesala (x 480-499, fila 66) y arena de Luisón (x 500-539): las de S12, copiadas 260 tiles a la derecha y 40 filas
 #   más abajo (mausoleos x 501-507 y 533-539, faroles encendidos que el aullido apaga)
 size 540x70
@@ -87,7 +88,7 @@ at 398,57 id=reja_panteon
 at 428,59 kind=sleep
 at 439,52 speed=50 waitMs=1800
 at 454,52 speed=50 waitMs=1800
-at 469,60 id=angel mode=toggle speed=60
+at 469,60 id=angel mode=run speed=60 waitMs=1500
 point Lantern x=476 y=59 target=angel mount=niche
 rect DarkZone x=292 y=0 w=188 h=70
 point Lantern x=483 y=65
