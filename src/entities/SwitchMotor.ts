@@ -138,6 +138,10 @@ export interface WaveLight {
   canHit: boolean;
   reachActive: boolean;
   reachX: number;
+  /** S36: la luz barre de `reachFromX` a `reachX` en cada paso (con el juego lento no se salta nada). */
+  reachFromX: number;
+  /** S36: el último tramo, el del paso en que la luz llegó al alcance, también cuenta. */
+  reachEnded: boolean;
 }
 
 /** Rectángulo de la luz (reutilizado: nada de asignar en cada frame). */
@@ -156,13 +160,15 @@ export function waveStrikes<T extends Strikeable>(
   out: T[] = [],
 ): T[] {
   out.length = 0;
-  const lit = throughWalls ? wave.reachActive : wave.canHit;
+  const lit = throughWalls ? wave.reachActive || wave.reachEnded : wave.canHit;
   if (!lit) return out;
-  const x = throughWalls ? wave.reachX : wave.x;
+  // Con la luz, el tramo barrido en el último paso; sin ella, la onda donde está.
+  const x0 = throughWalls ? Math.min(wave.reachFromX, wave.reachX) : wave.x;
+  const x1 = throughWalls ? Math.max(wave.reachFromX, wave.reachX) : wave.x;
   const rect = WAVE_BOX;
-  rect.x = x - width / 2;
+  rect.x = x0 - width / 2;
   rect.y = wave.y - height / 2;
-  rect.width = width;
+  rect.width = x1 - x0 + width;
   rect.height = height;
   for (const sw of switches) {
     if (sw.lastWaveShot === wave.shot || !overlaps(sw.zone, rect)) continue;

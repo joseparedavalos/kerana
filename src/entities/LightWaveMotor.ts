@@ -32,6 +32,13 @@ export class LightWaveMotor {
    */
   reachActive = false;
   reachX = 0;
+  /**
+   * S36: dónde estaba la luz antes del último paso; la luz barre de ahí a `reachX`. Con el juego lento un paso avanza
+   * más que el ancho de la luz y se saltaba un farol angosto (la chipa C de l7).
+   */
+  reachFromX = 0;
+  /** S36: la luz llegó al alcance en el último paso: ese último tramo también cuenta. */
+  reachEnded = false;
   private reachTraveled = 0;
   /** Número de disparo (cada onda nueva suma 1): un Switch cuenta cada onda una sola vez. */
   shot = 0;
@@ -51,6 +58,8 @@ export class LightWaveMotor {
     this.hits.clear();
     this.reachActive = true;
     this.reachX = x;
+    this.reachFromX = x;
+    this.reachEnded = false;
     this.reachTraveled = 0;
     this.shot++;
     return true;
@@ -88,11 +97,16 @@ export class LightWaveMotor {
 
   /** La luz sigue derecho a la velocidad de la onda, sin chocar, hasta el alcance. */
   private stepReach(dtMs: number): void {
+    this.reachEnded = false;
     if (!this.reachActive) return;
     const dx = Math.min(this.cfg.speed * (dtMs / 1000), this.cfg.rangePx - this.reachTraveled);
+    this.reachFromX = this.reachX;
     this.reachX += this.dir * dx;
     this.reachTraveled += dx;
-    if (this.reachTraveled >= this.cfg.rangePx) this.reachActive = false;
+    if (this.reachTraveled >= this.cfg.rangePx) {
+      this.reachActive = false;
+      this.reachEnded = true;
+    }
   }
 
   stop(): void {

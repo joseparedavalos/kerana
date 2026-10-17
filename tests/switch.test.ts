@@ -105,6 +105,22 @@ describe('activación', () => {
     expect(hits).toBe(0);
   });
 
+  it('S36: con el juego lento (pasos largos) la luz no se salta un farol angosto, ni al final del alcance', () => {
+    // Un paso de 150 ms avanza 36 px, más que el ancho de la luz (14) más el de la piedra (16): antes se la saltaba
+    // (en x 46 cae entre dos pasos; en x 90, en el último tramo, el del paso en que la luz llega al alcance).
+    for (const at of [46, 90]) {
+      const sw = makeSwitch(at, -8);
+      const wave = new LightWaveMotor(WAVE);
+      wave.fire(0, 0, 1);
+      let hits = 0;
+      for (let t = 0; t < 1000; t += 150) {
+        wave.step(150);
+        hits += waveStrikes([sw], wave, 14, 26, true).length;
+      }
+      expect([at, hits]).toEqual([at, 1]);
+    }
+  });
+
   it('cada onda lo cuenta una sola vez', () => {
     const sw = makeSwitch(30, -8);
     const wave = new LightWaveMotor(WAVE);
