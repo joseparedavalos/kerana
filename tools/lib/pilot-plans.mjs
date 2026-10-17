@@ -859,9 +859,10 @@ export const L7_SECRET = {
   aim: true,
   steps: [
     { run: -1, untilX: 93 },
-    // S36: sobre el hueco de la escalera (x 87-91): frenando en 91,7 a veces quedaba en el borde del piso, no caía y
-    // seguía por la calle (por eso fallaba el chequeo del sótano también en main).
-    { run: -1, untilX: 90.6 },
+    // S36: un salto medido al fondo del hueco de la escalera (x 87-91): frenando en x 91,7 a veces quedaba en el borde
+    // del piso y seguía por la calle (por eso fallaba el chequeo del sótano también en main); corriendo más, caía sobre
+    // el escalón (x 87-88) y cruzaba el sótano por arriba, sin pasar por la chipa.
+    { jumpTo: [90.5, 68] },
     { run: 1, untilX: 108.6 },
     { jumpTo: [105.8, 65] },
     { jumpTo: [107.6, 62] },

@@ -94,11 +94,13 @@ async function main() {
     await page.keyboard.up('ArrowRight');
   }
 
-  // S36: el nivel como la primera vez: sin sus chipas y con su hijo sin liberar (la puerta de la ofrenda, cerrada).
-  async function freshLevel(page, levelId, bossId) {
+  // S36: el nivel como la primera vez: sin sus chipas y con su hijo sin liberar (la puerta de la ofrenda, cerrada). Si
+  // el hijo ya estaba libre y su don es un corazón, ese corazón también se devuelve (la liberación lo vuelve a dar).
+  async function freshLevel(page, levelId, bossId, heartUp = false) {
     await page.evaluate(
-      (id, boss) => {
+      (id, boss, heart) => {
         const save = JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}');
+        if (heart && (save.freed ?? []).includes(boss)) save.maxHearts -= 1;
         save.freed = (save.freed ?? []).filter((b) => b !== boss);
         save.feathers = { ...(save.feathers ?? {}), [id]: [false, false, false] };
         localStorage.setItem('kerana.save.v1', JSON.stringify(save));
@@ -106,7 +108,20 @@ async function main() {
       },
       levelId,
       bossId,
+      heartUp,
     );
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 20000 });
+    await sleep(500);
+  }
+  // S36: el recorrido principal ya guardó las tres chipas: las pruebas sueltas de una chipa empiezan sin las del nivel.
+  async function clearChipas(page, levelId) {
+    await page.evaluate((id) => {
+      const save = JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}');
+      save.feathers = { ...(save.feathers ?? {}), [id]: [false, false, false] };
+      localStorage.setItem('kerana.save.v1', JSON.stringify(save));
+      window.__KERANA_READY__ = false;
+    }, levelId);
     await page.reload({ waitUntil: 'load' });
     await page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 20000 });
     await sleep(500);
@@ -306,6 +321,7 @@ async function main() {
     const l1High = await open('/?debug=1&level=1&god=1');
     await l1High.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l1High, 'l1');
     await l1High.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(102 * 16, 9 * 16));
     await sleep(300);
     const highStart = await l1High.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
@@ -490,7 +506,7 @@ async function main() {
     const l2Run = await open('/?debug=1&level=2&god=1');
     await l2Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    await freshLevel(l2Run, 'l2', 'mboi_tui');
+    await freshLevel(l2Run, 'l2', 'mboi_tui', true);
     const l2Info = await l2Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
       const groups = new Set(s.breakables.map((b) => b.group));
@@ -594,6 +610,7 @@ async function main() {
     const l2High = await open('/?debug=1&level=2&god=1');
     await l2High.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l2High, 'l2');
     await l2High.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(143.5 * 16, 26 * 16));
     await sleep(300);
     const l2HighStart = await l2High.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
@@ -619,6 +636,7 @@ async function main() {
     const l2Copa = await open('/?debug=1&level=2&god=1');
     await l2Copa.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l2Copa, 'l2');
     await l2Copa.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       d.player.body.reset(155.5 * 16, 18 * 16);
@@ -889,6 +907,7 @@ async function main() {
     const l3Cave = await open('/?debug=1&level=3&god=1');
     await l3Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l3Cave, 'l3');
     const calmJump = await l3Cave.evaluate(async () => {
       const d = window.__KERANA_DEBUG__;
       const z = d.scene.windZones.find((w) => w.zone.x === 189 * 16);
@@ -1075,6 +1094,7 @@ async function main() {
     const l4Cave = await open('/?debug=1&level=4&god=1');
     await l4Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l4Cave, 'l4');
     const corral0 = await l4Cave.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       // body.reset pone los pies (origen 0,5 1): 1 px sobre la repisa.
@@ -1109,6 +1129,7 @@ async function main() {
     const l4Niche = await open('/?debug=1&level=4&god=1');
     await l4Niche.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l4Niche, 'l4');
     const niche0 = await l4Niche.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       d.player.body.reset(95 * 16, 35 * 16 - 1);
@@ -1129,6 +1150,7 @@ async function main() {
     const l4Bell = await open('/?debug=1&level=4&god=1&gifts=all');
     await l4Bell.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l4Bell, 'l4');
     const bell0 = await l4Bell.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -1285,7 +1307,7 @@ async function main() {
     const l5Run = await open('/?debug=1&level=5&god=1');
     await l5Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    await freshLevel(l5Run, 'l5', 'kurupi');
+    await freshLevel(l5Run, 'l5', 'kurupi', true);
     const l5Info = await l5Run.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -1359,6 +1381,7 @@ async function main() {
     const l5Cave = await open('/?debug=1&level=5&god=1');
     await l5Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l5Cave, 'l5');
     const claro0 = await l5Cave.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       d.player.body.reset(192 * 16, 14 * 16 - 1);
@@ -1390,6 +1413,7 @@ async function main() {
     const l5Feathers = await open('/?debug=1&level=5&god=1');
     await l5Feathers.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l5Feathers, 'l5');
     const featherRun = async (x, row, plan) => {
       const before = await l5Feathers.evaluate(([px, r]) => {
         const d = window.__KERANA_DEBUG__;
@@ -1564,7 +1588,7 @@ async function main() {
     const l6Run = await open('/?debug=1&level=6&god=1');
     await l6Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
-    await freshLevel(l6Run, 'l6', 'ao_ao');
+    await freshLevel(l6Run, 'l6', 'ao_ao', true);
     const l6Info = await l6Run.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       const s = d.scene;
@@ -1739,6 +1763,7 @@ async function main() {
     const l6Cave = await open('/?debug=1&level=6&god=1');
     await l6Cave.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l6Cave, 'l6');
     const gruta0 = await l6Cave.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       d.player.body.reset(163 * 16, 15 * 16 - 1);
@@ -1772,6 +1797,7 @@ async function main() {
     const l6Feathers = await open('/?debug=1&level=6&god=1');
     await l6Feathers.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l6Feathers, 'l6');
     const l6FeatherRun = async (x, row, plan) => {
       const before = await l6Feathers.evaluate(([px, r]) => {
         const d = window.__KERANA_DEBUG__;
@@ -1996,6 +2022,7 @@ async function main() {
     const l7Cellar = await open('/?debug=1&level=7&god=1&gifts=all');
     await l7Cellar.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l7Cellar, 'l7');
     const cellar0 = await l7Cellar.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
       d.player.body.reset(99.5 * 16, 60 * 16 - 1);
@@ -2005,6 +2032,8 @@ async function main() {
     await sleep(300);
     await l7Cellar.evaluate(installPilot, L7_SECRET);
     for (let t = 0; t < 150000 && !(await pilot(l7Cellar)).done; t += 500) await sleep(500);
+    // S36: con los pies en el piso (el último salto de la trampilla a veces deja un rebote del buffer del salto).
+    for (let t = 0; t < 3000 && !(await l7Cellar.evaluate(() => window.__KERANA_DEBUG__.player.body.blocked.down)); t += 100) await sleep(100);
     const cellar = await l7Cellar.evaluate(() => ({
       done: window.__KERANA_PILOT__.done,
       respawns: window.__KERANA_PILOT__.respawns,
@@ -2027,6 +2056,7 @@ async function main() {
     const l7Feathers = await open('/?debug=1&level=7&god=1&gifts=all');
     await l7Feathers.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await clearChipas(l7Feathers, 'l7');
     const l7FeatherRun = async (x, row, plan) => {
       const before = await l7Feathers.evaluate(([px, r]) => {
         const d = window.__KERANA_DEBUG__;
