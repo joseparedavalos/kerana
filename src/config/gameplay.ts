@@ -1216,6 +1216,27 @@ export const GAMEPLAY = {
       fruitColor: 0xb5442c,
     },
   },
+  /**
+   * Audio (S37, GDD §10.4). La música se genera con ZzFX (src/data/music.ts) y cada pista se normaliza a
+   * `musicRms` antes de sonar: las diez quedan parejas. `musicGain` la deja por debajo de los efectos, que avisan.
+   */
+  audio: {
+    /** Volumen final de la música (con Opciones al 100 %), sobre la pista ya normalizada. */
+    musicGain: 0.04,
+    /** Intensidad (RMS) a la que se lleva cada pista; los picos se redondean por encima de `musicCeiling`. */
+    musicRms: 0.25,
+    musicCeiling: 0.85,
+    /** Muestras por segundo de la música: la mitad que los efectos alcanza y se genera el doble de rápido. */
+    musicSampleRate: 22050,
+    /** Fundidos (ms) al entrar y al salir una pista. */
+    fadeInMs: 1500,
+    fadeOutMs: 900,
+    /** Con un diálogo abierto la música baja a esta fracción, en `duckMs`. */
+    duckFactor: 0.35,
+    duckMs: 250,
+    /** Pistas generadas que se guardan en memoria (unos 2 MB cada una). */
+    cacheTracks: 4,
+  },
 } as const;
 
 export type GameplayConfig = typeof GAMEPLAY;

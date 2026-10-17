@@ -5,6 +5,7 @@ import { WORLD_LEVELS } from '../data/levels';
 import { TAU_ARRIVAL_SLIDES } from '../data/story';
 import type { LevelDef } from '../data/types';
 import { t } from '../i18n';
+import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
@@ -25,6 +26,7 @@ export class LevelCompleteScene extends Phaser.Scene {
 
   create(): void {
     setupView(this);
+    AudioManager.music('map');
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
@@ -94,8 +96,13 @@ export class LevelCompleteScene extends Phaser.Scene {
 
   override update(): void {
     this.inputs.update();
-    if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) this.goNext();
-    else if (this.inputs.justPressed('pause')) this.goMap();
+    if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) {
+      AudioManager.play('uiConfirm');
+      this.goNext();
+    } else if (this.inputs.justPressed('pause')) {
+      AudioManager.play('uiBack');
+      this.goMap();
+    }
   }
 
   /** El siguiente de la lista. Si no hay otro, Yvága, como hasta ahora. */
