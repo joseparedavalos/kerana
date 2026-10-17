@@ -413,7 +413,9 @@ export const L4_SECRET = {
   // Hasta el borde del henil caminando: la vaca se aborda desde ahí, cuando está en su punta.
   noGapJump: [[233.5, 235]],
   steps: [
-    { run: 1, untilX: 222.5 },
+    // S36: quieta antes del tajo cargado. Llegando a la carrera (el recorrido con las tres chipas), se deslizó un tile
+    // hasta el borde del segundo ascensor (x 224), que la subió al techo: la onda pasó por encima de la piedra.
+    { stop: 222.3 },
     { charge: 1 },
     // Cruza la ranura del segundo ascensor cuando está abajo (si no, al pasar lo puede levantar).
     { run: 1, wait: [224, 30], untilX: 233.6 },
@@ -430,7 +432,7 @@ export const L4_SECRET = {
 
 // S36: l4 con las tres chipas antes de la puerta de la ofrenda. A: en el patio del jagua, la onda a través de la reja y la
 // pared enciende la piedra del nicho. B: el potrero de la vaca guasu (L4_SECRET) desde la repisa del ascenso 2, que
-// termina en el segundo ascensor. C: arriba del campanario, el dash por encima de las dos espinas y de vuelta.
+// termina en el segundo ascensor. C: arriba del campanario, el dash por encima de la espina y de vuelta.
 export const L4_CHIPAS = {
   ...L4_MAIN,
   noGapJump: [...L4_MAIN.noGapJump, ...L4_SECRET.noGapJump],
@@ -884,7 +886,7 @@ export const L7_FEATHER_B = {
 };
 
 // Pluma C de l7 (S32): parada en el ascensor del ángel (x 469-471, fila 60), el tajo cargado: la onda enciende el farol de
-// la hornacina de la capilla (el sable no llega) y el ascensor (toggle) sube a la cornisa de la pluma.
+// la hornacina de la capilla (el sable no llega) y el ascensor sube a la cornisa de la pluma (S36: después va y viene).
 export const L7_FEATHER_C = {
   steps: [
     { charge: 1 },
@@ -918,6 +920,7 @@ L7_CHIPAS.steps = chain(
   [L7_FEATHER_C.steps],
   // De la cornisa al techo del mausoleo con un salto medido (corriendo, se pasaba y caía en la fosa común) y a la calle.
   { jumpTo: [460, 52] },
-  { run: 1, untilX: 467.5 },
+  // El ascensor ya va y viene: el salto a la capilla, con él abajo (a media altura podría caer sobre él).
+  { run: 1, wait: [469, 60], untilX: 467.5 },
   [L7_MAIN.steps, 49],
 );

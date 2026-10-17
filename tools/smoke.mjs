@@ -40,6 +40,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Pulsaciones (cada 300 ms) para pasar la liberación hasta "Nivel completado": el bucle corta apenas llega.
 // Con 60 (≈ 18 s) a veces no alcanzaba cuando el headless iba lento (falló una vez en l7, S18).
 const PRESS_MAX = 150;
+// Espacio solo con el diálogo abierto (S27, como en l1): Espacio también pasa "Nivel completado" y, con el juego lento,
+// un toque de más entraba al nivel siguiente (en l7, a la llegada de Tau) antes de que el chequeo lo viera (S36).
+const dialogueOpen = (page) => page.evaluate(() => window.__KERANA_DEBUG__?.scene.dialogueBox?.active ?? false);
 
 async function main() {
   const executablePath = findBrowser();
@@ -492,7 +495,7 @@ async function main() {
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l2Done = () => l2Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l2Done()); i++) {
-      await l2Page.keyboard.press('Space');
+      if (await dialogueOpen(l2Page)) await l2Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l2Done(), "Mbói Tu'i vencido → liberación → Nivel completado");
@@ -601,7 +604,7 @@ async function main() {
     console.log(`  l2 (ruta principal): ${(run2.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run2.splits)}`);
     await l2Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     for (let i = 0; i < PRESS_MAX && !(await l2Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); })); i++) {
-      await l2Run.keyboard.press('Space');
+      if (await dialogueOpen(l2Run)) await l2Run.keyboard.press('Space');
       await sleep(300);
     }
     check(await l2Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); }), 'nivel 2 recorrido → liberación → Nivel completado');
@@ -803,7 +806,7 @@ async function main() {
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l3Done = () => l3Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l3Done()); i++) {
-      await l3Page.keyboard.press('Space');
+      if (await dialogueOpen(l3Page)) await l3Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l3Done(), 'Moñái vencido → liberación → Nivel completado');
@@ -898,7 +901,7 @@ async function main() {
     console.log(`  l3 (ruta principal): ${(run3.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run3.splits)}`);
     await l3Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     for (let i = 0; i < PRESS_MAX && !(await l3Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); })); i++) {
-      await l3Run.keyboard.press('Space');
+      if (await dialogueOpen(l3Run)) await l3Run.keyboard.press('Space');
       await sleep(300);
     }
     check(await l3Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); }), 'nivel 3 recorrido → liberación → Nivel completado');
@@ -1085,7 +1088,7 @@ async function main() {
     await l4Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l4RunDone = () => l4Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l4RunDone()); i++) {
-      await l4Run.keyboard.press('Space');
+      if (await dialogueOpen(l4Run)) await l4Run.keyboard.press('Space');
       await sleep(300);
     }
     check(await l4RunDone(), 'nivel 4 recorrido → liberación → Nivel completado');
@@ -1296,7 +1299,7 @@ async function main() {
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l4Done = () => l4Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l4Done()); i++) {
-      await l4Page.keyboard.press('Space');
+      if (await dialogueOpen(l4Page)) await l4Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l4Done(), 'Jasy Jatere vencido → liberación → Nivel completado');
@@ -1375,7 +1378,7 @@ async function main() {
     await l5Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l5RunDone = () => l5Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l5RunDone()); i++) {
-      await l5Run.keyboard.press('Space');
+      if (await dialogueOpen(l5Run)) await l5Run.keyboard.press('Space');
       await sleep(300);
     }
     check(await l5RunDone(), 'nivel 5 recorrido → liberación → Nivel completado');
@@ -1471,7 +1474,7 @@ async function main() {
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l5Done = () => l5Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l5Done()); i++) {
-      await l5Page.keyboard.press('Space');
+      if (await dialogueOpen(l5Page)) await l5Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l5Done(), 'Kurupi vencido → liberación → Nivel completado');
@@ -1694,7 +1697,7 @@ async function main() {
     await l6Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l6RunDone = () => l6Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l6RunDone()); i++) {
-      await l6Run.keyboard.press('Space');
+      if (await dialogueOpen(l6Run)) await l6Run.keyboard.press('Space');
       await sleep(300);
     }
     check(await l6RunDone(), 'nivel 6 recorrido → liberación → Nivel completado');
@@ -1862,7 +1865,7 @@ async function main() {
     await l6Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l6Done = () => l6Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l6Done()); i++) {
-      await l6Page.keyboard.press('Space');
+      if (await dialogueOpen(l6Page)) await l6Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l6Done(), 'Ao Ao vencido → liberación → Nivel completado');
@@ -2018,7 +2021,7 @@ async function main() {
     await l7Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const l7RunDone = () => l7Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && s.isActive('LevelComplete'); });
     for (let i = 0; i < PRESS_MAX && !(await l7RunDone()); i++) {
-      await l7Run.keyboard.press('Space');
+      if (await dialogueOpen(l7Run)) await l7Run.keyboard.press('Space');
       await sleep(300);
     }
     check(await l7RunDone(), 'nivel 7 recorrido → liberación → Nivel completado');
@@ -2118,7 +2121,7 @@ async function main() {
     check(await l7Page.evaluate(() => window.__KERANA_DEBUG__.scene.darkness.candles), 'Luisón liberado: las velas se encienden');
     await l7Page.screenshot({ path: join(SHOTS, 'l7-candles.png') });
     for (let i = 0; i < PRESS_MAX && !(await l7Active('LevelComplete')); i++) {
-      await l7Page.keyboard.press('Space');
+      if (await dialogueOpen(l7Page)) await l7Page.keyboard.press('Space');
       await sleep(300);
     }
     check(await l7Active('LevelComplete'), 'Luisón vencido → liberación → Nivel completado');

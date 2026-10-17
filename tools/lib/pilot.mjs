@@ -128,6 +128,13 @@ export function installPilot(plan) {
     const dx = x - body().center.x;
     move(Math.abs(dx) <= 3 ? 0 : Math.sign(dx));
   };
+  // S36: como seek, pero suelta a tiempo para frenar ahí (en el aire frena a groundDecel × airControl = 1600 px/s²).
+  // Llegando a la carrera al hongo de la pluma C de l5, seek se podía pasar unos 10 px (frenado + margen) hacia las espinas.
+  const seekStop = (x) => {
+    const dx = x - body().center.x;
+    const vx = body().velocity.x;
+    move(Math.abs(dx) > 3 + (vx * vx) / 3200 ? Math.sign(dx) : 0);
+  };
   // Dash en el aire (S30): una vez por paso, después del salto doble si el paso lo pide, cerca del ápice.
   const dashInAir = (needDouble, dir = 0) => {
     // Con salto doble, en el ápice del segundo (en el mismo cuadro, el dash anularía el salto doble: vy = 0).
@@ -616,7 +623,7 @@ export function installPilot(plan) {
         } else {
           // S30: con hold, quieta sobre el hongo hasta el dash (la pluma C de l5: subiendo, ir hacia ella es tocar las
           // espinas de la pared); el dash sale hacia landX.
-          if (s.hold && s.dash && !st.dashed) seek(hx);
+          if (s.hold && s.dash && !st.dashed) seekStop(hx);
           else seek(s.landX * T);
           if (s.double && !grounded()) doubleAtApex();
           if (s.dash) dashInAir(!!s.double, s.hold ? Math.sign(s.landX * T - b.center.x) : 0);
