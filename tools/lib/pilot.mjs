@@ -40,6 +40,8 @@
 //   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
 //   hueco, salta hacia él.
 //   S36: bounce con afterDouble termina recién después del salto doble. { stop: x } se para quieta en esa x.
+//   S36: run con gust: [x, y] arranca recién con una ráfaga entera en esa zona de viento; con aimX, frena en el aire
+//   sobre esa x (con aim).
 //   { ensureChipa: i, back: n } vuelve n pasos atrás si la chipa i sigue en el mapa (repite un desvío que no la tocó).
 //   S32: strict con un número (ms) pide que a la plataforma le quede al menos esa espera en la punta (subirse a una
 //   balsa recién llegada con el juego lento).
@@ -256,7 +258,7 @@ export function installPilot(plan) {
     }
     if (wall || noFloor || spikes) {
       if (st.jumpCool <= 0) st.log.push(`salto en x ${tx.toFixed(1)}${wall ? ' pared' : ''}${noFloor ? ' hueco' : ''}${spikes ? ' espinas' : ''}`);
-      if (plan.aim && noFloor && !wall) st.aim = landingAim(dir, front, feet);
+      if (plan.aim && noFloor && !wall) st.aim = st.aimX ?? landingAim(dir, front, feet);
       startJump();
     }
   };
@@ -299,6 +301,8 @@ export function installPilot(plan) {
   const doStep = (s) => {
     const b = body();
     if (s.run !== undefined) {
+      // S36: aimX fija dónde frenar en el aire (la ráfaga de la cueva de l3 la lanza más allá del punto de siempre).
+      st.aimX = s.aimX !== undefined ? s.aimX * T : undefined;
       if (st.phase === 'start' && s.wait) {
         move(0);
         const mm = moverAt(s.wait).motor;
@@ -308,6 +312,13 @@ export function installPilot(plan) {
             ? (mm.dir === 1 && mm.pos > mm.length - 1.5 * T) || (mm.pos >= mm.length - 1 && mm.waitLeftMs > 800)
             : (mm.dir === -1 && mm.pos < 1.5 * T) || (mm.pos < 1 && mm.waitLeftMs > 800);
         if (!ready) return false;
+      }
+      // S36: con gust: [x, y], quieta hasta que en esa zona de viento empiece una ráfaga entera (la cueva de l3: el paso
+      // arrancaba con la ráfaga por terminar, frenaba en el borde y la ráfaga que se acababa la empujaba al pozo).
+      if (st.phase === 'start' && s.gust) {
+        move(0);
+        const z = scene.windZones.find((w) => w.zone.contains((s.gust[0] + 0.5) * T, (s.gust[1] + 0.5) * T));
+        if (!(z.cycle.phase === 'gust' && z.cycle.leftMs > 1500)) return false;
       }
       st.phase = 'run';
       if (s.untilMover && onThis(moverAt(s.untilMover), b)) {

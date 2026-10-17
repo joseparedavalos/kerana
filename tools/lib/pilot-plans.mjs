@@ -278,7 +278,13 @@ export const L3_SECRET = {
   noGapJump: [[215, 219]],
   steps: [
     { run: 1, wait: [181, 26], untilX: 186 },
-    { run: 1, untilTop: 29 },
+    // S36: cada pozo, desde quieta y con una ráfaga entera (`gust`). Arrancando con la ráfaga por terminar, frenaba en
+    // el borde y la ráfaga la empujaba al pozo; y la del pozo 1 la dejaba lanzada hacia el pozo 2 sin su ráfaga. Caía al
+    // túnel sin la pluma (en el smoke, 1 de cada 6; suelto, casi siempre).
+    { stop: 186.5 },
+    { run: 1, untilX: 198, gust: [189, 26], aimX: 197.2 },
+    { stop: 199 },
+    { run: 1, untilTop: 29, gust: [202, 26] },
     { run: -1, untilX: 178 },
   ],
 };
@@ -308,6 +314,8 @@ export const L3_CHIPAS = {
     ...L3_MAIN.steps.slice(11, 15),
     ...L3_SECRET.steps,
     L3_MAIN.steps[14],
+    // Si la cueva no pagó la pluma (cayó al túnel), del hongo a la repisa y otra vez, como una persona.
+    { ensureChipa: 1, back: 7 },
     // Ascensor, la barra, la rama alta, la meseta, el hongo dormido y las pencas del ascenso 3.
     ...L3_MAIN.steps.slice(15, 28),
     { run: 1, untilX: 275.5 },
@@ -448,8 +456,11 @@ export const L4_CHIPAS = {
     // Techo del galpón, casa Z, plaza, campanario.
     [L4_MAIN.steps, 25, 36],
     { run: -1, untilX: 307.4 },
-    { dash: -1, from: 306.6 },
-    // De vuelta, desde donde quedó (pegada a la pared): con from 303,6 el cuerpo ya tocaba la primera espina.
+    // El dash (3,2 tiles) termina contra la pared (centro en 303,5) si sale con el centro entre 305,5 (más a la
+    // izquierda, el cuerpo toca la espina de x 304) y 306,7: al medio. Con 306,6 (era el punto con dos espinas), a
+    // ±6 px salía pasado y, con el juego lento, el dash corto la dejaba sobre la espina (S36: una caída en el smoke).
+    { dash: -1, from: 306.0 },
+    // De vuelta, desde donde quedó (pegada a la pared): con from 303,6 el cuerpo ya tocaba la espina.
     { dash: 1 },
     // La cadena de bajada, la galería de las tejas y la antesala.
     [L4_MAIN.steps, 36],

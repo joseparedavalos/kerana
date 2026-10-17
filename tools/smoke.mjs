@@ -936,18 +936,25 @@ async function main() {
     for (let t = 0; t < 15000 && !(await pilot(l3Cave)).done; t += 250) await sleep(250);
     const calmEnd = await l3Cave.evaluate(() => window.__KERANA_DEBUG__.player.body.bottom / 16);
     check(calmJump && calmEnd > 30, `nivel 3: en la cueva, el salto en calma no cruza el pozo de 8 y cae al túnel de abajo (pies en la fila ${calmEnd.toFixed(1)})`);
-    await l3Cave.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(178.5 * 16, 23.3 * 16));
-    await l3Cave.waitForFunction(() => { const m = window.__KERANA_DEBUG__.scene.movers.find((mv) => mv.zone.x === 181 * 16); return m.motor.pos < 1 && m.motor.waitLeftMs > 300; }, { timeout: 30000, polling: 50 });
-    await l3Cave.screenshot({ path: join(SHOTS, 'l3-cueva.png') });
     const caveStart = await l3Cave.evaluate(() => window.__KERANA_DEBUG__.scene.feathers);
-    await l3Cave.evaluate(installPilot, L3_SECRET);
-    for (let t = 0; t < 120000 && !(await pilot(l3Cave)).done; t += 500) await sleep(500);
-    const cave = await l3Cave.evaluate(() => ({ done: window.__KERANA_PILOT__.done, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16), feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16), timeMs: Math.round(window.__KERANA_PILOT__.timeMs) }));
+    // S36: hasta tres intentos desde la repisa, como una persona. Con el juego lento (≈ 12 FPS) Kerana aterriza del pozo 1
+    // lanzada por la ráfaga y no frena en el piso del medio (5 tiles): cae al túnel, que la devuelve al pie, sin la pluma.
+    let cave;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await l3Cave.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(178.5 * 16, 23.3 * 16));
+      await l3Cave.waitForFunction(() => { const m = window.__KERANA_DEBUG__.scene.movers.find((mv) => mv.zone.x === 181 * 16); return m.motor.pos < 1 && m.motor.waitLeftMs > 300; }, { timeout: 30000, polling: 50 });
+      if (attempt === 1) await l3Cave.screenshot({ path: join(SHOTS, 'l3-cueva.png') });
+      await l3Cave.evaluate(installPilot, L3_SECRET);
+      for (let t = 0; t < 120000 && !(await pilot(l3Cave)).done; t += 500) await sleep(500);
+      cave = await l3Cave.evaluate(() => ({ done: window.__KERANA_PILOT__.done, hud: window.__KERANA_DEBUG__.scene.feathers, respawns: window.__KERANA_PILOT__.respawns, x: Math.round(window.__KERANA_DEBUG__.player.x / 16), feet: Math.round(window.__KERANA_DEBUG__.player.body.bottom / 16), timeMs: Math.round(window.__KERANA_PILOT__.timeMs) }));
+      cave.attempt = attempt;
+      if (cave.hud === caveStart + 1) break;
+      console.log((await l3Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
+    }
     check(
       cave.done && cave.hud === caveStart + 1 && cave.respawns === 0 && cave.feet === 33 && cave.x < 184,
       `nivel 3: la cueva del viento se cruza con la ráfaga a favor, paga la pluma B y devuelve al pie del ascenso (${JSON.stringify(cave)})`,
     );
-    if (!cave.done || cave.hud !== caveStart + 1) console.log((await l3Cave.evaluate(() => window.__KERANA_PILOT__.log)).slice(-30).join('\n'));
     console.log(`  l3 (cueva del viento): ${(cave.timeMs / 1000).toFixed(1)} s de juego desde la repisa del ascenso 2 hasta volver al pie`);
     await l3Cave.close();
 
