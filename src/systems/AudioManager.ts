@@ -2,6 +2,7 @@ import { GAMEPLAY } from '../config/gameplay';
 import { BOSS_LAYER, INSTRUMENTS, TRACKS, type MusicKey, type TrackId } from '../data/music';
 import { bossVariant, normalize, peak, renderTrack, rms, type TrackDef } from './musicLogic';
 import { SaveManager } from './SaveManager';
+import type { MusicJob, MusicResult } from './musicWorker';
 import { SFX_PRESETS, type SfxKey } from './sfxPresets';
 
 // AudioManager (GDD §10.4): efectos y música, los dos generados por código con ZzFX.
@@ -219,7 +220,49 @@ export class AudioManager {
     return job;
   }
 
-  private static async renderSamples(def: TrackDef): Promise<Float32Array> {
+  private static worker: Worker | null | undefined;
+  private static nextJob = 0;
+  private static readonly jobs = new Map<number, { resolve: (s: Float32Array) => void; reject: (e: Error) => void }>();
+
+  /** Genera en el worker; si el navegador no lo deja, en el hilo principal (en pedazos). */
+  private static renderSamples(def: TrackDef): Promise<Float32Array> {
+    const worker = this.musicWorker();
+    if (!worker) return this.renderHere(def);
+    const id = ++this.nextJob;
+    const job: MusicJob = { id, def, sampleRate: CFG.musicSampleRate, rms: CFG.musicRms, ceiling: CFG.musicCeiling };
+    return new Promise<Float32Array>((resolve, reject) => {
+      this.jobs.set(id, { resolve, reject });
+      worker.postMessage(job);
+    }).catch(() => this.renderHere(def));
+  }
+
+  private static musicWorker(): Worker | null {
+    if (this.worker !== undefined) return this.worker;
+    try {
+      const worker = new Worker(new URL('./musicWorker.ts', import.meta.url), { type: 'module' });
+      worker.onmessage = (e: MessageEvent<MusicResult>) => {
+        const job = this.jobs.get(e.data.id);
+        if (!job) return;
+        this.jobs.delete(e.data.id);
+        if ('samples' in e.data) job.resolve(e.data.samples);
+        else job.reject(new Error(e.data.error));
+      };
+      // Si el worker no arranca, lo pendiente y lo que venga se genera acá.
+      worker.onerror = (e) => {
+        e.preventDefault();
+        this.worker = null;
+        worker.terminate();
+        for (const job of this.jobs.values()) job.reject(new Error('worker'));
+        this.jobs.clear();
+      };
+      this.worker = worker;
+    } catch {
+      this.worker = null;
+    }
+    return this.worker;
+  }
+
+  private static async renderHere(def: TrackDef): Promise<Float32Array> {
     const { ZZFX } = await this.zzfxModule();
     const synth = (params: number[]) => {
       // ZzFX genera a su `sampleRate`; se cambia solo mientras dura esta nota (los efectos siguen a 44,1 kHz).
@@ -266,6 +309,7 @@ export class AudioManager {
       started: [...this.started],
       failures: [...this.failures],
       busGain: this.musicBus?.gain.value ?? 0,
+      renderer: this.worker ? 'worker' : this.worker === null ? 'hilo principal' : 'sin usar',
     };
   }
 

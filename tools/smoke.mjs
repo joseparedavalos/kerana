@@ -187,7 +187,10 @@ async function main() {
     check(true, 'Título → Nueva partida → Prólogo');
     await title.bringToFront();
     const storyMusic = await waitMusic(title, 'title');
-    check(storyMusic?.playing === 'title' && storyMusic.gestured, `música: con la primera tecla arranca el canto de Eichu (${storyMusic?.context})`);
+    check(
+      storyMusic?.playing === 'title' && storyMusic.gestured && storyMusic.renderer === 'worker',
+      `música: con la primera tecla arranca el canto de Eichu, generado fuera del hilo del juego (${storyMusic?.context}, ${storyMusic?.renderer})`,
+    );
     // Mantener Pausa salta el prólogo entero: se mantiene hasta que aparece el mapa (con 700 ms fijos fallaba en máquinas lentas).
     await title.keyboard.down('Escape');
     for (let t = 0; t < 5000 && !(await title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false)); t += 100) await sleep(100);
