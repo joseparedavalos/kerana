@@ -1452,7 +1452,7 @@ async function main() {
       if (!after.done || after.respawns > 0) console.log((await l5Feathers.evaluate(() => window.__KERANA_PILOT__.log)).slice(-20).join('\n'));
       return { before, ...after };
     };
-    const featherA = await featherRun(35.5, 92, { steps: [{ bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true, afterDouble: true }] });
+    const featherA = await featherRun(35.5, 92, { steps: [{ bounce: [39, 90], via: [[46, 90]], landX: 47, landTop: 92, double: true, afterDouble: true }] });
     check(featherA.done && featherA.respawns === 0 && featherA.feathers === featherA.before + 1, `nivel 5: la pluma A se cobra rebotando en el hongo de un uso de la cadena (${JSON.stringify(featherA)})`);
     // Cae sobre el hongo desde arriba (sin cruzar el hueco del ascensor de la copa 7, que puede estar abajo).
     const featherC = await featherRun(228, 11, { steps: [{ bounce: [227, 13], landX: 231.5, landTop: 14, double: true, dash: true, hold: true }] });

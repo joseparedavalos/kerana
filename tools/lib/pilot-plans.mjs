@@ -581,8 +581,11 @@ export const L5_CHIPAS = {
   ...L5_MAIN,
   steps: chain(
     [L5_MAIN.steps, 0, 3],
-    { bounce: [39, 90], via: [[46, 90]], landX: 46.5, landTop: 92, double: true, afterDouble: true },
-    { bounce: [53, 90], landX: 61, landTop: 92 },
+    // Cae al medio del tallo (x 46-47): con landX 46,5 a veces tocaba el karaguatá de x 45.
+    { bounce: [39, 90], via: [[46, 90]], landX: 47, landTop: 92, double: true, afterDouble: true },
+    // Parada en el tallo del hongo de un uso (desinflado), espera a que se vuelva a inflar (3 s): rebota y sigue por el
+    // hongo de x 53. Desde el tallo, un salto común no llega al de x 53 y cae en el karaguatá (S36: en bucle en un smoke).
+    { bounce: [46, 90], via: [[53, 90]], landX: 61, landTop: 92 },
     // Las ramas del pozo, el tronco, los ascensores, la reja de raíces, el compás y el dosel hasta la copa 6.
     [L5_MAIN.steps, 4, 46],
     [L5_SECRET.steps],
