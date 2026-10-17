@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
+import { AudioManager } from '../systems/AudioManager';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { InputManager } from '../systems/InputManager';
 import { setupView, VIEW } from '../systems/View';
@@ -45,10 +46,19 @@ export class PauseScene extends Phaser.Scene {
 
   override update(): void {
     this.inputs.update();
-    if (this.inputs.justPressed('down')) this.selected = (this.selected + 1) % this.items.length;
-    else if (this.inputs.justPressed('up')) this.selected = (this.selected - 1 + this.items.length) % this.items.length;
-    else if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) this.items[this.selected].action();
-    else if (this.inputs.justPressed('pause')) this.resumeLevel();
+    if (this.inputs.justPressed('down')) {
+      this.selected = (this.selected + 1) % this.items.length;
+      AudioManager.play('uiMove');
+    } else if (this.inputs.justPressed('up')) {
+      this.selected = (this.selected - 1 + this.items.length) % this.items.length;
+      AudioManager.play('uiMove');
+    } else if (this.inputs.justPressed('confirm') || this.inputs.justPressed('jump')) {
+      AudioManager.play('uiConfirm');
+      this.items[this.selected].action();
+    } else if (this.inputs.justPressed('pause')) {
+      AudioManager.play('uiBack');
+      this.resumeLevel();
+    }
     this.refresh();
   }
 

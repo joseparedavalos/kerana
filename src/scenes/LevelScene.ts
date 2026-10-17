@@ -6,6 +6,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import { liberationDialogue } from '../data/dialogues';
 import { getLevel, WORLD_LEVELS } from '../data/levels';
+import { bossTrack, levelTrack } from '../data/music';
 import { endingSlides } from '../data/story';
 import type { BossId, LevelDef, LevelId } from '../data/types';
 import { createBoss, type Boss, type BossContext } from '../entities/bosses';
@@ -148,6 +149,7 @@ export class LevelScene extends Phaser.Scene {
   private arenaLuz?: Pickup;
   private arenaLuzUsed = false;
   private lastPlayerState: PlayerStateName = 'idle';
+  private lastAirJumped = false;
   private wasImmune = false;
   private readonly safeGround = new Phaser.Math.Vector2();
   /** Red de seguridad (S23): 1 = piso encerrado (celda de los pies); el reloj corre mientras Kerana está en uno. */
@@ -253,6 +255,7 @@ export class LevelScene extends Phaser.Scene {
     this.arenaLuz = undefined;
     this.arenaLuzUsed = false;
     this.lastPlayerState = 'idle';
+    this.lastAirJumped = false;
     this.levelExitZone = undefined;
     this.completing = false;
     this.breakables = [];
@@ -304,6 +307,7 @@ export class LevelScene extends Phaser.Scene {
       this.scene.start(this.def.order > 0 ? 'Map' : 'Title');
       return;
     }
+    AudioManager.music(levelTrack(this.def.id));
     this.inputs = new InputManager(this);
     this.enemies = [];
     this.pickups = [];
@@ -503,6 +507,7 @@ export class LevelScene extends Phaser.Scene {
     // Al volver de la pausa (y de Opciones) se relee el modo asistido: se puede cambiar en cualquier momento.
     this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      AudioManager.duck(false);
       this.touchControls?.destroy();
       this.scene.stop('UI');
       SaveManager.persist();
@@ -769,6 +774,7 @@ export class LevelScene extends Phaser.Scene {
     this.fighting = true;
     this.arena!.lock(this.cameras.main);
     AudioManager.play('arenaLock');
+    AudioManager.music(bossTrack(this.def.id));
     this.shake(GAMEPLAY.boss.lockShakeMs, GAMEPLAY.boss.lockShakeIntensity);
     this.boss!.begin();
     this.syncArenaLuz();
@@ -811,6 +817,7 @@ export class LevelScene extends Phaser.Scene {
   private resetBossFight(): void {
     if (!this.fighting) return;
     this.fighting = false;
+    AudioManager.music(levelTrack(this.def.id));
     this.boss?.resetFight();
     this.arena?.unlock(this.cameras.main, this.map.widthInPixels, this.map.heightInPixels);
     this.clearOneShotHazards();
@@ -825,6 +832,8 @@ export class LevelScene extends Phaser.Scene {
     const boss = this.boss!;
     this.cutscene = true;
     this.fighting = false;
+    // Silencio para que el arpegio de la liberación se oiga solo; "Nivel completado" trae la del mapa.
+    AudioManager.music(null);
     this.clearOneShotHazards();
     this.clearFlowers();
     this.clearBossMinions();
@@ -978,23 +987,45 @@ export class LevelScene extends Phaser.Scene {
     riders.push(this.player.body);
     for (const enemy of this.enemies) if (enemy.active && !enemy.purified && isGroundedEnemy(enemy)) riders.push(enemy.body);
     for (const cow of this.cows) cow.tick(deltaMs, riders);
-    for (const m of this.movers) m.update(deltaMs, riders);
+    const view = this.cameras.main.worldView;
+    for (const m of this.movers) {
+      const wasMoving = m.motor.moving;
+      m.update(deltaMs, riders);
+      // Arranque de una plataforma que espera un disparador o que se manda sola una vez (las de vaivén, no: sonarían siempre).
+      if (!wasMoving && m.motor.moving && m.motor.mode !== 'loop' && Phaser.Geom.Rectangle.Overlaps(view, m.zone)) AudioManager.play('moverStart');
+    }
   }
 
   /** Disparadores: tiempo de los temporizados, energía a sus objetivos y rejas que esperan para cerrarse. */
   private updateSwitches(deltaMs: number): void {
     if (this.switches.length === 0 && this.gates.length === 0 && this.lanterns.length === 0) return;
-    for (const sw of this.switches) sw.update(deltaMs);
+    for (const sw of this.switches) {
+      const before = sw.state;
+      sw.update(deltaMs);
+      if (sw.state === 'closing' && before !== 'closing') AudioManager.play('switchWarn');
+    }
     this.switchBoard.update();
     const blockers = this.gateBlockers;
     blockers.length = 0;
     blockers.push(this.playerRect);
-    for (const g of this.gates) g.update(blockers);
+    for (const g of this.gates) {
+      const wasOpen = g.isOpen;
+      g.update(blockers);
+      this.gateSound(g, wasOpen);
+    }
   }
 
   private hitSwitch(sw: Switch): void {
-    if (sw.hit()) AudioManager.play('lantern');
+    if (sw.hit()) AudioManager.play('switchOn');
+    const open = this.gates.map((g) => g.isOpen);
     this.switchBoard.update();
+    this.gates.forEach((g, i) => this.gateSound(g, open[i]));
+  }
+
+  /** La reja suena al abrirse y al cerrarse, si se ve. */
+  private gateSound(gate: Gate, wasOpen: boolean): void {
+    if (gate.isOpen === wasOpen || !Phaser.Geom.Rectangle.Overlaps(this.cameras.main.worldView, gate.zone)) return;
+    AudioManager.play(gate.isOpen ? 'gateOpen' : 'gateClose');
   }
 
   /** El sable enciende los Switch y despierta (solo cargado) a los hongos dormidos. */
@@ -1328,7 +1359,7 @@ export class LevelScene extends Phaser.Scene {
       if (b.broken || this.player.hasHitThisSwing(b) || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
       this.player.markHitThisSwing(b);
       if (b.needsCharge && !this.player.motor.chargedSwing) {
-        AudioManager.play('hit');
+        AudioManager.play('blocked');
         continue;
       }
       b.hitsLeft -= 1;
@@ -1396,7 +1427,7 @@ export class LevelScene extends Phaser.Scene {
     for (const obj of hit.look) obj.destroy();
     hit.look.length = 0;
     this.dropPickupsFrom(hit.group);
-    AudioManager.play('rockBreak');
+    AudioManager.play(hit.kind === 'liana' ? 'vineSnap' : 'rockBreak');
     this.shake(80, 0.004);
   }
 
@@ -1469,7 +1500,10 @@ export class LevelScene extends Phaser.Scene {
   private updateLuzArasyHud(): void {
     const active = this.player.isImmune;
     if (active) EventBus.emit(GameEvents.luzArasyChanged, true, this.player.luzArasyFraction);
-    else if (this.wasImmune) EventBus.emit(GameEvents.luzArasyChanged, false, 0);
+    else if (this.wasImmune) {
+      EventBus.emit(GameEvents.luzArasyChanged, false, 0);
+      AudioManager.play('luzArasyEnd');
+    }
     this.wasImmune = active;
   }
 
@@ -1936,6 +1970,8 @@ export class LevelScene extends Phaser.Scene {
       AudioManager.play('hurt');
       this.hitStop(GAMEPLAY.hitStop.onHurtMs);
     }
+    // La red de seguridad avisa que fue ella la que sacó a Kerana del encierro.
+    if (reason === 'trap') AudioManager.play('rescue');
     if (this.player.health.isDead) this.koRespawn();
     else {
       const spot = this.respawnSpot();
@@ -2098,6 +2134,7 @@ export class LevelScene extends Phaser.Scene {
       AudioManager.play('feather');
     } else if (event === 'opened') {
       door.open();
+      AudioManager.play('offeringOpen');
       AudioManager.play('leaves');
     }
     const talking = motor.state === 'offering' || (near && motor.state === 'closed');
@@ -2138,6 +2175,10 @@ export class LevelScene extends Phaser.Scene {
 
   private reportPlayerStateSfx(): void {
     const state = this.player.motor.state;
+    // El salto doble no cambia de estado: se oye por su cuenta.
+    const airJumped = this.player.motor.airJumped;
+    if (airJumped && !this.lastAirJumped) AudioManager.play('doubleJump');
+    this.lastAirJumped = airJumped;
     if (state === this.lastPlayerState) return;
     if (state === 'jump') AudioManager.play('jump');
     else if (state === 'dash') AudioManager.play('dash');

@@ -66,7 +66,27 @@ export type SfxKey =
   | 'mooGuasu'
   | 'lightWave'
   // Nivel 7: farol que se enciende.
-  | 'lantern';
+  | 'lantern'
+  // S37: lo que faltaba. Salto doble y fin de la Luz de Arasy (GDD §10.3), menús, aviso genérico de jefe,
+  // piezas del nivel (disparador, reja, plataforma, puerta de las chipas, liana, roca que pide el tajo cargado)
+  // y la red de seguridad.
+  | 'doubleJump'
+  | 'luzArasyEnd'
+  | 'uiMove'
+  | 'uiConfirm'
+  | 'uiBack'
+  | 'bossWarn'
+  | 'switchOn'
+  | 'switchWarn'
+  | 'gateOpen'
+  | 'gateClose'
+  | 'moverStart'
+  | 'offeringOpen'
+  | 'vineSnap'
+  | 'blocked'
+  | 'rescue'
+  // El aullido de Luisón (GDD §10.3), más grave y largo que el «ao, ao».
+  | 'luisonHowl';
 
 // [volumen, aleatoriedad, frecuencia, ataque, sostenido, caída, forma, curva, slide, deltaSlide,
 //  saltoDeTono, tiempoSaltoDeTono, repetición, ruido, modulación, bitCrush, delay, sostenidoVol, decay, tremolo]
@@ -127,4 +147,26 @@ export const SFX_PRESETS: Record<SfxKey, number[]> = {
   lightWave: [0.6, 0.02, 800, 0.01, 0.1, 0.25, 0, 1, 12, 0, 200, 0.05, 0, 0, 0, 0, 0, 0.5, 0.08],
   lantern: [0.5, 0.02, 520, 0.01, 0.06, 0.2, 0, 1, 0, 0, 300, 0.04, 0, 0, 0, 0, 0, 0.6, 0.05],
   sink: [0.6, 0.1, 160, 0.03, 0.12, 0.2, 0, 1, -6, 0, 0, 0, 0, 0.4, 0, 0, 0, 0.5, 0.06],
+  // S37
+  doubleJump: [0.8, 0.05, 480, 0.02, 0.05, 0.1, 0, 1.4, 6, 0, 200, 0.04, 0, 0, 0, 0, 0, 0.4, 0.05],
+  luzArasyEnd: [0.6, 0.05, 660, 0.02, 0.15, 0.3, 0, 1, 0, 0, -220, 0.1, 0, 0, 0, 0, 0, 0.6, 0.1],
+  uiMove: [0.4, 0, 880, 0, 0.01, 0.04, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.01],
+  uiConfirm: [0.5, 0, 660, 0, 0.03, 0.12, 0, 1, 0, 0, 330, 0.04, 0, 0, 0, 0, 0, 0.6, 0.02],
+  uiBack: [0.45, 0, 520, 0, 0.03, 0.1, 0, 1, 0, 0, -130, 0.04, 0, 0, 0, 0, 0, 0.6, 0.02],
+  // Aviso genérico de jefe: un serrucho grave que sube una cuarta. No se parece a ningún otro.
+  bossWarn: [0.8, 0.02, 220, 0.01, 0.2, 0.15, 2, 1.5, 0, 0, 110, 0.08, 0, 0.2, 0, 0, 0, 0.7, 0.05, 0, -1800],
+  switchOn: [0.7, 0.02, 980, 0, 0.04, 0.18, 0, 1, 0, 0, 490, 0.03, 0, 0, 0, 0, 0, 0.5, 0.02],
+  // Tic-tac del disparador con tiempo que se está por apagar.
+  switchWarn: [0.4, 0, 1200, 0, 0.5, 0.05, 1, 1, 0, 0, 0, 0, 0.12, 0, 0, 0, 0, 0.6, 0, 1],
+  gateOpen: [0.6, 0.1, 90, 0.05, 0.3, 0.15, 4, 1, 2, 0, 0, 0, 0, 1.5, 0, 0.1, 0, 0.5, 0.05],
+  gateClose: [0.7, 0.1, 70, 0.02, 0.2, 0.2, 4, 1, -2, 0, 0, 0, 0, 1.5, 0, 0.2, 0, 0.5, 0.05],
+  moverStart: [0.5, 0.1, 140, 0.01, 0.08, 0.12, 1, 1.5, 4, 0, 0, 0, 0, 0.4, 0, 0, 0, 0.5, 0.03],
+  // Las raíces de la ofrenda se recogen: un arpegio que sube (además del crujido de hojas).
+  offeringOpen: [0.7, 0.02, 392, 0.02, 0.3, 0.5, 0, 1, 0, 0, 196, 0.1, 0.1, 0, 0, 0, 0.08, 0.6, 0.1],
+  vineSnap: [0.6, 0.2, 600, 0, 0.02, 0.1, 4, 1, -40, 0, 0, 0, 0, 1, 0, 0, 0, 0.4, 0.01],
+  // La roca agrietada no cede sin el tajo cargado: golpe sordo, distinto del golpe a un enemigo.
+  blocked: [0.7, 0.05, 240, 0, 0.03, 0.12, 3, 1, 0, 0, -60, 0.02, 0, 0.3, 0, 0.2, 0, 0.5, 0.02],
+  // La red de seguridad saca a Kerana de un encierro.
+  rescue: [0.6, 0.05, 300, 0.05, 0.15, 0.25, 0, 1, 10, 0, 150, 0.12, 0, 0, 0, 0, 0, 0.6, 0.05],
+  luisonHowl: [0.9, 0.05, 150, 0.12, 0.5, 0.4, 0, 1, 0, 0, -40, 0.3, 0.35, 0, 4, 0, 0, 0.75, 0.2],
 };
