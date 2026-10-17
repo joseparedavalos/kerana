@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 16 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 87). Al día con S36.
+Revisado el 17 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 92). Al día con S37.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -29,12 +29,16 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - El GDD dice el orden de publicación correcto: itch.io, después Google Play, después Steam (S35). `CLAUDE.md` y la línea «Futuro» del GDD, también (S36).
 - Las tres chipas del nivel abren el paso a la antesala (S36). Una cortina de raíces con una tablita que muestra cuántas lleva Kerana; Mainumby dice cuántas faltan; con las tres se entregan y el paso se abre. Desde la pausa se puede volver a buscar las que faltan. Las partidas viejas con el hijo ya libre encuentran el paso abierto. La chipa A de l2 y la C de l3 piden ahora un desvío de verdad. El ascensor de la chipa C de l7 va y viene: si se iba sin Kerana, la chipa se perdía.
 
+- Hay música (S37): diez piezas generadas por código (título, mapa, cada nivel y Yvága) y una variante tensa para cada jefe. Fundidos, más baja en los diálogos, pausa sin foco y arranque con el primer toque. Volumen de música y de efectos por separado en Opciones. Todo aviso de jefe suena, y suenan la puerta de las chipas, los disparadores, las rejas, las plataformas, las lianas, la roca que pide el tajo cargado, la red de seguridad, el salto doble y los menús.
+
 ## Ahora
 
-1. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
-2. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
-3. Publicar en itch.io (los pasos, abajo).
-4. Google Play, con el feedback de itch.io (los pasos, abajo).
+1. Escuchar la música (Jose) y ajustarla en `src/data/music.ts`: Claude no puede oír. Volumen y fundidos en `GAMEPLAY.audio`. Faltan el remate de la liberación (hoy calla la música) y el tema del final (hoy suena el del título).
+2. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
+3. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
+4. El smoke no siempre pasa tres veces seguidas en el contenedor (S37): con el juego a menos de ≈ 10 FPS el piloto se traba en el paso 1 de l2 (también sin música) y alguna vez en la copa 3 de l3. No es del juego: es el piloto, afinado para 10-12 FPS. Detalle en las notas de S37.
+5. Publicar en itch.io (los pasos, abajo).
+6. Google Play, con el feedback de itch.io (los pasos, abajo).
 
 ## itch.io
 

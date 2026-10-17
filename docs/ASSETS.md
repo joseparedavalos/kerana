@@ -282,11 +282,11 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 ## 9. Audio
 
-- **Música** (`public/assets/audio/music/*.mp3`, 128 kbps):
-  - MVP: `title.mp3`, `level.mp3` (genérica), `boss.mp3`.
-  - Núcleo: `l1.mp3` a `l7.mp3`, `liberation.mp3` (5 a 8 s), `ending.mp3`.
+- **Música, hoy (S37): generada por código con ZzFX, sin archivos.** Diez piezas en `src/data/music.ts`: título («Canto de Eichu»), mapa, `l1` a `l7` y Yvága (la pelea con Tau incluida). Cada jefe usa una variante tensa de la pista de su nivel (`l1_boss`…), que el código arma sola. Pesan unos 18 KB de código (6 KB comprimidos) y no hay licencias que revisar. Se generan al entrar a la escena (≈ 0,3 s, en un Web Worker para no trabar el juego) y se guardan en memoria las últimas cuatro.
+  - Para cambiar una pieza: notas, instrumentos y tempo en `src/data/music.ts` (el formato de los patrones está en `src/systems/musicLogic.ts`). Volúmenes y fundidos en `GAMEPLAY.audio`. Cada pista se normaliza sola: las diez suenan parejas.
+- **Música, más adelante:** si llegan grabaciones (`public/assets/audio/music/*.mp3`, 128 kbps), el `AudioManager` las puede tomar en lugar de la pista generada sin tocar las escenas; las escenas piden una clave (`title`, `map`, `l1`…, `l1_boss`…). Falta todavía: la liberación (5 a 8 s; hoy es el efecto `liberation`) y el tema del final y los créditos (hoy, el del título).
   - Dirección musical en GDD §10.1.
-- **De dónde sacarla:** bibliotecas libres de derechos (revisa uso comercial y atribución), generadores de música con IA (revisa la licencia del plan que uses), o un músico local: un arpa paraguaya real le daría mucha identidad.
+- **De dónde sacar grabaciones:** bibliotecas libres de derechos (revisa uso comercial y atribución), generadores de música con IA (revisa la licencia del plan que uses), o un músico local: un arpa paraguaya real le daría mucha identidad.
 - **Efectos:** al principio, generados por código con ZzFX (sin archivos). Para reemplazarlos: Kenney (packs de audio CC0) o freesound.org (revisa la licencia de cada sonido).
 
 ---
@@ -300,7 +300,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Mainumby aleteando (`fly_8x1`) | Núcleo | S13c | ☑ |
 | Mainumby | Núcleo | S4 | ☐ |
 | Fuentes (con prueba de caracteres) | MVP | S4 | ☐ |
-| 3 pistas de música (title, level, boss) | MVP | S5 | ☐ |
+| 3 pistas de música (title, level, boss) | MVP | S5 | ☑ (S37: por código; título, una por nivel y variante de jefe) |
 | Teju Jagua (cabeza) + silueta del cuerpo | MVP | S6 | ☐ |
 | teju_i, mbopi | MVP | S6 | ☐ |
 | Mbói Tu'i + jakare, nakurutu, mboi | MVP | S7 | ☐ |
@@ -316,7 +316,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 | Logo y mapa del mundo | Núcleo | S13 | ☐ |
 | Iconos y props de interfaz | Núcleo | S13 | ◐ (corazones, chipa, tereré, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
 | Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas; S20: cuerpo más chico, onda del coletazo y señal de cabeza expuesta) |
-| Música de niveles (7), liberación y final | Núcleo | S13 | ☐ |
+| Música de niveles (7), liberación y final | Núcleo | S13 | ◐ (S37: los siete niveles y Yvága, por código; faltan la liberación y el tema del final) |
 | Tau (disfraz y forma real) + `yvaga_far.png` y `final.png` | MVP | S12c | ☐ |
 
 Si un asset no está listo cuando llega su sesión, **no pasa nada**: Claude usa un placeholder y lo anota. Se integra después (S13).
