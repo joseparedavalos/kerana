@@ -881,8 +881,11 @@ export const L7_SECRET = {
     // el escalón (x 87-88) y cruzaba el sótano por arriba, sin pasar por la chipa.
     { jumpTo: [90.5, 68] },
     { run: 1, untilX: 108.6 },
-    { jumpTo: [105.8, 65] },
-    { jumpTo: [107.6, 62] },
+    // S37: del piso del sótano, salto doble recto por la abertura de x 108 hasta la repisa de la fila 62 (llega a la
+    // fila 61: no pasa la trampilla). Antes subía por el tablón de x 105-106 y saltaba a x 107,6, bajo el borde del
+    // techo: daba contra él, o llegaba a x 105,0 (a más de 2,5 tiles), caminaba, se caía al fondo y ya no salía. En
+    // este contenedor fallaba siempre suelto, también en main.
+    { jumpTo: [108.5, 62], double: true },
     { jumpTo: [108.8, 60] },
   ],
 };
