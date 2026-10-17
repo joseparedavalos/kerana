@@ -908,6 +908,8 @@ L7_CHIPAS.steps = chain(
   // De vuelta, con el centro entre x 161,3 y 162,5 (a ±6 px del punto, el piloto no toca la espina).
   { dash: 1, from: 161.9 },
   { run: 1, untilX: 167.5 },
+  // En dos corridas del smoke el desvío no tocó la chipa (no se reprodujo suelto): si quedó en el mapa, otra vuelta.
+  { ensureChipa: 1, back: 7 },
   // Abajo en el andamio, la torre (la ronda del farolero), los tejados de la catedral, el camposanto y la cripta.
   [L7_MAIN.steps, 12, 49],
   // Parada en el ascensor del ángel, sin pasarse de x 470: más a la derecha, la onda no llega al farol de la capilla.

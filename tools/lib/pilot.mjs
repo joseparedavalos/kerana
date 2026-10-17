@@ -40,6 +40,7 @@
 //   3 por defecto) se acerca a la plataforma `onto` desde más lejos; si entre Kerana y el hongo hay espinas o un
 //   hueco, salta hacia él.
 //   S36: bounce con afterDouble termina recién después del salto doble. { stop: x } se para quieta en esa x.
+//   { ensureChipa: i, back: n } vuelve n pasos atrás si la chipa i sigue en el mapa (repite un desvío que no la tocó).
 //   S32: strict con un número (ms) pide que a la plataforma le quede al menos esa espera en la punta (subirse a una
 //   balsa recién llegada con el juego lento).
 //   S32: un paso mover con lantern: [x, y] espera además a que ese farol temporizado esté encendido con ≥ 1 s de cuenta
@@ -314,6 +315,19 @@ export function installPilot(plan) {
     }
     if (s.charge !== undefined) return doCharge(s);
     if (s.stop !== undefined) return doStop(s);
+    // S36: { ensureChipa: i, back: n } si la chipa de índice i sigue en el mapa (el desvío no la tocó), vuelve n pasos
+    // atrás y lo repite; queda anotado en el registro. A lo sumo `tries` veces (3 por defecto).
+    if (s.ensureChipa !== undefined) {
+      const left = scene.pickups.some((p) => p.kind === 'pluma' && p.index === s.ensureChipa && p.active);
+      st.ensureTries = st.ensureTries ?? {};
+      const tries = st.ensureTries[st.step] ?? 0;
+      if (!left || tries >= (s.tries ?? 3)) return true;
+      st.ensureTries[st.step] = tries + 1;
+      st.log.push(`chipa ${s.ensureChipa} sin juntar: vuelve ${s.back} pasos`);
+      st.step -= s.back;
+      st.phase = 'start';
+      return false;
+    }
     // { dash: 1 | -1 } es un paso; jumpTo y bounce también pueden llevar dash: true (en el aire).
     if (typeof s.dash === 'number') return doDash(s);
     if (s.jumpTo !== undefined) return doJumpTo(s, b);

@@ -302,6 +302,7 @@ async function main() {
     const run1 = await pilot(l1Page);
     const chipas1 = await chipasState(l1Page);
     check(run1.done && chipas1.hud === 3 && chipas1.door === 'open', `nivel 1: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas1)})`);
+    if (chipas1.hud < 3) console.log((await l1Page.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     check(run1.done && run1.respawns === 0, `nivel 1: Kerana cruza el nivel entero sin caer a un pozo (${JSON.stringify(run1)})`);
     if (!run1.done) {
       await l1Page.screenshot({ path: join(SHOTS, 'l1-piloto-atascado.png') });
@@ -588,6 +589,7 @@ async function main() {
     const run2 = await pilot(l2Run);
     const chipas2 = await chipasState(l2Run);
     check(run2.done && chipas2.hud === 3 && chipas2.door === 'open', `nivel 2: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas2)})`);
+    if (chipas2.hud < 3) console.log((await l2Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     const rhythm = await l2Run.evaluate(() => window.__RHYTHM__);
     check(rhythm.exposed > 0 && rhythm.apart === 0, `nivel 2: los jakare guasu asoman solo con las balsas de su encuentro juntas (${JSON.stringify(rhythm)})`);
     check(run2.done && run2.respawns === 0, `nivel 2: Kerana cruza el estero entero sin caer al agua (${JSON.stringify(run2)})`);
@@ -881,6 +883,7 @@ async function main() {
     const run3 = await pilot(l3Run);
     const chipas3 = await chipasState(l3Run);
     check(run3.done && chipas3.hud === 3 && chipas3.door === 'open', `nivel 3: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas3)})`);
+    if (chipas3.hud < 3) console.log((await l3Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     check(run3.done && run3.respawns === 0, `nivel 3: Kerana cruza el campo entero sin caer (${JSON.stringify(run3)})`);
     if (!run3.done) {
       await l3Run.screenshot({ path: join(SHOTS, 'l3-piloto-atascado.png') });
@@ -1072,6 +1075,7 @@ async function main() {
     const run4 = await pilot(l4Run);
     const chipas4 = await chipasState(l4Run);
     check(run4.done && chipas4.hud === 3 && chipas4.door === 'open', `nivel 4: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas4)})`);
+    if (chipas4.hud < 3) console.log((await l4Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     check(run4.done && run4.respawns === 0, `nivel 4: Kerana cruza Capiatá entera sin caer (${JSON.stringify(run4)})`);
     if (!run4.done) {
       await l4Run.screenshot({ path: join(SHOTS, 'l4-piloto-atascado.png') });
@@ -1360,6 +1364,7 @@ async function main() {
     const run5 = await pilot(l5Run);
     const chipas5 = await chipasState(l5Run);
     check(run5.done && chipas5.hud === 3 && chipas5.door === 'open', `nivel 5: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas5)})`);
+    if (chipas5.hud < 3) console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     check(run5.done && run5.respawns === 0, `nivel 5: Kerana cruza Canindeyú entera sin caer (${JSON.stringify(run5)})`);
     if (run5.respawns > 0) console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log)).filter((l) => l.startsWith('caída') || l.startsWith('paso')).slice(-40).join('\n'));
     if (!run5.done) {
@@ -1669,6 +1674,7 @@ async function main() {
     const run6 = await pilot(l6Run);
     const chipas6 = await chipasState(l6Run);
     check(run6.done && chipas6.hud === 3 && chipas6.door === 'open', `nivel 6: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas6)})`);
+    if (chipas6.hud < 3) console.log((await l6Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     // Todo lo del camino queda recogido (las guavirá, la Luz de Arasy del fuego 2); quedan las tres plumas y lo de la gruta.
     const l6Left = await l6Pickups();
     const l6Off = ['guavira@151', 'guavira@161', 'luz_arasy@164', 'pluma@154', 'pluma@322', 'pluma@71'];
@@ -1984,6 +1990,7 @@ async function main() {
     const run7 = await pilot(l7Run);
     const chipas7 = await chipasState(l7Run);
     check(run7.done && chipas7.hud === 3 && chipas7.door === 'open', `nivel 7: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas7)})`);
+    if (chipas7.hud < 3) console.log((await l7Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));
     check(run7.done && (await l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true)), `nivel 7: el piloto llega a la arena de Luisón por la ruta principal (${run7.respawns} caídas)`);
     const l7Left = await l7Pickups();
     // Quedan las plumas, lo del sótano (secreto), la guavirá del balcón alto (salto doble, a un costado) y la de la antesala.
