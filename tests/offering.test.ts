@@ -57,15 +57,18 @@ describe('paso de la ofrenda: lógica', () => {
     expect(chipaReturnTarget(points, [true, true, true])).toBeNull();
   });
 
-  it('la pausa ofrece volver solo con la puerta cerrada, ya alcanzada y alguna chipa por buscar', () => {
+  it('la pausa ofrece volver con la puerta cerrada y alguna chipa por buscar, aunque no haya llegado a la puerta (S39)', () => {
     const target = { chipa: 0, x: 0, y: 0 };
     const m = new OfferingMotor(false);
-    expect(canReturnForChipas(m, target)).toBe(false);
+    expect(m.reached).toBe(false);
+    expect(canReturnForChipas(m, target)).toBe(true);
     m.step(DT, true, 1, NEED, OFFER_MS);
     expect(canReturnForChipas(m, target)).toBe(true);
     expect(canReturnForChipas(m, null)).toBe(false);
     m.step(DT, true, 3, NEED, OFFER_MS);
     expect(canReturnForChipas(m, target)).toBe(false);
+    // Abierta desde el principio (el hijo ya estaba libre): no se ofrece.
+    expect(canReturnForChipas(new OfferingMotor(true), target)).toBe(false);
   });
 
   it('el texto de Mainumby: cuántas lleva (ninguna aparte) o la ofrenda', () => {
@@ -134,8 +137,11 @@ function reachable(id: string, closeDoor: boolean, from: readonly [number, numbe
     platforms: layer('Platforms'),
     hazards: () => false,
     water: () => false,
-    objects: objects.filter((o) => o.cls !== 'WindZone' && o.cls !== 'BossArena' && o.cls !== 'ChaseZone' && o.cls !== 'Enemy'),
+    // S39: el inicio y los fuegos también son salidas del test de encierros; acá no (se mide hasta dónde se camina).
+    objects: objects.filter((o) => !['WindZone', 'BossArena', 'ChaseZone', 'Enemy', 'PlayerSpawn', 'Checkpoint'].includes(o.cls)),
     cowReachPx: 0,
+    // Rompibles rotos y hongos despiertos (Kerana puede abrirlos); la puerta la pone `closeDoor`.
+    opened: (o) => o.cls !== 'Offering',
   });
   const { width: w, height: h, cells } = grid;
   const water = layer('Water');
@@ -288,6 +294,8 @@ describe('paso de la ofrenda: en los siete niveles', () => {
           water: layer('Water'),
           objects,
           cowReachPx: GAMEPLAY.cow.patrolDistance + 2 * T,
+          // Como el modelo de S36: todo abierto salvo la puerta, que la pone `close`.
+          opened: (o) => o.cls !== 'Offering',
         });
         const r = findTraps(gr, REACH);
         return r.trappedSpans.map((n) => r.spans[n]);
