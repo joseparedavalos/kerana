@@ -7,7 +7,7 @@ import { InputManager } from '../systems/InputManager';
 import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
-// Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Reiniciar desde el fuego · Opciones · Salir al mapa.
+// Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Volver al último fuego (S39; antes «Reiniciar desde el fuego») · Opciones · Salir al mapa.
 export class PauseScene extends Phaser.Scene {
   private inputs!: InputManager;
   private items: { labelKey: string; action: () => void }[] = [];

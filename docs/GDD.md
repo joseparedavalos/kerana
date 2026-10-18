@@ -863,7 +863,7 @@ Una escena genérica de diapositivas (`StoryScene`) que recibe una lista de diap
 
 ### 8.6 Pausa y opciones [MVP / Núcleo]
 
-- **Pausa:** Continuar · Reiniciar desde el fuego · Opciones · Salir al mapa. Frente al paso de la ofrenda sin las tres chipas, además «Volver a buscar chipas» (S36, §4.4), después de Continuar.
+- **Pausa:** Continuar · Volver al último fuego (S39; antes «Reiniciar desde el fuego»: no reinicia el nivel, solo devuelve a Kerana al último fuego, y sirve para salir de cualquier hueco) · Opciones · Salir al mapa. Con la puerta de la ofrenda cerrada y alguna chipa por buscar, además «Volver a buscar chipas» (S36, §4.4; desde S39 en cualquier punto del nivel, no solo frente a la puerta), después de Continuar.
 - **Opciones:** volumen de música · volumen de efectos · idioma · modo asistido · sacudida de cámara (sí/no) · destellos (sí/no) · velocidad del texto · mover los botones del celular · ataque automático (apagado de fábrica) · borrar partida (con confirmación).
 
 ### 8.7 Diálogos [MVP]

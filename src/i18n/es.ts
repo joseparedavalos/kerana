@@ -187,7 +187,7 @@ export const es = {
   // Pausa y opciones (GDD §8.6).
   'pause.title': 'Pausa',
   'pause.continue': 'Continuar',
-  'pause.restart': 'Reiniciar desde el fuego',
+  'pause.restart': 'Volver al último fuego',
   'pause.chipa_return': 'Volver a buscar chipas',
   'pause.options': 'Opciones',
   'pause.exit_to_map': 'Salir al mapa',

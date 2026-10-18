@@ -188,7 +188,7 @@ export const en: Record<TextKey, string> = {
   // Pausa y opciones (GDD §8.6).
   'pause.title': 'Paused',
   'pause.continue': 'Continue',
-  'pause.restart': 'Restart from the campfire',
+  'pause.restart': 'Back to the last campfire',
   'pause.chipa_return': 'Go back for chipas',
   'pause.options': 'Options',
   'pause.exit_to_map': 'Back to the map',
