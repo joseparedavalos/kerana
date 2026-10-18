@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 17 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 93). Al día con S38.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 94). Al día con S39.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -32,14 +32,17 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Hay música (S37): diez piezas generadas por código (título, mapa, cada nivel y Yvága) y una variante tensa para cada jefe. Fundidos, más baja en los diálogos, pausa sin foco y arranque con el primer toque. Volumen de música y de efectos por separado en Opciones. Todo aviso de jefe suena, y suenan la puerta de las chipas, los disparadores, las rejas, las plataformas, las lianas, la roca que pide el tajo cargado, la red de seguridad, el salto doble y los menús.
 - «Nivel completado» responde siempre (S38). Desde el 13 de octubre, la segunda vez que aparecía sin recargar la página (después de l2) no hacía caso al clic ni a las teclas y el juego quedaba trabado. Los textos de los menús responden al clic en todo su ancho (antes, la mitad derecha de los largos no). El smoke prueba los botones con el ratón.
 
+- La red de seguridad saca a Kerana del hueco del premio de l2 aunque no rompa el fardo (S39). Hasta S38 la red daba por rotos todos los rompibles y ese hueco no contaba como encierro: Jose quedó atrapado sin salida. Ahora mira lo que está sano y lo que ya se rompió, y recalcula cada vez que algo se abre. «Volver a buscar chipas» está en la pausa desde el inicio del nivel, mientras falte alguna chipa, no solo frente a la puerta.
+
 ## Ahora
 
 1. Escuchar la música (Jose) y ajustarla en `src/data/music.ts`: Claude no puede oír. Volumen y fundidos en `GAMEPLAY.audio`. Faltan el remate de la liberación (hoy calla la música) y el tema del final (hoy suena el del título).
 2. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
 3. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
 4. El smoke no siempre pasa tres veces seguidas en el contenedor (S37): con el juego a menos de ≈ 10 FPS el piloto se traba en el paso 1 de l2 (también sin música) y alguna vez en la copa 3 de l3. No es del juego: es el piloto, afinado para 10-12 FPS. Detalle en las notas de S37.
-5. Publicar en itch.io (los pasos, abajo).
-6. Google Play, con el feedback de itch.io (los pasos, abajo).
+5. Decidir si «Reiniciar desde el fuego» de la pausa pasa a llamarse «Volver al último fuego» (Jose): ya es una salida de cualquier hueco (solo devuelve al último fuego, no reinicia el nivel), pero con ese nombre nadie la usa para salir. Es la recomendación de S39 sobre la red de seguridad; la otra, un detector en vivo en vez del cálculo de antemano, está en las notas de S39 (`docs/PLAN.md`).
+6. Publicar en itch.io (los pasos, abajo).
+7. Google Play, con el feedback de itch.io (los pasos, abajo).
 
 ## itch.io
 
