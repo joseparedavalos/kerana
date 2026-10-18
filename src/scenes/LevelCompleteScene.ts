@@ -8,6 +8,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
+import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
 // Pantalla de nivel completado: hijo, don y chipas juntos. Siguiente sigue la lista; el último va a Yvága.
@@ -22,6 +23,8 @@ export class LevelCompleteScene extends Phaser.Scene {
 
   init(data: { level: LevelDef }): void {
     this.def = data.level;
+    // Phaser reusa la instancia de la escena: sin esto, la segunda vez los botones no hacían nada (S38).
+    this.left = false;
   }
 
   create(): void {
@@ -61,7 +64,7 @@ export class LevelCompleteScene extends Phaser.Scene {
     const map = this.add
       .text(width / 2, height - 40, t('level_complete.map'), { fontFamily: FONT_FAMILY, fontSize: '12px', color: '#CFE3F2' })
       .setOrigin(0.5);
-    map.setInteractive(new Phaser.Geom.Rectangle(-80, -14, 160, 28), Phaser.Geom.Rectangle.Contains);
+    centerHitArea(map, 160, 28);
     map.on('pointerdown', () => this.goMap());
   }
 

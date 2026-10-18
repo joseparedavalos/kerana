@@ -48,6 +48,9 @@ export class StoryScene extends Phaser.Scene {
     this.backdrop = [];
     this.index = -1;
     this.holdMs = 0;
+    // La instancia se reusa (prólogo, llegada de Tau, final): el salto vuelve a esperar (S38).
+    this.skipReady = false;
+    this.touchAdvance = false;
   }
 
   /** Solo las imágenes de estas diapositivas. */

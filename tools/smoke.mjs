@@ -152,7 +152,136 @@ async function main() {
     });
   }
 
+
+  // S38: clic de verdad (page.mouse) sobre un objeto interactivo de la escena. `pick`: { text } (regex del texto, con o
+  // sin el "> " del elegido; en inglés o español), { node } (punto del mapa) o { center: true } (zona de toda la
+  // pantalla). Devuelve false si no encontró el objeto.
+  async function clickOn(page, sceneKey, pick) {
+    const point = await page.evaluate(
+      (key, p) => {
+        const game = window.__KERANA_GAME__;
+        const scene = game.scene.getScene(key);
+        if (!scene || !game.scene.isActive(key)) return null;
+        const cam = scene.cameras.main;
+        let wx;
+        let wy;
+        if (p.center) {
+          wx = cam.worldView.centerX;
+          wy = cam.worldView.centerY;
+        } else {
+          const re = p.text ? new RegExp(`^(> )?(${p.text})`) : null;
+          const obj = re
+            ? scene.children.list.find((o) => o.input?.enabled && typeof o.text === 'string' && re.test(o.text))
+            : scene.nodes?.[p.node]?.dot;
+          if (!obj) return null;
+          const b = obj.getBounds();
+          wx = b.centerX;
+          wy = b.centerY;
+        }
+        const sx = (wx - cam.worldView.x) * cam.zoom + cam.x;
+        const sy = (wy - cam.worldView.y) * cam.zoom + cam.y;
+        const r = game.canvas.getBoundingClientRect();
+        return { x: r.left + (sx * r.width) / game.canvas.width, y: r.top + (sy * r.height) / game.canvas.height };
+      },
+      sceneKey,
+      pick,
+    );
+    if (!point) return false;
+    await page.mouse.click(point.x, point.y);
+    return true;
+  }
+  // Espera hasta que la escena esté activa (y no en pausa) o se cumpla `maxMs`.
+  async function waitScene(page, key, maxMs = 8000) {
+    for (let t = 0; t < maxMs; t += 100) {
+      if (await page.evaluate((k) => { const s = window.__KERANA_GAME__?.scene; return !!s && s.isActive(k) && !s.isPaused(k); }, key)) return true;
+      await sleep(100);
+    }
+    return false;
+  }
+
+  // S38: todas las pantallas con botones, con el ratón y en la misma partida (cada una al menos dos veces: Phaser
+  // reusa la instancia de la escena y una bandera que no se reinicia deja los botones muertos la segunda vez; así
+  // quedó trabada "Nivel completado" desde 01eec5e). El smoke de siempre pasa estas pantallas con el teclado.
+  async function mouseTour() {
+    const page = await open('/');
+    await page.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Title') ?? false, { timeout: 20000 });
+    await sleep(500);
+    // `click`: clic y espera la escena; `to` puede ser una función (estado más fino que la escena activa).
+    const click = async (from, pick, to, msg) => {
+      const found = await clickOn(page, from, pick);
+      const ok = found && (typeof to === 'function' ? await to() : await waitScene(page, to));
+      check(ok, `ratón: ${msg}${found ? '' : ' (no encontré el botón)'}`);
+      await sleep(300);
+      return ok;
+    };
+    const finishLevel = async () => {
+      await page.evaluate(() => window.__KERANA_GAME__.scene.getScene('Level').debugDefeatBoss());
+      for (let i = 0; i < PRESS_MAX && !(await waitScene(page, 'LevelComplete', 100)); i++) {
+        if (await page.evaluate(() => window.__KERANA_GAME__.scene.getScene('Level')?.dialogueBox?.active ?? false)) await page.keyboard.press('Space');
+        await sleep(300);
+      }
+      await sleep(500);
+    };
+    const levelId = () => page.evaluate(() => window.__KERANA_GAME__.scene.getScene('Level').def.id);
+    // Un clic elige el punto y otro entra (si ya estaba elegido, entra con el primero).
+    const enterNode = async (i) => {
+      const found = await clickOn(page, 'Map', { node: i });
+      if (found && !(await waitScene(page, 'Level', 600))) await clickOn(page, 'Map', { node: i });
+      check(found && (await waitScene(page, 'Level')), `ratón: mapa → punto ${i + 1} → nivel${found ? '' : ' (no encontré el punto)'}`);
+      await sleep(300);
+    };
+
+    await click('Title', { center: true }, 'Story', 'título sin partida → prólogo');
+    await sleep(700);
+    await click('Story', { text: 'Skip|Saltar' }, 'Map', 'prólogo → Saltar → mapa');
+    await enterNode(0);
+    await sleep(1000);
+    // Pausa dos veces, Opciones desde la pausa.
+    await page.keyboard.press('Escape');
+    await waitScene(page, 'Pause');
+    await click('Pause', { text: 'Continue|Continuar' }, 'Level', 'pausa → Continuar');
+    await page.keyboard.press('Escape');
+    await waitScene(page, 'Pause');
+    await click('Pause', { text: 'Options|Opciones' }, 'Options', 'pausa → Opciones');
+    await click('Options', { text: 'Back|Volver' }, 'Pause', 'Opciones → Volver → pausa');
+    await click('Pause', { text: 'Continue|Continuar' }, 'Level', 'pausa (otra vez) → Continuar');
+    // Nivel completado tres veces: mapa, siguiente, siguiente (el caso de Jose: la segunda no respondía).
+    await finishLevel();
+    await click('LevelComplete', { text: 'Back to the map|Volver al mapa' }, 'Map', 'nivel 1 completado → Volver al mapa');
+    await enterNode(1);
+    await sleep(1000);
+    await finishLevel();
+    await click('LevelComplete', { text: 'Next|Siguiente' }, async () => (await waitScene(page, 'Level')) && (await levelId()) === 'l3', 'nivel 2 completado → Siguiente → nivel 3');
+    await sleep(1000);
+    await finishLevel();
+    await click('LevelComplete', { text: 'Next|Siguiente' }, async () => (await waitScene(page, 'Level')) && (await levelId()) === 'l4', 'nivel 3 completado → Siguiente → nivel 4');
+    await sleep(1000);
+    await page.keyboard.press('Escape');
+    await waitScene(page, 'Pause');
+    await click('Pause', { text: 'Back to the map|Salir al mapa' }, 'Map', 'pausa → Salir al mapa');
+    // Título con partida: Créditos, Opciones y Continuar, dos veces el título.
+    await page.keyboard.press('Escape');
+    await waitScene(page, 'Title');
+    await click('Title', { text: 'Credits|Créditos' }, 'Credits', 'título → Créditos');
+    await click('Credits', { center: true }, 'Title', 'créditos → clic → título');
+    await click('Title', { text: 'Options|Opciones' }, 'Options', 'título → Opciones');
+    await click('Options', { text: 'Back|Volver' }, 'Title', 'Opciones → Volver → título');
+    await click('Title', { text: 'Continue|Continuar' }, 'Map', 'título → Continuar → mapa');
+    // Borrar la partida desde Opciones (dos clics) y empezar otra vez (borrar deja una partida nueva guardada).
+    await page.keyboard.press('Escape');
+    await waitScene(page, 'Title');
+    await click('Title', { text: 'Options|Opciones' }, 'Options', 'título → Opciones (otra vez)');
+    await clickOn(page, 'Options', { text: 'Delete save|Borrar partida' });
+    await sleep(300);
+    await click('Options', { text: 'Delete save|Borrar partida' }, 'Title', 'Opciones → Borrar partida (dos clics) → título');
+    await click('Title', { text: 'New game|Nueva partida' }, 'Story', 'título → Nueva partida → prólogo');
+    await page.evaluate(() => localStorage.clear());
+    await page.close();
+  }
+
   try {
+    await mouseTour();
+
     // 1) Título → Nueva partida → Prólogo (salteado) → Mapa → nivel 1 → LevelExit → Nivel completado → Mapa.
     // (?debug=1, sin `level`, para poder teletransportar a Kerana sin cambiar el flujo Título → Mapa.)
     const title = await open('/?debug=1');

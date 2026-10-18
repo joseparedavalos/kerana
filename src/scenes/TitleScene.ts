@@ -8,6 +8,7 @@ import { AudioManager } from '../systems/AudioManager';
 import { addEichu, addNightSky } from '../systems/Backdrops';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
+import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
 const SKY_KEY = 'bg_yvaga_far';
@@ -31,6 +32,8 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     setupView(this);
+    // La instancia se reusa al volver al título (S38).
+    this.started = false;
     SaveManager.load();
     AudioManager.music('title');
     const { width, height } = VIEW;
@@ -125,7 +128,7 @@ export class TitleScene extends Phaser.Scene {
       .text(x, y, t(key), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' })
       .setOrigin(0.5)
       .setDepth(6);
-    text.setInteractive(new Phaser.Geom.Rectangle(-56, -12, 112, 24), Phaser.Geom.Rectangle.Contains);
+    centerHitArea(text, 112, 24);
     text.on('pointerdown', () => action());
     return text;
   }

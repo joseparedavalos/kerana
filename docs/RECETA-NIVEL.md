@@ -752,3 +752,12 @@ Hasta S35 las chipas eran opcionales y la regla era «una pide un don posterior�
 20. **Partir una cadena de hongos para meter una chipa:** la chipa A de l5 está sobre el hongo de un uso de la cadena del karaguatá; el plan viejo era un solo rebote en cadena (39 → 46 → 53). Para la chipa, el paso termina después del salto doble, parada en el tallo del hongo desinflado; desde ahí un salto común no llega al hongo siguiente (7 tiles) y caía en el karaguatá, en bucle. Ahora espera en el tallo a que el hongo se vuelva a inflar (3 s), rebota y sigue la cadena. Una persona hace lo mismo: el hongo inflado la levanta sola.
 21. **Nada en paralelo con el smoke.** Con otro navegador abierto (una corrida suelta del piloto, otra serie que quedó andando), el juego baja a 6-12 FPS y aparecen caídas y fallas que no son del juego ni del plan. S36 perdió dos series por eso. Antes de largar una serie: `pgrep -af "[c]hrome-linux|[s]moke.mjs"` vacío.
 
+## 18. La interfaz se prueba con el ratón y dos veces (S38)
+
+Desde el 13 de octubre, la segunda pantalla de «Nivel completado» de una visita no respondía: el juego quedaba trabado al terminar l2. El smoke la pasaba siempre, porque la pasaba con el teclado y en una página nueva por nivel. Lo que dejó:
+
+1. **Una prueba que solo usa el teclado no comprueba que la interfaz funcione con el ratón.** Un jugador en la computadora hace clic; uno en el celular toca. Cada botón nuevo se prueba con un clic de verdad (`clickOn` en `tools/smoke.mjs`, que pasa por `page.mouse`), en su centro y en la pantalla tal como la ve el jugador, sin parámetros de depuración.
+2. **Cada pantalla, dos veces en la misma página.** Phaser crea cada escena una sola vez y la reusa: un campo de la clase con valor inicial (`private left = false`) no vuelve a ese valor en el segundo `scene.start`. Todo estado de una escena se reinicia en `init()` o `create()`. El recorrido con el ratón del smoke pasa cada pantalla al menos dos veces.
+3. **El recorrido de un jugador, no solo atajos.** `?level=N&boss=1` abre una página nueva por nivel y nunca encadena dos niveles. El camino título → l1 → Siguiente → l2 es el que juega todo el mundo y tiene que estar en alguna prueba.
+4. **Las zonas de clic se miden desde la esquina del objeto**, no desde su origen: `setInteractive(new Rectangle(-w/2, -h/2, w, h))` en un texto con `setOrigin(0.5)` queda corrida medio texto a la izquierda. Se usa `centerHitArea()` (`src/systems/hitArea.ts`) y, si el texto cambia de ancho, se vuelve a llamar.
+

@@ -13,6 +13,7 @@ import {
   type TouchButtonId,
   type TouchLayout,
 } from '../systems/touchLayout';
+import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
 interface Drawn {
@@ -130,7 +131,7 @@ export class ButtonLayoutScene extends Phaser.Scene {
       .text(x, y, label, { fontFamily: FONT_FAMILY, fontSize: '14px', color: '#F2EEE3' })
       .setOrigin(0.5)
       .setDepth(4);
-    text.setInteractive(new Phaser.Geom.Rectangle(-36, -14, 72, 28), Phaser.Geom.Rectangle.Contains);
+    centerHitArea(text, 72, 28);
     text.on('pointerdown', () => onClick());
   }
 

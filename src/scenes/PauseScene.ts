@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { EventBus, GameEvents } from '../systems/EventBus';
 import { InputManager } from '../systems/InputManager';
+import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
 // Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Reiniciar desde el fuego · Opciones · Salir al mapa.
@@ -37,7 +38,7 @@ export class PauseScene extends Phaser.Scene {
       const text = this.add
         .text(width / 2, height / 2 - 30 + i * 22, t(item.labelKey), { fontFamily: FONT_FAMILY, fontSize: '12px', color: '#F2EEE3' })
         .setOrigin(0.5);
-      text.setInteractive(new Phaser.Geom.Rectangle(-90, -10, 180, 24), Phaser.Geom.Rectangle.Contains);
+      centerHitArea(text, 180, 24);
       text.on('pointerdown', () => item.action());
       return text;
     });

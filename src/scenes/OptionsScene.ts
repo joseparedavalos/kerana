@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager, type SaveSettings } from '../systems/SaveManager';
+import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
 // Opciones (GDD §8.6): volumen, idioma, modo asistido, sacudida, destellos, velocidad del texto y borrar partida.
@@ -43,7 +44,7 @@ export class OptionsScene extends Phaser.Scene {
       const text = this.add
         .text(width / 2, startY + i * ROW_HEIGHT, '', { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2EEE3' })
         .setOrigin(0.5);
-      text.setInteractive(new Phaser.Geom.Rectangle(-140, -10, 280, 22), Phaser.Geom.Rectangle.Contains);
+      text.setInteractive();
       text.on('pointerdown', () => row.onChange(1));
       return text;
     });
@@ -157,6 +158,8 @@ export class OptionsScene extends Phaser.Scene {
       const text = this.texts[i];
       text.setText(i === this.selected ? `> ${line}` : line);
       text.setColor(i === this.selected ? '#F2C14E' : '#F2EEE3');
+      // El texto cambia de ancho (valor, «> »): la zona de clic lo sigue.
+      centerHitArea(text, 280, 22);
     });
   }
 }
