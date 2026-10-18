@@ -7,8 +7,10 @@
 //   - salta `jumpRows` filas y `bounceRows` desde un hongo, calculadas con la física real (`trapReach`): el salto
 //     perfecto sube 63,3 px (3 filas; 6 con salto doble) y el hongo 135,7 px (8; 11 con salto doble);
 //   - en el aire se mueve sin límite hacia los costados y hacia abajo (mucho más de lo que puede de verdad);
-//   - las plataformas móviles son piso en TODO su recorrido, los rompibles y las rejas no existen,
-//     y el viento, la arena del jefe, la salida y las vacas cuentan como salida.
+//   - las plataformas móviles son piso en TODO su recorrido, las rejas no existen,
+//     y el viento, la arena del jefe, la salida, las vacas, el inicio y los fuegos cuentan como salida;
+//   - S39: lo que hay que abrir se toma como está: rompible sano = pared, hongo dormido = piso, ofrenda cerrada = pared.
+//     El nivel recalcula cada vez que algo se abre (`TrapMapSource.opened`).
 // Un piso queda "encerrado" solo si ni con ese modelo exagerado se llega desde él a una salida: el agua honda,
 // las espinas o el fondo del mapa (que ya devuelven a Kerana a tierra firme), la arena o la meta.
 // Un piso por el que se avanza o se pelea normalmente no puede quedar marcado: desde ahí se llega a la arena.
@@ -17,6 +19,10 @@
 // redondeaba a 4 y 7 filas. El juego integra a paso fijo y sube menos: una pared de 4 (o de 7 con salto doble) no se
 // trepa nunca, pero el modelo la daba por salida. Con `gifts=all` el hueco de l2 no quedaba marcado y la red no
 // actuaba, por más que Kerana saltara (lo que le pasó a Jose). Exagerar más allá de la física deja encierros sin red.
+//
+// Lo que corrigió S39: hasta S38 los rompibles "no existían" (se daban por rotos). Desde S24 la única salida del hueco
+// de l2 es romper un fardo, así que el hueco no quedaba marcado y quien no lo rompía quedaba atrapado sin red (Jose,
+// otra vez). Suponer que el jugador hace lo que hay que hacer es otra forma de exagerar.
 
 /** Qué hay en cada tile para el análisis. */
 export const TrapCell = {
@@ -299,6 +305,11 @@ export interface TrapMapSource {
   objects: readonly TrapObject[];
   /** Medio ancho (px) de la zona en la que una vaca puede llevar a Kerana (su patrulla y un poco más). */
   cowReachPx: number;
+  /**
+   * S39: lo que Kerana ya abrió en esta partida del nivel (rompibles rotos, hongos dormidos despiertos, la ofrenda
+   * abierta). Sin esto, el mapa como empieza: todo cerrado.
+   */
+  opened?: (o: TrapObject) => boolean;
 }
 
 /** Arma la grilla del análisis desde las capas y los objetos del mapa (el mismo JSON de Tiled que carga el nivel). */
@@ -322,8 +333,18 @@ export function trapGridFromMap(src: TrapMapSource): TrapGrid {
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(y * w + x);
   };
   const num = (v: unknown) => (typeof v === 'number' ? v : Number(v ?? 0) || 0);
-  // Primero lo que abre (rompibles), después lo que se pisa y al final las salidas (solo sobre aire).
-  for (const o of src.objects) if (o.cls === 'Breakable') paint(o.x, o.y, o.width, o.height, (i) => (cells[i] = TrapCell.Air));
+  const opened = src.opened ?? (() => false);
+  // Primero lo que cierra o abre (rompibles y la ofrenda), después lo que se pisa y al final las salidas (solo sobre aire).
+  // S39: un rompible sano es pared (las lianas no son tiles: se pintan), uno roto es aire. Hasta S38 se daban todos por
+  // rotos: quien no rompía el fardo del hueco de l2 quedaba encerrado y la red no actuaba nunca.
+  for (const o of src.objects) {
+    if (o.cls === 'Breakable') {
+      const open = opened(o);
+      paint(o.x, o.y, o.width, o.height, (i) => (cells[i] = open ? TrapCell.Air : TrapCell.Solid));
+    } else if (o.cls === 'Offering' && !opened(o)) {
+      paint(o.x, o.y, o.width, o.height, (i) => (cells[i] = TrapCell.Solid));
+    }
+  }
   for (const o of src.objects) {
     if (o.cls === 'Mover') {
       const dx = num(o.props.dx) * tile;
@@ -338,7 +359,9 @@ export function trapGridFromMap(src: TrapMapSource): TrapGrid {
         if (cells[i] !== TrapCell.Solid) cells[i] = TrapCell.Floor;
       });
     } else if (o.cls === 'Bouncer') {
-      paint(o.x, o.y, o.width, o.height, (i) => (cells[i] = TrapCell.Bounce));
+      // El dormido no rebota hasta el tajo cargado: mientras tanto es piso.
+      const asleep = o.props.kind === 'sleep' && !opened(o);
+      paint(o.x, o.y, o.width, o.height, (i) => (cells[i] = asleep ? TrapCell.Floor : TrapCell.Bounce));
     }
   }
   const escape = (i: number) => {
@@ -350,6 +373,10 @@ export function trapGridFromMap(src: TrapMapSource): TrapGrid {
     } else if (o.cls === 'Enemy' && (o.props.kind === 'vaca' || o.props.kind === 'vaca_embrujada')) {
       // La vaca es una plataforma que camina: donde puede estar, se puede subir a ella.
       paint(o.x - src.cowReachPx, o.y - 5 * tile, src.cowReachPx * 2, 5 * tile, escape);
+    } else if (o.cls === 'PlayerSpawn' || o.cls === 'Checkpoint') {
+      // S39: el inicio y los fuegos son adonde la red (o el KO) la devolvería igual: lo que llega a ellos no es encierro.
+      // Sin esto, con los rompibles sanos, el tramo del inicio de l4 (cerrado por un fardo del camino) quedaba marcado.
+      paint(o.x, o.y - 1, 1, 1, escape);
     }
   }
   return { width: w, height: h, cells };
