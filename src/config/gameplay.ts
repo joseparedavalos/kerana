@@ -474,6 +474,28 @@ export const GAMEPLAY = {
     crownAbove: 30,
     crownBelow: 18,
     treeVariation: 0.2,
+    /**
+     * Colores de la serpiente (S42): naranja rojizo con vientre claro y cuernos grises, como el Moñái del Museo
+     * Mitológico Ramón Elías (verde se leía como dragón oriental). El naranja es más claro y saturado que la tierra
+     * de l3 (≈ #a8472c) y el borde oscuro lo separa de ella; sobre el cielo y las copas verdes, contrasta solo.
+     */
+    palette: {
+      outline: 0x3a1608,
+      body: 0xe2732c,
+      shade: 0xb04f1e,
+      light: 0xf6a85e,
+      belly: 0xf6dcae,
+      spot: 0x8a3414,
+      /** Vueltas detrás del tronco: más oscuras. */
+      back: 0x8f3c18,
+      backOutline: 0x240d05,
+      eye: 0xf2e04e,
+      mouth: 0x5e1420,
+      fang: 0xf4f0e0,
+      horn: 0xb4b1aa,
+      hornBand: 0x7d7a74,
+      star: 0xffe27a,
+    },
   },
   /**
    * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de

@@ -14,24 +14,8 @@ export const HORNS_TEXTURE = 'monai_horns';
 /** Píxeles de textura por unidad del mundo. */
 export const ART_K = 2;
 
-/** Colores de la serpiente: verde con dibujo dorsal oscuro y vientre crema. */
-export const SNAKE = {
-  outline: 0x1e2e14,
-  body: 0x4f7d2c,
-  shade: 0x3a5e21,
-  light: 0x86b24a,
-  belly: 0xd8cf86,
-  spot: 0x2b4618,
-  /** Vueltas detrás del tronco: más oscuras. */
-  back: 0x2f4a1c,
-  backOutline: 0x18240f,
-  eye: 0xf2c14e,
-  mouth: 0x7a1f2b,
-  fang: 0xf4f0e0,
-  horn: 0xf1ead2,
-  hornBand: 0xb9ae8a,
-  star: 0xffe27a,
-} as const;
+/** Colores de la serpiente (`GAMEPLAY.monai.palette`). */
+export const SNAKE = CFG.palette;
 
 /** Tamaño de las texturas de la cabeza (unidades) y punto que coincide con el centro de la zona de daño. */
 const HEAD_W = 38;
@@ -126,7 +110,7 @@ function makeHead(scene: Phaser.Scene, key: string, mood: 'closed' | 'open' | 'd
   g.destroy();
 }
 
-/** Cuernos largos que salen de la nuca hacia arriba y atrás, color hueso con anillos (el tinte los vuelve iridiscentes). */
+/** Cuernos largos que salen de la nuca hacia arriba y atrás, grises con anillos (el tinte los vuelve iridiscentes). */
 function makeHorns(scene: Phaser.Scene): void {
   const k = ART_K;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
