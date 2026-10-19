@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 94). Al día con S39.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S40.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -33,6 +33,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - «Nivel completado» responde siempre (S38). Desde el 13 de octubre, la segunda vez que aparecía sin recargar la página (después de l2) no hacía caso al clic ni a las teclas y el juego quedaba trabado. Los textos de los menús responden al clic en todo su ancho (antes, la mitad derecha de los largos no). El smoke prueba los botones con el ratón.
 
 - La red de seguridad saca a Kerana del hueco del premio de l2 aunque no rompa el fardo (S39). Hasta S38 la red daba por rotos todos los rompibles y ese hueco no contaba como encierro: Jose quedó atrapado sin salida. Ahora mira lo que está sano y lo que ya se rompió, y recalcula cada vez que algo se abre. «Volver a buscar chipas» está en la pausa desde el inicio del nivel, mientras falte alguna chipa, no solo frente a la puerta. «Reiniciar desde el fuego» de la pausa se llama ahora «Volver al último fuego»: es lo que hace (no reinicia el nivel) y alguien atascado la encuentra.
+- La pestaña del navegador dice «Kerana · Pokõi ñemoñare» (S40), igual que el título del juego. Desde el 13 de octubre decía solo «Kerana»; «Kerana: Pokõi Mbyja», el subtítulo viejo, quedó en las versiones publicadas antes de ese día.
 
 ## Ahora
 
@@ -40,7 +41,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 2. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
 3. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
 4. El smoke no siempre pasa tres veces seguidas en el contenedor (S37): con el juego a menos de ≈ 10 FPS el piloto se traba en el paso 1 de l2 (también sin música) y alguna vez en la copa 3 de l3. No es del juego: es el piloto, afinado para 10-12 FPS. Detalle en las notas de S37.
-5. El tirón de la red de seguridad al romper algo en l5 (S39, sin arreglar). Desde S39 la red se recalcula entera cada vez que algo se abre (un rompible, un hongo dormido, la ofrenda). Medido en el headless, en el cuadro en que se rompe algo: l5 tarda 48 a 75 ms (el recálculo solo: 40 a 134, mediana 50), l7 24 a 38, l2 7 a 9; sin el recálculo, romper tarda menos de 1 ms. En l5 son 3 o 4 cuadros perdidos a 60 FPS: se nota como un tirón, sobre todo en un celular (en una PC rápida será menos). No cambia la física (Arcade recupera los pasos), solo se ve. Cómo evitarlo, de lo más simple a lo más fino: (a) repartir el recálculo en varios cuadros o hacerlo en un Web Worker, usando el mapa viejo mientras tanto (la red espera 4 s: unos cuadros de atraso no importan); (b) recalcular solo lo que puede cambiar: los tramos marcados, los que aparecen donde estaba lo que se abrió y los que pasaban por encima de él (romper un fardo saca un piso que alguien podía usar de escalón, así que no alcanza con mirar solo los marcados).
+5. El tirón de la red de seguridad al romper algo en l5 (S39, sin arreglar). Desde S39 la red se recalcula entera cada vez que algo se abre (un rompible, un hongo dormido, la ofrenda). Medido en el headless, en el cuadro en que se rompe algo: en S39, l5 48 a 75 ms (el recálculo solo: 40 a 134, mediana 50), l7 24 a 38, l2 7 a 9. **Confirmado en S40:** l5, romper 27 a 53 ms (mediana 32; el recálculo solo, mediana 29), l7 12 a 25, l2 6 a 12; con la CPU frenada ×4, como un celular modesto, l5 tarda 107 a 200 ms (mediana 122). Sin el recálculo, romper tarda menos de 1 ms (1,3 con la CPU frenada). En l5 son 2 o 3 cuadros perdidos a 60 FPS en una PC y 6 a 12 en un celular: se nota como un tirón. No cambia la física (Arcade recupera los pasos), solo se ve. Cómo evitarlo, de lo más simple a lo más fino: (a) repartir el recálculo en varios cuadros o hacerlo en un Web Worker, usando el mapa viejo mientras tanto (la red espera 4 s: unos cuadros de atraso no importan); (b) recalcular solo lo que puede cambiar: los tramos marcados, los que aparecen donde estaba lo que se abrió y los que pasaban por encima de él (romper un fardo saca un piso que alguien podía usar de escalón, así que no alcanza con mirar solo los marcados).
 6. Publicar en itch.io (los pasos, abajo).
 7. Google Play, con el feedback de itch.io (los pasos, abajo).
 
