@@ -232,7 +232,9 @@ async function main() {
     };
 
     await click('Title', { center: true }, 'Story', 'título sin partida → prólogo');
-    await sleep(700);
+    // S39: «Saltar» responde a los 600 ms de juego; con el contenedor lento, 700 ms de reloj no alcanzaban y el clic se
+    // perdía (y con él todo el recorrido). Se espera a que esté listo.
+    await page.waitForFunction(() => window.__KERANA_GAME__.scene.getScene('Story')?.skipReady === true, { timeout: 10000 });
     await click('Story', { text: 'Skip|Saltar' }, 'Map', 'prólogo → Saltar → mapa');
     await enterNode(0);
     await sleep(1000);
