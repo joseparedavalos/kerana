@@ -27,7 +27,8 @@ const DOUBLE: TrapReach = trapReach({ ...PHYSICS, doubleJumpVelocity: p.doubleJu
 
 type Obj = { cls: string; x: number; y: number; width: number; height: number; props: Record<string, unknown> };
 
-function analyze(map: TiledMap, reach = BASE, keep: (o: Obj) => boolean = () => true) {
+/** `opened`: lo que Kerana ya abrió (rompibles, hongos dormidos, la ofrenda); por defecto, el mapa como empieza. */
+function analyze(map: TiledMap, reach = BASE, keep: (o: Obj) => boolean = () => true, opened?: (o: Obj) => boolean) {
   const layer = (name: string) => {
     const data = map.layers.find((l) => l.name === name)?.data ?? [];
     return (x: number, y: number) => (data[y * map.width + x] ?? 0) > 0;
@@ -52,16 +53,20 @@ function analyze(map: TiledMap, reach = BASE, keep: (o: Obj) => boolean = () => 
     water: layer('Water'),
     objects,
     cowReachPx: GAMEPLAY.cow.patrolDistance + 2 * T,
+    opened,
   });
   const r = findTraps(grid, reach);
   return r.trappedSpans.map((n) => r.spans[n]);
 }
 
-const fromAscii = (rows: string[], reach = BASE) =>
-  analyze(buildTiledMap(parseAscii(`size ${rows[0].length}x${rows.length}\nbiome estero\n---\n${rows.join('\n')}\n`)) as TiledMap, reach);
+const fromAscii = (rows: string[], reach = BASE, opened?: (o: Obj) => boolean, header = '') =>
+  analyze(buildTiledMap(parseAscii(`size ${rows[0].length}x${rows.length}\nbiome estero\n${header}---\n${rows.join('\n')}\n`)) as TiledMap, reach, undefined, opened);
+/** Todo abierto: el modelo de S23 a S38, que daba por rotos los rompibles y despiertos los hongos dormidos. */
+const ALL_OPEN = () => true;
 // Los mapas que carga el juego (el JSON generado por `npm run maps`, o el editado en Tiled).
 const MAPS = import.meta.glob('../public/assets/maps/*.json', { eager: true, import: 'default' }) as Record<string, TiledMap>;
-const fromLevel = (id: string, reach = BASE, keep?: (o: Obj) => boolean) => analyze(MAPS[`../public/assets/maps/${id}.json`], reach, keep);
+const fromLevel = (id: string, reach = BASE, keep?: (o: Obj) => boolean, opened?: (o: Obj) => boolean) =>
+  analyze(MAPS[`../public/assets/maps/${id}.json`], reach, keep, opened);
 const show = (spans: TrapSpan[]) => spans.map((s) => `x ${s.x0}-${s.x1} fila ${s.y + 1}`);
 
 // Un pozo de 6 de ancho cuyas paredes miden `wall` filas, con agua a la derecha (la salida del nivel).
@@ -130,7 +135,7 @@ describe('red de seguridad: encierros (S23, alcances de S24)', () => {
     expect(fromAscii(pocket(7), { ...DOUBLE, jumpRows: 7 })).toEqual([]);
   });
 
-  it('se sale si adentro hay un hongo, pencas, una plataforma móvil, o si una pared es rompible', () => {
+  it('se sale si adentro hay un hongo, pencas, una plataforma móvil, o si una pared rompible ya está rota', () => {
     expect(fromAscii(pocket(7, ['M,12,12']))).toEqual([]);
     // Pencas cada 3 filas (con 4, la primera ya no se alcanza).
     expect(fromAscii(pocket(7, ['=,12,10', '=,11,7']))).toEqual([]);
@@ -138,8 +143,26 @@ describe('red de seguridad: encierros (S23, alcances de S24)', () => {
     expect(fromAscii(pocket(7, ['-,12,12', ':,12,11', ':,12,10', ':,12,9', ':,12,8', ':,12,7', ':,12,6']))).toEqual([]);
     // Roca agrietada en las 4 filas de arriba de la pared izquierda y en la esquina de la meseta: rotas, quedan
     // dos escalones de 3. Sin la esquina, el segundo escalón mide 4 y no se sube.
-    expect(fromAscii(pocket(7, ['B,9,6', 'B,9,7', 'B,9,8', 'B,9,9', 'B,8,6']))).toEqual([]);
-    expect(fromAscii(pocket(7, ['B,9,6', 'B,9,7', 'B,9,8', 'B,9,9']))).not.toEqual([]);
+    expect(fromAscii(pocket(7, ['B,9,6', 'B,9,7', 'B,9,8', 'B,9,9', 'B,8,6']), BASE, ALL_OPEN)).toEqual([]);
+    expect(fromAscii(pocket(7, ['B,9,6', 'B,9,7', 'B,9,8', 'B,9,9']), BASE, ALL_OPEN)).not.toEqual([]);
+  });
+
+  it('S39: un rompible sano es pared; un hongo dormido, piso que no rebota (hasta que Kerana los abre)', () => {
+    // La misma roca sin romper: encierra (S23 a S38 la daban por rota y la red no actuaba nunca).
+    expect(show(fromAscii(pocket(7, ['B,9,6', 'B,9,7', 'B,9,8', 'B,9,9', 'B,8,6'])))).toEqual(['x 10-15 fila 13']);
+    // Lo mismo con fardo (tajo normal): sano encierra, roto se sale.
+    const fardo = ['%,9,6', '%,9,7', '%,9,8', '%,9,9', '%,8,6'];
+    expect(show(fromAscii(pocket(7, fardo)))).toEqual(['x 10-15 fila 13']);
+    expect(fromAscii(pocket(7, fardo), BASE, ALL_OPEN)).toEqual([]);
+    // Hongo dormido: se lo pisa pero no lanza; despierto, saca.
+    const asleep = 'at 12,12 kind=sleep\n';
+    expect(show(fromAscii(pocket(7, ['M,12,12']), BASE, undefined, asleep))).toEqual(['x 12-12 fila 12', 'x 10-15 fila 13']);
+    expect(fromAscii(pocket(7, ['M,12,12']), BASE, ALL_OPEN, asleep)).toEqual([]);
+  });
+
+  it('S39: lo que llega al inicio o a un fuego no es encierro (la red la devolvería ahí)', () => {
+    // El fuego adentro del pozo: Kerana empieza (o reaparece) ahí; la red no la sacaría a ningún otro lado.
+    expect(fromAscii(pocket(7, ['C,12,12']))).toEqual([]);
   });
 
   it('agua honda o espinas adentro ya devuelven a tierra firme: no es encierro', () => {
@@ -152,21 +175,37 @@ describe('red de seguridad: encierros (S23, alcances de S24)', () => {
     expect(show(fromAscii(pocket(7)))).toEqual(['x 10-15 fila 13']);
   });
 
-  it('l2: ningún encierro; el hueco del premio se sale rompiendo el fardo de la base del pilar (S24)', () => {
-    expect(fromLevel('l2')).toEqual([]);
-    expect(fromLevel('l2', DOUBLE)).toEqual([]);
-    // Sin el fardo (x 233, filas 29-32) el hueco vuelve a ser el encierro de S23, también con salto doble
-    // (con el alcance de S23, 7 filas, no se veía: así quedó Jose sin red con gifts=all).
-    const noFardo = (o: Obj) => !(o.cls === 'Breakable' && o.x === 233 * T);
-    expect(show(fromLevel('l2', BASE, noFardo))).toEqual(['x 234-238 fila 33']);
-    expect(show(fromLevel('l2', DOUBLE, noFardo))).toEqual(['x 234-238 fila 33']);
-    expect(fromLevel('l2', { ...DOUBLE, jumpRows: 7 }, noFardo)).toEqual([]);
+  it('l2 (S39): el hueco del premio es encierro mientras el fardo de la base del pilar esté sano', () => {
+    // Lo que le pasó a Jose: S24 le puso salida (romper el fardo, x 233, filas 29-32) y el modelo daba el fardo por roto,
+    // así que el hueco no quedaba marcado y la red no actuaba si Kerana no lo rompía. x 1-4 es el nido de la guavirá
+    // tras el fardo del inicio (x 5): no se entra sin romperlo, así que nunca se pisa marcado.
+    const l2Closed = ['x 1-4 fila 33', 'x 234-238 fila 33'];
+    expect(show(fromLevel('l2', DOUBLE))).toEqual(l2Closed);
+    expect(show(fromLevel('l2', BASE))).toEqual(l2Closed);
+    // Roto el fardo, se sale por el túnel: el hueco deja de estar marcado.
+    const fardo = (o: Obj) => o.cls === 'Breakable' && o.x === 233 * T;
+    expect(show(fromLevel('l2', DOUBLE, undefined, fardo))).toEqual(['x 1-4 fila 33']);
+    expect(fromLevel('l2', DOUBLE, undefined, ALL_OPEN)).toEqual([]);
+    // Con el modelo de S23 a S38 (todo abierto) no se veía nada.
+    expect(fromLevel('l2', BASE, undefined, ALL_OPEN)).toEqual([]);
   });
 
-  it('ningún otro nivel tiene encierros con los dones que se traen', () => {
-    // El salto doble se gana al final de l3: l1 y l3 sin él, l4 en adelante con él.
-    for (const id of ['l1', 'l3']) expect([id, show(fromLevel(id))]).toEqual([id, []]);
-    for (const id of ['l4', 'l5', 'l6', 'l7', 'yvaga']) expect([id, show(fromLevel(id, DOUBLE))]).toEqual([id, []]);
+  it('los demás niveles (S39): solo bolsillos a los que no se entra sin abrirlos; abiertos, ninguno', () => {
+    // Desde S36 los dones se tienen desde el primer nivel: todos con salto doble. Cada bolsillo está cerrado por el
+    // rompible (o la ofrenda) que hay que abrir para entrar: estando sano no se pisa, y al abrirlo se recalcula.
+    const closed: Record<string, string[]> = {
+      l1: ['x 246-248 fila 14'], // secreto tras la liana (x 245)
+      l3: [],
+      l4: ['x 167-168 fila 37', 'x 170-172 fila 37'], // jaula de fardo y rocas (x 166-173)
+      l5: ['x 262-263 fila 80'], // entre el fardo (x 261) y la ofrenda (x 264)
+      l6: ['x 150-153 fila 26', 'x 70-73 fila 62'], // tras el fardo de la pluma (x 154-155) y tras la roca (x 69)
+      l7: ['x 392-396 fila 66'], // tras la roca (x 390-391)
+      yvaga: [],
+    };
+    for (const [id, spans] of Object.entries(closed)) {
+      expect([id, show(fromLevel(id, DOUBLE))]).toEqual([id, spans]);
+      expect([id, show(fromLevel(id, DOUBLE, undefined, ALL_OPEN))]).toEqual([id, []]);
+    }
   });
 
   it('la vitrina tiene un encierro a propósito: el pozo F, pared de 7 con salto doble (lo usa el smoke)', () => {

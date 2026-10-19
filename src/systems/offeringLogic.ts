@@ -2,7 +2,8 @@
 //
 // La entrada a la antesala está cerrada hasta llevar las tres chipas del nivel. Al llegar con las tres, Kerana las
 // entrega y el paso se abre. Sin las tres, Mainumby dice cuántas lleva; la puerta no encierra ni devuelve al mapa:
-// se puede volver atrás caminando o, desde la pausa, reaparecer donde empieza el tramo de la primera que falta.
+// se puede volver atrás caminando o, desde la pausa, reaparecer donde empieza el tramo de la primera que falta
+// (S39: en cualquier momento del nivel mientras falte alguna, no solo después de llegar a la puerta).
 // Si el hijo de ese nivel ya está libre (se jugó antes de S36 o ya se entregó la ofrenda), el paso está abierto.
 
 export type OfferingState = 'closed' | 'offering' | 'open';
@@ -12,7 +13,7 @@ export type OfferingEvent = 'none' | 'reached' | 'offer' | 'opened';
 export class OfferingMotor {
   private current: OfferingState;
   private ms = 0;
-  /** Kerana llegó a la puerta cerrada al menos una vez: desde ahí la pausa ofrece volver a buscar chipas. */
+  /** Kerana llegó a la puerta cerrada al menos una vez (Mainumby lo dice una sola vez por partida del nivel). */
   reached = false;
 
   constructor(open: boolean) {
@@ -66,9 +67,13 @@ export function chipaReturnTarget(points: readonly ChipaReturnPoint[], collected
   return points.find((p) => collected[p.chipa] !== true) ?? null;
 }
 
-/** La pausa ofrece "Volver a buscar chipas" con la puerta cerrada, ya alcanzada, y alguna chipa por buscar. */
+/**
+ * La pausa ofrece "Volver a buscar chipas" mientras la puerta esté cerrada y falte alguna chipa, aunque Kerana no haya
+ * llegado a la puerta (S39: S36 lo pedía y a Jose le hizo falta mucho antes, atascado en un hueco de l2). Con la puerta
+ * abierta no: o ya las tiene o el paso estaba abierto desde el principio (y Kerana puede estar peleando en la arena).
+ */
 export function canReturnForChipas(motor: OfferingMotor, target: ChipaReturnPoint | null): boolean {
-  return motor.reached && motor.state === 'closed' && target !== null;
+  return motor.state === 'closed' && target !== null;
 }
 
 /** Clave del texto de Mainumby frente a la puerta. */

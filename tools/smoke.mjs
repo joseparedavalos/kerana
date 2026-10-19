@@ -232,7 +232,9 @@ async function main() {
     };
 
     await click('Title', { center: true }, 'Story', 'título sin partida → prólogo');
-    await sleep(700);
+    // S39: «Saltar» responde a los 600 ms de juego; con el contenedor lento, 700 ms de reloj no alcanzaban y el clic se
+    // perdía (y con él todo el recorrido). Se espera a que esté listo.
+    await page.waitForFunction(() => window.__KERANA_GAME__.scene.getScene('Story')?.skipReady === true, { timeout: 10000 });
     await click('Story', { text: 'Skip|Saltar' }, 'Map', 'prólogo → Saltar → mapa');
     await enterNode(0);
     await sleep(1000);
@@ -380,7 +382,8 @@ async function main() {
     await sleep(800);
     const got = await featherState(title);
     check(got.hud === 1 && got.saved?.join() === 'true,false,false', `nivel 1: la pluma 0 se guarda al tocarla (${JSON.stringify(got)})`);
-    // Pausa → Salir al mapa (4.º ítem) → volver a entrar al nodo 1.
+    // Pausa → Salir al mapa (el último ítem: S39, con chipas por buscar está también "Volver a buscar chipas") → volver a
+    // entrar al nodo 1.
     const tap = async (key) => {
       await title.keyboard.down(key);
       await sleep(120);
@@ -389,7 +392,8 @@ async function main() {
     };
     await tap('Escape');
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Pause') ?? false, { timeout: 5000 });
-    for (let i = 0; i < 3; i++) await tap('ArrowDown');
+    const exitIndex = await title.evaluate(() => window.__KERANA_GAME__.scene.getScene('Pause').items.findIndex((i) => i.labelKey === 'pause.exit_to_map'));
+    for (let i = 0; i < exitIndex; i++) await tap('ArrowDown');
     await tap('Enter');
     await title.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Map') ?? false, { timeout: 10000 });
     await title.evaluate(() => (window.__KERANA_READY__ = false));
@@ -603,10 +607,13 @@ async function main() {
       });
     await ofrSave(false, [true, false, true]);
     await ofrReload();
+    // S39: la pausa ofrece volver desde el inicio del nivel, antes de llegar a la puerta.
+    const ofrStart = await ofrState();
+    check(ofrStart.canReturn && ofrStart.x < 20 && ofrStart.line === '', `S39: con una chipa por buscar, la pausa ofrece volver desde el inicio, sin haber llegado a la puerta (${JSON.stringify(ofrStart)})`);
     await ofrAt(244, 30);
     await sleep(300);
     await ofr.keyboard.down('ArrowRight');
-    for (let t = 0; t < 8000 && !(await ofrState()).canReturn; t += 200) await sleep(200);
+    for (let t = 0; t < 8000 && !(await ofrState()).line; t += 200) await sleep(200);
     await sleep(800);
     const ofrClosed = await ofrState();
     await ofr.keyboard.up('ArrowRight');
@@ -710,7 +717,7 @@ async function main() {
         drawn: s.breakables.every((b) => b.look.length > 0),
         checkpoints: s.checkpoints.length,
         feathers: s.pickups.filter((p) => p.kind === 'pluma').length + s.feathers,
-        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (S24: ningún encierro, el hueco tiene salida).
+        // S23: enemigos (el guasu es el ñakurutu en grande) y la red de seguridad (S39: el hueco del premio queda marcado mientras su fardo esté sano).
         enemies: s.enemies.reduce((acc, e) => ({ ...acc, [e.def.id]: (acc[e.def.id] ?? 0) + 1 }), {}),
         guardianScale: s.enemies.find((e) => e.def.id === 'nakurutu_guasu')?.scaleX,
         bigJakareScale: s.enemies.find((e) => e.def.id === 'jakare_guasu')?.scaleX,
@@ -735,8 +742,9 @@ async function main() {
         l2Info.enemies.mboi === 4 &&
         l2Info.enemies.nakurutu_guasu === 1 &&
         l2Info.guardianScale > 2 &&
-        l2Info.traps === 0,
-      `nivel 2: 22 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 7 fardos dibujados, 4 fuegos, 3 plumas, enemigos con el ñakurutu guasu y 4 jakare guasu, ningún encierro (${JSON.stringify(l2Info)})`,
+        // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
+        l2Info.traps === 9,
+      `nivel 2: 22 plataformas (3 verticales), 1 piedra, 5 hongos, 2 rocas y 7 fardos dibujados, 4 fuegos, 3 plumas, enemigos con el ñakurutu guasu y 4 jakare guasu, encierros solo en el hueco del premio y el nido del inicio, cerrados por fardos (${JSON.stringify(l2Info)})`,
     );
     // El tajo normal no rompe la roca agrietada del peñasco (x 14-16); el piloto la rompe después con el cargado.
     await l2Run.evaluate(() => {
@@ -872,6 +880,8 @@ async function main() {
           // El fardo entra en la cámara con Kerana en el hueco.
           inView: !!fardo && s.cameras.main.worldView.contains(fardo.zone.centerX, fardo.zone.centerY),
           prize: s.pickups.filter((p) => p.active && Math.floor(p.x / 16) >= 234 && Math.floor(p.x / 16) <= 238 && p.y / 16 > 30).length,
+          // S39: el piso del hueco (fila 33) está marcado como encierro mientras el fardo siga sano.
+          marked: s.trapCells?.[32 * s.map.width + 236] === 1,
         };
       });
     await l2Hole.evaluate(() => {
@@ -907,6 +917,8 @@ async function main() {
     const out = await holeState();
     check(
       holeStart.fardo === 'dibujado' &&
+        holeStart.marked &&
+        !broken.marked &&
         inHole.feet === 33 &&
         inHole.immune &&
         inHole.prize === 0 &&
@@ -915,9 +927,127 @@ async function main() {
         out.x <= 226 &&
         out.feet === 33 &&
         out.traps === 0,
-      `nivel 2: el hueco del premio se cobra (Luz y guavirá), el fardo se ve desde adentro, cae con el tajo normal y se sale por el túnel; la red no actúa (${JSON.stringify({ holeStart, inHole, broken, out })})`,
+      `nivel 2: el hueco del premio se cobra (Luz y guavirá), el fardo se ve desde adentro, cae con el tajo normal y se sale por el túnel; la red no actúa y, roto el fardo, el hueco deja de estar marcado (${JSON.stringify({ holeStart, inHole, broken, out })})`,
     );
     await l2Hole.close();
+    // 1c7) S39: la red en el encierro real de l2, como le pasó a Jose (versión publicada: sin god ni gifts=all; los dones
+    // vienen del guardado). Kerana baja del pilar al hueco y no rompe el fardo: corre de pared a pared, salta, usa el
+    // salto doble y el dash sin parar. Hasta S38 el modelo daba el fardo por roto y la red no actuaba nunca (12 s sin
+    // salir). Ahora la saca a los GAMEPLAY.trap.waitMs (4000) al pilar, con el fardo sano.
+    const l2Net = await open('/?debug=1&level=2');
+    await l2Net.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const l2NetRun = await l2Net.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const d = window.__KERANA_DEBUG__;
+          const s = d.scene;
+          const b = d.player.body;
+          const kb = s.input.keyboard;
+          const keys = { left: kb.addKey(37), right: kb.addKey(39), jump: kb.addKey(32), dash: kb.addKey(67) };
+          const set = (k, on) => {
+            if (k.isDown === on) return;
+            k.isDown = on;
+            k.isUp = !on;
+            k.emit(on ? 'down' : 'up', k);
+          };
+          const fardo = () => s.breakables.find((q) => q.zone.x === 233 * 16);
+          const out = {
+            doubleJump: d.player.motor.doubleJumpEnabled,
+            dash: d.player.motor.dashEnabled,
+            marked: s.trapCells?.[32 * s.map.width + 236] === 1,
+            traps: 0,
+            ms: 0,
+            jumps: 0,
+            doubles: 0,
+            dashes: 0,
+            topFeet: 99,
+            x0: 999,
+            x1: 0,
+          };
+          const orig = s.respawn;
+          s.respawn = function (reason) {
+            if (reason === 'trap') out.traps++;
+            return orig.call(this, reason);
+          };
+          // Del pilar (x 227-233) hacia el hueco, a la derecha.
+          b.reset(231.5 * 16, 26 * 16);
+          let f = 0;
+          let after = -1;
+          let phase = 'ground';
+          let inside = false;
+          const tick = (_time, delta) => {
+            f++;
+            if (out.traps > 0) {
+              for (const k of Object.values(keys)) set(k, false);
+              if (++after < 40) return;
+              s.events.off('preupdate', tick);
+              Object.assign(out, { x: +(b.center.x / 16).toFixed(1), feet: +(b.bottom / 16).toFixed(1), fardo: fardo()?.broken ? 'roto' : 'sano' });
+              resolve(out);
+              return;
+            }
+            // El reloj de la prueba arranca al pisar el fondo del hueco.
+            if (!inside) {
+              set(keys.right, true);
+              if (b.blocked.down && b.bottom / 16 > 32.5) inside = true;
+              return;
+            }
+            out.ms += delta;
+            out.topFeet = Math.min(out.topFeet, +(b.bottom / 16).toFixed(2));
+            out.x0 = Math.min(out.x0, +(b.center.x / 16).toFixed(1));
+            out.x1 = Math.max(out.x1, +(b.center.x / 16).toFixed(1));
+            const right = Math.floor(f / 25) % 2 === 0;
+            set(keys.right, right);
+            set(keys.left, !right);
+            // Salta apenas pisa; cerca del ápice suelta y vuelve a apretar (salto doble) y después el dash.
+            if (phase === 'ground' && b.blocked.down) {
+              set(keys.jump, true);
+              out.jumps++;
+              phase = 'rise';
+            } else if (phase === 'rise' && b.velocity.y > -60) {
+              set(keys.jump, false);
+              phase = 'double';
+            } else if (phase === 'double') {
+              set(keys.jump, true);
+              out.doubles++;
+              phase = 'dash';
+            } else if (phase === 'dash' && b.velocity.y > -30) {
+              set(keys.dash, true);
+              out.dashes++;
+              phase = 'fall';
+            } else if (phase === 'fall' && b.blocked.down) {
+              set(keys.jump, false);
+              set(keys.dash, false);
+              phase = 'ground';
+            }
+            if (out.ms > 12000) {
+              s.events.off('preupdate', tick);
+              for (const k of Object.values(keys)) set(k, false);
+              resolve(out);
+            }
+          };
+          s.events.on('preupdate', tick);
+        }),
+    );
+    check(
+      l2NetRun.doubleJump &&
+        l2NetRun.dash &&
+        l2NetRun.marked &&
+        l2NetRun.jumps >= 2 &&
+        l2NetRun.doubles >= 2 &&
+        l2NetRun.x0 < 235 &&
+        l2NetRun.x1 > 237.5 &&
+        l2NetRun.topFeet > 26 &&
+        l2NetRun.traps === 1 &&
+        l2NetRun.ms > 3500 &&
+        l2NetRun.ms < 5000 &&
+        l2NetRun.x >= 227 &&
+        l2NetRun.x <= 234 &&
+        l2NetRun.feet <= 26.5 &&
+        l2NetRun.fardo === 'sano',
+      `S39: nivel 2, la red saca a Kerana del hueco del premio sin romper el fardo, moviéndose, saltando y con salto doble y dash (${JSON.stringify(l2NetRun)})`,
+    );
+    await l2Net.close();
 
     // 1c6) Ñakurutu con tiro libre (S24): el del poste de C1 (x 204), con Kerana quieta en el piso a 4 tiles y el camino
     // libre, avisa, se lanza y llega hasta ella. Con Kerana al pie del poste (el camino cruza el poste) espera en su lugar.
@@ -1263,8 +1393,9 @@ async function main() {
         l4Info.enemies.jagua === 4 &&
         l4Info.enemies.abejas === 4 &&
         l4Info.enemies.vaca_embrujada === 1 &&
-        l4Info.traps === 0,
-      `nivel 4: 20 plataformas de un solo sentido (4 verticales), 7 piedras (1 temporizada) y 4 rejas, 3 vacas (1 guasu), 3 rocas agrietadas y 6 fardos, 13 tejas, 4 nieblas, 4 fuegos, 3 plumas, 4 jagua, 4 panales, 1 vaca embrujada, ningún encierro (${JSON.stringify(l4Info)})`,
+        // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
+        l4Info.traps === 5,
+      `nivel 4: 20 plataformas de un solo sentido (4 verticales), 7 piedras (1 temporizada) y 4 rejas, 3 vacas (1 guasu), 3 rocas agrietadas y 6 fardos, 13 tejas, 4 nieblas, 4 fuegos, 3 plumas, 4 jagua, 4 panales, 1 vaca embrujada, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l4Info)})`,
     );
     await l4Run.evaluate(installPilot, L4_CHIPAS);
     for (let t = 0; t < 480000 && !(await pilot(l4Run)).done; t += 500) await sleep(500);
@@ -1553,8 +1684,9 @@ async function main() {
         l5Info.enemies.kuati === L5_COUNTS.kuati &&
         l5Info.enemies.kai === L5_COUNTS.kai &&
         l5Info.enemies.mboi_colgante === L5_COUNTS.mboi &&
-        l5Info.traps === 0,
-      `nivel 5: ${L5_COUNTS.movers} plataformas de un solo sentido (${L5_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos (${L5_COUNTS.normal} normales, ${L5_COUNTS.once} de un uso, ${L5_COUNTS.sleep} dormidos), ${L5_COUNTS.crumbles} ramas que se quiebran, ${L5_COUNTS.rocks} rocas y ${L5_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L5_COUNTS.kuati} kuati, ${L5_COUNTS.kai} ka'i, ${L5_COUNTS.mboi} mbói, ningún encierro (${JSON.stringify(l5Info)})`,
+        // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
+        l5Info.traps === 2,
+      `nivel 5: ${L5_COUNTS.movers} plataformas de un solo sentido (${L5_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos (${L5_COUNTS.normal} normales, ${L5_COUNTS.once} de un uso, ${L5_COUNTS.sleep} dormidos), ${L5_COUNTS.crumbles} ramas que se quiebran, ${L5_COUNTS.rocks} rocas y ${L5_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L5_COUNTS.kuati} kuati, ${L5_COUNTS.kai} ka'i, ${L5_COUNTS.mboi} mbói, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l5Info)})`,
     );
     await l5Run.evaluate(installPilot, L5_CHIPAS);
     for (let t = 0; t < 600000 && !(await pilot(l5Run)).done; t += 500) await sleep(500);
@@ -1842,8 +1974,9 @@ async function main() {
         l6Info.chase &&
         l6Info.chasePindos === L6_COUNTS.chasePindos &&
         l6Info.waterfalls === 1 &&
-        l6Info.traps === 0,
-      `nivel 6: ${L6_COUNTS.movers} plataformas de un solo sentido (${L6_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos de las tres variantes, ${L6_COUNTS.crumbles} lajas que se quiebran, ${L6_COUNTS.rocks} rocas y ${L6_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L6_COUNTS.taitetu} taitetu, ${L6_COUNTS.karakara} karakara, ${L6_COUNTS.cria} crías, la persecución con ${L6_COUNTS.chasePindos} pindó, la cascada, ningún encierro (${JSON.stringify(l6Info)})`,
+        // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
+        l6Info.traps === 8,
+      `nivel 6: ${L6_COUNTS.movers} plataformas de un solo sentido (${L6_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos de las tres variantes, ${L6_COUNTS.crumbles} lajas que se quiebran, ${L6_COUNTS.rocks} rocas y ${L6_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L6_COUNTS.taitetu} taitetu, ${L6_COUNTS.karakara} karakara, ${L6_COUNTS.cria} crías, la persecución con ${L6_COUNTS.chasePindos} pindó, la cascada, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l6Info)})`,
     );
     // Durante la persecución la cámara va fija al borde que avanza (y vuelve a seguir a Kerana al terminar).
     await l6Run.evaluate(() => {
@@ -2180,8 +2313,9 @@ async function main() {
         l7RunInfo.enemies.mbopi === C7.mbopi &&
         l7RunInfo.enemies.pora === C7.pora &&
         l7RunInfo.enemies.jagua_hu === C7.jagua &&
-        l7RunInfo.traps === 0,
-      `nivel 7: ${C7.movers} plataformas de un solo sentido (${C7.vertical} verticales), ${C7.lanterns} faroles (${C7.triggers} disparadores, ${C7.timed} temporizados), 1 piedra y ${C7.gates} rejas, toldos de las tres variantes, ${C7.rocks} rocas y ${C7.brittle} fardos, 4 fuegos, 3 plumas, ${C7.mbopi} mbopi, ${C7.pora} póra, ${C7.jagua} jagua hũ, ningún encierro (${JSON.stringify(l7RunInfo)})`,
+        // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
+        l7RunInfo.traps === 5,
+      `nivel 7: ${C7.movers} plataformas de un solo sentido (${C7.vertical} verticales), ${C7.lanterns} faroles (${C7.triggers} disparadores, ${C7.timed} temporizados), 1 piedra y ${C7.gates} rejas, toldos de las tres variantes, ${C7.rocks} rocas y ${C7.brittle} fardos, 4 fuegos, 3 plumas, ${C7.mbopi} mbopi, ${C7.pora} póra, ${C7.jagua} jagua hũ, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l7RunInfo)})`,
     );
     const l7Pickups = () => l7Run.evaluate(() => window.__KERANA_DEBUG__.scene.pickups.filter((p) => p.active).map((p) => `${p.kind}@${Math.floor(p.x / 16)}`).sort());
     await l7Run.evaluate(installPilot, L7_CHIPAS);

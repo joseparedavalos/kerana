@@ -7,7 +7,7 @@ import { InputManager } from '../systems/InputManager';
 import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
-// Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Reiniciar desde el fuego · Opciones · Salir al mapa.
+// Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Volver al último fuego (S39; antes «Reiniciar desde el fuego») · Opciones · Salir al mapa.
 export class PauseScene extends Phaser.Scene {
   private inputs!: InputManager;
   private items: { labelKey: string; action: () => void }[] = [];
@@ -27,7 +27,7 @@ export class PauseScene extends Phaser.Scene {
 
     this.items = [
       { labelKey: 'pause.continue', action: () => this.resumeLevel() },
-      // S36: frente a la puerta de la ofrenda sin las tres chipas, volver a buscar las que faltan.
+      // S36: volver a buscar las chipas que faltan (S39: en cualquier punto del nivel con la puerta cerrada, no solo frente a ella).
       ...(this.registry.get('chipaReturn') === true ? [{ labelKey: 'pause.chipa_return', action: () => this.returnForChipas() }] : []),
       { labelKey: 'pause.restart', action: () => this.restart() },
       { labelKey: 'pause.options', action: () => this.scene.start('Options', { returnScene: 'Pause' }) },

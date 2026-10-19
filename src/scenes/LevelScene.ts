@@ -155,6 +155,9 @@ export class LevelScene extends Phaser.Scene {
   /** Red de seguridad (S23): 1 = piso encerrado (celda de los pies); el reloj corre mientras Kerana está en uno. */
   private trapCells?: Uint8Array;
   private readonly trapWatch = new TrapWatch();
+  /** Objetos del mapa para recalcular los encierros cuando algo se abre (S39), y la raya roja de `?debug=1`. */
+  private trapObjects: TrapObject[] = [];
+  private trapGfx?: Phaser.GameObjects.Graphics;
   private readonly checkpointPos = new Phaser.Math.Vector2();
   private readonly playerRect = new Phaser.Geom.Rectangle();
   private debugText?: Phaser.GameObjects.Text;
@@ -1037,7 +1040,9 @@ export class LevelScene extends Phaser.Scene {
     for (const b of this.bouncers) {
       if (b.motor.state !== 'asleep' || this.player.hasHitThisSwing(b) || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
       this.player.markHitThisSwing(b);
-      AudioManager.play(b.strike(this.player.motor.chargedSwing) ? 'bounce' : 'hit');
+      const woke = b.strike(this.player.motor.chargedSwing);
+      AudioManager.play(woke ? 'bounce' : 'hit');
+      if (woke) this.updateTraps();
     }
   }
 
@@ -1106,7 +1111,9 @@ export class LevelScene extends Phaser.Scene {
     }
     for (const b of this.bouncers) {
       if (b.motor.state !== 'asleep' || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
-      if (wave.tryHit(b) && b.strike(true)) AudioManager.play('bounce');
+      if (!wave.tryHit(b) || !b.strike(true)) continue;
+      AudioManager.play('bounce');
+      this.updateTraps();
     }
     const boss = this.boss;
     if (boss && this.fighting && boss.brain.state !== 'defeated') {
@@ -1427,6 +1434,7 @@ export class LevelScene extends Phaser.Scene {
     for (const obj of hit.look) obj.destroy();
     hit.look.length = 0;
     this.dropPickupsFrom(hit.group);
+    this.updateTraps();
     AudioManager.play(hit.kind === 'liana' ? 'vineSnap' : 'rockBreak');
     this.shake(80, 0.004);
   }
@@ -1867,19 +1875,17 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /**
-   * Red de seguridad (S23): marca los pisos de los que Kerana no puede salir con lo que tiene. Se calcula una vez,
-   * con la geometría del mapa y un modelo que exagera su alcance (ver `trapLogic.ts`).
+   * Red de seguridad (S23): marca los pisos de los que Kerana no puede salir con lo que tiene. Se calcula al cargar el
+   * nivel, con la geometría del mapa y un modelo que exagera su alcance (ver `trapLogic.ts`), y otra vez cada vez que
+   * algo se abre (S39: un rompible roto, un hongo dormido despierto, la ofrenda abierta).
    */
   private findTraps(): void {
     // La escena se reutiliza entre niveles (S24): sin esto quedaban las celdas y el reloj del nivel anterior.
     this.trapCells = undefined;
     this.trapWatch.reset();
-    const map = this.map;
-    const layer = (name: TileLayerName) => (x: number, y: number) => {
-      const tile = this.layers[name]?.getTileAt(x, y);
-      return !!tile && tile.index !== -1;
-    };
-    const objects: TrapObject[] = (map.getObjectLayer('Objects')?.objects ?? []).map((o) => ({
+    // La raya del nivel anterior se fue con la escena.
+    this.trapGfx = undefined;
+    this.trapObjects = (this.map.getObjectLayer('Objects')?.objects ?? []).map((o) => ({
       cls: objectClass(o),
       x: o.x ?? 0,
       y: o.y ?? 0,
@@ -1887,16 +1893,37 @@ export class LevelScene extends Phaser.Scene {
       height: o.height ?? 0,
       props: Object.fromEntries(((o.properties ?? []) as { name: string; value: unknown }[]).map((p) => [p.name, p.value])),
     }));
+    this.updateTraps();
+  }
+
+  /** ¿Kerana ya abrió este objeto? Rompibles rotos, hongos dormidos despiertos, la ofrenda abierta. */
+  private trapOpened(o: TrapObject): boolean {
+    const at = (zone: Phaser.Geom.Rectangle) => zone.x === o.x && zone.y === o.y;
+    if (o.cls === 'Breakable') return this.breakables.some((b) => b.broken && at(b.zone));
+    if (o.cls === 'Bouncer') return this.bouncers.some((b) => b.motor.state !== 'asleep' && at(b.zone));
+    if (o.cls === 'Offering') return this.offering?.motor.state === 'open';
+    return false;
+  }
+
+  /** Recalcula los pisos encerrados con lo que está abierto ahora. El reloj sigue: lo corta pisar un piso libre. */
+  private updateTraps(): void {
+    const map = this.map;
+    const layer = (name: TileLayerName) => (x: number, y: number) => {
+      const tile = this.layers[name]?.getTileAt(x, y);
+      return !!tile && tile.index !== -1;
+    };
     const grid = trapGridFromMap({
       width: map.width,
       height: map.height,
       tile: map.tileWidth,
+      // Los rompibles van por `opened`: el tile de uno roto ya no está, el de uno sano sí (y la liana no es tile).
       ground: layer('Ground'),
       platforms: layer('Platforms'),
       hazards: layer('Hazards'),
       water: layer('Water'),
-      objects,
+      objects: this.trapObjects,
       cowReachPx: GAMEPLAY.cow.patrolDistance + 2 * map.tileWidth,
+      opened: (o) => this.trapOpened(o),
     });
     const p = GAMEPLAY.player;
     // Alcance con la física del juego (S24): paso fijo de Arcade, no la fórmula continua (ver `trapReach`).
@@ -1913,11 +1940,12 @@ export class LevelScene extends Phaser.Scene {
         bodyHeight: p.bodyHeight,
       }),
     );
-    if (result.trappedSpans.length === 0) return;
-    this.trapCells = result.trapped;
-    if (!DEBUG.debug) return;
+    this.trapGfx?.destroy();
+    this.trapGfx = undefined;
+    this.trapCells = result.trappedSpans.length === 0 ? undefined : result.trapped;
+    if (!this.trapCells || !DEBUG.debug) return;
     // Con ?debug=1, una raya roja sobre cada piso encerrado.
-    const gfx = this.add.graphics().setDepth(30);
+    const gfx = (this.trapGfx = this.add.graphics().setDepth(30));
     gfx.lineStyle(2, 0xd94040, 0.9);
     for (const n of result.trappedSpans) {
       const sp = result.spans[n];
@@ -2134,6 +2162,7 @@ export class LevelScene extends Phaser.Scene {
       AudioManager.play('feather');
     } else if (event === 'opened') {
       door.open();
+      this.updateTraps();
       AudioManager.play('offeringOpen');
       AudioManager.play('leaves');
     }
