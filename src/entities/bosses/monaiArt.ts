@@ -7,31 +7,18 @@ import { GAMEPLAY } from '../../config/gameplay';
 // sobresalen arriba y no hacen daño.
 const CFG = GAMEPLAY.monai;
 
-export const HEAD_TEXTURE = 'monai_head';
-export const HEAD_OPEN_TEXTURE = 'monai_head_open';
-export const HEAD_DAZE_TEXTURE = 'monai_head_daze';
+/** Sprite de la cabeza (S43, raw/monai/head → `monai_head`, animaciones `_idle`, `_attack` y `_daze`). */
+export const HEAD_SPRITE = 'monai_head';
+// Cabeza por código: solo si falta el sprite (con otra clave, para no pisarlo).
+export const HEAD_TEXTURE = 'monai_head_drawn';
+export const HEAD_OPEN_TEXTURE = 'monai_head_drawn_open';
+export const HEAD_DAZE_TEXTURE = 'monai_head_drawn_daze';
 export const HORNS_TEXTURE = 'monai_horns';
 /** Píxeles de textura por unidad del mundo. */
 export const ART_K = 2;
 
-/** Colores de la serpiente: verde con dibujo dorsal oscuro y vientre crema. */
-export const SNAKE = {
-  outline: 0x1e2e14,
-  body: 0x4f7d2c,
-  shade: 0x3a5e21,
-  light: 0x86b24a,
-  belly: 0xd8cf86,
-  spot: 0x2b4618,
-  /** Vueltas detrás del tronco: más oscuras. */
-  back: 0x2f4a1c,
-  backOutline: 0x18240f,
-  eye: 0xf2c14e,
-  mouth: 0x7a1f2b,
-  fang: 0xf4f0e0,
-  horn: 0xf1ead2,
-  hornBand: 0xb9ae8a,
-  star: 0xffe27a,
-} as const;
+/** Colores de la serpiente (`GAMEPLAY.monai.palette`). */
+export const SNAKE = CFG.palette;
 
 /** Tamaño de las texturas de la cabeza (unidades) y punto que coincide con el centro de la zona de daño. */
 const HEAD_W = 38;
@@ -126,7 +113,10 @@ function makeHead(scene: Phaser.Scene, key: string, mood: 'closed' | 'open' | 'd
   g.destroy();
 }
 
-/** Cuernos largos que salen de la nuca hacia arriba y atrás, color hueso con anillos (el tinte los vuelve iridiscentes). */
+/**
+ * Cuernos que salen de la nuca hacia arriba y atrás, grises con anillos (el tinte los vuelve iridiscentes). Cortos (S43):
+ * la curva se acorta hacia su base en `hornLength` y el grosor no cambia.
+ */
 function makeHorns(scene: Phaser.Scene): void {
   const k = ART_K;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
@@ -134,10 +124,18 @@ function makeHorns(scene: Phaser.Scene): void {
   const top = HEAD_CY - CFG.headHeight / 2;
   const w = CFG.headWidth;
   // Dos cuernos: base sobre el cráneo, punta arriba y hacia atrás (el de atrás, más largo).
-  const horns = [
+  const long = [
     { bx: left + w * 0.6, by: top + 2, cx: left + w * 0.62, cy: top - 8, tx: left + w * 0.95, ty: 1.5, r: 1.9 },
     { bx: left + w * 0.78, by: top + 3, cx: left + w * 0.84, cy: top - 6, tx: HEAD_W - 1.5, ty: 4, r: 1.7 },
   ];
+  const f = CFG.hornLength;
+  const horns = long.map((hn) => ({
+    ...hn,
+    cx: hn.bx + (hn.cx - hn.bx) * f,
+    cy: hn.by + (hn.cy - hn.by) * f,
+    tx: hn.bx + (hn.tx - hn.bx) * f,
+    ty: hn.by + (hn.ty - hn.by) * f,
+  }));
   const steps = 22;
   for (const pass of [0, 1, 2]) {
     for (const hn of horns) {

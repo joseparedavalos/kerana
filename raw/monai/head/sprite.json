@@ -1,0 +1,15 @@
+{
+  "detail": 2,
+  "frame": [76, 68],
+  "height": 40,
+  "sheets": {
+    "idle": { "ignore": true },
+    "attack": { "align": "top", "anchor": "cell" },
+    "daze": { "align": "top", "anchor": "cell" }
+  },
+  "anims": {
+    "idle": { "source": "attack", "list": [0], "fps": 1, "loop": true },
+    "attack": { "frames": [1, 6], "fps": 16 },
+    "daze": { "fps": 6, "loop": true }
+  }
+}

@@ -32,7 +32,7 @@ export const backgroundPath = (key: string): string => `backgrounds/${key.slice(
 export const CHARACTER_SPRITES: Record<string, [number, number]> = {
   teju_jagua_head: [112, 96],
   mboi_tui: [128, 96],
-  monai: [72, 128],
+  monai_head: [76, 68],
   jasy_jatere: [64, 72],
   kurupi: [64, 96],
   ao_ao: [128, 64],

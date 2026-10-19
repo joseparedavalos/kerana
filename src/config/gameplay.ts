@@ -467,6 +467,17 @@ export const GAMEPLAY = {
     /** Al caer o embestir, la cabeza se inclina hacia donde va, hasta este ángulo (grados; 0 = siempre derecha). */
     diveTiltMaxDeg: 30,
     /**
+     * Sprite de la cabeza (S43, `monai_head`, frame de 76 × 68 a detail 2): punto del frame (fracciones) que va en el
+     * centro de la zona de daño. La cabeza cerrada ocupa x 8-69 e y 0-40 del frame (≈ 30 × 20 unidades), así que con
+     * (0,5; 0,3) cubre la zona de 26 × 18 y sobra un poco de hocico y de nuca. Moverlo corre el dibujo, no la zona.
+     */
+    headSpriteOrigin: [0.5, 0.3],
+    /**
+     * Largo de los cuernos (S43), fracción del largo de S26 (1 = como antes, hasta 10 unidades sobre el cráneo). La
+     * referencia del Museo Mitológico Ramón Elías los tiene cortos, apenas despuntando del cráneo: 0,4.
+     */
+    hornLength: 0.4,
+    /**
      * Árboles de la arena (S26): copa irregular de racimos de hojas, ancho (px) y alto sobre y bajo la línea de la copa
      * (la plataforma "="); cada árbol varía hasta ± la mitad de `treeVariation`.
      */
@@ -474,6 +485,28 @@ export const GAMEPLAY = {
     crownAbove: 30,
     crownBelow: 18,
     treeVariation: 0.2,
+    /**
+     * Colores de la serpiente (S42): naranja rojizo con vientre claro y cuernos grises, como el Moñái del Museo
+     * Mitológico Ramón Elías (verde se leía como dragón oriental). El naranja es más claro y saturado que la tierra
+     * de l3 (≈ #a8472c) y el borde oscuro lo separa de ella; sobre el cielo y las copas verdes, contrasta solo.
+     */
+    palette: {
+      outline: 0x3a1608,
+      body: 0xe2732c,
+      shade: 0xb04f1e,
+      light: 0xf6a85e,
+      belly: 0xf6dcae,
+      spot: 0x8a3414,
+      /** Vueltas detrás del tronco: más oscuras. */
+      back: 0x8f3c18,
+      backOutline: 0x240d05,
+      eye: 0xf2e04e,
+      mouth: 0x5e1420,
+      fang: 0xf4f0e0,
+      horn: 0xb4b1aa,
+      hornBand: 0x7d7a74,
+      star: 0xffe27a,
+    },
   },
   /**
    * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de

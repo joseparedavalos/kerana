@@ -184,6 +184,20 @@ describe('sprite pipeline', () => {
     expect(rows[1]).toBeLessThan(rows[2]);
   });
 
+  it('ignore deja afuera una hoja; sus animaciones salen de otra con source', () => {
+    const run = { anim: 'run', cols: 2, rows: 1, img: syntheticSheet(2, 100) };
+    const bad = { anim: 'idle', cols: 2, rows: 1, img: syntheticSheet(2, 100, [200, 200, 200, 255]) };
+    const { meta } = processCharacter('x', [bad, run], {
+      frame: [32, 32],
+      height: 20,
+      sheets: { idle: { ignore: true } },
+      anims: { idle: { source: 'run', list: [0] } },
+    });
+    expect(meta.frames).toBe(2);
+    expect((meta.anims as Record<string, { frames: number[] }>).x_idle.frames).toEqual([0]);
+    expect((meta.anims as Record<string, { frames: number[] }>).x_run.frames).toEqual([0, 1]);
+  });
+
   it('cropBottom borra las filas de abajo de cada celda antes de medir', () => {
     // Una "rama" de 10 px pegada al borde de abajo de cada celda: sin ella, la escala sale del cuerpo.
     const img = syntheticSheet(2, 100);
