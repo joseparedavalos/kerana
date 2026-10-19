@@ -4,12 +4,12 @@ import { getBossDef } from '../../data/bosses';
 import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
+import { drawCoil, MboiWaterFx } from './mboiTuiArt';
 
 const CFG = GAMEPLAY.mboiTui;
 const TILE = 16;
 const HEAD_TEXTURE = 'mboi_tui_head_placeholder';
 const NECK_COLOR = 0x2f7a3e;
-const COIL_COLOR = 0x28603a;
 const CREST_COLOR = 0xe04848;
 const SWELL_TINT = 0xa8d8f0;
 const RING_COLOR = 0xf2eee3;
@@ -47,13 +47,19 @@ function ensureTextures(scene: Phaser.Scene): void {
 }
 
 // Mbói Tu'i (GDD §6.2): serpiente con cabeza de loro que emerge del agua de la laguna.
+// Antes de salir el agua avisa (S41, mboiTuiArt.ts): se calma, se abren los juncos y gira un remolino.
 // Fase 1: picotazos. Fase 2: + graznido y escupitajo. Fase 3: enroscado en el islote central,
 // picotazos rápidos, graznido doble, camalotes que aparecen y desaparecen, y flores que curan.
 export class MboiTui extends Boss {
   private readonly head: Phaser.GameObjects.Image;
   private readonly crest: Phaser.GameObjects.Triangle;
   private readonly neck: Phaser.GameObjects.Graphics;
-  private readonly coil: Phaser.GameObjects.Ellipse;
+  /** Vueltas del cuerpo en el charco del islote (fase 3), dibujadas por código. */
+  private readonly coil: Phaser.GameObjects.Graphics;
+  private readonly coilState = { rise: 0 };
+  private readonly water: MboiWaterFx;
+  /** Aviso del agua en curso: punto (-1 sin aviso), ms transcurridos y duración. */
+  private readonly warning = { point: -1, elapsedMs: 0, totalMs: 1 };
   private readonly bubbles: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly rings: Ring[] = [];
   private readonly balls: Ball[] = [];
@@ -82,7 +88,8 @@ export class MboiTui extends Boss {
     this.emergeXs = CFG.emergeTiles.map((t) => arena.left + t * TILE);
     this.coilX = arena.left + CFG.coilTile * TILE;
 
-    this.coil = scene.add.ellipse(this.coilX, ctx.floorY - 10, 70, 24, COIL_COLOR).setDepth(-1);
+    this.coil = scene.add.graphics().setDepth(-1);
+    this.water = new MboiWaterFx(scene, this.emergeXs, this.coilX, ctx.floorY);
     this.neck = scene.add.graphics().setDepth(4);
     this.head = scene.add.image(0, 0, HEAD_TEXTURE).setDepth(5);
     this.crest = scene.add.triangle(0, 0, 0, 10, 5, 0, 10, 10, CREST_COLOR).setDepth(4);
@@ -114,22 +121,27 @@ export class MboiTui extends Boss {
   // ── Presentación ──────────────────────────────────────────────────────────
 
   protected playIntro(onDone: () => void): void {
-    // Un graznido que sacude la pantalla; la cabeza de loro emerge en el centro.
+    // El agua del centro avisa; la cabeza de loro emerge y suelta un graznido que sacude la pantalla.
     const x = this.emergeXs[1];
+    const warnMs = CFG.introWarnMs;
     this.setBase(x, this.ctx.floorY + CFG.headHeight);
-    this.head.setPosition(x, this.baseY).setAlpha(1).setFlipX(this.ctx.playerX() > x);
-    this.moveHead(x, this.ctx.floorY - CFG.riseHeight, 600);
+    this.head.setPosition(x, this.baseY).setAlpha(0).setFlipX(this.ctx.playerX() > x);
+    this.startWarning(1, warnMs);
     this.timers.push(
-      this.scene.time.delayedCall(600, () => {
+      this.scene.time.delayedCall(warnMs, () => {
+        this.surface(1);
+        this.moveHead(x, this.ctx.floorY - CFG.riseHeight, 600);
+      }),
+      this.scene.time.delayedCall(warnMs + 600, () => {
         this.ctx.sfx('squawk');
         this.ctx.shake(400, 0.01);
         this.bristle(true);
       }),
-      this.scene.time.delayedCall(1500, () => {
+      this.scene.time.delayedCall(warnMs + 1500, () => {
         this.bristle(false);
         this.submerge();
       }),
-      this.scene.time.delayedCall(1900, onDone),
+      this.scene.time.delayedCall(warnMs + 1900, onDone),
     );
   }
 
@@ -170,6 +182,7 @@ export class MboiTui extends Boss {
       this.submerge();
       this.setBase(this.pickEmergeX(true), this.ctx.floorY + CFG.headHeight);
       this.bubbleMs = 0;
+      this.startWarning(this.water.pointAt(this.baseX), this.brain.msLeft);
     }
     this.ctx.sfx('bubbles');
   }
@@ -186,6 +199,7 @@ export class MboiTui extends Boss {
     const arena = this.ctx.arena;
     const toX = Phaser.Math.Clamp(fromX + dir * dist, arena.left + CFG.headWidth, arena.right - CFG.headWidth);
     const toY = floorY - CFG.headHeight / 2;
+    if (!this.coiled) this.surface(this.water.pointAt(fromX), false);
     this.scene.tweens.killTweensOf(this.head);
     this.head.setAlpha(1).setAngle(0).setFlipX(dir > 0).setPosition(fromX, fromY);
     this.harmful = true;
@@ -311,13 +325,24 @@ export class MboiTui extends Boss {
   protected override onDefeated(): void {
     this.ctx.setArenaPlatformsCycling(false);
     this.hideProjectiles();
+    // Sin ondas ni remolino congelados durante la liberación (el agua deja de actualizarse).
+    this.warning.point = -1;
+    this.water.reset();
   }
 
-  /** Fase 3: se enrosca en el islote central; los camalotes empiezan a ir y venir. */
+  /** Fase 3: el charco del islote avisa y salen las vueltas del cuerpo; los camalotes empiezan a ir y venir. */
   private coilUp(): void {
     this.coiled = true;
-    this.coil.setVisible(true).setAlpha(0);
-    this.scene.tweens.add({ targets: this.coil, alpha: 1, duration: 500 });
+    this.coilState.rise = 0;
+    this.coil.setAlpha(1);
+    const puddle = this.water.puddleIndex;
+    this.startWarning(puddle, CFG.coilWarnMs);
+    this.timers.push(
+      this.scene.time.delayedCall(CFG.coilWarnMs, () => {
+        this.surface(puddle, false);
+        this.scene.tweens.add({ targets: this.coilState, rise: 1, duration: CFG.coilRiseMs, ease: 'Back.easeOut' });
+      }),
+    );
     this.flowerMs = CFG.flowerEveryMs;
     this.ctx.setArenaPlatformsCycling(true);
   }
@@ -391,6 +416,7 @@ export class MboiTui extends Boss {
         this.ctx.spawnHealFlower(x);
       }
     }
+    this.updateWater(deltaMs);
 
     const dir = this.head.flipX ? -1 : 1;
     this.crest.setPosition(this.head.x + dir * 8, this.head.y - CFG.headHeight / 2 - 3).setAlpha(this.head.alpha);
@@ -404,12 +430,15 @@ export class MboiTui extends Boss {
   protected resetVisuals(): void {
     for (const timer of this.timers) timer.remove();
     this.timers.length = 0;
-    this.scene.tweens.killTweensOf([this.head, this.coil, this.arc, this]);
+    this.scene.tweens.killTweensOf([this.head, this.coil, this.coilState, this.arc, this]);
     this.harmful = false;
     this.exposed = false;
     this.coiled = false;
     this.neckScale = 1;
-    this.coil.setVisible(false).setAlpha(1);
+    this.coilState.rise = 0;
+    this.coil.clear().setAlpha(1);
+    this.warning.point = -1;
+    this.water.reset();
     this.crest.setVisible(false);
     this.neck.setAlpha(1);
     this.setBase(this.emergeXs[1], this.ctx.floorY + CFG.headHeight);
@@ -432,16 +461,57 @@ export class MboiTui extends Boss {
   /** Emerge (o se yergue sobre el islote) cerca de Kerana, `height` px sobre el agua. */
   private emergeNear(height: number): void {
     const x = this.coiled ? this.coilX : this.pickEmergeX(false);
-    if (!this.coiled) {
-      this.setBase(x, this.ctx.floorY + CFG.headHeight);
-      this.head.setPosition(x, this.baseY);
-    }
-    this.head.setAlpha(1).setFlipX(this.ctx.playerX() > x);
-    this.moveHead(x, this.ctx.floorY - height, 300);
     this.ctx.sfx('bubbles');
+    if (this.coiled) {
+      this.head.setAlpha(1).setFlipX(this.ctx.playerX() > x);
+      this.moveHead(x, this.ctx.floorY - height, 300);
+      return;
+    }
+    // Desde el agua: primero avisa el agua (`emergeLeadMs`) y después sube la cabeza.
+    this.submerge();
+    this.setBase(x, this.ctx.floorY + CFG.headHeight);
+    const point = this.water.pointAt(x);
+    this.startWarning(point, CFG.emergeLeadMs);
+    this.timers.push(
+      this.scene.time.delayedCall(CFG.emergeLeadMs, () => {
+        this.surface(point);
+        this.head.setFlipX(this.ctx.playerX() > x);
+        this.moveHead(x, this.ctx.floorY - height, 300);
+      }),
+    );
+  }
+
+  /** Sale del agua en el punto `point`: chapuzón y ondas; con `placeHead`, la cabeza lista bajo la superficie. */
+  private surface(point: number, placeHead = true): void {
+    this.warning.point = -1;
+    this.water.splash(point, true);
+    if (!placeHead) return;
+    this.scene.tweens.killTweensOf(this.head);
+    this.head.setPosition(this.baseX, this.ctx.floorY + CFG.headHeight).setAlpha(1);
+  }
+
+  private startWarning(point: number, totalMs: number): void {
+    this.warning.point = point;
+    this.warning.elapsedMs = 0;
+    this.warning.totalMs = Math.max(1, totalMs);
+  }
+
+  /** Aviso en curso, juncos abiertos donde está afuera y el cuerpo enroscado. */
+  private updateWater(deltaMs: number): void {
+    const w = this.warning;
+    if (w.point >= 0) {
+      w.elapsedMs += deltaMs;
+      this.water.warn(w.point, Math.min(1, w.elapsedMs / w.totalMs));
+    }
+    if (this.head.alpha > 0.1 && this.head.y < this.ctx.floorY) {
+      this.water.occupy(this.coiled ? this.water.puddleIndex : this.water.pointAt(this.baseX));
+    }
+    this.water.update(deltaMs);
+    drawCoil(this.coil, this.coilX, this.ctx.floorY, this.coilState.rise, 1);
   }
 
   private submerge(): void {
+    if (this.head.alpha > 0.5) this.water.splash(this.water.pointAt(this.head.x), false);
     this.scene.tweens.killTweensOf(this.head);
     this.scene.tweens.add({ targets: this.head, y: this.ctx.floorY + CFG.headHeight, alpha: 0, duration: 250 });
   }
