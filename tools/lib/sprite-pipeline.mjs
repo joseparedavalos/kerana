@@ -292,6 +292,8 @@ export function processCharacter(name, sheets, config = {}) {
 
   for (const sheet of sheets) {
     const opts = config.sheets?.[sheet.anim] ?? {};
+    // ignore: la hoja no se procesa (p. ej. vino sin transparencia y hay que regenerarla); sus animaciones, con `source`.
+    if (opts.ignore) continue;
     let bg = removeBackground(sheet.img);
     const passes = greenEdgePasses(opts.greenEdge ?? config.greenEdge);
     const margin = opts.greenEdgeMargin ?? config.greenEdgeMargin;
