@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { HeartThief, pulseBlocked, type Trunk } from '../src/entities/bosses/monaiLogic';
 import { Health } from '../src/systems/Health';
 import { StatusEffects } from '../src/systems/StatusEffects';
+import { GAMEPLAY } from '../src/config/gameplay';
+import { getBossDef } from '../src/data/bosses';
 
 describe('Hipnosis (StatusEffects)', () => {
   it('invierte izquierda y derecha mientras dura y después vuelve a la normalidad', () => {
@@ -88,5 +90,57 @@ describe('Robo del corazón (HeartThief)', () => {
     thief.steal(() => true);
     thief.reset();
     expect(thief.holding).toBe(false);
+  });
+});
+
+describe('Confusión de Moñái (S44)', () => {
+  const press = () => ({ left: false, right: true, attackPressed: true, attackHeld: true });
+
+  it('invierte los controles y además no deja atacar mientras dura', () => {
+    const s = new StatusEffects();
+    expect(s.applyConfusion(4500, 0)).toBe(true);
+    expect(s.confused).toBe(true);
+    const input = press();
+    s.applyTo(input);
+    expect(input).toEqual({ left: true, right: false, attackPressed: false, attackHeld: false });
+    s.step(4500);
+    expect(s.confused).toBe(false);
+    const after = press();
+    s.applyTo(after);
+    expect(after.attackPressed).toBe(true);
+    expect(after.right).toBe(true);
+  });
+
+  it('cada intento de atacar la sacude y la acorta, hasta quitarla', () => {
+    const s = new StatusEffects();
+    s.applyConfusion(1000, 400);
+    s.applyTo(press());
+    s.applyTo(press());
+    expect(s.confused).toBe(true);
+    s.applyTo({ left: false, right: false });
+    expect(s.confused).toBe(true);
+    s.applyTo(press());
+    expect(s.confused).toBe(false);
+    expect(s.hypnotized).toBe(false);
+  });
+
+  it('la hipnosis de Tau sigue sin quitar el tajo', () => {
+    const s = new StatusEffects();
+    s.applyHypnosis(3000);
+    expect(s.confused).toBe(false);
+    const input = press();
+    s.applyTo(input);
+    expect(input.attackPressed).toBe(true);
+  });
+
+  it('las ventanas de Moñái salen de gameplay.ts y son más cortas que antes de S44', () => {
+    const cfg = GAMEPLAY.monai;
+    expect(cfg.dazeMs).toBeLessThan(1500);
+    expect(cfg.afterPulseMs).toBeLessThan(1000);
+    expect(cfg.tailMs).toBeLessThan(1200);
+    const windows = getBossDef('monai').phases.flatMap((p) => p.attacks.map((a) => a.recoverMs));
+    expect(new Set(windows)).toEqual(new Set([cfg.dazeMs, cfg.dazeFastMs, cfg.afterPulseMs, cfg.tailMs]));
+    // La vida no cambia (S44).
+    expect(getBossDef('monai').hp).toBe(12);
   });
 });

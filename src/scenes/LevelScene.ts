@@ -711,6 +711,7 @@ export class LevelScene extends Phaser.Scene {
       },
       pushPlayer: (vx, ms) => this.player.motor.push(vx, ms),
       hypnotizePlayer: () => this.hypnotizePlayer(),
+      confusePlayer: () => this.confusePlayer(),
       damagePlayer: (fromX) => this.hurtPlayer(fromX) && !this.player.health.isDead,
       healPlayer: (amount) => {
         if (this.player.heal(amount) > 0) EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
@@ -1207,6 +1208,12 @@ export class LevelScene extends Phaser.Scene {
     if (this.player.status.applyHypnosis(GAMEPLAY.hypnosis.durationMs)) AudioManager.play('hypnosis');
   }
 
+  private confusePlayer(): void {
+    if (DEBUG.god) return;
+    const cfg = GAMEPLAY.monai;
+    if (this.player.status.applyConfusion(cfg.confusionMs, cfg.confusionShakeCutMs)) AudioManager.play('hypnosis');
+  }
+
   private updateHypnosisIcon(deltaMs: number): void {
     const icon = this.hypnosisIcon;
     if (!icon) return;
@@ -1215,6 +1222,9 @@ export class LevelScene extends Phaser.Scene {
     if (!on) return;
     icon.setPosition(this.player.x, this.player.y - GAMEPLAY.hypnosis.iconOffsetY);
     icon.angle += (GAMEPLAY.hypnosis.iconSpinDegPerS * deltaMs) / 1000;
+    // Confundida (Moñái, S44): espiral más grande que se achica a medida que se le pasa o se sacude.
+    const status = this.player.status;
+    icon.setScale(status.confused ? GAMEPLAY.monai.confusionIconScale * (0.5 + 0.5 * status.hypnosisFraction) : 1);
     // Tinte iridiscente que va cambiando (el aviso no depende solo del color: la espiral gira).
     icon.setTint(Phaser.Display.Color.HSVToRGB((this.time.now / 1500) % 1, 0.6, 1).color);
   }

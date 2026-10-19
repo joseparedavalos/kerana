@@ -9,6 +9,8 @@ import { BounceMeter } from './hazards/BounceMeter';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
 const FX = GAMEPLAY.playerFx;
+/** Colores del brillo de la confusión: los del pulso de Moñái. */
+const CONFUSION_COLORS = [0xe06bd0, 0x6bd0e0, 0xe0d06b] as const;
 
 /** Animación de cada estado de la máquina de Kerana (GDD §3.5). */
 const STATE_ANIM: Record<PlayerStateName, string> = {
@@ -83,6 +85,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private nextEyeBlinkMs = 0;
   private hurtFlashMsLeft = 0;
   private chargeGlow?: Phaser.Filters.Glow;
+  /** Brillo de la confusión de Moñái (S44): cambia de color mientras dura. */
+  private confusionGlow?: Phaser.Filters.Glow;
   /** Píxeles de textura por unidad del mundo (`detail` del sprite.json; 1 en el placeholder). */
   private readonly detail: number;
 
@@ -191,6 +195,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateAnimation(deltaMs);
     this.updateHurtFlash(deltaMs);
     this.setChargeGlow(this.motor.chargeFraction);
+    this.updateConfusionGlow();
   }
 
   /** Rebote de un hongo (se aplica en el próximo paso del motor) y empieza a medir su altura. */
@@ -216,6 +221,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     this.chargeGlow.setActive(true);
     this.chargeGlow.outerStrength = FX.chargeGlowStrength * Math.min(1, fraction);
+  }
+
+  /** Confundida (S44): brillo iridiscente que no deja duda (la carga no puede coincidir: sin tajo no hay carga). */
+  private updateConfusionGlow(): void {
+    if (!this.status.confused) {
+      if (this.confusionGlow?.active) this.confusionGlow.setActive(false);
+      return;
+    }
+    const cfg = GAMEPLAY.monai;
+    if (!this.confusionGlow) {
+      this.enableFilters();
+      this.confusionGlow = this.filters!.internal.addGlow(CONFUSION_COLORS[0], cfg.confusionGlowStrength, 0, this.detail);
+    }
+    this.confusionGlow.setActive(true);
+    this.confusionGlow.color = CONFUSION_COLORS[Math.floor(this.scene.time.now / cfg.confusionGlowCycleMs) % CONFUSION_COLORS.length];
   }
 
   /**

@@ -30,8 +30,10 @@ export interface BossContext {
   setArenaPlatformsCycling(on: boolean): void;
   /** Deja caer una flor que cura en x (fase 3 de Mbói Tu'i). */
   spawnHealFlower(x: number): void;
-  /** Hipnotiza a Kerana (controles invertidos, pulso de Moñái). */
+  /** Hipnotiza a Kerana (controles invertidos, melodía de Tau). */
   hypnotizePlayer(): void;
+  /** Confunde a Kerana (S44, pulso de Moñái): controles invertidos y sin tajo hasta que se le pase o se sacuda. */
+  confusePlayer(): void;
   /** 1 de daño a Kerana; true si se aplicó y sigue en pie (robo del corazón de Moñái). */
   damagePlayer(fromX: number): boolean;
   /** Cura a Kerana (corazón recuperado de la cola de Moñái). */
