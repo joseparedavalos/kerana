@@ -517,10 +517,11 @@ export const GAMEPLAY = {
      */
     confusionMs: 4500, // antes 3000 (hipnosis compartida, solo invertía)
     confusionShakeCutMs: 400, // nuevo: ≈ 11 intentos de tajo la quitan entera
-    /** Señal en Kerana: brillo de color que cambia (Glow) y la espiral, más grande que la de Tau; se achica al sacudirse. */
+    /** Señal en Kerana: brillo de color que cambia (Glow) y una espiral que gira, más grande que la de Tau; se achica al pasarse o al sacudirse. */
     confusionGlowStrength: 3, // nuevo
     confusionGlowCycleMs: 600, // nuevo: cuánto dura cada color del brillo
-    confusionIconScale: 1.8, // nuevo (la espiral de Tau mide 1)
+    confusionIconPx: 40, // nuevo: lado de la espiral (la de Tau mide 20)
+    confusionIconLine: 3, // nuevo: grosor de su trazo (px)
     /**
      * Ventanas para golpearle (ms; antes cabía toda la tanda en una). Con un tajo cada 280 ms, ≈ 600 ms dan para dos
      * golpes si Kerana ya está al lado y para uno si llega justo. Las usa `src/data/bosses.ts` como `recoverMs`.
@@ -533,12 +534,12 @@ export const GAMEPLAY = {
      * Cuerpo que estorba: en el suelo (aturdida o junto a un tronco para el pulso), los primeros `guardSegments` se
      * levantan en una joroba detrás de la nuca (`guardWidth` de largo y `guardHeight` de alto, px) que **lastima al
      * tocarla**; el resto queda chato en el suelo y no lastima. La cabeza se alcanza de frente o saltando la joroba
-     * (≈ 30 px de alto: el salto la pasa de sobra). La joroba se arma `guardArmMs` después de llegar al suelo y tarda
+     * (≈ 35 px de alto con el grosor: el salto, ≈ 63, la pasa de sobra). La joroba se arma `guardArmMs` después de llegar al suelo y tarda
      * `guardSettleMs` en levantarse. Antes (hasta S43) el cuerpo no lastimaba y los primeros segmentos también eran blanco.
      */
     guardSegments: 6, // nuevo
     guardWidth: 36, // nuevo
-    guardHeight: 20, // nuevo
+    guardHeight: 26, // nuevo
     guardArmMs: 250, // nuevo
     guardSettleMs: 120, // nuevo
     /** El tajo al cuerpo cuenta como golpe (antes true: se le pegaba a cualquier parte; ahora solo a la cabeza). */
