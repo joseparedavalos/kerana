@@ -1,7 +1,8 @@
 import { GAMEPLAY } from '../config/gameplay';
 
 // Estados alterados de Kerana (GDD §4.8). Lógica pura, sin Phaser.
-// Hipnosis de Moñái (izquierda y derecha invertidas) y sueño de siesta (N4: quieta en la niebla → se duerme).
+// Hipnosis (izquierda y derecha invertidas; melodía de Tau), confusión de Moñái (hipnosis + sin tajo, S44) y sueño de
+// siesta (N4: quieta en la niebla → se duerme).
 
 export interface HorizontalInput {
   left: boolean;
@@ -30,6 +31,9 @@ export type SleepEvent = 'yawn' | 'asleep' | 'awake' | null;
 export class StatusEffects {
   private hypnosisMs = 0;
   private hypnosisTotalMs = 1;
+  /** Confusión de Moñái (S44): la hipnosis además le quita el tajo; cada intento de atacar la acorta en esto (ms). */
+  private sealed = false;
+  private shakeCutMs = 0;
   /** Tiempo quieta dentro de la niebla (ms). */
   private stillMs = 0;
   /** Sueño que queda (ms); > 0 = dormida. */
@@ -39,6 +43,11 @@ export class StatusEffects {
 
   get hypnotized(): boolean {
     return this.hypnosisMs > 0;
+  }
+
+  /** Confundida (S44): controles invertidos y sin tajo. */
+  get confused(): boolean {
+    return this.sealed && this.hypnotized;
   }
 
   /** Lo que queda de hipnosis (1 → 0), para el icono. */
@@ -65,8 +74,20 @@ export class StatusEffects {
     return fresh;
   }
 
+  /**
+   * Confusión de Moñái (S44): hipnosis que además no la deja atacar. Cada vez que intenta atacar se sacude y la
+   * confusión se acorta `shakeCutMs`. Devuelve true si Kerana no estaba hipnotizada.
+   */
+  applyConfusion(ms: number, shakeCutMs: number): boolean {
+    const fresh = this.applyHypnosis(ms);
+    this.sealed = true;
+    this.shakeCutMs = shakeCutMs;
+    return fresh;
+  }
+
   step(dtMs: number): void {
     this.hypnosisMs = Math.max(0, this.hypnosisMs - dtMs);
+    if (this.hypnosisMs === 0) this.sealed = false;
   }
 
   /**
@@ -102,7 +123,7 @@ export class StatusEffects {
     this.stillMs = 0;
   }
 
-  /** Controles invertidos (hipnosis) o anulados (dormida). Modifica `input`. */
+  /** Controles invertidos (hipnosis), sin tajo (confundida) o anulados (dormida). Modifica `input`. */
   applyTo(input: SleepableInput): void {
     if (this.asleep) {
       input.left = false;
@@ -115,13 +136,25 @@ export class StatusEffects {
       return;
     }
     if (!this.hypnotized) return;
+    if (this.sealed) {
+      // Intentar atacar la sacude: la confusión dura menos, pero el tajo no sale.
+      if (input.attackPressed) this.shake();
+      input.attackPressed = false;
+      input.attackHeld = false;
+    }
     const left = input.left;
     input.left = input.right;
     input.right = left;
   }
 
+  private shake(): void {
+    this.hypnosisMs = Math.max(0, this.hypnosisMs - this.shakeCutMs);
+    if (this.hypnosisMs === 0) this.sealed = false;
+  }
+
   clear(): void {
     this.hypnosisMs = 0;
+    this.sealed = false;
     this.wake();
   }
 }

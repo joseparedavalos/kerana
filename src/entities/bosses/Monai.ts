@@ -90,6 +90,8 @@ export class Monai extends Boss {
   private shadowMs = 0;
   private shadowLockMs = 0;
   private glowMs = 0;
+  /** Tiempo con la joroba levantada en el suelo (S44); lastima desde `guardArmMs`. */
+  private guardMs = 0;
   /** Destello blanco del golpe en curso (no lo pisa el brillo de los cuernos). */
   private flashing = false;
 
@@ -277,7 +279,7 @@ export class Monai extends Boss {
     if (this.exposed === 'tail') {
       if (!Phaser.Geom.Rectangle.Overlaps(this.tailBounds(), rect)) return 0;
       if (this.thief.recover((n) => this.ctx.healPlayer(n))) this.ctx.sfx('heartBack');
-    } else if (!Phaser.Geom.Rectangle.Overlaps(this.headBounds(), rect) && !this.touchesBody(rect)) {
+    } else if (!Phaser.Geom.Rectangle.Overlaps(this.headBounds(), rect) && !(CFG.bodyIsTarget && this.touchesBody(rect))) {
       return 0;
     }
     this.flash();
@@ -303,9 +305,11 @@ export class Monai extends Boss {
       const d = Math.sqrt(dx * dx + dy * dy);
       if (Math.abs(d - this.pulseState.r) <= CFG.pulseBand && !pulseBlocked(this.pulse.x, playerRect.centerX, playerRect.bottom, this.trunks)) {
         this.pulseHit = true;
-        this.ctx.hypnotizePlayer();
+        this.ctx.confusePlayer();
       }
     }
+    // La joroba del cuerpo en el suelo lastima al tocarla (S44): hay que ir por delante o saltarla.
+    if (this.guardMs >= CFG.guardArmMs && this.touchesGuard(playerRect)) return true;
     if (!this.harmful || !Phaser.Geom.Rectangle.Overlaps(this.headBounds(), playerRect)) return false;
     if (!this.stealing) return true;
     // Robo: un solo intento por embestida.
@@ -336,8 +340,10 @@ export class Monai extends Boss {
       this.pulse.setRadius(this.pulseState.r).setStrokeStyle(3, color, 1 - this.pulseState.r / (CFG.pulseRadius * 1.3));
     }
     const perched = this.isPerched();
+    const guarding = this.isGuarding();
+    this.guardMs = guarding ? this.guardMs + deltaMs : 0;
     this.updateHead(perched);
-    this.updateSegments(deltaMs, perched);
+    this.updateSegments(deltaMs, perched, guarding);
     this.drawBody();
     this.drawFx(deltaMs);
     const tail = this.segments[this.segments.length - 1];
@@ -349,6 +355,12 @@ export class Monai extends Boss {
   private isPerched(): boolean {
     if (this.grounded || this.harmful || this.head.alpha <= 0) return false;
     return Math.abs(this.head.x - this.perchX(this.perch)) < 4 && Math.abs(this.head.y - this.perchY()) < 4;
+  }
+
+  /** En el suelo con la cabeza apoyada (aturdida o para el pulso, no en la ventana de la cola): levanta la joroba. */
+  private isGuarding(): boolean {
+    if (!this.grounded || this.harmful || this.exposed === 'tail' || this.head.alpha <= 0) return false;
+    return Math.abs(this.head.y - this.groundHeadY()) < 3;
   }
 
   /** Cara según lo que hace (fauces abiertas = hace daño; ojo cerrado = aturdida) y cuernos pegados a la cabeza. */
@@ -396,7 +408,7 @@ export class Monai extends Boss {
    * El cuerpo sigue a la cabeza como una cuerda; aturdido, se apoya en el suelo. En una copa, cada segmento va hacia su
    * lugar del enroscado: el cuello baja a la copa y el resto da vueltas alrededor del tronco hasta el suelo.
    */
-  private updateSegments(deltaMs: number, perched: boolean): void {
+  private updateSegments(deltaMs: number, perched: boolean, guarding: boolean): void {
     let prevX = this.neckX();
     let prevY = this.head.y + 2;
     const floor = this.floorY - CFG.segmentRadius / 2;
@@ -406,18 +418,30 @@ export class Monai extends Boss {
     const neckX = prevX;
     const neckY = prevY;
     const coilTop = this.canopyY + CFG.coilPitch;
+    // Joroba (S44): detrás de la nuca, del lado contrario a donde mira la cabeza.
+    const back = this.head.flipX ? -1 : 1;
+    const guardStep = Math.min(1, deltaMs / CFG.guardSettleMs);
     for (let i = 0; i < this.segments.length; i++) {
       const s = this.segments[i];
-      if (this.grounded) s.y += (floor - s.y) * settle;
+      if (this.grounded && !guarding) s.y += (floor - s.y) * settle;
       const dx = s.x - prevX;
       const dy = s.y - prevY;
       const d = Math.sqrt(dx * dx + dy * dy);
-      if (d > CFG.segmentGap) {
+      // La joroba tiene su propia forma (sus segmentos van más separados que la cuerda): no tira.
+      if (d > CFG.segmentGap && !guarding) {
         s.x = prevX + (dx / d) * CFG.segmentGap;
         s.y = prevY + (dy / d) * CFG.segmentGap;
       }
       s.back = false;
-      if (perched) {
+      if (guarding) {
+        // Los primeros segmentos, en arco; el resto, chato en el suelo detrás de la joroba.
+        const g = CFG.guardSegments;
+        const f = Math.min(1, (i + 1) / g);
+        const tx = neckX + back * (CFG.guardWidth * f + Math.max(0, i + 1 - g) * CFG.segmentGap);
+        const ty = floor - (i < g ? CFG.guardHeight * Math.sin(Math.PI * f) : 0);
+        s.x += (tx - s.x) * guardStep;
+        s.y += (ty - s.y) * guardStep;
+      } else if (perched) {
         // Lugar en el enroscado: el cuello, recto de la nuca a la copa; después, la hélice alrededor del tronco.
         let tx: number;
         let ty: number;
@@ -500,6 +524,7 @@ export class Monai extends Boss {
     this.stealing = false;
     this.exposed = 'none';
     this.grounded = false;
+    this.guardMs = 0;
     this.glowMs = 0;
     this.perch = 1;
     this.placeAll(this.perchX(1), this.perchY());
@@ -563,7 +588,20 @@ export class Monai extends Boss {
     return this.tailRect.setTo(tail.x - CFG.tailWidth / 2, tail.y - CFG.tailHeight / 2, CFG.tailWidth, CFG.tailHeight);
   }
 
-  /** El tajo toca alguno de los primeros segmentos del cuerpo (aturdido). */
+  /** Kerana toca la joroba (S44): círculo de cada segmento de la joroba contra su caja. */
+  private touchesGuard(rect: Phaser.Geom.Rectangle): boolean {
+    const n = this.segments.length;
+    for (let i = 0; i < CFG.guardSegments; i++) {
+      const s = this.segments[i];
+      const r = CFG.segmentRadius * (1 - (i / n) * 0.6);
+      const cx = Phaser.Math.Clamp(s.x, rect.left, rect.right);
+      const cy = Phaser.Math.Clamp(s.y, rect.top, rect.bottom);
+      if ((s.x - cx) ** 2 + (s.y - cy) ** 2 <= r * r) return true;
+    }
+    return false;
+  }
+
+  /** El tajo toca alguno de los primeros segmentos del cuerpo (aturdido; desde S44 solo si `bodyIsTarget`). */
   private touchesBody(rect: Phaser.Geom.Rectangle): boolean {
     for (let i = 0; i < this.segments.length / 2; i++) {
       const s = this.segments[i];

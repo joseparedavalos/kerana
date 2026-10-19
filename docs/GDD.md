@@ -610,11 +610,15 @@ El suelo base está en la fila 33 y el mapa crece hacia arriba: tres ascensos si
 
 | Fase | Ataque | Aviso | Ventana |
 |---|---|---|---|
-| 1 | **Descenso:** se esconde en una de las copas y cae en picada sobre Kerana | Sombra en el suelo (1 s) | Aturdido en el suelo 1,5 s |
-| 2 | + **Hipnosis:** un pulso en anillo sale de sus cuernos, con alcance de 200 px. Si toca a Kerana, invierte los controles 3 s. Los troncos lo bloquean | Los cuernos brillan iridiscentes con un sonido agudo (1 s) | 1 s después del pulso |
-| 3 | + **Robo:** una embestida en diagonal que, si acierta, **se lleva un corazón** (brilla en su cola). Golpear la cola lo recupera. Los descensos son más rápidos | Se enrosca y tiembla (0,7 s) | La cola queda expuesta 1,2 s |
+| 1 | **Descenso:** se esconde en una de las copas y cae en picada sobre Kerana | Sombra en el suelo (1 s) | Aturdido en el suelo 0,65 s (S44; antes 1,5) |
+| 2 | + **Hipnosis:** un pulso en anillo sale de sus cuernos, con alcance de 200 px. Si toca a Kerana, la **confunde** 4,5 s (S44): controles invertidos y **sin tajo**. Los troncos lo bloquean | Los cuernos brillan iridiscentes con un sonido agudo (1 s) | 0,6 s después del pulso (S44; antes 1) |
+| 3 | + **Robo:** una embestida en diagonal que, si acierta, **se lleva un corazón** (brilla en su cola). Golpear la cola lo recupera. Los descensos son más rápidos | Se enrosca y tiembla (0,7 s) | La cola queda expuesta 0,8 s (S44; antes 1,2); aturdido 0,6 s (antes 1,3) |
 
-**Aspecto (S26).** Serpiente gigante verde con dos cuernos largos color hueso, dibujada por código: en una copa, la cabeza asoma sobre el follaje y el cuerpo se enrosca en el tronco hasta el suelo; al caer o embestir abre las fauces (esa cabeza es lo que hace daño; el cuerpo y los cuernos no); aturdida, cierra el ojo y le giran estrellitas encima. Al brillar, solo los cuernos cambian de color. El ataque llega al suelo de la arena (hasta S26 caía a la altura de las copas por un error en el suelo del jefe).
+**Confusión (S44).** Hasta S44 el pulso solo invertía los controles y se podía ignorar: después del pulso se le pegaba igual. Ahora, si el pulso toca a Kerana, queda **confundida**: izquierda y derecha invertidas y el tajo no sale (ni se carga), así que pierde la ventana de después del pulso y esquiva el siguiente descenso con los controles al revés. Se ve sin duda: Kerana brilla con los colores del pulso, que van cambiando, y sobre la cabeza gira una espiral grande. **Se evita** detrás de un tronco o lejos del anillo; **se sale sacudiéndose**: cada vez que aprieta atacar, la confusión se acorta (≈ 11 intentos la quitan entera) y la espiral se achica. Solo Moñái: la melodía de Tau sigue solo invirtiendo. Los valores, en `GAMEPLAY.monai` (bloque S44).
+
+**El cuerpo estorba (S44).** En el suelo (aturdida o junto al tronco para el pulso) el cuerpo levanta una **joroba** detrás de la nuca que **lastima al tocarla**; el resto del cuerpo queda chato y no lastima. Solo la cabeza recibe golpes (hasta S44, el cuerpo también). A la cabeza se llega de frente o saltando la joroba (≈ 35 px). Como la cabeza mira hacia donde cayó, quien esquiva el descenso hacia afuera queda delante de la cabeza y quien esquiva hacia el árbol queda detrás de la joroba. Vida sin cambios: 12.
+
+**Aspecto (S26).** Serpiente gigante verde con dos cuernos largos color hueso, dibujada por código: en una copa, la cabeza asoma sobre el follaje y el cuerpo se enrosca en el tronco hasta el suelo; al caer o embestir abre las fauces (esa cabeza es lo que hace daño; los cuernos no, y el cuerpo solo con la joroba en el suelo, desde S44); aturdida, cierra el ojo y le giran estrellitas encima. Al brillar, solo los cuernos cambian de color. El ataque llega al suelo de la arena (hasta S26 caía a la altura de las copas por un error en el suelo del jefe).
 
 **Liberación**
 

@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S43.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S44.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -37,6 +37,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Mbói Tu'ĩ sale del agua (S41): el agua se calma, se abren los juncos y gira un remolino antes de que salga; al salir, chapuzón y ondas. En la fase 3 sale de un charco del islote, ya no de un óvalo verde. El marco del cuadro de diálogo ya no cruza en diagonal.
 - Moñái es naranja rojizo, con vientre claro y cuernos grises (S42), como el del Museo Mitológico Ramón Elías: verde se leía como dragón oriental. Misma forma y misma pelea.
 - La cabeza de Moñái es el sprite de Grok (S43): boca cerrada en reposo, fauces que se abren al caer y ojo cerrado cuando queda aturdida. Los cuernos son cortos, apenas despuntan, y siguen brillando en el aviso del pulso. Misma pelea.
+- Moñái es más exigente (S44): el pulso confunde (controles al revés y sin tajo; se sale sacudiéndose con atacar, y Kerana brilla con una espiral grande encima), las ventanas para pegarle son más cortas (dan uno o dos golpes) y su cuerpo en el suelo levanta una joroba que lastima, así que hay que buscarle la cabeza de frente. La vida no cambió.
 
 ## Ahora
 
@@ -48,6 +49,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 6. Publicar en itch.io (los pasos, abajo).
 7. Google Play, con el feedback de itch.io (los pasos, abajo).
 8. Regenerar `raw/monai/head/idle_8x1.png` (Jose) con fondo transparente de verdad: vino con el damero pintado en los píxeles y el pipeline no puede quitarlo. Mientras tanto Moñái en reposo usa un fotograma quieto de la mordida. Qué cambiar en `sprite.json` cuando llegue, en las notas de S43.
+9. Jugar la pelea de Moñái de S44 (Jose) y ajustar el bloque S44 de `GAMEPLAY.monai`: la ventana (0,65 s), la confusión (4,5 s y 0,4 s por sacudida) y la joroba. Si la joroba no se lee como peligrosa, darle un dibujo propio mientras lastima (notas de S44).
 
 ## itch.io
 

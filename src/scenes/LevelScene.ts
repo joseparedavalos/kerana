@@ -186,6 +186,8 @@ export class LevelScene extends Phaser.Scene {
   private windZones: WindZone[] = [];
   /** Espiral sobre Kerana mientras está hipnotizada (GDD §4.8). */
   private hypnosisIcon?: Phaser.GameObjects.Image;
+  /** Espiral grande de la confusión de Moñái (S44). */
+  private confusionSpiral?: Phaser.GameObjects.Graphics;
   /** Niebla del sueño (GDD §4.8, §6.4). */
   private fogZones: Phaser.Geom.Rectangle[] = [];
   /** "Zzz" sobre Kerana: bostezo (tenue) y dormida. */
@@ -267,6 +269,7 @@ export class LevelScene extends Phaser.Scene {
     this.shallowZones = [];
     this.windZones = [];
     this.hypnosisIcon = undefined;
+    this.confusionSpiral = undefined;
     this.fogZones = [];
     this.sleepIcon = undefined;
     this.bossMinions = [];
@@ -403,6 +406,7 @@ export class LevelScene extends Phaser.Scene {
       this.mainumby = this.add.image(spawn.x, spawn.y - 40, 'mainumby_placeholder').setDepth(15);
     }
     this.hypnosisIcon = this.add.image(spawn.x, spawn.y, this.makeSpiralTexture()).setDepth(16).setVisible(false);
+    this.confusionSpiral = this.add.graphics().setDepth(16);
     this.sleepIcon = this.add
       .text(spawn.x, spawn.y, t('status.zzz'), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#F2EEE3' })
       .setOrigin(0.5, 1)
@@ -711,6 +715,7 @@ export class LevelScene extends Phaser.Scene {
       },
       pushPlayer: (vx, ms) => this.player.motor.push(vx, ms),
       hypnotizePlayer: () => this.hypnotizePlayer(),
+      confusePlayer: () => this.confusePlayer(),
       damagePlayer: (fromX) => this.hurtPlayer(fromX) && !this.player.health.isDead,
       healPlayer: (amount) => {
         if (this.player.heal(amount) > 0) EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
@@ -1207,16 +1212,52 @@ export class LevelScene extends Phaser.Scene {
     if (this.player.status.applyHypnosis(GAMEPLAY.hypnosis.durationMs)) AudioManager.play('hypnosis');
   }
 
+  private confusePlayer(): void {
+    if (DEBUG.god) return;
+    const cfg = GAMEPLAY.monai;
+    if (this.player.status.applyConfusion(cfg.confusionMs, cfg.confusionShakeCutMs)) AudioManager.play('hypnosis');
+  }
+
   private updateHypnosisIcon(deltaMs: number): void {
     const icon = this.hypnosisIcon;
     if (!icon) return;
-    const on = this.player.status.hypnotized;
-    icon.setVisible(on);
+    const status = this.player.status;
+    const on = status.hypnotized;
+    // Confundida (Moñái, S44): en vez del icono, una espiral grande dibujada (se achica al pasarse o al sacudirse).
+    icon.setVisible(on && !status.confused);
+    this.drawConfusionSpiral(status.confused ? status.hypnosisFraction : 0);
     if (!on) return;
     icon.setPosition(this.player.x, this.player.y - GAMEPLAY.hypnosis.iconOffsetY);
     icon.angle += (GAMEPLAY.hypnosis.iconSpinDegPerS * deltaMs) / 1000;
     // Tinte iridiscente que va cambiando (el aviso no depende solo del color: la espiral gira).
     icon.setTint(Phaser.Display.Color.HSVToRGB((this.time.now / 1500) % 1, 0.6, 1).color);
+  }
+
+  /**
+   * Espiral de la confusión (S44): se dibuja girada cada cuadro (una textura grande girada se recorta en el render).
+   * `fraction` 0 la borra; 1 es el tamaño entero.
+   */
+  private drawConfusionSpiral(fraction: number): void {
+    const g = this.confusionSpiral;
+    if (!g) return;
+    g.clear();
+    if (fraction <= 0) return;
+    const cfg = GAMEPLAY.monai;
+    const radius = (cfg.confusionIconPx / 2) * (0.5 + 0.5 * fraction);
+    const turns = Math.PI * 5;
+    const spin = Phaser.Math.DegToRad((this.time.now / 1000) * GAMEPLAY.hypnosis.iconSpinDegPerS);
+    const cx = this.player.x;
+    const cy = this.player.y - GAMEPLAY.hypnosis.iconOffsetY - (cfg.confusionIconPx - 20) / 2;
+    g.lineStyle(cfg.confusionIconLine, Phaser.Display.Color.HSVToRGB((this.time.now / 1500) % 1, 0.6, 1).color);
+    g.beginPath();
+    for (let a = 0; a <= turns; a += 0.2) {
+      const r = (a / turns) * radius;
+      const x = cx + Math.cos(a + spin) * r;
+      const y = cy + Math.sin(a + spin) * r;
+      if (a === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.strokePath();
   }
 
   /** Espiral blanca por código (placeholder del icono de hipnosis). */
