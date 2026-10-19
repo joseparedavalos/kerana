@@ -618,7 +618,7 @@ El suelo base está en la fila 33 y el mapa crece hacia arriba: tres ascensos si
 
 **El cuerpo estorba (S44).** En el suelo (aturdida o junto al tronco para el pulso) el cuerpo levanta una **joroba** detrás de la nuca que **lastima al tocarla**; el resto del cuerpo queda chato y no lastima. Solo la cabeza recibe golpes (hasta S44, el cuerpo también). A la cabeza se llega de frente o saltando la joroba (≈ 35 px). Como la cabeza mira hacia donde cayó, quien esquiva el descenso hacia afuera queda delante de la cabeza y quien esquiva hacia el árbol queda detrás de la joroba. Vida sin cambios: 12.
 
-**Aspecto (S26).** Serpiente gigante verde con dos cuernos largos color hueso, dibujada por código: en una copa, la cabeza asoma sobre el follaje y el cuerpo se enrosca en el tronco hasta el suelo; al caer o embestir abre las fauces (esa cabeza es lo que hace daño; el cuerpo y los cuernos no); aturdida, cierra el ojo y le giran estrellitas encima. Al brillar, solo los cuernos cambian de color. El ataque llega al suelo de la arena (hasta S26 caía a la altura de las copas por un error en el suelo del jefe).
+**Aspecto (S26).** Serpiente gigante verde con dos cuernos largos color hueso, dibujada por código: en una copa, la cabeza asoma sobre el follaje y el cuerpo se enrosca en el tronco hasta el suelo; al caer o embestir abre las fauces (esa cabeza es lo que hace daño; los cuernos no, y el cuerpo solo con la joroba en el suelo, desde S44); aturdida, cierra el ojo y le giran estrellitas encima. Al brillar, solo los cuernos cambian de color. El ataque llega al suelo de la arena (hasta S26 caía a la altura de las copas por un error en el suelo del jefe).
 
 **Liberación**
 
