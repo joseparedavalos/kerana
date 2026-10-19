@@ -13,19 +13,24 @@ import {
   ensureTreeArt,
   HEAD_DAZE_TEXTURE,
   HEAD_OPEN_TEXTURE,
+  HEAD_SPRITE,
   HEAD_TEXTURE,
   headOrigin,
   HORNS_TEXTURE,
 } from './monaiArt';
 import { HeartThief, pulseBlocked, type Trunk } from './monaiLogic';
+import { hasSprite, spriteDetail } from '../../systems/SpriteSkin';
 
 const CFG = GAMEPLAY.monai;
 const TILE = 16;
 const SHADOW_COLOR = 0x1b1a2e;
 const PULSE_COLORS = [0xe06bd0, 0x6bd0e0, 0xe0d06b] as const;
 const HEART_COLOR = 0xe04848;
-/** Los cuernos brillan: halo de color alrededor de las puntas (desplazamiento desde la cabeza mirando a la izquierda). */
-const HORN_GLOW = { dx: 13, dy: -13, r: 13, alpha: 0.35 };
+/**
+ * Los cuernos brillan: halo de color alrededor de las puntas (desplazamiento desde la cabeza mirando a la izquierda).
+ * Sigue el largo de los cuernos (S43): con `hornLength` 1 es el de S26 (13, −13, radio 13); con 0 queda en sus bases.
+ */
+const HORN_GLOW = { dx: 5 + 8 * CFG.hornLength, dy: -6.5 - 6.5 * CFG.hornLength, r: 6 + 7 * CFG.hornLength, alpha: 0.35 };
 /** Las estrellitas de mareo, sobre la cabeza (px). */
 const STARS_RISE = 16;
 
@@ -39,9 +44,14 @@ interface Segment {
 // Moñái (GDD §6.3): serpiente con cuernos que se esconde en las copas de la isla de monte.
 // Fase 1: descenso con sombra. Fase 2: + pulso de hipnosis (los troncos lo tapan).
 // Fase 3: + robo de un corazón que se recupera golpeando la cola; descensos más rápidos.
-// Arte por código (S26, monaiArt.ts): cabeza con cuernos, cuerpo de serpiente enroscado en el tronco y árboles.
+// Arte por código (S26, monaiArt.ts): cuernos, cuerpo de serpiente enroscado en el tronco y árboles. La cabeza es el
+// sprite `monai_head` (S43); si falta, la dibujada por código.
 export class Monai extends Boss {
-  private readonly head: Phaser.GameObjects.Image;
+  private readonly head: Phaser.GameObjects.Sprite;
+  /** La cabeza es el sprite (no la textura por código) y su escala de reposo. */
+  private readonly headSprite: boolean;
+  private readonly headScale: number;
+  private headMood: 'idle' | 'attack' | 'daze' = 'idle';
   private readonly horns: Phaser.GameObjects.Image;
   private readonly bodyGfx: Phaser.GameObjects.Graphics;
   /** Vueltas del enroscado detrás del tronco. */
@@ -106,7 +116,15 @@ export class Monai extends Boss {
     this.highBack = { gfx: scene.add.graphics(), belowY: this.canopyY + CFG.crownBelow };
     this.bodyGfx = scene.add.graphics();
     const [ox, oy] = headOrigin();
-    this.head = scene.add.image(0, 0, HEAD_TEXTURE).setOrigin(ox, oy).setScale(1 / ART_K);
+    this.headSprite = hasSprite(scene, HEAD_SPRITE);
+    if (this.headSprite) {
+      this.headScale = 1 / spriteDetail(scene, HEAD_SPRITE);
+      this.head = scene.add.sprite(0, 0, HEAD_SPRITE).setOrigin(...CFG.headSpriteOrigin).setScale(this.headScale);
+      this.head.play(`${HEAD_SPRITE}_idle`);
+    } else {
+      this.headScale = 1 / ART_K;
+      this.head = scene.add.sprite(0, 0, HEAD_TEXTURE).setOrigin(ox, oy).setScale(this.headScale);
+    }
     this.horns = scene.add.image(0, 0, HORNS_TEXTURE).setOrigin(ox, oy).setScale(1 / ART_K);
     // Cuerpo y cabeza por delante de las copas y las plataformas, pero detrás de Kerana: nunca la tapan (S28).
     ctx.placeBelowPlayer([this.highBack.gfx, this.bodyGfx, this.head, this.horns]);
@@ -211,7 +229,7 @@ export class Monai extends Boss {
     this.scene.tweens.killTweensOf(this.head);
     this.head.setPosition(this.perchX(this.perch), this.perchY());
     this.scene.tweens.add({ targets: this.head, angle: { from: -10, to: 10 }, duration: 70, yoyo: true, repeat: 4, onComplete: () => this.head.setAngle(0) });
-    this.scene.tweens.add({ targets: this.head, scale: 1.2 / ART_K, duration: 350, yoyo: true });
+    this.scene.tweens.add({ targets: this.head, scale: 1.2 * this.headScale, duration: 350, yoyo: true });
   }
 
   /** Embestida en diagonal hacia donde está Kerana; si acierta, se lleva un corazón. */
@@ -222,7 +240,7 @@ export class Monai extends Boss {
     const toX = Phaser.Math.Clamp(px + dir * CFG.stealOvershoot, arena.left + TILE, arena.right - TILE);
     this.harmful = true;
     this.stealing = true;
-    this.head.setAngle(0).setScale(1 / ART_K).setFlipX(dir > 0);
+    this.head.setAngle(0).setScale(this.headScale).setFlipX(dir > 0);
     this.scene.tweens.killTweensOf(this.head);
     this.scene.tweens.add({ targets: this.head, x: toX, y: this.groundHeadY(), duration: activeMs, ease: 'Sine.easeIn' });
     this.ctx.sfx('dive');
@@ -248,7 +266,7 @@ export class Monai extends Boss {
     this.exposed = 'none';
     this.grounded = false;
     this.glowMs = 0;
-    this.head.setAngle(0).setScale(1 / ART_K);
+    this.head.setAngle(0).setScale(this.headScale);
     this.flyTo(this.perchX(this.perch), this.perchY(), CFG.flyMs);
   }
 
@@ -336,8 +354,15 @@ export class Monai extends Boss {
   /** Cara según lo que hace (fauces abiertas = hace daño; ojo cerrado = aturdida) y cuernos pegados a la cabeza. */
   private updateHead(perched: boolean): void {
     const head = this.head;
-    const texture = this.harmful ? HEAD_OPEN_TEXTURE : this.exposed === 'body' ? HEAD_DAZE_TEXTURE : HEAD_TEXTURE;
-    if (head.texture.key !== texture) head.setTexture(texture);
+    const mood = this.harmful ? 'attack' : this.exposed === 'body' ? 'daze' : 'idle';
+    if (this.headSprite) {
+      // Las fauces abren y quedan abiertas (la animación no se repite) mientras dure el daño.
+      if (mood !== this.headMood) head.play(`${HEAD_SPRITE}_${mood}`);
+    } else {
+      const texture = mood === 'attack' ? HEAD_OPEN_TEXTURE : mood === 'daze' ? HEAD_DAZE_TEXTURE : HEAD_TEXTURE;
+      if (head.texture.key !== texture) head.setTexture(texture);
+    }
+    this.headMood = mood;
     // En la copa mira hacia Kerana; al caer o embestir, se inclina hacia donde va.
     if (perched && this.brain.state !== 'telegraph') head.setFlipX(this.ctx.playerX() > head.x);
     if (this.harmful && CFG.diveTiltMaxDeg > 0) {
@@ -350,7 +375,9 @@ export class Monai extends Boss {
     }
     this.lastHeadX = head.x;
     this.lastHeadY = head.y;
-    this.horns.setPosition(head.x, head.y).setFlipX(head.flipX).setAngle(head.angle).setScale(head.scaleX, head.scaleY).setAlpha(head.alpha);
+    // La textura de los cuernos es de S26 (ART_K): crece con la cabeza (el tirón del golpe) desde su escala de reposo.
+    const hornScale = head.scaleX / this.headScale / ART_K;
+    this.horns.setPosition(head.x, head.y).setFlipX(head.flipX).setAngle(head.angle).setScale(hornScale).setAlpha(head.alpha);
     // Cuernos que brillan: parpadeo iridiscente.
     if (this.glowMs > 0) {
       const color = PULSE_COLORS[Math.floor(this.glowMs / 90) % PULSE_COLORS.length];
@@ -476,7 +503,7 @@ export class Monai extends Boss {
     this.glowMs = 0;
     this.perch = 1;
     this.placeAll(this.perchX(1), this.perchY());
-    this.head.setAlpha(0).setAngle(0).setScale(1 / ART_K).clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    this.head.setAlpha(0).setAngle(0).setScale(this.headScale).clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     this.horns.clearTint();
     this.hideFx();
   }

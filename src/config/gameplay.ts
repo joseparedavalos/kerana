@@ -467,6 +467,17 @@ export const GAMEPLAY = {
     /** Al caer o embestir, la cabeza se inclina hacia donde va, hasta este ángulo (grados; 0 = siempre derecha). */
     diveTiltMaxDeg: 30,
     /**
+     * Sprite de la cabeza (S43, `monai_head`, frame de 76 × 68 a detail 2): punto del frame (fracciones) que va en el
+     * centro de la zona de daño. La cabeza cerrada ocupa x 8-69 e y 0-40 del frame (≈ 30 × 20 unidades), así que con
+     * (0,5; 0,3) cubre la zona de 26 × 18 y sobra un poco de hocico y de nuca. Moverlo corre el dibujo, no la zona.
+     */
+    headSpriteOrigin: [0.5, 0.3],
+    /**
+     * Largo de los cuernos (S43), fracción del largo de S26 (1 = como antes, hasta 10 unidades sobre el cráneo). La
+     * referencia del Museo Mitológico Ramón Elías los tiene cortos, apenas despuntando del cráneo: 0,4.
+     */
+    hornLength: 0.4,
+    /**
      * Árboles de la arena (S26): copa irregular de racimos de hojas, ancho (px) y alto sobre y bajo la línea de la copa
      * (la plataforma "="); cada árbol varía hasta ± la mitad de `treeVariation`.
      */
