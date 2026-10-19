@@ -13,6 +13,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `docs/SESIONES.md`: el plan hacia adelante, hasta publicar (itch.io, Google Play, Steam). Léelo si la tarea es de ahora.
 - `docs/PENDIENTES.md`: lo que falta hoy. Única lista de pendientes. Léela al empezar y al cerrar.
 - `docs/RECETA-NIVEL.md`: cómo se rediseña un nivel (salió de siete rediseños). Léela antes de tocar cualquier mapa.
+- `docs/RECETA-SPRITES.md`: cómo se encarga y se conecta el sprite de un jefe (salió de la cabeza de Moñái, S42 y S43). Léela antes de pedir datos para generar arte o de conectar hojas nuevas de `raw/`.
 - `docs/REVIEW.md`: la auditoría de diseño de S16, como referencia histórica. No es una lista de tareas.
 - `docs/ASSETS.md`: sprites, tiles, fondos y audio. Léelo antes de tocar arte o audio.
 - Al cerrar una sesión se actualizan `PLAN.md` y `PENDIENTES.md` en el mismo cambio. Si no coinciden, manda `PENDIENTES.md`.

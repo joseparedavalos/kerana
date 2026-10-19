@@ -193,6 +193,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S42 | 2026-10-19 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S43 | 2026-10-19 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S44 | 2026-10-19 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S45 | 2026-10-19 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -293,6 +294,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S42 | Hecha | rama `claude/wizardly-babbage-aiqgmq` | Color de Moñái (fuera del plan, plan Pro): de verde a naranja rojizo con vientre claro y cuernos grises, como el del Museo Mitológico Ramón Elías (el verde largo con cuernos se leía como dragón oriental). La paleta pasa de `monaiArt.ts` a `GAMEPLAY.monai.palette`; la silueta, la vida, los tiempos y los mapas no cambian. Datos para encargar el sprite de la cabeza, en el chat y en las notas. Build y tests OK; smoke 178 de 184 (l3 y la pelea de Moñái pasan; fallan 6 chequeos del piloto en l5 y l7, que S42 no toca) |
 | S43 | Hecha | rama `claude/happy-noether-o7na8z` | Cabeza de Moñái en sprite (fuera del plan, plan Pro): `raw/monai/head/` → `monai_head` (76 × 68, detail 2) con `idle`, `attack` (fotogramas 1 a 6: abren y quedan abiertas mientras hace daño) y `daze`; el encaje en `GAMEPLAY.monai.headSpriteOrigin`, la zona de daño sin cambios. `idle_8x1.png` vino sin transparencia (damero pintado): se ignora (`sheets.idle.ignore`, opción nueva del pipeline) y el reposo usa el fotograma 0 de `attack` hasta que Jose la regenere. Cuernos más cortos (`hornLength` 0,4) con el halo del aviso a su medida. Fuera el sprite verde colgante (raw, public y manifest). Incluye S42 (rama sin mergear). Sin cambios de balance ni de mapas. Build, tests y maps OK; smoke 187 de 190 (fallan 3 del piloto de l2, trabado en el paso 1: el pendiente 4; en la corrida anterior l2 pasó entero y Moñái pasa en las dos) |
 | S44 | Hecha | rama `claude/sweet-rubin-ovn1rz` | Balance de Moñái (fuera del plan, plan Pro): el pulso **confunde** (controles invertidos y sin tajo, 4,5 s; se sale sacudiéndose con atacar; Kerana brilla y gira una espiral grande); ventanas más cortas (aturdida 1,5 → 0,65 s, tras el pulso 1 → 0,6, cola 1,2 → 0,8, aturdida rápida 1,3 → 0,6); el cuerpo en el suelo levanta una **joroba que lastima** y solo la cabeza recibe golpes. Vida sin cambios (12). Todo en el bloque S44 de `GAMEPLAY.monai`. Sin cambios en otros jefes ni en mapas. Build, tests (401) y maps OK; smoke 189 de 190 (falla 1 del piloto de l7: en el sótano no junta la Luz de Arasy; l3 y Moñái pasan enteros) |
+| S45 | Hecha | rama `claude/modest-ride-1bab7m` | Solo documentación (fuera del plan, plan Pro): `docs/RECETA-SPRITES.md`, cómo encargar y conectar el sprite de un jefe a partir de S42 y S43 (el flujo en cinco pasos, los datos que hay que pedir antes de generar, las reglas de formato: PNG con transparencia real o magenta, nunca un JPG convertido, el número real de fotogramas en el nombre; qué conviene encargar y qué queda por código, `sheets.<hoja>.ignore` y qué le falta a cada jefe). Citada en `CLAUDE.md`. Pendiente 8 con el cambio de `sprite.json` escrito. Sin código, mapas ni assets. Build y tests OK |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -1538,6 +1540,20 @@ Jose jugó la pelea después de S26 y le resulta demasiado fácil: «su poder so
 - **Valores nuevos o cambiados** (bloque S44 de `GAMEPLAY.monai`, con el viejo al lado): `confusionMs` (3000 → 4500), `confusionShakeCutMs`, `confusionGlowStrength`, `confusionGlowCycleMs`, `confusionIconPx`, `confusionIconLine`, `dazeMs`, `dazeFastMs`, `afterPulseMs`, `tailMs`, `guardSegments`, `guardWidth`, `guardHeight`, `guardArmMs`, `guardSettleMs`, `bodyIsTarget` (true → false). `hypnosis.durationMs` (Tau) sin cambios. Pruebas nuevas en `tests/monai.test.ts`: la confusión quita el tajo, sacudirse la acorta hasta quitarla, la hipnosis de Tau no quita el tajo, las ventanas salen de `gameplay.ts` y la vida sigue en 12.
 - **Para probar:** `?debug=1&level=3&boss=1` (sin `god`, que ignora la confusión y la joroba) y entrar a la arena. La fase 2 (pulso) empieza con 8 de vida.
 - **Sin verificar a mano:** la sensación (Claude no puede jugarla): si 650 ms de aturdida se sienten justos o mezquinos, si 4,5 s de confusión y 400 ms por sacudida dan una salida razonable, y si la joroba se entiende como «por acá no» la primera vez. Todo está en el bloque S44 para ajustarlo.
+
+### S45: Receta para encargar sprites de jefes (fuera del plan original; plan Pro)
+Solo documentación: no toca código, mapas ni assets.
+
+**Tarea:** escribir `docs/RECETA-SPRITES.md` con lo que funcionó en S42 y S43 para la cabeza de Moñái, para repetirlo con los otros jefes: (1) el flujo (pedir los datos a una sesión, generar fuera, subir a `raw/<jefe>/<parte>/`, una sesión que conecta); (2) los datos que hay que pedir antes de generar (notas de S42); (3) las reglas de formato de S43; (4) qué conviene encargar (partes rígidas) y qué queda por código; (5) `sheets.<hoja>.ignore`; (6) qué le falta a cada jefe. Comprobar que el pendiente de la `idle` de Moñái esté en `PENDIENTES.md` con el cambio de `sprite.json`. Citar la receta en `CLAUDE.md`.
+
+**Criterios:** sin cambios de código · build y test pasan (el smoke no hace falta) · PR · S45 en §6.3, §7 y §8, y `PENDIENTES.md` en el mismo cambio.
+
+**Notas para la próxima sesión (S45 → la que siga):**
+- **La receta** tiene seis secciones, una por punto de la tarea. No repite el pipeline (ASSETS §2) ni los prompts (ASSETS §3.4): los cita. Las reglas de formato llevan el ejemplo de S43 que las motivó (el damero pintado de `idle`, el estilo distinto de sus fotogramas 4 a 7, las fauces más chicas en `attack`, `daze` sin contorno).
+- **Qué le falta a cada jefe** (sección 6 de la receta): los ocho tienen solo la hoja de reposo salvo Moñái (Ao Ao, la carrera). Teju Jagua y Mbói Tu'ĩ tampoco tienen ataque ni golpe propios, pero su sprite es la cabeza con el cuello y el resto va por código; Jasy Jatere, Kurupi, Ao Ao, Luisón y Tau son el jefe entero en sprite, con el aviso y el golpe hechos con tintes y destello blanco. Esos cinco son la lista para encargar a continuación. Antes de generar, cada uno necesita su sesión de datos (paso 1 de la receta): la tabla no da tamaños.
+- **Jasy Jatere:** el bastón es una imagen aparte que se tiñe en el aviso de las chispas (`JasyJatere.ts`). La sesión de datos tiene que decir si la hoja de ataque lo lleva dibujado o no (regla de la sección 4: lo que se tiñe como aviso, aparte).
+- **Pendiente 8** (`idle` de Moñái) ya estaba; ahora dice el cambio exacto de `sprite.json` en vez de remitir a las notas de S43.
+- **Verificación.** `npm run build` y `npm test` pasan. Sin smoke (no hay cambios de código).
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
