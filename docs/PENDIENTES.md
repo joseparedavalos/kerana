@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S41.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S42.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -35,6 +35,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - La red de seguridad saca a Kerana del hueco del premio de l2 aunque no rompa el fardo (S39). Hasta S38 la red daba por rotos todos los rompibles y ese hueco no contaba como encierro: Jose quedó atrapado sin salida. Ahora mira lo que está sano y lo que ya se rompió, y recalcula cada vez que algo se abre. «Volver a buscar chipas» está en la pausa desde el inicio del nivel, mientras falte alguna chipa, no solo frente a la puerta. «Reiniciar desde el fuego» de la pausa se llama ahora «Volver al último fuego»: es lo que hace (no reinicia el nivel) y alguien atascado la encuentra.
 - La pestaña del navegador dice «Kerana · Pokõi ñemoñare» (S40), igual que el título del juego. Desde el 13 de octubre decía solo «Kerana»; «Kerana: Pokõi Mbyja», el subtítulo viejo, quedó en las versiones publicadas antes de ese día.
 - Mbói Tu'ĩ sale del agua (S41): el agua se calma, se abren los juncos y gira un remolino antes de que salga; al salir, chapuzón y ondas. En la fase 3 sale de un charco del islote, ya no de un óvalo verde. El marco del cuadro de diálogo ya no cruza en diagonal.
+- Moñái es naranja rojizo, con vientre claro y cuernos grises (S42), como el del Museo Mitológico Ramón Elías: verde se leía como dragón oriental. Misma forma y misma pelea.
 
 ## Ahora
 
