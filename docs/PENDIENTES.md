@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S44.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S45.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -38,6 +38,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Moñái es naranja rojizo, con vientre claro y cuernos grises (S42), como el del Museo Mitológico Ramón Elías: verde se leía como dragón oriental. Misma forma y misma pelea.
 - La cabeza de Moñái es el sprite de Grok (S43): boca cerrada en reposo, fauces que se abren al caer y ojo cerrado cuando queda aturdida. Los cuernos son cortos, apenas despuntan, y siguen brillando en el aviso del pulso. Misma pelea.
 - Moñái es más exigente (S44): el pulso confunde (controles al revés y sin tajo; se sale sacudiéndose con atacar, y Kerana brilla con una espiral grande encima), las ventanas para pegarle son más cortas (dan uno o dos golpes) y su cuerpo en el suelo levanta una joroba que lastima, así que hay que buscarle la cabeza de frente. La vida no cambió.
+- Hay una receta para encargar el sprite de un jefe (S45): [docs/RECETA-SPRITES.md](RECETA-SPRITES.md), con el flujo, los datos que hay que pedir antes de generar, las reglas de formato y qué le falta a cada jefe.
 
 ## Ahora
 
@@ -48,7 +49,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 5. El tirón de la red de seguridad al romper algo en l5 (S39, sin arreglar). Desde S39 la red se recalcula entera cada vez que algo se abre (un rompible, un hongo dormido, la ofrenda). Medido en el headless, en el cuadro en que se rompe algo: en S39, l5 48 a 75 ms (el recálculo solo: 40 a 134, mediana 50), l7 24 a 38, l2 7 a 9. **Confirmado en S40:** l5, romper 27 a 53 ms (mediana 32; el recálculo solo, mediana 29), l7 12 a 25, l2 6 a 12; con la CPU frenada ×4, como un celular modesto, l5 tarda 107 a 200 ms (mediana 122). Sin el recálculo, romper tarda menos de 1 ms (1,3 con la CPU frenada). En l5 son 2 o 3 cuadros perdidos a 60 FPS en una PC y 6 a 12 en un celular: se nota como un tirón. No cambia la física (Arcade recupera los pasos), solo se ve. Cómo evitarlo, de lo más simple a lo más fino: (a) repartir el recálculo en varios cuadros o hacerlo en un Web Worker, usando el mapa viejo mientras tanto (la red espera 4 s: unos cuadros de atraso no importan); (b) recalcular solo lo que puede cambiar: los tramos marcados, los que aparecen donde estaba lo que se abrió y los que pasaban por encima de él (romper un fardo saca un piso que alguien podía usar de escalón, así que no alcanza con mirar solo los marcados).
 6. Publicar en itch.io (los pasos, abajo).
 7. Google Play, con el feedback de itch.io (los pasos, abajo).
-8. Regenerar `raw/monai/head/idle_8x1.png` (Jose) con fondo transparente de verdad: vino con el damero pintado en los píxeles y el pipeline no puede quitarlo. Mientras tanto Moñái en reposo usa un fotograma quieto de la mordida. Qué cambiar en `sprite.json` cuando llegue, en las notas de S43.
+8. Regenerar `raw/monai/head/idle_8x1.png` (Jose) con fondo transparente de verdad: vino con el damero pintado en los píxeles y el pipeline no puede quitarlo. Mientras tanto Moñái en reposo usa un fotograma quieto de la mordida. Cuando llegue, en `raw/monai/head/sprite.json`: `sheets.idle` pasa de `{ "ignore": true }` a `{ "align": "top", "anchor": "cell" }`, la animación `idle` pasa a `{ "fps": 8, "loop": true }` (sin `source` ni `list`), y `npm run sprites`. Cómo generarla, en [docs/RECETA-SPRITES.md](RECETA-SPRITES.md) (sección 3).
 9. Jugar la pelea de Moñái de S44 (Jose) y ajustar el bloque S44 de `GAMEPLAY.monai`: la ventana (0,65 s), la confusión (4,5 s y 0,4 s por sacudida) y la joroba. Si la joroba no se lee como peligrosa, darle un dibujo propio mientras lastima (notas de S44).
 
 ## itch.io
