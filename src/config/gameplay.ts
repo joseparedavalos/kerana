@@ -387,6 +387,43 @@ export const GAMEPLAY = {
     flowerHeal: 1,
     /** Desfase del ciclo automático entre camalotes de la arena (ms). */
     platformCycleOffsetMs: 900,
+    /**
+     * Sale del agua (S41, solo dibujo). Etapas del aviso como fracción del aviso del picotazo: hasta `emergeCalmEnd`
+     * el agua se calma, hasta `emergeReedsEnd` se abren los juncos y en el resto gira el remolino.
+     */
+    emergeCalmEnd: 0.3,
+    emergeReedsEnd: 0.6,
+    /** Graznido y escupitajo: el agua avisa estos ms y después sube la cabeza (300 ms; cabe en el aviso de 600). */
+    emergeLeadMs: 280,
+    /** Presentación: el agua del centro avisa estos ms antes de que salga por primera vez. */
+    introWarnMs: 700,
+    /** Fase 3: aviso en el charco del islote antes de que salgan las vueltas del cuerpo, y cuánto tardan en subir (ms). */
+    coilWarnMs: 700,
+    coilRiseMs: 350,
+    /** Juncos por lado de cada punto: distancia al punto, separación y alto (unidades), y cuánto se abren (grados). */
+    reedsPerSide: 4,
+    reedInner: 13,
+    reedGap: 3.5,
+    reedHeight: 20,
+    reedLeanDeg: 38,
+    /** Vaivén de los juncos en reposo (grados y período en ms) y suavizado al volver (por frame a 60 fps). */
+    reedSwayDeg: 4,
+    reedSwayMs: 1800,
+    reedLerp: 0.08,
+    /** Remolino: radio (unidades; asoma a los lados del camalote, de 3 tiles) y vueltas por segundo. */
+    whirlRadius: 30,
+    whirlTurnsPerS: 1.6,
+    /** Ondas al salir y al hundirse: radio máximo (unidades), duración, cuántas y separación (ms). */
+    rippleRadius: 36,
+    rippleMs: 900,
+    ripplesOnEmerge: 3,
+    rippleGapMs: 140,
+    /** Gotas del chapuzón al salir. */
+    splashDrops: 10,
+    /** Semiancho del agua de cada punto (los pozos miden 5 tiles): las ondas no pasan de ahí. */
+    pitHalf: 38,
+    /** Charco del islote donde se enrosca en la fase 3: semiancho (unidades). */
+    puddleHalf: 34,
   },
 
   /** Camalotes y agua (GDD §4.8, §6.2). */

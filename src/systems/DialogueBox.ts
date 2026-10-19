@@ -34,7 +34,9 @@ export class DialogueBox {
   constructor(scene: Phaser.Scene) {
     const { width, height } = VIEW;
     const hud = fixedOffset(scene.cameras.main);
-    const bg = scene.add.rectangle(0, 0, width, BOX_HEIGHT, 0x1b1a2e, 0.92).setOrigin(0, 1).setStrokeStyle(1, 0xf2eee3);
+    // Origen arriba a la izquierda (S41): con origen (0, 1) el borde de Phaser 4 se salta la esquina de abajo a la
+    // derecha (descarta puntos "duplicados" comparando el punto corrido por el origen con el original) y cruza en diagonal.
+    const bg = scene.add.rectangle(0, -BOX_HEIGHT, width, BOX_HEIGHT, 0x1b1a2e, 0.92).setOrigin(0, 0).setStrokeStyle(1, 0xf2eee3);
     this.portrait = scene.add.image(8, -BOX_HEIGHT + 8, '').setOrigin(0, 0).setDisplaySize(PORTRAIT_SIZE, PORTRAIT_SIZE);
     this.nameText = scene.add
       .text(PORTRAIT_SIZE + 16, -BOX_HEIGHT + 10, '', { fontFamily: FONT_FAMILY, fontSize: '11px', color: '#F2C14E' });
