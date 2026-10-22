@@ -252,3 +252,28 @@ describe('objetos de motor (S18)', () => {
     expect(parsed.warnings.some((w: string) => /sin ningún Switch/.test(w))).toBe(true);
   });
 });
+
+describe('prop por bioma (S46)', () => {
+  const GRID = 'P.....\n######';
+  const objectsOf = (header: string, catalog?: Set<string>) => {
+    const map = buildTiledMap(parseAscii(`size 6x2\n${header}\n---\n${GRID}`), { propCatalog: catalog });
+    return (map.layers.at(-1) as unknown as { objects: Obj[] }).objects.filter((o) => o.type === 'Prop');
+  };
+
+  it('"prop X,Y carpeta/nombre" pone un Prop en el pie del tile con escala, espejo y frente', () => {
+    const [plain, opts] = objectsOf('prop 2,0 l3_pastizal/termite_mound_large\nprop 4,0 l2_tierra/pindo_palm scale=1.5 flip front');
+    expect([plain!.x, plain!.y, plain!.point]).toEqual([40, 16, true]);
+    expect(props(plain!)).toEqual({ art: 'l3_pastizal/termite_mound_large' });
+    expect(props(opts!)).toEqual({ art: 'l2_tierra/pindo_palm', scale: 1.5, flip: true, front: true });
+  });
+
+  it('da error con sintaxis mala, opción desconocida, fuera del mapa o prop que no está en el catálogo', () => {
+    expect(() => objectsOf('prop 2 l3_pastizal/x')).toThrow(/prop/);
+    expect(() => objectsOf('prop 2,0 tacuru')).toThrow(/carpeta\/nombre/);
+    expect(() => objectsOf('prop 2,0 a/b big')).toThrow(/desconocida/);
+    expect(() => objectsOf('prop 2,0 a/b scale=0')).toThrow(/scale/);
+    expect(() => objectsOf('prop 9,0 a/b')).toThrow(/fuera del mapa/);
+    expect(() => objectsOf('prop 2,0 a/c', new Set(['a/b']))).toThrow(/desconocido "a\/c"/);
+    expect(objectsOf('prop 2,0 a/b', new Set(['a/b']))).toHaveLength(1);
+  });
+});

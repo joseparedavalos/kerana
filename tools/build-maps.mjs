@@ -24,8 +24,20 @@ function tiledLevels() {
   }
 }
 
+// Props por bioma (S46): "carpeta/nombre" de cada frame de los atlas de public/assets/props, para validar "prop".
+function propCatalog() {
+  const dir = join(ROOT, 'public', 'assets', 'props');
+  const out = new Set();
+  for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+    const atlas = JSON.parse(readFileSync(join(dir, file), 'utf8'));
+    for (const name of Object.keys(atlas.frames ?? {})) out.add(`${basename(file, '.json')}/${name}`);
+  }
+  return out;
+}
+
 const only = process.argv.slice(2);
 const skip = tiledLevels();
+const props = propCatalog();
 mkdirSync(OUT_DIR, { recursive: true });
 let failed = false;
 for (const file of readdirSync(SRC_DIR).filter((f) => f.endsWith('.txt'))) {
@@ -37,7 +49,7 @@ for (const file of readdirSync(SRC_DIR).filter((f) => f.endsWith('.txt'))) {
   }
   try {
     const parsed = parseAscii(readFileSync(join(SRC_DIR, file), 'utf8'));
-    const map = buildTiledMap(parsed);
+    const map = buildTiledMap(parsed, { propCatalog: props });
     // Después de armar el mapa: buildTiledMap también suma avisos (rejas sin Switch).
     for (const w of parsed.warnings) console.warn(`! ${id}: ${w}`);
     writeFileSync(join(OUT_DIR, `${id}.json`), JSON.stringify(map));
