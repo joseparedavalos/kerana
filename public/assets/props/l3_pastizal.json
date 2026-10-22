@@ -38,7 +38,8 @@
       "sourceSize": {
         "w": 128,
         "h": 63
-      }
+      },
+      "sink": 10
     },
     "fence_post_wire": {
       "frame": {

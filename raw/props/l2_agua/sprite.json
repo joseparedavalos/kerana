@@ -38,5 +38,17 @@
       "height": 56,
       "note": "postes de muelle"
     }
+  },
+  "sheets": {
+    "water_hyacinth": {
+      "note": "S47: flota en el estero. Colocalo SOLO sobre agua, nunca en tierra firme. sink = cuánto de la base queda dentro de la lámina de agua",
+      "sink": 7,
+      "waterOnly": true
+    },
+    "water_lilies": {
+      "note": "S47: flota en el estero. Colocalo SOLO sobre agua, nunca en tierra firme. sink = cuánto de la base queda dentro de la lámina de agua",
+      "sink": 7,
+      "waterOnly": true
+    }
   }
 }

@@ -46,6 +46,10 @@
     },
     "stalactites": {
       "hang": true
+    },
+    "water_puddle_drips": {
+      "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
+      "sink": 6
     }
   }
 }

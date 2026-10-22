@@ -2,7 +2,7 @@
   "frames": {
     "clay_water_jars": {
       "frame": {
-        "x": 530,
+        "x": 402,
         "y": 2,
         "w": 91,
         "h": 48
@@ -22,7 +22,7 @@
     },
     "hand_water_pump": {
       "frame": {
-        "x": 130,
+        "x": 2,
         "y": 2,
         "w": 78,
         "h": 80
@@ -42,7 +42,7 @@
     },
     "hitching_post": {
       "frame": {
-        "x": 210,
+        "x": 82,
         "y": 2,
         "w": 17,
         "h": 64
@@ -62,7 +62,7 @@
     },
     "low_whitewashed_wall": {
       "frame": {
-        "x": 721,
+        "x": 593,
         "y": 2,
         "w": 128,
         "h": 40
@@ -78,31 +78,11 @@
       "sourceSize": {
         "w": 128,
         "h": 40
-      }
-    },
-    "market_stall_awning": {
-      "frame": {
-        "x": 2,
-        "y": 2,
-        "w": 126,
-        "h": 112
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 126,
-        "h": 112
-      },
-      "sourceSize": {
-        "w": 126,
-        "h": 112
       }
     },
     "terracotta_tile_stacks": {
       "frame": {
-        "x": 229,
+        "x": 101,
         "y": 2,
         "w": 71,
         "h": 64
@@ -122,7 +102,7 @@
     },
     "wooden_bench_wall": {
       "frame": {
-        "x": 623,
+        "x": 495,
         "y": 2,
         "w": 96,
         "h": 41
@@ -142,7 +122,7 @@
     },
     "wooden_cart": {
       "frame": {
-        "x": 302,
+        "x": 174,
         "y": 2,
         "w": 128,
         "h": 63
@@ -162,7 +142,7 @@
     },
     "wooden_crates_baskets": {
       "frame": {
-        "x": 432,
+        "x": 304,
         "y": 2,
         "w": 96,
         "h": 60
@@ -185,8 +165,8 @@
     "image": "l4_calle.png",
     "format": "RGBA8888",
     "size": {
-      "w": 851,
-      "h": 116
+      "w": 723,
+      "h": 84
     },
     "scale": "1",
     "detail": 2

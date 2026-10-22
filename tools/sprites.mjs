@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join } from 'node:path';
 import jpeg from 'jpeg-js';
 import { PNG } from 'pngjs';
-import { coverImage, packAtlas, parseSheetName, processCharacter, processIcon, propName } from './lib/sprite-pipeline.mjs';
+import { coverImage, packAtlas, parseSheetName, processCharacter, processIcon, propFrameData, propName } from './lib/sprite-pipeline.mjs';
 
 const RAW = 'raw';
 const OUT = 'public/assets';
@@ -85,7 +85,8 @@ function processIcons(sub, outSub) {
 /**
  * Props por bioma (S46): cada subcarpeta de raw/props es un atlas (props/<carpeta>.png + .json, formato JSON Hash
  * de Phaser). Cada PNG pasa por el mismo proceso que un prop suelto; `size.<nombre>` da su tamaño en unidades,
- * `sheets.<nombre>.ignore` lo deja afuera y `sheets.<nombre>.hang` lo cuelga del techo (va en el frame del atlas).
+ * `sheets.<nombre>.ignore` lo deja afuera; `hang` (cuelga del techo), `sink` y `waterOnly` (S47, hundido) y `flow`,
+ * `splash` y `mist` (S47, agua animada) van en el frame del atlas (`propFrameData`).
  */
 function processPropAtlases() {
   const dir = join(RAW, 'props');
@@ -107,17 +108,17 @@ function processPropAtlases() {
         console.log(`props/${folder}/${file}: vacío, se omite`);
         continue;
       }
-      entries.push({ name, image: result.image, hang: sheet.hang === true });
+      entries.push({ name, image: result.image, data: propFrameData(sheet) });
     }
     if (entries.length === 0) continue;
     const { image, frames } = packAtlas(entries, ATLAS_MAX_WIDTH);
     const detail = config.detail ?? 1;
     const json = {
       frames: Object.fromEntries(
-        entries.map(({ name, hang }) => {
+        entries.map(({ name, data }) => {
           const { x, y, w, h } = frames[name];
           const frame = { frame: { x, y, w, h }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w, h }, sourceSize: { w, h } };
-          return [name, hang ? { ...frame, hang } : frame];
+          return [name, { ...frame, ...data }];
         }),
       ),
       meta: { image: `${folder}.png`, format: 'RGBA8888', size: { w: image.width, h: image.height }, scale: '1', detail },

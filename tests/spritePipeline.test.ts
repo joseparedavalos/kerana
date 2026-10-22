@@ -6,6 +6,7 @@ import {
   detectPixelSize,
   greenEdgePasses,
   opaqueBounds,
+  propFrameData,
   packAtlas,
   parseSheetName,
   processCharacter,
@@ -285,5 +286,14 @@ describe('sprite pipeline', () => {
     expect(at(frames.a.x, frames.a.y)).toBe(20);
     expect(at(frames.c.x + 29, frames.c.y + 4)).toBe(30);
     expect(() => packAtlas([{ name: 'big', image: solid(100, 1, 1) }], 80)).toThrow(/big/);
+  });
+});
+
+describe('propFrameData (S47)', () => {
+  it('pasa al frame del atlas solo lo que el juego usa, sin notas ni ignore', () => {
+    const sheet = { note: 'x', ignore: false, sink: 6, waterOnly: true, hang: false, flow: { dir: 'down', region: [0, 0, 1, 1] } };
+    expect(propFrameData(sheet)).toEqual({ sink: 6, waterOnly: true, flow: { dir: 'down', region: [0, 0, 1, 1] } });
+    expect(propFrameData({ hang: true, mist: true, splash: [0.3, 0.7, 0.95] })).toEqual({ hang: true, mist: true, splash: [0.3, 0.7, 0.95] });
+    expect(propFrameData()).toEqual({});
   });
 });

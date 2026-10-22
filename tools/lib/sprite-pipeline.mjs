@@ -469,6 +469,14 @@ export function propName(file) {
     .replace(/_transparent$/, '');
 }
 
+/** Datos de `sheets.<nombre>` que viajan en el frame del atlas (S46: hang; S47: sink, waterOnly, flow, splash, mist). */
+export const PROP_FRAME_KEYS = ['hang', 'sink', 'waterOnly', 'flow', 'splash', 'mist'];
+
+/** Lo que el juego necesita de `sheets.<nombre>` de un prop (S47): solo las claves de PROP_FRAME_KEYS, sin `note`. */
+export function propFrameData(sheet = {}) {
+  return Object.fromEntries(PROP_FRAME_KEYS.filter((k) => sheet[k] !== undefined && sheet[k] !== false).map((k) => [k, sheet[k]]));
+}
+
 /**
  * Empaqueta imágenes en un atlas por estantes (S46): de la más alta a la más baja, filas de hasta `maxWidth` px,
  * con `padding` px de aire entre una y otra. Devuelve { image, frames: { nombre: { x, y, w, h } } }.
