@@ -90,6 +90,7 @@ Ejemplo real (`raw/kerana/sprite.json`). Los índices empiezan en **0** (el fram
   - `size.<nombre>` (o `size.default`): `height` o `width` en **unidades del mundo** (la textura mide eso × `detail`; el juego la dibuja a 1/detail, `ART_DETAIL` en `manifest.ts`).
   - `edge`: color del borde del Chroma key a borrar del contorno (`"cyan"` en los props de Grok con fondo transparente, `"magenta"` en los JPG), en `edgePasses` pasadas. `tolerance`: distancia al magenta para el fondo (90 por defecto; los JPG lo dejan desparejo: 140). `coverage`: cobertura mínima de cada bloque al reducir (0,5 por defecto; más baja conserva contornos finos en diagonal, como el corazón vacío).
   - En el juego: `ART_IMAGES` en `manifest.ts` (`ui_*`, `prop_*`) y `artOrPlaceholder` (`src/assets/art.ts`): si falta un archivo, cada uso dibuja su placeholder.
+  - **Props por bioma (S46):** cada subcarpeta `raw/props/<carpeta>/` es un atlas: `props/<carpeta>.png` + `.json` (formato JSON Hash de Phaser, un frame por prop). Los archivos sueltos de `raw/props/` (cartel, fogata, farol) siguen como antes. En el `sprite.json` de la carpeta: `size.<nombre>` como arriba (con un `note` para comentar), `sheets.<nombre>.ignore: true` deja un PNG afuera y `sheets.<nombre>.hang: true` lo cuelga del techo. El nombre es el del archivo sin `prop_` ni `_transparent`. `edge: "chroma"` borra solo el magenta puro del Chroma key (verde casi nulo), sin tocar el rosa del lapacho ni el violeta de los cristales; los props de Grok de S46 traían una franja de 3 a 8 px en la base, por eso van 8 pasadas. Inventario y tamaños en §6.1; cómo se colocan, GDD §11.7.1.
 - Si cambiás algo, corré `npm run sprites` y recargá el juego.
 
 ---
@@ -250,6 +251,40 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
   - **itch.io** y **OpenGameArt**: revisa la licencia de cada pack (uso comercial, atribución).
   - **IA:** suele fallar en que los tiles empalmen; mejor úsala para decoración.
   - **Cambio de paleta:** un tileset base recoloreado por bioma (el pipeline puede hacerlo). Es la forma más barata de tener 7 biomas coherentes.
+
+### 6.1 Props por bioma (S46)
+
+Jose los generó en Grok, sueltos y con fondo transparente, en doce carpetas de `raw/props/`. `npm run sprites` hace un atlas por carpeta (`public/assets/props/<carpeta>.png` + `.json`); el juego los carga todos al inicio (`PROP_ATLASES` en `manifest.ts`). Se colocan con la línea `prop` del mapa ASCII (GDD §11.7.1). Vitrina: `?debug=1&level=vitrina&boss=1`.
+
+**Un atlas por carpeta**, y no uno por nivel ni uno general: la carpeta es la unidad que Jose genera y regenera (rehacer un prop toca un solo atlas), cada carpeta es un bioma que se puede cargar solo en su nivel si el peso empieza a importar, y todos entran en 1024 px de ancho (cualquier celular). Uno general pasaría de 1024 × 2000 px; uno por nivel mezclaría dos carpetas sin ganar nada.
+
+**Tamaños.** Vienen a la resolución del modelo (lienzos de 1408 × 1408, el dibujo de 200 a 1300 px): sin escalar, un tacurú mediría 700 px, quince Keranas. El pipeline los lleva al tamaño del juego con `size.<nombre>` (`height` o `width`, en unidades; Kerana mide ≈ 46 y un tile 16) y los dibuja con `detail` 2. Esos valores, comentados con `note`, están en el `sprite.json` de cada carpeta: para ajustar uno, cambiá el número y corré `npm run sprites`. La regla que se usó: lo bajo (pasto, piedras, charcos) de 10 a 24; matas, rocas, postes, tacurú, muebles de 24 a 44 (menos que Kerana); lo que Kerana mira hacia arriba (juncal, puesto, pozo, escalera, postes de muelle) de 48 a 64; árboles y peñascos de 96 a 144 (de 2 a 3 Keranas; la pindó es la más alta, 144). Lo ancho y bajo (canoa, troncos, cercos, hojarasca) va por `width`, de 40 a 128.
+
+Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
+
+| Carpeta | Atlas (px) | Peso | Props |
+|---|---|---|---|
+| `l1_cueva` | 688 × 100 | 82 KB | ceiling_roots 31,5 × 40 (cuelga), crystal_cluster_large 57 × 48, crystal_cluster_medium 35 × 28, crystal_cluster_small 20 × 16, gold_ore_vein 38,5 × 32, stalactites 35,5 × 48 (cuelga), stalagmites 39,5 × 40, stone_rubble_pile 29 × 16, water_puddle_drips 48 × 20,5 |
+| `l1_ladera` | 517 × 84 | 52 KB | exposed_tree_roots 72 × 24, loose_stones_boulders 35,5 × 20, moss_grey_rock 36 × 40, short_dry_grass 17,5 × 10, spiky_bromeliad 25 × 28, tall_dry_grass 29,5 × 32, termite_mound 35 × 36 |
+| `l2_agua` | 911 × 143 | 114 KB | canoe 72 × 19,5, marsh_grass 64 × 17, reeds_large 99 × 48, reeds_small 44 × 32, rotting_log 64 × 12,5, water_hyacinth 36,5 × 28, water_lilies 40 × 29,5, water_ripples 48 × 15, wooden_posts 43 × 56 |
+| `l2_tierra` | 665 × 292 | 99 KB | driftwood 56 × 19,5, dry_grass_clump 24 × 24, fallen_fronds 56 × 26, fence_post 26 × 40, pindo_palm 74 × 144, sandy_mounds 40 × 18,5, thorny_scrub 48,5 × 36 |
+| `l3_arboles` | 978 × 350 | 364 KB | corral_rail 64 × 21,5, dead_tree_termite 94 × 112, fallen_logs 48 × 19,5, lapacho_pink 134 × 128, lapacho_yellow 133,5 × 128, shade_tree_green 122,5 × 120, stone_trough 56 × 18, wooden_gate 29,5 × 44 |
+| `l3_pastizal` | 693 × 108 | 83 KB | bromeliad_spiky 28,5 × 28, cracked_earth_patch 64 × 31,5, fence_post_wire 6,5 × 40, grass_tuft_bent 26 × 28, grass_tuft_upright 26,5 × 32, scrub_bush_thorny 38,5 × 32, stones_halfburied 48 × 23, termite_mound_large 29 × 36, termite_mound_small 28,5 × 52, wildflowers_clump 40 × 19 |
+| `l4_calle` | 851 × 116 | 102 KB | clay_water_jars 45,5 × 24, hand_water_pump 39 × 40, hitching_post 8,5 × 32, low_whitewashed_wall 64 × 20, market_stall_awning 63 × 56, terracotta_tile_stacks 35,5 × 32, wooden_bench_wall 48 × 20,5, wooden_cart 64 × 31,5, wooden_crates_baskets 48 × 30 |
+| `l4_patio` | 1012 × 260 | 194 KB | banana_plant 74,5 × 96, clothesline 96 × 45,5, hammock 80 × 40, mango_tree 111 × 128, potted_plants 34,5 × 32, stone_well 42 × 56, watering_can 20,5 × 16, wooden_chair 16,5 × 28, wooden_ladder 21 × 56 |
+| `l5_altura` | 957 × 243 | 248 KB | aerial_roots 96 × 63 (cuelga), branch_platform 96 × 22,5, bromeliads 80 × 23, canopy 128 × 63,5, hollow_trunk 52 × 96, lianas_hanging 96 × 34 (cuelga), orchids 64 × 17, vines_trunk 19,5 × 96 |
+| `l5_suelo` | 916 × 221 | 161 KB | bracket_fungi 36 × 64, buttress_roots 114 × 96, ferns 50 × 40, leaf_litter 64 × 28, rotting_logs 72 × 36,5, saplings 34 × 80, stream_bed 80 × 11,5, undergrowth 80 × 24,5 |
+| `l6_agua` | 1009 × 280 | 354 KB | ferns_rock 82,5 × 96, mist_spray 43 × 64, moss_cushions 82,5 × 96, mossy_trunk 80 × 29,5, shallow_pool 72 × 25, thin_stream 61,5 × 112, waterfall 96 × 112, wet_rock 51 × 56 |
+| `l6_roca` | 961 × 258 | 206 KB | balanced_boulders 78 × 64, crevice_grasses 80 × 49,5, lichen_moss 80 × 47, rock_ledge 72 × 30, sandstone_outcrop 80 × 47, scree_pile 72 × 34, windbent_tree 83,5 × 96 |
+
+**Para regenerar o revisar (S46):**
+
+- `l6_roca/prop_deep_crack.png`: el dibujo llega al borde de arriba y de abajo del lienzo (está cortado). Queda afuera con `sheets.deep_crack.ignore`. Cuando llegue el nuevo, se saca el `ignore` y se corre `npm run sprites`.
+- `l3_pastizal`: `termite_mound_small` es más alto que `termite_mound_large` (¿nombres al revés?). Hoy `small` mide 52 de alto y `large` 36.
+- `l2_tierra/prop_dry_grass_clump.png`: las puntas tienen un violeta que parece resto del magenta, mezclado con el dibujo (el pipeline no lo puede separar). Se ve poco a este tamaño; si molesta, regenerar.
+- `l2_agua/prop_water_ripples.png`: las ondas son marrones y violetas, no se leen como agua sobre el fondo del estero.
+- `l6_agua`: `ferns_rock` y `moss_cushions` son el peñasco de la cascada sin el agua, pero con la espuma abajo: sueltos se ven raros. Sirven junto a `waterfall`.
+- Las doce carpetas traen transparencia real (ninguna con el damero pintado) y lienzos razonables (de 228 a 1792 px). `l3_pastizal` y `l5_altura` vienen recortados al dibujo; las demás, en lienzos de 1408 × 1408.
 
 ---
 

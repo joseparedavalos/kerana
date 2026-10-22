@@ -58,12 +58,15 @@ const GREEN_EDGE_MARGIN = 30;
 const CYAN_EDGE_MARGIN = 25;
 /** Rosado del contorno de los íconos en JPG (rojo y azul sobre el verde). */
 const MAGENTA_EDGE_MARGIN = 40;
+/** Magenta puro del Chroma key (S46): rojo y azul altos, verde casi nulo. No toca el rosa del lapacho ni el violeta de los cristales. */
+const CHROMA_EDGE = { minRed: 150, minBlue: 100, maxGreen: 60 };
 
 /** Predicados de color del contorno (r, g, b) → es resto del Chroma key. */
 export const EDGE_COLORS = {
   green: (r, g, b) => g - r >= GREEN_EDGE_MARGIN && g - b >= GREEN_EDGE_MARGIN,
   cyan: (r, g, b) => g - r >= CYAN_EDGE_MARGIN && b - r >= CYAN_EDGE_MARGIN,
   magenta: (r, g, b) => r - g >= MAGENTA_EDGE_MARGIN && b - g >= MAGENTA_EDGE_MARGIN,
+  chroma: (r, g, b) => r >= CHROMA_EDGE.minRed && b >= CHROMA_EDGE.minBlue && g <= CHROMA_EDGE.maxGreen,
 };
 
 /**
@@ -456,4 +459,48 @@ export function processIcon(img, { size, detail = 1, edge, edgePasses = 0, toler
     w = Math.max(1, Math.round((crop.width * h) / crop.height));
   }
   return { image: resizeImage(crop, w, h, coverage ?? COVERAGE_MIN), background };
+}
+
+/** Nombre de un prop por bioma (S46): `prop_tacuru_transparent.png` → `tacuru`. */
+export function propName(file) {
+  return file
+    .replace(/\.[^.]+$/, '')
+    .replace(/^prop_/, '')
+    .replace(/_transparent$/, '');
+}
+
+/**
+ * Empaqueta imágenes en un atlas por estantes (S46): de la más alta a la más baja, filas de hasta `maxWidth` px,
+ * con `padding` px de aire entre una y otra. Devuelve { image, frames: { nombre: { x, y, w, h } } }.
+ */
+export function packAtlas(entries, maxWidth = 1024, padding = 2) {
+  const sorted = [...entries].sort((a, b) => b.image.height - a.image.height || a.name.localeCompare(b.name));
+  const places = {};
+  let x = padding;
+  let y = padding;
+  let shelf = 0;
+  let width = 0;
+  for (const { name, image } of sorted) {
+    if (image.width + 2 * padding > maxWidth) throw new Error(`"${name}" mide ${image.width} px: más que el atlas (${maxWidth})`);
+    if (x + image.width + padding > maxWidth) {
+      x = padding;
+      y += shelf + padding;
+      shelf = 0;
+    }
+    places[name] = { x, y, w: image.width, h: image.height };
+    x += image.width + padding;
+    width = Math.max(width, x);
+    shelf = Math.max(shelf, image.height);
+  }
+  const atlas = createImage(Math.max(1, width), Math.max(1, y + shelf + padding));
+  for (const { name, image } of sorted) {
+    const p = places[name];
+    for (let row = 0; row < p.h; row++) {
+      const from = row * p.w * 4;
+      atlas.data.set(image.data.subarray(from, from + p.w * 4), ((p.y + row) * atlas.width + p.x) * 4);
+    }
+  }
+  // Los frames salen en el orden de los archivos (alfabético), no en el del empaque.
+  const frames = Object.fromEntries(entries.map(({ name }) => [name, places[name]]));
+  return { image: atlas, frames };
 }

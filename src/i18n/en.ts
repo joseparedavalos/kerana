@@ -95,6 +95,7 @@ export const en: Record<TextKey, string> = {
   'hint.l7.onda': "Your charged slash's light reaches faraway lanterns",
   'hint.l5.antesala': 'Kurupi: backward feet. Follow his footprints',
   'status.zzz': 'Zzz',
+  'vitrina.props.group': 'Props: {id}',
   'hint.vitrina.gate': 'Strike the stone and the gate opens. This one goes out by itself: hurry!',
   'hint.vitrina.wave': 'A stone is sealed inside the wall: only the light of the charged slash can reach it.',
   'hint.vitrina.mushrooms': 'The first mushroom deflates when used. The second is asleep: wake it with a charged slash.',

@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { artOrPlaceholder, hasArt } from '../assets/art';
-import { ART_DETAIL, tilesetKey } from '../assets/manifest';
+import { addProp, propLook, propNames } from '../assets/propArt';
+import { layoutShowcase } from '../assets/propLayout';
+import { ART_DETAIL, PROP_ATLASES, tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -1632,10 +1634,23 @@ export class LevelScene extends Phaser.Scene {
         case 'Cave':
           this.addCave(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
           break;
+        case 'PropShowcase':
+          this.addPropShowcase(new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 0), Number(obj.height ?? 0)));
+          break;
         case 'DarkZone':
           this.darkness?.addZone({ x, y, width: Number(obj.width ?? 16), height: Number(obj.height ?? 16) });
           break;
         case 'Prop': {
+          // Props por bioma (S46): "prop X,Y carpeta/nombre" del mapa ASCII (GDD §11.7.1).
+          const art = objectProp(obj, 'art');
+          if (art !== undefined) {
+            addProp(this, x, y, String(art), this.map.tileHeight, {
+              scale: Number(objectProp(obj, 'scale') ?? 1),
+              flip: objectProp(obj, 'flip') === true,
+              front: objectProp(obj, 'front') === true,
+            });
+            break;
+          }
           const kind = String(objectProp(obj, 'kind') ?? '');
           const spec =
             kind === 'nest' ? { key: 'prop_nest' as const, w: 18, h: 14 }
@@ -2169,6 +2184,44 @@ export class LevelScene extends Phaser.Scene {
       cp.sprite.setScale(base * (1 - f.amplitude * 0.5 * wave), base * (1 + f.amplitude * wave));
       const warm = Math.round(255 * (1 - f.tintDip * (0.5 + 0.5 * wave)));
       cp.sprite.setTint(Phaser.Display.Color.GetColor(255, warm, Math.round(warm * 0.92)));
+    }
+  }
+
+  /**
+   * Vitrina de props por bioma (S46, rect PropShowcase): todos los props de los atlas, agrupados por carpeta, a
+   * su tamaño de sprite.json. Los que se apoyan van al piso del rect; los que cuelgan, a su techo. Cada uno lleva
+   * su nombre ("carpeta/nombre" es un identificador, no un texto traducible) y cada carpeta un rótulo.
+   */
+  private addPropShowcase(rect: Phaser.Geom.Rectangle): void {
+    const cfg = GAMEPLAY.props;
+    const groups = PROP_ATLASES.map((folder) => ({
+      folder,
+      items: propNames(this, folder).map((name) => {
+        const id = `${folder}/${name}`;
+        const look = propLook(this, id);
+        const frame = this.textures.getFrame(look.key, look.frame);
+        return { id, width: frame.width * look.scale, height: frame.height * look.scale, hang: look.hang };
+      }),
+    }));
+    const layout = layoutShowcase(groups, rect.left + cfg.showcaseGroupGap, cfg.showcaseGap, cfg.showcaseGroupGap);
+    if (layout.right > rect.right) console.warn(`[vitrina] los props llegan a x=${Math.round(layout.right)}; el rect termina en ${rect.right}`);
+    const labelStyle = { ...TEXT_STYLE, fontSize: `${cfg.showcaseLabelSize}px`, padding: { x: 1, y: 1 }, wordWrap: undefined };
+    const tile = this.map.tileHeight;
+    layout.items.forEach((item, i) => {
+      addProp(this, item.x, item.hang ? rect.top + tile : rect.bottom, item.id, tile);
+      const stagger = (i % 3) * cfg.showcaseLabelStagger;
+      const labelY = item.hang ? rect.top + item.height + 2 + stagger : rect.bottom - item.height - 2 - stagger;
+      this.add
+        .text(item.x, labelY, item.id.split('/')[1]!, labelStyle)
+        .setOrigin(0.5, item.hang ? 0 : 1)
+        .setDepth(20);
+    });
+    for (const [g, { folder, x }] of layout.groups.entries()) {
+      const tallest = Math.max(0, ...layout.items.filter((it) => it.group === g && !it.hang).map((it) => it.height));
+      this.add
+        .text(x, rect.bottom - tallest - cfg.showcaseLabelStagger * 4, t('vitrina.props.group', { id: folder }), TEXT_STYLE)
+        .setOrigin(0, 1)
+        .setDepth(20);
     }
   }
 

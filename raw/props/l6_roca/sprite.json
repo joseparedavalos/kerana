@@ -1,0 +1,44 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "balanced_boulders": {
+      "height": 64,
+      "note": "piedras apiladas"
+    },
+    "crevice_grasses": {
+      "width": 80
+    },
+    "deep_crack": {
+      "height": 128,
+      "note": "grieta. Ignorada: el dibujo llega al borde de arriba y de abajo del lienzo (cortado). Regenerar."
+    },
+    "lichen_moss": {
+      "width": 80
+    },
+    "rock_ledge": {
+      "width": 72,
+      "note": "cornisa"
+    },
+    "sandstone_outcrop": {
+      "width": 80,
+      "note": "afloramiento de arenisca"
+    },
+    "scree_pile": {
+      "width": 72,
+      "note": "pedregal"
+    },
+    "windbent_tree": {
+      "height": 96,
+      "note": "árbol torcido por el viento sobre la roca"
+    }
+  },
+  "sheets": {
+    "deep_crack": {
+      "ignore": true
+    }
+  }
+}

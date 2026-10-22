@@ -1,0 +1,36 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "exposed_tree_roots": {
+      "width": 72,
+      "note": "raíces a ras del piso, anchas"
+    },
+    "loose_stones_boulders": {
+      "height": 20
+    },
+    "moss_grey_rock": {
+      "height": 40,
+      "note": "roca: un poco menos que Kerana"
+    },
+    "short_dry_grass": {
+      "height": 10,
+      "note": "mata baja, menos de un tile"
+    },
+    "spiky_bromeliad": {
+      "height": 28,
+      "note": "karaguatá: medio Kerana"
+    },
+    "tall_dry_grass": {
+      "height": 32,
+      "note": "pasto alto: dos tiles"
+    },
+    "termite_mound": {
+      "height": 36,
+      "note": "tacurú: un poco menos que Kerana"
+    }
+  }
+}

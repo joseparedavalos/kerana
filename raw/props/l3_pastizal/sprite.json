@@ -1,0 +1,44 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "bromeliad_spiky": {
+      "height": 28,
+      "note": "karaguatá"
+    },
+    "cracked_earth_patch": {
+      "width": 64,
+      "note": "tierra rajada a ras del piso"
+    },
+    "fence_post_wire": {
+      "height": 40,
+      "note": "poste de alambrado"
+    },
+    "grass_tuft_bent": {
+      "height": 28
+    },
+    "grass_tuft_upright": {
+      "height": 32
+    },
+    "scrub_bush_thorny": {
+      "height": 32
+    },
+    "stones_halfburied": {
+      "width": 48
+    },
+    "termite_mound_large": {
+      "height": 36,
+      "note": "tacurú: el archivo «large» es el más bajo y ancho"
+    },
+    "termite_mound_small": {
+      "height": 52,
+      "note": "tacurú alto y angosto: el archivo «small» es el más alto (¿nombres al revés?)"
+    },
+    "wildflowers_clump": {
+      "width": 40
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "banana_plant": {
+      "height": 96,
+      "note": "bananero: seis tiles"
+    },
+    "clothesline": {
+      "width": 96,
+      "note": "tendedero entre dos postes"
+    },
+    "hammock": {
+      "width": 80,
+      "note": "hamaca entre dos postes"
+    },
+    "mango_tree": {
+      "height": 128,
+      "note": "mango: ocho tiles"
+    },
+    "potted_plants": {
+      "height": 32,
+      "note": "macetas"
+    },
+    "stone_well": {
+      "height": 56,
+      "note": "pozo con techito"
+    },
+    "watering_can": {
+      "height": 16,
+      "note": "regadera: un tile (el dibujo es grande, el objeto no)"
+    },
+    "wooden_chair": {
+      "height": 28,
+      "note": "silla"
+    },
+    "wooden_ladder": {
+      "height": 56,
+      "note": "escalera apoyada"
+    }
+  }
+}

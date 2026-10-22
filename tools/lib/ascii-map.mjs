@@ -15,6 +15,8 @@
 //     Gate:    id=…
 //     Switch:  target=<id de una reja o un Mover> (obligatorio) ms=<0 permanente | ms encendido>
 //     Bouncer: kind=once (un solo uso) | kind=sleep (dormido hasta un tajo cargado)
+//   Props por bioma (S46) con la línea "prop X,Y carpeta/nombre [scale=N] [flip] [front]": objeto Prop con
+//   art=carpeta/nombre en el pie del tile (X, Y). Los que cuelgan (sheets.<nombre>.hang) van del techo del tile.
 import { TILE, TILESET_COLUMNS, TILESET_ROWS, TILES } from './tileset-layout.mjs';
 
 const TILED_VERSION = '1.10.2';
@@ -37,6 +39,30 @@ function parsePairs(tokens) {
   return out;
 }
 
+/** Banderas sin valor de la línea "prop". */
+const PROP_FLAGS = new Set(['flip', 'front']);
+
+/** "prop X,Y carpeta/nombre [scale=N] [flip] [front]" → { x, y, art, scale?, flip?, front? } (S46). */
+function parsePropLine(rest, line) {
+  const m = /^(\d+),(\d+)$/.exec(rest[0] ?? '');
+  const art = rest[1] ?? '';
+  if (!m || !/^[a-z0-9_]+\/[a-z0-9_]+$/.test(art))
+    throw new Error(`"prop" inválido (se espera "prop X,Y carpeta/nombre [scale=N] [flip] [front]"): ${line}`);
+  const out = { x: Number(m[1]), y: Number(m[2]), art };
+  for (const tok of rest.slice(2)) {
+    if (PROP_FLAGS.has(tok)) {
+      out[tok] = true;
+      continue;
+    }
+    const pairs = tok.includes('=') ? parsePairs([tok]) : {};
+    if (pairs.scale === undefined) throw new Error(`"prop": opción desconocida "${tok}" (scale=N, flip, front)`);
+    const scale = Number(pairs.scale);
+    if (!(scale > 0)) throw new Error(`"prop": scale tiene que ser un número mayor que 0: ${line}`);
+    out.scale = scale;
+  }
+  return out;
+}
+
 /**
  * Lee el texto ASCII. Devuelve { name, width, height, biome, enemies, signs, rects, points, grid, warnings }.
  */
@@ -45,7 +71,7 @@ export function parseAscii(text) {
   const sep = lines.findIndex((l) => l.trim() === '---');
   if (sep < 0) throw new Error('Falta la línea "---" que separa la cabecera de la grilla.');
 
-  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, reeds: false, town: false, enemies: {}, signs: {}, rects: [], points: [], ats: [], grid: [], warnings: [] };
+  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, reeds: false, town: false, enemies: {}, signs: {}, rects: [], points: [], ats: [], props: [], grid: [], warnings: [] };
 
   for (const rawLine of lines.slice(0, sep)) {
     const line = rawLine.trim();
@@ -112,6 +138,9 @@ export function parseAscii(text) {
         result.ats.push({ x: Number(m[1]), y: Number(m[2]), props });
         break;
       }
+      case 'prop':
+        result.props.push(parsePropLine(rest, line));
+        break;
       default:
         throw new Error(`Cabecera desconocida: "${cmd}"`);
     }
@@ -205,7 +234,8 @@ function checkSwitchLinks(objects, warnings) {
 
 /**
  * Convierte el resultado de parseAscii en un mapa de Tiled (objeto JSON).
- * Opciones: autotile (true), tilesetImage ('../tiles/<bioma>.png'), enemyDefaults.
+ * Opciones: autotile (true), tilesetImage ('../tiles/<bioma>.png'), enemyDefaults,
+ * propCatalog (Set de "carpeta/nombre" de los atlas de props: si está, un prop que no existe da error).
  */
 export function buildTiledMap(parsed, options = {}) {
   const { width, height, grid, biome } = parsed;
@@ -384,6 +414,12 @@ export function buildTiledMap(parsed, options = {}) {
   applyAts(objects, parsed.ats ?? [], prop);
   for (const r of parsed.rects) addObject(r.cls, r.x * TILE, r.y * TILE, r.w * TILE, r.h * TILE, r.props);
   for (const p of parsed.points) addObject(p.cls, px(p.x), py(p.y), 0, 0, p.props, true);
+  for (const { x, y, ...props } of parsed.props ?? []) {
+    if (x >= width || y >= height) throw new Error(`prop ${props.art} en (${x}, ${y}): fuera del mapa`);
+    if (options.propCatalog && !options.propCatalog.has(props.art))
+      throw new Error(`prop desconocido "${props.art}" en (${x}, ${y}): no está en public/assets/props/<carpeta>.json`);
+    addObject('Prop', px(x), py(y), 0, 0, props, true);
+  }
   checkSwitchLinks(objects, parsed.warnings);
 
   let layerId = 1;

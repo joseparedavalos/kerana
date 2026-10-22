@@ -1,0 +1,214 @@
+{
+  "frames": {
+    "bromeliad_spiky": {
+      "frame": {
+        "x": 400,
+        "y": 2,
+        "w": 57,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 57,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 57,
+        "h": 56
+      }
+    },
+    "cracked_earth_patch": {
+      "frame": {
+        "x": 270,
+        "y": 2,
+        "w": 128,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 63
+      }
+    },
+    "fence_post_wire": {
+      "frame": {
+        "x": 61,
+        "y": 2,
+        "w": 13,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 13,
+        "h": 80
+      }
+    },
+    "grass_tuft_bent": {
+      "frame": {
+        "x": 459,
+        "y": 2,
+        "w": 52,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 56
+      }
+    },
+    "grass_tuft_upright": {
+      "frame": {
+        "x": 136,
+        "y": 2,
+        "w": 53,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 53,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 53,
+        "h": 64
+      }
+    },
+    "scrub_bush_thorny": {
+      "frame": {
+        "x": 191,
+        "y": 2,
+        "w": 77,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 77,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 77,
+        "h": 64
+      }
+    },
+    "stones_halfburied": {
+      "frame": {
+        "x": 513,
+        "y": 2,
+        "w": 96,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 46
+      }
+    },
+    "termite_mound_large": {
+      "frame": {
+        "x": 76,
+        "y": 2,
+        "w": 58,
+        "h": 72
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 72
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 72
+      }
+    },
+    "termite_mound_small": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 57,
+        "h": 104
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 57,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 57,
+        "h": 104
+      }
+    },
+    "wildflowers_clump": {
+      "frame": {
+        "x": 611,
+        "y": 2,
+        "w": 80,
+        "h": 38
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 38
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 38
+      }
+    }
+  },
+  "meta": {
+    "image": "l3_pastizal.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 693,
+      "h": 108
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

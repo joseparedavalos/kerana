@@ -1,0 +1,42 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "canoe": {
+      "width": 72,
+      "note": "canoa: el ancho de un adulto acostado"
+    },
+    "marsh_grass": {
+      "width": 64
+    },
+    "reeds_large": {
+      "height": 48,
+      "note": "juncal alto: como Kerana"
+    },
+    "reeds_small": {
+      "height": 32
+    },
+    "rotting_log": {
+      "width": 64
+    },
+    "water_hyacinth": {
+      "height": 28,
+      "note": "camalote en flor"
+    },
+    "water_lilies": {
+      "width": 40,
+      "note": "irupé o nenúfar a flor de agua"
+    },
+    "water_ripples": {
+      "width": 48,
+      "note": "ondas sobre el agua"
+    },
+    "wooden_posts": {
+      "height": 56,
+      "note": "postes de muelle"
+    }
+  }
+}

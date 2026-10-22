@@ -1,0 +1,194 @@
+{
+  "frames": {
+    "clay_water_jars": {
+      "frame": {
+        "x": 530,
+        "y": 2,
+        "w": 91,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 91,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 91,
+        "h": 48
+      }
+    },
+    "hand_water_pump": {
+      "frame": {
+        "x": 130,
+        "y": 2,
+        "w": 78,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 78,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 78,
+        "h": 80
+      }
+    },
+    "hitching_post": {
+      "frame": {
+        "x": 210,
+        "y": 2,
+        "w": 17,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 17,
+        "h": 64
+      }
+    },
+    "low_whitewashed_wall": {
+      "frame": {
+        "x": 721,
+        "y": 2,
+        "w": 128,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 40
+      }
+    },
+    "market_stall_awning": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 126,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 126,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 126,
+        "h": 112
+      }
+    },
+    "terracotta_tile_stacks": {
+      "frame": {
+        "x": 229,
+        "y": 2,
+        "w": 71,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 71,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 71,
+        "h": 64
+      }
+    },
+    "wooden_bench_wall": {
+      "frame": {
+        "x": 623,
+        "y": 2,
+        "w": 96,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 41
+      }
+    },
+    "wooden_cart": {
+      "frame": {
+        "x": 302,
+        "y": 2,
+        "w": 128,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 63
+      }
+    },
+    "wooden_crates_baskets": {
+      "frame": {
+        "x": 432,
+        "y": 2,
+        "w": 96,
+        "h": 60
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 60
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 60
+      }
+    }
+  },
+  "meta": {
+    "image": "l4_calle.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 851,
+      "h": 116
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

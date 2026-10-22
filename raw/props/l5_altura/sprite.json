@@ -1,0 +1,49 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "aerial_roots": {
+      "width": 96,
+      "note": "raíces aéreas: cuelgan de una rama"
+    },
+    "branch_platform": {
+      "width": 96,
+      "note": "rama gruesa: sirve de borde de una plataforma"
+    },
+    "bromeliads": {
+      "width": 80,
+      "note": "rama con bromelias"
+    },
+    "canopy": {
+      "width": 128,
+      "note": "follaje del dosel"
+    },
+    "hollow_trunk": {
+      "height": 96,
+      "note": "tronco hueco: seis tiles"
+    },
+    "lianas_hanging": {
+      "width": 96,
+      "note": "lianas: cuelgan de una rama"
+    },
+    "orchids": {
+      "width": 64,
+      "note": "rama con orquídeas"
+    },
+    "vines_trunk": {
+      "height": 96,
+      "note": "tronco con enredaderas"
+    }
+  },
+  "sheets": {
+    "aerial_roots": {
+      "hang": true
+    },
+    "lianas_hanging": {
+      "hang": true
+    }
+  }
+}

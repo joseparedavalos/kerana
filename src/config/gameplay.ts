@@ -1327,6 +1327,25 @@ export const GAMEPLAY = {
    * Audio (S37, GDD §10.4). La música se genera con ZzFX (src/data/music.ts) y cada pista se normaliza a
    * `musicRms` antes de sonar: las diez quedan parejas. `musicGain` la deja por debajo de los efectos, que avisan.
    */
+  /**
+   * Props por bioma (S46). El tamaño de cada prop NO va acá: está en raw/props/<carpeta>/sprite.json (`size`, en
+   * unidades; Kerana ≈ 46, un tile 16) y se hornea con `npm run sprites` para que el pixel art quede nítido.
+   * Acá va lo que no es tamaño: el `scale` de la línea `prop` del mapa multiplica ese tamaño (1 = el de sprite.json).
+   */
+  props: {
+    /** Profundidad de los props normales: detrás de Kerana y de los enemigos, delante del fondo y del terreno. */
+    depth: 0,
+    /** Profundidad de los props con `front`: delante de Kerana, como la capa Foreground. */
+    frontDepth: 10,
+    /** Lado (unidades) del placeholder de un prop que no está en su atlas. */
+    placeholderSize: 16,
+    /** Vitrina (rect PropShowcase): aire entre props (unidades) y entre carpetas. */
+    showcaseGap: 20,
+    showcaseGroupGap: 48,
+    /** Alto (unidades) de los rótulos de la vitrina sobre cada prop, y separación entre sus tres alturas alternadas. */
+    showcaseLabelSize: 6,
+    showcaseLabelStagger: 8,
+  },
   audio: {
     /** Volumen final de la música (con Opciones al 100 %), sobre la pista ya normalizada. */
     musicGain: 0.04,

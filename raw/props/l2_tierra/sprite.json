@@ -1,0 +1,33 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "driftwood": {
+      "width": 56
+    },
+    "dry_grass_clump": {
+      "height": 24
+    },
+    "fallen_fronds": {
+      "width": 56,
+      "note": "hojas de palma caídas"
+    },
+    "fence_post": {
+      "height": 40,
+      "note": "poste: más bajo que Kerana"
+    },
+    "pindo_palm": {
+      "height": 144,
+      "note": "palmera pindó: tres Keranas, nueve tiles"
+    },
+    "sandy_mounds": {
+      "width": 40
+    },
+    "thorny_scrub": {
+      "height": 36
+    }
+  }
+}

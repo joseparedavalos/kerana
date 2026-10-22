@@ -1,0 +1,51 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "ceiling_roots": {
+      "height": 40,
+      "note": "raíces que cuelgan del techo de la cueva"
+    },
+    "crystal_cluster_large": {
+      "height": 48,
+      "note": "cristales grandes: algo más que Kerana"
+    },
+    "crystal_cluster_medium": {
+      "height": 28
+    },
+    "crystal_cluster_small": {
+      "height": 16,
+      "note": "un tile"
+    },
+    "gold_ore_vein": {
+      "height": 32,
+      "note": "roca con veta: dos tiles"
+    },
+    "stalactites": {
+      "height": 48,
+      "note": "cuelgan del techo"
+    },
+    "stalagmites": {
+      "height": 40
+    },
+    "stone_rubble_pile": {
+      "height": 16,
+      "note": "escombro bajo: un tile"
+    },
+    "water_puddle_drips": {
+      "width": 48,
+      "note": "charco a ras del piso"
+    }
+  },
+  "sheets": {
+    "ceiling_roots": {
+      "hang": true
+    },
+    "stalactites": {
+      "hang": true
+    }
+  }
+}

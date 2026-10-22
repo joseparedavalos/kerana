@@ -1223,6 +1223,27 @@ at 40,18 id=ascensor mode=toggle speed=60
 at 52,21 kind=sleep
 ```
 
+**Props del escenario (S46).** Cada prop de `raw/props/<carpeta>/` (inventario en ASSETS §6.1) se coloca con una línea de cabecera, sin carácter en la grilla:
+
+```
+prop X,Y carpeta/nombre [scale=N] [flip] [front]
+```
+
+- `X,Y`: el tile, en unidades de tile como `at`. Un prop que se apoya queda con la base en el borde de abajo de ese tile, centrado: se pone en la primera fila de aire sobre el piso (la del `P`). Uno que cuelga (`sheets.<nombre>.hang` en su `sprite.json`: estalactitas, raíces, lianas) queda con el borde de arriba en el techo del tile: se pone en la primera fila de aire bajo el techo.
+- `carpeta/nombre`: la carpeta de `raw/props/` y el nombre del archivo sin `prop_` ni `_transparent` (`raw/props/l3_pastizal/prop_termite_mound_large.png` → `l3_pastizal/termite_mound_large`). Si no está en ningún atlas de `public/assets/props/`, `npm run maps` da error.
+- `scale=N` (1 por defecto) multiplica el tamaño de `sprite.json`. Sirve para probar; si un prop siempre se ve chico o grande, mejor cambiar su `size` y correr `npm run sprites`: el pixel queda nítido.
+- `flip` lo espeja. `front` lo pone delante de Kerana (como la capa `Foreground`); sin `front` queda detrás de Kerana y de los enemigos.
+- No choca: es decoración. Lo que se pisa sigue siendo la grilla.
+
+```
+prop 104,26 l3_pastizal/termite_mound_large
+prop 110,26 l2_tierra/pindo_palm scale=0.75 flip
+prop 116,26 l4_patio/wooden_chair front
+prop 108,9 l1_cueva/stalactites
+```
+
+Los props viejos con `point Prop x=… y=… kind=nest|tacuru|fence|chair|hammock|trunk|liana` (16 de octubre) siguen funcionando igual. Todos los props nuevos, por carpeta y a su tamaño: `?debug=1&level=vitrina&boss=1` (empieza en el fuego de la zona de props).
+
 La luz de la onda del tajo cargado enciende un Switch hasta 6 tiles adelante aunque haya una pared en medio (la onda se apaga en la pared y no daña nada del otro lado; `GAMEPLAY.switches.waveThroughWalls`). Vitrina con todas las piezas: `?debug=1&level=vitrina&gifts=all` (`tools/levels/vitrina.txt`, fuera de la campaña).
 
 **Regla:** cuando el autor edita un mapa en Tiled, ese JSON pasa a ser la fuente (`mapSource: 'tiled'` en `levels.ts`) y ya no se regenera desde el ASCII.

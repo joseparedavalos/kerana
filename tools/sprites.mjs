@@ -2,17 +2,20 @@
 // raw/<id>/<anim>_<C>x<R>.png → sprites/<id>.png + .json; raw/<id>/<parte>/ → sprites/<id>_<parte>.*
 // raw/portraits/*.png → portraits/ (96 × 96). Los fondos (raw/backgrounds) los procesa `npm run backgrounds`.
 // raw/props/*.png → props/ y raw/hud/*.png|jpg → ui/ (props e íconos de la interfaz; tamaños en raw/<carpeta>/sprite.json).
+// raw/props/<carpeta>/*.png → props/<carpeta>.png + .json: un atlas por carpeta de props por bioma (S46).
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import jpeg from 'jpeg-js';
 import { PNG } from 'pngjs';
-import { coverImage, parseSheetName, processCharacter, processIcon } from './lib/sprite-pipeline.mjs';
+import { coverImage, packAtlas, parseSheetName, processCharacter, processIcon, propName } from './lib/sprite-pipeline.mjs';
 
 const RAW = 'raw';
 const OUT = 'public/assets';
 const PORTRAIT_SIZE = 96;
 /** Carpetas de props e íconos → carpeta de salida en public/assets. */
 const ICON_FOLDERS = { props: 'props', hud: 'ui' };
+/** Ancho máximo de un atlas de props (px de textura): entra en cualquier GPU de celular. */
+const ATLAS_MAX_WIDTH = 1024;
 const SPECIAL = new Set(['backgrounds', 'portraits', ...Object.keys(ICON_FOLDERS)]);
 
 const readPng = (file) => {
@@ -79,6 +82,54 @@ function processIcons(sub, outSub) {
   }
 }
 
+/**
+ * Props por bioma (S46): cada subcarpeta de raw/props es un atlas (props/<carpeta>.png + .json, formato JSON Hash
+ * de Phaser). Cada PNG pasa por el mismo proceso que un prop suelto; `size.<nombre>` da su tamaño en unidades,
+ * `sheets.<nombre>.ignore` lo deja afuera y `sheets.<nombre>.hang` lo cuelga del techo (va en el frame del atlas).
+ */
+function processPropAtlases() {
+  const dir = join(RAW, 'props');
+  if (!existsSync(dir)) return;
+  for (const folder of readdirSync(dir).filter((f) => isDir(join(dir, f))).sort()) {
+    const sub = join(dir, folder);
+    const cfgPath = join(sub, 'sprite.json');
+    const config = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) : {};
+    const entries = [];
+    for (const file of readdirSync(sub).filter((f) => /\.png$/i.test(f)).sort()) {
+      const name = propName(file);
+      const sheet = config.sheets?.[name] ?? {};
+      if (sheet.ignore) {
+        console.log(`props/${folder}/${file}: ignorado (sheets.${name}.ignore)`);
+        continue;
+      }
+      const result = processIcon(readPng(join(sub, file)), { ...config, size: config.size?.[name] ?? config.size?.default });
+      if (!result) {
+        console.log(`props/${folder}/${file}: vacío, se omite`);
+        continue;
+      }
+      entries.push({ name, image: result.image, hang: sheet.hang === true });
+    }
+    if (entries.length === 0) continue;
+    const { image, frames } = packAtlas(entries, ATLAS_MAX_WIDTH);
+    const detail = config.detail ?? 1;
+    const json = {
+      frames: Object.fromEntries(
+        entries.map(({ name, hang }) => {
+          const { x, y, w, h } = frames[name];
+          const frame = { frame: { x, y, w, h }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w, h }, sourceSize: { w, h } };
+          return [name, hang ? { ...frame, hang } : frame];
+        }),
+      ),
+      meta: { image: `${folder}.png`, format: 'RGBA8888', size: { w: image.width, h: image.height }, scale: '1', detail },
+    };
+    mkdirSync(join(OUT, 'props'), { recursive: true });
+    writePng(join(OUT, 'props', `${folder}.png`), image);
+    writeFileSync(join(OUT, 'props', `${folder}.json`), JSON.stringify(json, null, 2) + '\n');
+    const sizes = entries.map(({ name, image: img }) => `${name} ${img.width / detail}×${img.height / detail}`).join(', ');
+    console.log(`props/${folder}.png: ${image.width}×${image.height}, ${entries.length} props (unidades: ${sizes})`);
+  }
+}
+
 if (!existsSync(RAW)) {
   console.log('No hay carpeta raw/: nada que procesar.');
   process.exit(0);
@@ -92,4 +143,5 @@ for (const id of readdirSync(RAW)) {
   }
 }
 for (const [sub, outSub] of Object.entries(ICON_FOLDERS)) processIcons(sub, outSub);
+processPropAtlases();
 processImages('portraits', (img) => coverImage(img, PORTRAIT_SIZE, PORTRAIT_SIZE), `${PORTRAIT_SIZE}×${PORTRAIT_SIZE}`);
