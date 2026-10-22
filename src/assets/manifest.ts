@@ -5,7 +5,8 @@ export type AssetEntry =
   | { type: 'image'; key: string; path: string; width: number; height: number; codePlaceholder?: boolean }
   | { type: 'spritesheet'; key: string; path: string; frameWidth: number; frameHeight: number; frames: number }
   | { type: 'tilemap'; key: string; path: string }
-  | { type: 'json'; key: string; path: string };
+  | { type: 'json'; key: string; path: string }
+  | { type: 'atlas'; key: string; path: string; json: string };
 
 export const TILE_SIZE = 16;
 /** Tileset placeholder: 4 columnas × 7 filas (ver tools/make-placeholder-tiles.mjs). */
@@ -95,6 +96,26 @@ export const ART_IMAGES = {
 } as const;
 export type ArtKey = keyof typeof ART_IMAGES;
 
+/**
+ * Props por bioma (S46): un atlas por carpeta de raw/props (`npm run sprites` → props/<carpeta>.png + .json).
+ * El orden es el de la vitrina. Cada frame es un prop; su tamaño está en raw/props/<carpeta>/sprite.json.
+ */
+export const PROP_ATLASES = [
+  'l1_cueva',
+  'l1_ladera',
+  'l2_agua',
+  'l2_tierra',
+  'l3_arboles',
+  'l3_pastizal',
+  'l4_calle',
+  'l4_patio',
+  'l5_altura',
+  'l5_suelo',
+  'l6_agua',
+  'l6_roca',
+] as const;
+export const propAtlasKey = (folder: string): string => `props_${folder}`;
+
 export const tilesetKey = (biome: string): string => `tiles_${biome}`;
 
 export const MANIFEST: AssetEntry[] = [
@@ -129,5 +150,9 @@ export const MANIFEST: AssetEntry[] = [
   // Props e íconos de la interfaz (S13d): sin arte, cada uso dibuja su placeholder (`artOrPlaceholder`).
   ...Object.entries(ART_IMAGES).map(
     ([key, path]): AssetEntry => ({ type: 'image', key, path, width: 1, height: 1, codePlaceholder: true }),
+  ),
+  // Props por bioma (S46): sin atlas, cada prop dibuja su placeholder (`propLook`).
+  ...PROP_ATLASES.map(
+    (folder): AssetEntry => ({ type: 'atlas', key: propAtlasKey(folder), path: `props/${folder}.png`, json: `props/${folder}.json` }),
   ),
 ];

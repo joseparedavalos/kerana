@@ -94,6 +94,7 @@ export const es = {
   'hint.l7.onda': 'La luz del tajo cargado enciende los faroles lejanos',
   'hint.l5.antesala': 'Kurupi: pies al revés. Seguí sus huellas',
   'status.zzz': 'Zzz',
+  'vitrina.props.group': 'Props: {id}',
   'hint.vitrina.gate': 'Golpeá la piedra y la reja se abre. Esta se apaga sola: ¡apurate!',
   'hint.vitrina.wave': 'Hay una piedra encerrada en la pared: solo la luz del tajo cargado llega hasta ella.',
   'hint.vitrina.mushrooms': 'El primer hongo se desinfla al usarlo. El segundo duerme: despertalo con un tajo cargado.',

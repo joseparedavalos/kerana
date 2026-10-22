@@ -48,6 +48,7 @@ export class PreloadScene extends Phaser.Scene {
       else if (entry.type === 'spritesheet')
         this.load.spritesheet(entry.key, url, { frameWidth: entry.frameWidth, frameHeight: entry.frameHeight });
       else if (entry.type === 'json') this.load.json(entry.key, url);
+      else if (entry.type === 'atlas') this.load.atlas(entry.key, url, ASSET_BASE + entry.json);
       else this.load.tilemapTiledJSON(entry.key, url);
     }
   }
