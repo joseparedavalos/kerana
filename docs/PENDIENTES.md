@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S45.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S46.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -39,11 +39,12 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - La cabeza de Moñái es el sprite de Grok (S43): boca cerrada en reposo, fauces que se abren al caer y ojo cerrado cuando queda aturdida. Los cuernos son cortos, apenas despuntan, y siguen brillando en el aviso del pulso. Misma pelea.
 - Moñái es más exigente (S44): el pulso confunde (controles al revés y sin tajo; se sale sacudiéndose con atacar, y Kerana brilla con una espiral grande encima), las ventanas para pegarle son más cortas (dan uno o dos golpes) y su cuerpo en el suelo levanta una joroba que lastima, así que hay que buscarle la cabeza de frente. La vida no cambió.
 - Hay una receta para encargar el sprite de un jefe (S45): [docs/RECETA-SPRITES.md](RECETA-SPRITES.md), con el flujo, los datos que hay que pedir antes de generar, las reglas de formato y qué le falta a cada jefe.
+- Los props de escenario de los niveles 1 a 6 están listos para usar (S46): 99 props en doce atlas, uno por carpeta de `raw/props/`, a un tamaño pensado contra Kerana y el tile. Se colocan con una línea `prop` en el mapa ASCII (GDD §11.7.1) y se ven todos en la vitrina: `?debug=1&level=vitrina&boss=1`. Todavía no hay ninguno en los niveles.
 
 ## Ahora
 
 1. Escuchar la música (Jose) y ajustarla en `src/data/music.ts`: Claude no puede oír. Volumen y fundidos en `GAMEPLAY.audio`. Faltan el remate de la liberación (hoy calla la música) y el tema del final (hoy suena el del título).
-2. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco.
+2. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco. Para l6 ya hay props (`l6_agua`, `l6_roca`; S46): ver el punto 10.
 3. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
 4. El smoke no siempre pasa tres veces seguidas en el contenedor (S37): con el juego a menos de ≈ 10 FPS el piloto se traba en el paso 1 de l2 (también sin música) y alguna vez en la copa 3 de l3. No es del juego: es el piloto, afinado para 10-12 FPS. Detalle en las notas de S37.
 5. El tirón de la red de seguridad al romper algo en l5 (S39, sin arreglar). Desde S39 la red se recalcula entera cada vez que algo se abre (un rompible, un hongo dormido, la ofrenda). Medido en el headless, en el cuadro en que se rompe algo: en S39, l5 48 a 75 ms (el recálculo solo: 40 a 134, mediana 50), l7 24 a 38, l2 7 a 9. **Confirmado en S40:** l5, romper 27 a 53 ms (mediana 32; el recálculo solo, mediana 29), l7 12 a 25, l2 6 a 12; con la CPU frenada ×4, como un celular modesto, l5 tarda 107 a 200 ms (mediana 122). Sin el recálculo, romper tarda menos de 1 ms (1,3 con la CPU frenada). En l5 son 2 o 3 cuadros perdidos a 60 FPS en una PC y 6 a 12 en un celular: se nota como un tirón. No cambia la física (Arcade recupera los pasos), solo se ve. Cómo evitarlo, de lo más simple a lo más fino: (a) repartir el recálculo en varios cuadros o hacerlo en un Web Worker, usando el mapa viejo mientras tanto (la red espera 4 s: unos cuadros de atraso no importan); (b) recalcular solo lo que puede cambiar: los tramos marcados, los que aparecen donde estaba lo que se abrió y los que pasaban por encima de él (romper un fardo saca un piso que alguien podía usar de escalón, así que no alcanza con mirar solo los marcados).
@@ -51,6 +52,9 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 7. Google Play, con el feedback de itch.io (los pasos, abajo).
 8. Regenerar `raw/monai/head/idle_8x1.png` (Jose) con fondo transparente de verdad: vino con el damero pintado en los píxeles y el pipeline no puede quitarlo. Mientras tanto Moñái en reposo usa un fotograma quieto de la mordida. Cuando llegue, en `raw/monai/head/sprite.json`: `sheets.idle` pasa de `{ "ignore": true }` a `{ "align": "top", "anchor": "cell" }`, la animación `idle` pasa a `{ "fps": 8, "loop": true }` (sin `source` ni `list`), y `npm run sprites`. Cómo generarla, en [docs/RECETA-SPRITES.md](RECETA-SPRITES.md) (sección 3).
 9. Jugar la pelea de Moñái de S44 (Jose) y ajustar el bloque S44 de `GAMEPLAY.monai`: la ventana (0,65 s), la confusión (4,5 s y 0,4 s por sacudida) y la joroba. Si la joroba no se lee como peligrosa, darle un dibujo propio mientras lastima (notas de S44).
+10. Mirar los props de S46 en la vitrina (Jose, `?debug=1&level=vitrina&boss=1`) y decidir cuáles se usan y a qué tamaño (el `size` de `raw/props/<carpeta>/sprite.json`, después `npm run sprites`). Después, una sesión por nivel los coloca con la línea `prop` (GDD §11.7.1) y decide si reemplazan a los props viejos (`kind=tacuru`, `fence`, `chair`, `hammock`…) y al borde de las baldosas 23 y 24.
+11. Regenerar `raw/props/l6_roca/prop_deep_crack.png` (Jose): viene cortado arriba y abajo y queda afuera (`sheets.deep_crack.ignore` en su `sprite.json`; al llegar el nuevo, se saca el `ignore`). Revisar también, sin apuro: los tacurús de `l3_pastizal` con los nombres al revés (`small` es el alto), las puntas violetas de `l2_tierra/prop_dry_grass_clump.png`, las ondas marrones de `l2_agua/prop_water_ripples.png` y los peñascos sin agua de `l6_agua` (`ferns_rock`, `moss_cushions`). Detalle en ASSETS §6.1.
+12. El peso del juego subió 2,37 MB con los props (S46; `dist` 11,16 MB). Si molesta para itch.io o Google Play: cargar solo los atlas del nivel que se juega, o comprimir los PNG.
 
 ## itch.io
 
