@@ -1,0 +1,41 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "bracket_fungi": {
+      "height": 64,
+      "note": "tramo de tronco con hongos repisa"
+    },
+    "buttress_roots": {
+      "height": 96,
+      "note": "pie de árbol con raíces tablares"
+    },
+    "ferns": {
+      "height": 40,
+      "note": "helechos"
+    },
+    "leaf_litter": {
+      "width": 64,
+      "note": "hojarasca"
+    },
+    "rotting_logs": {
+      "width": 72,
+      "note": "troncos podridos"
+    },
+    "saplings": {
+      "height": 80,
+      "note": "arbolitos finos"
+    },
+    "stream_bed": {
+      "width": 80,
+      "note": "lecho de arroyo a ras del piso"
+    },
+    "undergrowth": {
+      "width": 80,
+      "note": "sotobosque"
+    }
+  }
+}

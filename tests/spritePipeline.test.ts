@@ -6,9 +6,11 @@ import {
   detectPixelSize,
   greenEdgePasses,
   opaqueBounds,
+  packAtlas,
   parseSheetName,
   processCharacter,
   processIcon,
+  propName,
   removeBackground,
   removeColorEdge,
   EDGE_COLORS,
@@ -242,5 +244,46 @@ describe('sprite pipeline', () => {
     expect(out?.background).toMatch(/magenta/);
     const wide = processIcon(createImage(1, 1) as Img, { size: { width: 20 } });
     expect(wide).toBeNull();
+  });
+
+  it('propName quita el prefijo prop_ y el sufijo _transparent (S46)', () => {
+    expect(propName('prop_termite_mound.png')).toBe('termite_mound');
+    expect(propName('prop_ferns_transparent.png')).toBe('ferns');
+    expect(propName('sign.png')).toBe('sign');
+  });
+
+  it('chroma borra el magenta puro y no el rosa del lapacho ni el violeta de los cristales (S46)', () => {
+    expect(EDGE_COLORS.chroma(240, 0, 160)).toBe(true);
+    expect(EDGE_COLORS.chroma(255, 150, 195)).toBe(false);
+    expect(EDGE_COLORS.chroma(110, 50, 200)).toBe(false);
+  });
+
+  it('packAtlas acomoda sin solapar, deja aire y respeta el ancho máximo (S46)', () => {
+    const solid = (w: number, h: number, v: number): Img => {
+      const img = createImage(w, h) as Img;
+      fillRect(img, 0, 0, w, h, [v, v, v, 255]);
+      return img;
+    };
+    const entries = [
+      { name: 'b', image: solid(30, 10, 10) },
+      { name: 'a', image: solid(40, 20, 20) },
+      { name: 'c', image: solid(30, 5, 30) },
+    ];
+    const { image, frames } = packAtlas(entries, 80, 2);
+    expect(Object.keys(frames)).toEqual(['b', 'a', 'c']);
+    expect(image.width).toBeLessThanOrEqual(80);
+    const rects = Object.values(frames) as { x: number; y: number; w: number; h: number }[];
+    for (const r of rects) expect(r.x + r.w).toBeLessThanOrEqual(image.width);
+    for (let i = 0; i < rects.length; i++)
+      for (let j = i + 1; j < rects.length; j++) {
+        const [p, q] = [rects[i], rects[j]];
+        const apart = p.x + p.w + 2 <= q.x || q.x + q.w + 2 <= p.x || p.y + p.h + 2 <= q.y || q.y + q.h + 2 <= p.y;
+        expect(apart).toBe(true);
+      }
+    // Cada imagen queda copiada en su lugar.
+    const at = (x: number, y: number) => image.data[(y * image.width + x) * 4];
+    expect(at(frames.a.x, frames.a.y)).toBe(20);
+    expect(at(frames.c.x + 29, frames.c.y + 4)).toBe(30);
+    expect(() => packAtlas([{ name: 'big', image: solid(100, 1, 1) }], 80)).toThrow(/big/);
   });
 });

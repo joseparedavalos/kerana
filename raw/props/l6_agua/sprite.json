@@ -1,0 +1,41 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "ferns_rock": {
+      "height": 96,
+      "note": "peñasco con helechos"
+    },
+    "mist_spray": {
+      "height": 64,
+      "note": "rocío de la cascada"
+    },
+    "moss_cushions": {
+      "height": 96,
+      "note": "peñasco con musgo"
+    },
+    "mossy_trunk": {
+      "width": 80,
+      "note": "tronco caído con musgo"
+    },
+    "shallow_pool": {
+      "width": 72,
+      "note": "pozo bajo"
+    },
+    "thin_stream": {
+      "height": 112,
+      "note": "peñasco con hilo de agua"
+    },
+    "waterfall": {
+      "height": 112,
+      "note": "peñasco con cascada"
+    },
+    "wet_rock": {
+      "height": 56,
+      "note": "roca mojada"
+    }
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "frames": {
+    "ceiling_roots": {
+      "frame": {
+        "x": 191,
+        "y": 2,
+        "w": 63,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 80
+      },
+      "hang": true
+    },
+    "crystal_cluster_large": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 114,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 114,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 114,
+        "h": 96
+      }
+    },
+    "crystal_cluster_medium": {
+      "frame": {
+        "x": 416,
+        "y": 2,
+        "w": 70,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 56
+      }
+    },
+    "crystal_cluster_small": {
+      "frame": {
+        "x": 586,
+        "y": 2,
+        "w": 40,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 32
+      }
+    },
+    "gold_ore_vein": {
+      "frame": {
+        "x": 337,
+        "y": 2,
+        "w": 77,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 77,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 77,
+        "h": 64
+      }
+    },
+    "stalactites": {
+      "frame": {
+        "x": 118,
+        "y": 2,
+        "w": 71,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 71,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 71,
+        "h": 96
+      },
+      "hang": true
+    },
+    "stalagmites": {
+      "frame": {
+        "x": 256,
+        "y": 2,
+        "w": 79,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 79,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 79,
+        "h": 80
+      }
+    },
+    "stone_rubble_pile": {
+      "frame": {
+        "x": 628,
+        "y": 2,
+        "w": 58,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 32
+      }
+    },
+    "water_puddle_drips": {
+      "frame": {
+        "x": 488,
+        "y": 2,
+        "w": 96,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 41
+      }
+    }
+  },
+  "meta": {
+    "image": "l1_cueva.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 688,
+      "h": 100
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

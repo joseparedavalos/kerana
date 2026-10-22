@@ -1,0 +1,174 @@
+{
+  "frames": {
+    "ferns_rock": {
+      "frame": {
+        "x": 321,
+        "y": 2,
+        "w": 165,
+        "h": 192
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 165,
+        "h": 192
+      },
+      "sourceSize": {
+        "w": 165,
+        "h": 192
+      }
+    },
+    "mist_spray": {
+      "frame": {
+        "x": 655,
+        "y": 2,
+        "w": 86,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 86,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 86,
+        "h": 128
+      }
+    },
+    "moss_cushions": {
+      "frame": {
+        "x": 488,
+        "y": 2,
+        "w": 165,
+        "h": 192
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 165,
+        "h": 192
+      },
+      "sourceSize": {
+        "w": 165,
+        "h": 192
+      }
+    },
+    "mossy_trunk": {
+      "frame": {
+        "x": 847,
+        "y": 2,
+        "w": 160,
+        "h": 59
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 59
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 59
+      }
+    },
+    "shallow_pool": {
+      "frame": {
+        "x": 2,
+        "y": 228,
+        "w": 144,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 50
+      }
+    },
+    "thin_stream": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 123,
+        "h": 224
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 123,
+        "h": 224
+      },
+      "sourceSize": {
+        "w": 123,
+        "h": 224
+      }
+    },
+    "waterfall": {
+      "frame": {
+        "x": 127,
+        "y": 2,
+        "w": 192,
+        "h": 224
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 192,
+        "h": 224
+      },
+      "sourceSize": {
+        "w": 192,
+        "h": 224
+      }
+    },
+    "wet_rock": {
+      "frame": {
+        "x": 743,
+        "y": 2,
+        "w": 102,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 102,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 102,
+        "h": 112
+      }
+    }
+  },
+  "meta": {
+    "image": "l6_agua.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1009,
+      "h": 280
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

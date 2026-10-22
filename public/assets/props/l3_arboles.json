@@ -1,0 +1,174 @@
+{
+  "frames": {
+    "corral_rail": {
+      "frame": {
+        "x": 63,
+        "y": 260,
+        "w": 128,
+        "h": 43
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 43
+      }
+    },
+    "dead_tree_termite": {
+      "frame": {
+        "x": 788,
+        "y": 2,
+        "w": 188,
+        "h": 224
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 188,
+        "h": 224
+      },
+      "sourceSize": {
+        "w": 188,
+        "h": 224
+      }
+    },
+    "fallen_logs": {
+      "frame": {
+        "x": 193,
+        "y": 260,
+        "w": 96,
+        "h": 39
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 39
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 39
+      }
+    },
+    "lapacho_pink": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 268,
+        "h": 256
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 268,
+        "h": 256
+      },
+      "sourceSize": {
+        "w": 268,
+        "h": 256
+      }
+    },
+    "lapacho_yellow": {
+      "frame": {
+        "x": 272,
+        "y": 2,
+        "w": 267,
+        "h": 256
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 267,
+        "h": 256
+      },
+      "sourceSize": {
+        "w": 267,
+        "h": 256
+      }
+    },
+    "shade_tree_green": {
+      "frame": {
+        "x": 541,
+        "y": 2,
+        "w": 245,
+        "h": 240
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 245,
+        "h": 240
+      },
+      "sourceSize": {
+        "w": 245,
+        "h": 240
+      }
+    },
+    "stone_trough": {
+      "frame": {
+        "x": 291,
+        "y": 260,
+        "w": 112,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 36
+      }
+    },
+    "wooden_gate": {
+      "frame": {
+        "x": 2,
+        "y": 260,
+        "w": 59,
+        "h": 88
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 88
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 88
+      }
+    }
+  },
+  "meta": {
+    "image": "l3_arboles.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 978,
+      "h": 350
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

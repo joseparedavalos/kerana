@@ -1,0 +1,176 @@
+{
+  "frames": {
+    "aerial_roots": {
+      "frame": {
+        "x": 407,
+        "y": 2,
+        "w": 192,
+        "h": 126
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 192,
+        "h": 126
+      },
+      "sourceSize": {
+        "w": 192,
+        "h": 126
+      },
+      "hang": true
+    },
+    "branch_platform": {
+      "frame": {
+        "x": 2,
+        "y": 196,
+        "w": 192,
+        "h": 45
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 192,
+        "h": 45
+      },
+      "sourceSize": {
+        "w": 192,
+        "h": 45
+      }
+    },
+    "bromeliads": {
+      "frame": {
+        "x": 795,
+        "y": 2,
+        "w": 160,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 46
+      }
+    },
+    "canopy": {
+      "frame": {
+        "x": 149,
+        "y": 2,
+        "w": 256,
+        "h": 127
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 127
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 127
+      }
+    },
+    "hollow_trunk": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 104,
+        "h": 192
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 104,
+        "h": 192
+      },
+      "sourceSize": {
+        "w": 104,
+        "h": 192
+      }
+    },
+    "lianas_hanging": {
+      "frame": {
+        "x": 601,
+        "y": 2,
+        "w": 192,
+        "h": 68
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 192,
+        "h": 68
+      },
+      "sourceSize": {
+        "w": 192,
+        "h": 68
+      },
+      "hang": true
+    },
+    "orchids": {
+      "frame": {
+        "x": 196,
+        "y": 196,
+        "w": 128,
+        "h": 34
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 34
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 34
+      }
+    },
+    "vines_trunk": {
+      "frame": {
+        "x": 108,
+        "y": 2,
+        "w": 39,
+        "h": 192
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 39,
+        "h": 192
+      },
+      "sourceSize": {
+        "w": 39,
+        "h": 192
+      }
+    }
+  },
+  "meta": {
+    "image": "l5_altura.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 957,
+      "h": 243
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "frames": {
+    "exposed_tree_roots": {
+      "frame": {
+        "x": 261,
+        "y": 2,
+        "w": 144,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 48
+      }
+    },
+    "loose_stones_boulders": {
+      "frame": {
+        "x": 407,
+        "y": 2,
+        "w": 71,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 71,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 71,
+        "h": 40
+      }
+    },
+    "moss_grey_rock": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 72,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 72,
+        "h": 80
+      }
+    },
+    "short_dry_grass": {
+      "frame": {
+        "x": 480,
+        "y": 2,
+        "w": 35,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 35,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 35,
+        "h": 20
+      }
+    },
+    "spiky_bromeliad": {
+      "frame": {
+        "x": 209,
+        "y": 2,
+        "w": 50,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 50,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 50,
+        "h": 56
+      }
+    },
+    "tall_dry_grass": {
+      "frame": {
+        "x": 148,
+        "y": 2,
+        "w": 59,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 64
+      }
+    },
+    "termite_mound": {
+      "frame": {
+        "x": 76,
+        "y": 2,
+        "w": 70,
+        "h": 72
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 72
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 72
+      }
+    }
+  },
+  "meta": {
+    "image": "l1_ladera.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 517,
+      "h": 84
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

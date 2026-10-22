@@ -1,0 +1,154 @@
+{
+  "frames": {
+    "balanced_boulders": {
+      "frame": {
+        "x": 171,
+        "y": 2,
+        "w": 156,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 156,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 156,
+        "h": 128
+      }
+    },
+    "crevice_grasses": {
+      "frame": {
+        "x": 329,
+        "y": 2,
+        "w": 160,
+        "h": 99
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 99
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 99
+      }
+    },
+    "lichen_moss": {
+      "frame": {
+        "x": 491,
+        "y": 2,
+        "w": 160,
+        "h": 94
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 94
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 94
+      }
+    },
+    "rock_ledge": {
+      "frame": {
+        "x": 2,
+        "y": 196,
+        "w": 144,
+        "h": 60
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 60
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 60
+      }
+    },
+    "sandstone_outcrop": {
+      "frame": {
+        "x": 653,
+        "y": 2,
+        "w": 160,
+        "h": 94
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 94
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 94
+      }
+    },
+    "scree_pile": {
+      "frame": {
+        "x": 815,
+        "y": 2,
+        "w": 144,
+        "h": 68
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 68
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 68
+      }
+    },
+    "windbent_tree": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 167,
+        "h": 192
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 167,
+        "h": 192
+      },
+      "sourceSize": {
+        "w": 167,
+        "h": 192
+      }
+    }
+  },
+  "meta": {
+    "image": "l6_roca.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 961,
+      "h": 258
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

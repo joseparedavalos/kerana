@@ -1,0 +1,154 @@
+{
+  "frames": {
+    "driftwood": {
+      "frame": {
+        "x": 469,
+        "y": 2,
+        "w": 112,
+        "h": 39
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 39
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 39
+      }
+    },
+    "dry_grass_clump": {
+      "frame": {
+        "x": 419,
+        "y": 2,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      }
+    },
+    "fallen_fronds": {
+      "frame": {
+        "x": 305,
+        "y": 2,
+        "w": 112,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 52
+      }
+    },
+    "fence_post": {
+      "frame": {
+        "x": 152,
+        "y": 2,
+        "w": 52,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 80
+      }
+    },
+    "pindo_palm": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 148,
+        "h": 288
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 148,
+        "h": 288
+      },
+      "sourceSize": {
+        "w": 148,
+        "h": 288
+      }
+    },
+    "sandy_mounds": {
+      "frame": {
+        "x": 583,
+        "y": 2,
+        "w": 80,
+        "h": 37
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 37
+      }
+    },
+    "thorny_scrub": {
+      "frame": {
+        "x": 206,
+        "y": 2,
+        "w": 97,
+        "h": 72
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 97,
+        "h": 72
+      },
+      "sourceSize": {
+        "w": 97,
+        "h": 72
+      }
+    }
+  },
+  "meta": {
+    "image": "l2_tierra.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 665,
+      "h": 292
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

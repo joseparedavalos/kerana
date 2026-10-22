@@ -1,0 +1,45 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "clay_water_jars": {
+      "height": 24,
+      "note": "cántaros: medio Kerana"
+    },
+    "hand_water_pump": {
+      "height": 40,
+      "note": "bomba de agua"
+    },
+    "hitching_post": {
+      "height": 32,
+      "note": "palenque: dos tiles"
+    },
+    "low_whitewashed_wall": {
+      "width": 64,
+      "note": "tapia baja encalada"
+    },
+    "market_stall_awning": {
+      "height": 56,
+      "note": "puesto de mercado: Kerana pasa por debajo"
+    },
+    "terracotta_tile_stacks": {
+      "height": 32,
+      "note": "pila de tejas"
+    },
+    "wooden_bench_wall": {
+      "width": 48,
+      "note": "banco"
+    },
+    "wooden_cart": {
+      "width": 64,
+      "note": "carreta"
+    },
+    "wooden_crates_baskets": {
+      "width": 48,
+      "note": "cajones y canastos"
+    }
+  }
+}

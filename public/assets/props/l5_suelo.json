@@ -1,0 +1,174 @@
+{
+  "frames": {
+    "bracket_fungi": {
+      "frame": {
+        "x": 302,
+        "y": 2,
+        "w": 72,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 72,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 72,
+        "h": 128
+      }
+    },
+    "buttress_roots": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 228,
+        "h": 192
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 228,
+        "h": 192
+      },
+      "sourceSize": {
+        "w": 228,
+        "h": 192
+      }
+    },
+    "ferns": {
+      "frame": {
+        "x": 376,
+        "y": 2,
+        "w": 100,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 100,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 80
+      }
+    },
+    "leaf_litter": {
+      "frame": {
+        "x": 624,
+        "y": 2,
+        "w": 128,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 56
+      }
+    },
+    "rotting_logs": {
+      "frame": {
+        "x": 478,
+        "y": 2,
+        "w": 144,
+        "h": 73
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 73
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 73
+      }
+    },
+    "saplings": {
+      "frame": {
+        "x": 232,
+        "y": 2,
+        "w": 68,
+        "h": 160
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 160
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 160
+      }
+    },
+    "stream_bed": {
+      "frame": {
+        "x": 2,
+        "y": 196,
+        "w": 160,
+        "h": 23
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 23
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 23
+      }
+    },
+    "undergrowth": {
+      "frame": {
+        "x": 754,
+        "y": 2,
+        "w": 160,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 49
+      }
+    }
+  },
+  "meta": {
+    "image": "l5_suelo.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 916,
+      "h": 221
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}
