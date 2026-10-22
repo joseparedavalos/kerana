@@ -38,7 +38,8 @@
       "sourceSize": {
         "w": 86,
         "h": 128
-      }
+      },
+      "mist": true
     },
     "moss_cushions": {
       "frame": {
@@ -98,6 +99,15 @@
       "sourceSize": {
         "w": 144,
         "h": 50
+      },
+      "flow": {
+        "dir": "side",
+        "region": [
+          0.1,
+          0.2,
+          0.92,
+          0.85
+        ]
       }
     },
     "thin_stream": {
@@ -118,7 +128,21 @@
       "sourceSize": {
         "w": 123,
         "h": 224
-      }
+      },
+      "flow": {
+        "dir": "down",
+        "region": [
+          0.2,
+          0.02,
+          0.8,
+          1
+        ]
+      },
+      "splash": [
+        0.38,
+        0.62,
+        0.95
+      ]
     },
     "waterfall": {
       "frame": {
@@ -138,7 +162,21 @@
       "sourceSize": {
         "w": 192,
         "h": 224
-      }
+      },
+      "flow": {
+        "dir": "down",
+        "region": [
+          0.18,
+          0.1,
+          0.86,
+          1
+        ]
+      },
+      "splash": [
+        0.3,
+        0.7,
+        0.95
+      ]
     },
     "wet_rock": {
       "frame": {

@@ -1345,6 +1345,37 @@ export const GAMEPLAY = {
     /** Alto (unidades) de los rótulos de la vitrina sobre cada prop, y separación entre sus tres alturas alternadas. */
     showcaseLabelSize: 6,
     showcaseLabelStagger: 8,
+    /**
+     * Props hundidos (S47, `sheets.<nombre>.sink` en sprite.json): se dibujan a esta profundidad, detrás del terreno
+     * (0) y delante del fondo (-20), para que la parte bajo la línea del suelo quede tapada por el piso o el agua.
+     */
+    sunkDepth: -1,
+    /** Vitrina: lámina de agua (unidades de alto) bajo los props que solo van sobre agua (`waterOnly`). */
+    showcaseWaterHeight: 6,
+    /**
+     * Agua animada de los props de l6_agua (S47; `flow`, `splash` y `mist` en raw/props/l6_agua/sprite.json). Solo
+     * se mueven los píxeles de agua: la roca y el musgo quedan quietos. Si el agua corre muy rápido deja de leerse.
+     */
+    water: {
+      /** Velocidad del agua que cae (cascada, hilo de agua), en unidades por segundo. */
+      fallSpeed: 24,
+      /** Velocidad de la lámina de agua (pozo bajo), en unidades por segundo: casi quieta. */
+      sheetSpeed: 4,
+      /** Cuánto corre el dibujo en un ciclo (px de arte) y en cuántos fotogramas: el paso es period / frames px. */
+      period: 24,
+      frames: 12,
+      /** Qué píxel es agua: canal más claro mínimo (0 a 255) y cuánto puede quedar el azul por debajo del rojo y del verde. */
+      minBright: 110,
+      blueSlack: 4,
+      /** Gotas donde el agua golpea abajo (las partículas de salpicadura de S22): cada cuánto (ms) y cuántas. */
+      dropsEveryMs: 260,
+      dropsPerBurst: 2,
+      /** Rocío (mist_spray): cuánto sube (unidades) en cada ciclo, cuánto dura (ms) y su opacidad mínima y máxima. */
+      mistRise: 6,
+      mistCycleMs: 3200,
+      mistAlphaMin: 0.45,
+      mistAlphaMax: 0.95,
+    },
   },
   audio: {
     /** Volumen final de la música (con Opciones al 100 %), sobre la pista ya normalizada. */

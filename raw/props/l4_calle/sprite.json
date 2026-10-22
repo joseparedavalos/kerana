@@ -21,10 +21,6 @@
       "width": 64,
       "note": "tapia baja encalada"
     },
-    "market_stall_awning": {
-      "height": 56,
-      "note": "puesto de mercado: Kerana pasa por debajo"
-    },
     "terracotta_tile_stacks": {
       "height": 32,
       "note": "pila de tejas"
@@ -40,6 +36,12 @@
     "wooden_crates_baskets": {
       "width": 48,
       "note": "cajones y canastos"
+    }
+  },
+  "sheets": {
+    "market_stall_awning": {
+      "note": "S47: descartado por Jose al verlo en la vitrina",
+      "ignore": true
     }
   }
 }

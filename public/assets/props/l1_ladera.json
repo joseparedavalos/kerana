@@ -18,7 +18,8 @@
       "sourceSize": {
         "w": 144,
         "h": 48
-      }
+      },
+      "sink": 6
     },
     "loose_stones_boulders": {
       "frame": {
@@ -38,7 +39,8 @@
       "sourceSize": {
         "w": 71,
         "h": 40
-      }
+      },
+      "sink": 4
     },
     "moss_grey_rock": {
       "frame": {

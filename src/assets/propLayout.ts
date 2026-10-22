@@ -12,6 +12,8 @@ export interface ShowcaseItem {
   width: number;
   height: number;
   hang: boolean;
+  /** S47: solo va sobre agua (la vitrina le dibuja una lámina de agua). */
+  waterOnly?: boolean;
 }
 
 /**

@@ -118,7 +118,9 @@
       "sourceSize": {
         "w": 73,
         "h": 56
-      }
+      },
+      "sink": 7,
+      "waterOnly": true
     },
     "water_lilies": {
       "frame": {
@@ -138,7 +140,9 @@
       "sourceSize": {
         "w": 80,
         "h": 59
-      }
+      },
+      "sink": 7,
+      "waterOnly": true
     },
     "water_ripples": {
       "frame": {

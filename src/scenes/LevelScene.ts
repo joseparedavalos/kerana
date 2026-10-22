@@ -1648,6 +1648,7 @@ export class LevelScene extends Phaser.Scene {
               scale: Number(objectProp(obj, 'scale') ?? 1),
               flip: objectProp(obj, 'flip') === true,
               front: objectProp(obj, 'front') === true,
+              drops: this.splashes,
             });
             break;
           }
@@ -2200,7 +2201,7 @@ export class LevelScene extends Phaser.Scene {
         const id = `${folder}/${name}`;
         const look = propLook(this, id);
         const frame = this.textures.getFrame(look.key, look.frame);
-        return { id, width: frame.width * look.scale, height: frame.height * look.scale, hang: look.hang };
+        return { id, width: frame.width * look.scale, height: frame.height * look.scale, hang: look.hang, waterOnly: look.waterOnly };
       }),
     }));
     const layout = layoutShowcase(groups, rect.left + cfg.showcaseGroupGap, cfg.showcaseGap, cfg.showcaseGroupGap);
@@ -2208,7 +2209,12 @@ export class LevelScene extends Phaser.Scene {
     const labelStyle = { ...TEXT_STYLE, fontSize: `${cfg.showcaseLabelSize}px`, padding: { x: 1, y: 1 }, wordWrap: undefined };
     const tile = this.map.tileHeight;
     layout.items.forEach((item, i) => {
-      addProp(this, item.x, item.hang ? rect.top + tile : rect.bottom, item.id, tile);
+      addProp(this, item.x, item.hang ? rect.top + tile : rect.bottom, item.id, tile, { drops: this.splashes });
+      // S47: los que solo van sobre agua (camalote, irupé) se muestran con su base dentro de una lámina de agua.
+      if (item.waterOnly) {
+        const h = cfg.showcaseWaterHeight;
+        this.add.rectangle(item.x, rect.bottom, item.width + cfg.showcaseGap, h, SHALLOW_COLOR, 0.55).setOrigin(0.5, 1).setDepth(11);
+      }
       const stagger = (i % 3) * cfg.showcaseLabelStagger;
       const labelY = item.hang ? rect.top + item.height + 2 + stagger : rect.bottom - item.height - 2 - stagger;
       this.add

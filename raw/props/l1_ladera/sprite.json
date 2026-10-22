@@ -32,5 +32,15 @@
       "height": 36,
       "note": "tacurú: un poco menos que Kerana"
     }
+  },
+  "sheets": {
+    "exposed_tree_roots": {
+      "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
+      "sink": 6
+    },
+    "loose_stones_boulders": {
+      "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
+      "sink": 4
+    }
   }
 }

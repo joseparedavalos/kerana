@@ -1234,6 +1234,8 @@ prop X,Y carpeta/nombre [scale=N] [flip] [front]
 - `scale=N` (1 por defecto) multiplica el tamaño de `sprite.json`. Sirve para probar; si un prop siempre se ve chico o grande, mejor cambiar su `size` y correr `npm run sprites`: el pixel queda nítido.
 - `flip` lo espeja. `front` lo pone delante de Kerana (como la capa `Foreground`); sin `front` queda detrás de Kerana y de los enemigos.
 - No choca: es decoración. Lo que se pisa sigue siendo la grilla.
+- Hundidos (S47): los props anchos y planos dibujados desde arriba (`sheets.<nombre>.sink` en su `sprite.json`) se dibujan unas unidades bajo la línea del suelo, detrás del piso, para que no parezcan flotar; se colocan igual que los demás. `l2_agua/water_hyacinth` y `l2_agua/water_lilies` (`waterOnly`) van **solo sobre agua**, nunca sobre tierra firme: su base queda dentro de la lámina de agua.
+- El agua de `l6_agua` (`waterfall`, `thin_stream`, `shallow_pool`, `mist_spray`) se anima sola (S47): no hace falta nada en la línea `prop`.
 
 ```
 prop 104,26 l3_pastizal/termite_mound_large

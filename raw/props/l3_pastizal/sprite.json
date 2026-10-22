@@ -40,5 +40,11 @@
     "wildflowers_clump": {
       "width": 40
     }
+  },
+  "sheets": {
+    "cracked_earth_patch": {
+      "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
+      "sink": 10
+    }
   }
 }

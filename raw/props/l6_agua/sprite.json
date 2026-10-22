@@ -37,5 +37,57 @@
       "height": 56,
       "note": "roca mojada"
     }
+  },
+  "sheets": {
+    "waterfall": {
+      "note": "S47: agua animada. flow.region = [x0, y0, x1, y1] en fracciones del dibujo: dentro, solo se mueven los píxeles claros y azulados (el agua); la roca y el musgo quedan quietos. flow.dir: down (cae) o side (lámina). splash = [x0, x1, y]: franja (fracciones) donde el agua golpea y saltan gotas. Velocidades en GAMEPLAY.props.water",
+      "flow": {
+        "dir": "down",
+        "region": [
+          0.18,
+          0.1,
+          0.86,
+          1
+        ]
+      },
+      "splash": [
+        0.3,
+        0.7,
+        0.95
+      ]
+    },
+    "thin_stream": {
+      "note": "S47: agua animada. flow.region = [x0, y0, x1, y1] en fracciones del dibujo: dentro, solo se mueven los píxeles claros y azulados (el agua); la roca y el musgo quedan quietos. flow.dir: down (cae) o side (lámina). splash = [x0, x1, y]: franja (fracciones) donde el agua golpea y saltan gotas. Velocidades en GAMEPLAY.props.water",
+      "flow": {
+        "dir": "down",
+        "region": [
+          0.2,
+          0.02,
+          0.8,
+          1
+        ]
+      },
+      "splash": [
+        0.38,
+        0.62,
+        0.95
+      ]
+    },
+    "shallow_pool": {
+      "note": "S47: agua animada. flow.region = [x0, y0, x1, y1] en fracciones del dibujo: dentro, solo se mueven los píxeles claros y azulados (el agua); la roca y el musgo quedan quietos. flow.dir: down (cae) o side (lámina). splash = [x0, x1, y]: franja (fracciones) donde el agua golpea y saltan gotas. Velocidades en GAMEPLAY.props.water",
+      "flow": {
+        "dir": "side",
+        "region": [
+          0.1,
+          0.2,
+          0.92,
+          0.85
+        ]
+      }
+    },
+    "mist_spray": {
+      "note": "S47: sube despacio y cambia de opacidad (GAMEPLAY.props.water.mist*)",
+      "mist": true
+    }
   }
 }
