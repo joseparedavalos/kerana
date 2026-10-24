@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S48.
+Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S49.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
 
@@ -42,6 +42,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Los props de escenario de los niveles 1 a 6 están listos para usar (S46): 99 props en doce atlas, uno por carpeta de `raw/props/`, a un tamaño pensado contra Kerana y el tile. Se colocan con una línea `prop` en el mapa ASCII (GDD §11.7.1) y se ven todos en la vitrina: `?debug=1&level=vitrina&boss=1`. Todavía no hay ninguno en los niveles.
 - Los props de la vitrina se asientan y el agua de l6 corre (S47): el charco, las raíces, las piedras y la tierra agrietada se hunden en el piso en vez de flotar; el camalote y el irupé, en el agua (van solo sobre agua). La cascada, el hilo de agua y el pozo corren, saltan gotas abajo y el rocío sube. El puesto de mercado de l4 se sacó.
 - Los árboles y los props de borde irregular se ven plantados (S48): se hunden un poco en el piso y los árboles grandes llevan matas de pasto al pie, para no comerse las raíces. Los dos peñascos sin agua de l6 se sacaron.
+- El tacurú de la ladera de l1 lleva pasto seco al pie, y las estalagmitas, la roca con veta y los cristales de la cueva, cascotes (S49): en la cueva no hay plantas. Las ondas marrones de l2 se sacaron.
 
 ## Ahora
 
@@ -54,8 +55,8 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 7. Google Play, con el feedback de itch.io (los pasos, abajo).
 8. Regenerar `raw/monai/head/idle_8x1.png` (Jose) con fondo transparente de verdad: vino con el damero pintado en los píxeles y el pipeline no puede quitarlo. Mientras tanto Moñái en reposo usa un fotograma quieto de la mordida. Cuando llegue, en `raw/monai/head/sprite.json`: `sheets.idle` pasa de `{ "ignore": true }` a `{ "align": "top", "anchor": "cell" }`, la animación `idle` pasa a `{ "fps": 8, "loop": true }` (sin `source` ni `list`), y `npm run sprites`. Cómo generarla, en [docs/RECETA-SPRITES.md](RECETA-SPRITES.md) (sección 3).
 9. Jugar la pelea de Moñái de S44 (Jose) y ajustar el bloque S44 de `GAMEPLAY.monai`: la ventana (0,65 s), la confusión (4,5 s y 0,4 s por sacudida) y la joroba. Si la joroba no se lee como peligrosa, darle un dibujo propio mientras lastima (notas de S44).
-10. Mirar los props de S46 en la vitrina (Jose, `?debug=1&level=vitrina&boss=1`) y decidir cuáles se usan y a qué tamaño (el `size` de `raw/props/<carpeta>/sprite.json`, después `npm run sprites`). Con S47 y S48: ver si el hundido (`sink`), las matas al pie de los árboles (`tufts`) y la velocidad del agua de l6 (`GAMEPLAY.props.water`) quedan bien. El camalote y el irupé van solo sobre agua. Después, una sesión por nivel los coloca con la línea `prop` (GDD §11.7.1) y decide si reemplazan a los props viejos (`kind=tacuru`, `fence`, `chair`, `hammock`…) y al borde de las baldosas 23 y 24.
-11. Regenerar `raw/props/l6_roca/prop_deep_crack.png` (Jose): viene cortado arriba y abajo y queda afuera (`sheets.deep_crack.ignore` en su `sprite.json`; al llegar el nuevo, se saca el `ignore`). Revisar también, sin apuro: los tacurús de `l3_pastizal` con los nombres al revés (`small` es el alto), las puntas violetas de `l2_tierra/prop_dry_grass_clump.png` y las ondas marrones de `l2_agua/prop_water_ripples.png`. Detalle en ASSETS §6.1.
+10. Mirar los props de S46 en la vitrina (Jose, `?debug=1&level=vitrina&boss=1`) y decidir cuáles se usan y a qué tamaño (el `size` de `raw/props/<carpeta>/sprite.json`, después `npm run sprites`). Con S47 a S49: ver si el hundido (`sink`), las matas al pie de los árboles y del tacurú y los cascotes de la cueva (`tufts`) y la velocidad del agua de l6 (`GAMEPLAY.props.water`) quedan bien. El camalote y el irupé van solo sobre agua. Después, una sesión por nivel los coloca con la línea `prop` (GDD §11.7.1) y decide si reemplazan a los props viejos (`kind=tacuru`, `fence`, `chair`, `hammock`…) y al borde de las baldosas 23 y 24.
+11. Regenerar `raw/props/l6_roca/prop_deep_crack.png` (Jose): viene cortado arriba y abajo y queda afuera (`sheets.deep_crack.ignore` en su `sprite.json`; al llegar el nuevo, se saca el `ignore`). Revisar también, sin apuro: los tacurús de `l3_pastizal` con los nombres al revés (`small` es el alto) y las puntas violetas de `l2_tierra/prop_dry_grass_clump.png`. Si Jose quiere ondas en l2, regenerar `l2_agua/prop_water_ripples.png` (fuera con `ignore` desde S49: salieron marrones). Detalle en ASSETS §6.1.
 12. El peso del juego subió 2,37 MB con los props (S46; `dist` 11,01 MB tras S48). Si molesta para itch.io o Google Play: cargar solo los atlas del nivel que se juega, o comprimir los PNG.
 
 ## itch.io
