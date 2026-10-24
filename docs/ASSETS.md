@@ -274,7 +274,7 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 | `l4_patio` | 1012 × 260 | 194 KB | banana_plant 74,5 × 96, clothesline 96 × 45,5, hammock 80 × 40, mango_tree 111 × 128, potted_plants 34,5 × 32, stone_well 42 × 56, watering_can 20,5 × 16, wooden_chair 16,5 × 28, wooden_ladder 21 × 56 |
 | `l5_altura` | 957 × 243 | 248 KB | aerial_roots 96 × 63 (cuelga), branch_platform 96 × 22,5, bromeliads 80 × 23, canopy 128 × 63,5, hollow_trunk 52 × 96, lianas_hanging 96 × 34 (cuelga), orchids 64 × 17, vines_trunk 19,5 × 96 |
 | `l5_suelo` | 916 × 221 | 161 KB | bracket_fungi 36 × 64, buttress_roots 114 × 96, ferns 50 × 40, leaf_litter 64 × 28, rotting_logs 72 × 36,5, saplings 34 × 80, stream_bed 80 × 11,5, undergrowth 80 × 24,5 |
-| `l6_agua` | 1009 × 280 | 354 KB | ferns_rock 82,5 × 96, mist_spray 43 × 64, moss_cushions 82,5 × 96, mossy_trunk 80 × 29,5, shallow_pool 72 × 25, thin_stream 61,5 × 112, waterfall 96 × 112, wet_rock 51 × 56 |
+| `l6_agua` | 821 × 228 | 219 KB | mist_spray 43 × 64, mossy_trunk 80 × 29,5, shallow_pool 72 × 25, thin_stream 61,5 × 112, waterfall 96 × 112, wet_rock 51 × 56 |
 | `l6_roca` | 961 × 258 | 206 KB | balanced_boulders 78 × 64, crevice_grasses 80 × 49,5, lichen_moss 80 × 47, rock_ledge 72 × 30, sandstone_outcrop 80 × 47, scree_pile 72 × 34, windbent_tree 83,5 × 96 |
 
 **Ajustes de S47** (después de que Jose recorrió la vitrina):
@@ -284,13 +284,18 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 - **Agua animada de `l6_agua`**, por código y sin arte nuevo (`src/assets/waterFlow.ts` y `flowAnim` en `propArt.ts`). `waterfall`, `thin_stream` y la lámina de `shallow_pool` llevan `flow` (`dir`: `down` o `side`; `region`: la parte del dibujo con agua, en fracciones). Dentro de la región solo se mueven los píxeles claros y azulados; la roca (oscura) y el musgo (verde) quedan quietos. Al cargar se arman 12 fotogramas en los que el agua corre hacia abajo (o de costado), mezclados para que el ciclo no salte. `splash` (`[x0, x1, y]` en fracciones) es la franja donde el agua golpea: ahí saltan gotas con las partículas de salpicadura de S22. `mist_spray` lleva `mist`: sube despacio y cambia de opacidad. Velocidades y ritmos en `GAMEPLAY.props.water` (comentados). El agua de `l2_agua` no se anima.
 - **Fuera:** `l4_calle/market_stall_awning` (Jose lo descartó en la vitrina): `sheets.market_stall_awning.ignore`, sin borrar el PNG de `raw/`.
 
+**Ajustes de S48** (Jose recorrió la vitrina otra vez): que se vean plantados en el suelo, no posados encima.
+
+- **Borde de abajo irregular**, con el fondo asomando entre bulto y bulto: se hunden con `sink`, comentado en cada `sprite.json`. `l1_cueva/crystal_cluster_large` 4, `l2_tierra/fallen_fronds` 7, `l2_tierra/sandy_mounds` 3, `l3_pastizal/termite_mound_small` y `termite_mound_large` 3.
+- **Árboles con raíces abiertas**, que se apoyaban en las puntas: se hunden poco, para no comerse las raíces (`l3_arboles/lapacho_pink`, `lapacho_yellow`, `shade_tree_green` y `dead_tree_termite` 3; `l4_patio/mango_tree` y `l5_suelo/buttress_roots` 4), y llevan **matas al pie**: `sheets.<nombre>.tufts`, una lista de props de pasto que ya existen y que el juego coloca solos junto al tronco (`prop`, `x` en fracción del ancho del dibujo, `scale`, `sink` y `flip`). Se dibujan delante del árbol y detrás de Kerana; siguen al árbol si va espejado, escalado o con `front`. Lapachos y árbol de sombra: `l3_pastizal/grass_tuft_bent` en las puntas de las raíces y `l1_ladera/short_dry_grass` al medio; árbol seco: los mismos dos; mango: `l3_pastizal/wildflowers_clump` y pasto corto; raíces tablares: `l5_suelo/ferns` a los costados y `undergrowth` al medio. Para cambiar una mata (por ejemplo, si el pasto seco de l3 no es del bioma donde se coloca el árbol), se edita el `sprite.json` y se corre `npm run sprites`. Se prefirió a dibujar pasto por código: es solo datos, el pasto tiene el estilo del resto del arte y no hay colores que elegir por bioma.
+- **Fuera:** `l6_agua/ferns_rock` y `l6_agua/moss_cushions` (`ignore`): eran el peñasco de `waterfall` y `thin_stream` sin el chorro, así que no se animaban y repetían la roca.
+
 **Para regenerar o revisar (S46):**
 
 - `l6_roca/prop_deep_crack.png`: el dibujo llega al borde de arriba y de abajo del lienzo (está cortado). Queda afuera con `sheets.deep_crack.ignore`. Cuando llegue el nuevo, se saca el `ignore` y se corre `npm run sprites`.
 - `l3_pastizal`: `termite_mound_small` es más alto que `termite_mound_large` (¿nombres al revés?). Hoy `small` mide 52 de alto y `large` 36.
 - `l2_tierra/prop_dry_grass_clump.png`: las puntas tienen un violeta que parece resto del magenta, mezclado con el dibujo (el pipeline no lo puede separar). Se ve poco a este tamaño; si molesta, regenerar.
 - `l2_agua/prop_water_ripples.png`: las ondas son marrones y violetas, no se leen como agua sobre el fondo del estero.
-- `l6_agua`: `ferns_rock` y `moss_cushions` son el peñasco de la cascada sin el agua, pero con la espuma abajo: sueltos se ven raros. Sirven junto a `waterfall`.
 - Las doce carpetas traen transparencia real (ninguna con el damero pintado) y lienzos razonables (de 228 a 1792 px). `l3_pastizal` y `l5_altura` vienen recortados al dibujo; las demás, en lienzos de 1408 × 1408.
 
 ---
