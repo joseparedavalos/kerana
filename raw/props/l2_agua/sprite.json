@@ -49,6 +49,10 @@
       "note": "S47: flota en el estero. Colocalo SOLO sobre agua, nunca en tierra firme. sink = cuánto de la base queda dentro de la lámina de agua",
       "sink": 7,
       "waterOnly": true
+    },
+    "water_ripples": {
+      "note": "S49: fuera (Jose, en la vitrina): las ondas salieron marrones y no se leen como agua. El PNG sigue en raw/",
+      "ignore": true
     }
   }
 }

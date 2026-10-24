@@ -41,6 +41,31 @@
     "loose_stones_boulders": {
       "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
       "sink": 4
+    },
+    "termite_mound": {
+      "note": "S49: borde de abajo irregular (se veía el fondo entre los bultos): hundido como los tacurúes de l3_pastizal, y matas de pasto seco de esta carpeta al pie (`tufts`: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido). La boca del medio queda libre",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.06,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/tall_dry_grass",
+          "x": 0.2,
+          "scale": 0.4,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.84,
+          "scale": 1,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     }
   }
 }

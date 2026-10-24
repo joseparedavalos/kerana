@@ -60,7 +60,23 @@
       "sourceSize": {
         "w": 70,
         "h": 56
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.1,
+          "scale": 0.35,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.9,
+          "scale": 0.35,
+          "sink": 1,
+          "flip": true
+        }
+      ]
     },
     "crystal_cluster_small": {
       "frame": {
@@ -80,7 +96,8 @@
       "sourceSize": {
         "w": 40,
         "h": 32
-      }
+      },
+      "sink": 2
     },
     "gold_ore_vein": {
       "frame": {
@@ -100,7 +117,23 @@
       "sourceSize": {
         "w": 77,
         "h": 64
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.1,
+          "scale": 0.45,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.88,
+          "scale": 0.4,
+          "sink": 1,
+          "flip": true
+        }
+      ]
     },
     "stalactites": {
       "frame": {
@@ -141,7 +174,30 @@
       "sourceSize": {
         "w": 79,
         "h": 80
-      }
+      },
+      "sink": 5,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.1,
+          "scale": 0.4,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.58,
+          "scale": 0.3,
+          "sink": 1,
+          "flip": true
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.9,
+          "scale": 0.4,
+          "sink": 1,
+          "flip": true
+        }
+      ]
     },
     "stone_rubble_pile": {
       "frame": {
@@ -161,7 +217,8 @@
       "sourceSize": {
         "w": 58,
         "h": 32
-      }
+      },
+      "sink": 2
     },
     "water_puddle_drips": {
       "frame": {

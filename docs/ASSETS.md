@@ -266,7 +266,7 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 |---|---|---|---|
 | `l1_cueva` | 688 × 100 | 82 KB | ceiling_roots 31,5 × 40 (cuelga), crystal_cluster_large 57 × 48, crystal_cluster_medium 35 × 28, crystal_cluster_small 20 × 16, gold_ore_vein 38,5 × 32, stalactites 35,5 × 48 (cuelga), stalagmites 39,5 × 40, stone_rubble_pile 29 × 16, water_puddle_drips 48 × 20,5 |
 | `l1_ladera` | 517 × 84 | 52 KB | exposed_tree_roots 72 × 24, loose_stones_boulders 35,5 × 20, moss_grey_rock 36 × 40, short_dry_grass 17,5 × 10, spiky_bromeliad 25 × 28, tall_dry_grass 29,5 × 32, termite_mound 35 × 36 |
-| `l2_agua` | 911 × 143 | 114 KB | canoe 72 × 19,5, marsh_grass 64 × 17, reeds_large 99 × 48, reeds_small 44 × 32, rotting_log 64 × 12,5, water_hyacinth 36,5 × 28, water_lilies 40 × 29,5, water_ripples 48 × 15, wooden_posts 43 × 56 |
+| `l2_agua` | 943 × 116 | 108 KB | canoe 72 × 19,5, marsh_grass 64 × 17, reeds_large 99 × 48, reeds_small 44 × 32, rotting_log 64 × 12,5, water_hyacinth 36,5 × 28, water_lilies 40 × 29,5, wooden_posts 43 × 56 (water_ripples, fuera desde S49) |
 | `l2_tierra` | 665 × 292 | 99 KB | driftwood 56 × 19,5, dry_grass_clump 24 × 24, fallen_fronds 56 × 26, fence_post 26 × 40, pindo_palm 74 × 144, sandy_mounds 40 × 18,5, thorny_scrub 48,5 × 36 |
 | `l3_arboles` | 978 × 350 | 364 KB | corral_rail 64 × 21,5, dead_tree_termite 94 × 112, fallen_logs 48 × 19,5, lapacho_pink 134 × 128, lapacho_yellow 133,5 × 128, shade_tree_green 122,5 × 120, stone_trough 56 × 18, wooden_gate 29,5 × 44 |
 | `l3_pastizal` | 693 × 108 | 83 KB | bromeliad_spiky 28,5 × 28, cracked_earth_patch 64 × 31,5, fence_post_wire 6,5 × 40, grass_tuft_bent 26 × 28, grass_tuft_upright 26,5 × 32, scrub_bush_thorny 38,5 × 32, stones_halfburied 48 × 23, termite_mound_large 29 × 36, termite_mound_small 28,5 × 52, wildflowers_clump 40 × 19 |
@@ -290,12 +290,18 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 - **Árboles con raíces abiertas**, que se apoyaban en las puntas: se hunden poco, para no comerse las raíces (`l3_arboles/lapacho_pink`, `lapacho_yellow`, `shade_tree_green` y `dead_tree_termite` 3; `l4_patio/mango_tree` y `l5_suelo/buttress_roots` 4), y llevan **matas al pie**: `sheets.<nombre>.tufts`, una lista de props de pasto que ya existen y que el juego coloca solos junto al tronco (`prop`, `x` en fracción del ancho del dibujo, `scale`, `sink` y `flip`). Se dibujan delante del árbol y detrás de Kerana; siguen al árbol si va espejado, escalado o con `front`. Lapachos y árbol de sombra: `l3_pastizal/grass_tuft_bent` en las puntas de las raíces y `l1_ladera/short_dry_grass` al medio; árbol seco: los mismos dos; mango: `l3_pastizal/wildflowers_clump` y pasto corto; raíces tablares: `l5_suelo/ferns` a los costados y `undergrowth` al medio. Para cambiar una mata (por ejemplo, si el pasto seco de l3 no es del bioma donde se coloca el árbol), se edita el `sprite.json` y se corre `npm run sprites`. Se prefirió a dibujar pasto por código: es solo datos, el pasto tiene el estilo del resto del arte y no hay colores que elegir por bioma.
 - **Fuera:** `l6_agua/ferns_rock` y `l6_agua/moss_cushions` (`ignore`): eran el peñasco de `waterfall` y `thin_stream` sin el chorro, así que no se animaban y repetían la roca.
 
+**Ajustes de S49** (Jose recorrió la vitrina otra vez): el mismo borde irregular en l1.
+
+- **`l1_ladera/termite_mound`:** `sink` 3 y matas de pasto seco de su carpeta al pie (`tufts`): `short_dry_grass` en los dos costados y `tall_dry_grass` chico a la izquierda. La boca del medio queda libre.
+- **`l1_cueva`: cascotes, no pasto** (en la cueva de l1 no hay plantas). `tufts` sirve igual con cualquier prop: acá es `l1_cueva/stone_rubble_pile` a escala 0,3 a 0,45. `stalagmites` `sink` 5 (son puntas que se estrechan hacia arriba: hundir la base no se lleva nada) y tres cascotes; `gold_ore_vein` (roca redonda, los costados se levantan) y `crystal_cluster_medium`, `sink` 3 y dos cascotes; `crystal_cluster_small` y `stone_rubble_pile`, `sink` 2, sin cascotes. Las raíces y las estalactitas cuelgan, el charco ya estaba hundido (S47) y `crystal_cluster_large` quedó como en S48.
+- **Fuera:** `l2_agua/water_ripples` (`ignore`): las ondas salieron marrones y no se leían como agua.
+
 **Para regenerar o revisar (S46):**
 
 - `l6_roca/prop_deep_crack.png`: el dibujo llega al borde de arriba y de abajo del lienzo (está cortado). Queda afuera con `sheets.deep_crack.ignore`. Cuando llegue el nuevo, se saca el `ignore` y se corre `npm run sprites`.
 - `l3_pastizal`: `termite_mound_small` es más alto que `termite_mound_large` (¿nombres al revés?). Hoy `small` mide 52 de alto y `large` 36.
 - `l2_tierra/prop_dry_grass_clump.png`: las puntas tienen un violeta que parece resto del magenta, mezclado con el dibujo (el pipeline no lo puede separar). Se ve poco a este tamaño; si molesta, regenerar.
-- `l2_agua/prop_water_ripples.png`: las ondas son marrones y violetas, no se leen como agua sobre el fondo del estero.
+- `l2_agua/prop_water_ripples.png`: las ondas son marrones y violetas, no se leen como agua sobre el fondo del estero. Fuera con `ignore` desde S49; si se regenera, se saca el `ignore`.
 - Las doce carpetas traen transparencia real (ninguna con el damero pintado) y lienzos razonables (de 228 a 1792 px). `l3_pastizal` y `l5_altura` vienen recortados al dibujo; las demás, en lienzos de 1408 × 1408.
 
 ---
