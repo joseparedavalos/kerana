@@ -43,7 +43,8 @@ export function layoutShowcase(
 
 /**
  * Mata de pasto al pie de un árbol (S48, `sheets.<nombre>.tufts` en sprite.json): otro prop ya existente que se
- * coloca solo junto al tronco para tapar lo que el hundido no tapa sin comerse las raíces.
+ * coloca solo junto al tronco para tapar lo que el hundido no tapa sin comerse las raíces. S49: también al pie de
+ * tacurúes y rocas, y en la cueva de l1 son cascotes (`l1_cueva/stone_rubble_pile`), no pasto.
  */
 export interface PropTuft {
   /** "carpeta/nombre" del pasto. */

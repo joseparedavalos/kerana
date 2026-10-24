@@ -140,7 +140,29 @@
       "sourceSize": {
         "w": 70,
         "h": 72
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.06,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/tall_dry_grass",
+          "x": 0.2,
+          "scale": 0.4,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.84,
+          "scale": 1,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     }
   },
   "meta": {
