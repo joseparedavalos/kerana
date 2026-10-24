@@ -1,28 +1,8 @@
 {
   "frames": {
-    "ferns_rock": {
-      "frame": {
-        "x": 321,
-        "y": 2,
-        "w": 165,
-        "h": 192
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 165,
-        "h": 192
-      },
-      "sourceSize": {
-        "w": 165,
-        "h": 192
-      }
-    },
     "mist_spray": {
       "frame": {
-        "x": 655,
+        "x": 321,
         "y": 2,
         "w": 86,
         "h": 128
@@ -41,29 +21,9 @@
       },
       "mist": true
     },
-    "moss_cushions": {
-      "frame": {
-        "x": 488,
-        "y": 2,
-        "w": 165,
-        "h": 192
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 165,
-        "h": 192
-      },
-      "sourceSize": {
-        "w": 165,
-        "h": 192
-      }
-    },
     "mossy_trunk": {
       "frame": {
-        "x": 847,
+        "x": 513,
         "y": 2,
         "w": 160,
         "h": 59
@@ -83,8 +43,8 @@
     },
     "shallow_pool": {
       "frame": {
-        "x": 2,
-        "y": 228,
+        "x": 675,
+        "y": 2,
         "w": 144,
         "h": 50
       },
@@ -180,7 +140,7 @@
     },
     "wet_rock": {
       "frame": {
-        "x": 743,
+        "x": 409,
         "y": 2,
         "w": 102,
         "h": 112
@@ -203,8 +163,8 @@
     "image": "l6_agua.png",
     "format": "RGBA8888",
     "size": {
-      "w": 1009,
-      "h": 280
+      "w": 821,
+      "h": 228
     },
     "scale": "1",
     "detail": 2

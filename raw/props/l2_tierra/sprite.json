@@ -29,5 +29,15 @@
     "thorny_scrub": {
       "height": 36
     }
+  },
+  "sheets": {
+    "fallen_fronds": {
+      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado. Plano y dibujado de arriba, como el charco de S47",
+      "sink": 7
+    },
+    "sandy_mounds": {
+      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado",
+      "sink": 3
+    }
   }
 }

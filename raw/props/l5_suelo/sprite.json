@@ -37,5 +37,32 @@
       "width": 80,
       "note": "sotobosque"
     }
+  },
+  "sheets": {
+    "buttress_roots": {
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "sink": 4,
+      "tufts": [
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.12,
+          "scale": 0.4,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/undergrowth",
+          "x": 0.5,
+          "scale": 0.3,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.88,
+          "scale": 0.4,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    }
   }
 }

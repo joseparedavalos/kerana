@@ -40,3 +40,33 @@ export function layoutShowcase(
   });
   return { items, groups: starts, right: x - (items.length ? gap : 0) };
 }
+
+/**
+ * Mata de pasto al pie de un árbol (S48, `sheets.<nombre>.tufts` en sprite.json): otro prop ya existente que se
+ * coloca solo junto al tronco para tapar lo que el hundido no tapa sin comerse las raíces.
+ */
+export interface PropTuft {
+  /** "carpeta/nombre" del pasto. */
+  prop: string;
+  /** Dónde va, en fracción del ancho del dibujo del árbol (0 = borde izquierdo). */
+  x: number;
+  /** Escala del pasto, sobre su tamaño de sprite.json. */
+  scale?: number;
+  /** Unidades que se hunde el pasto (a escala 1). */
+  sink?: number;
+  flip?: boolean;
+}
+
+/**
+ * Dónde y cómo va una mata respecto del árbol: `dx` (unidades desde el centro del árbol), escala, espejado y
+ * hundido. Si el árbol va espejado, la mata pasa al otro lado y también se espeja; `scale` es la del árbol.
+ */
+export function placeTuft(
+  tuft: PropTuft,
+  treeWidth: number,
+  scale: number,
+  flip: boolean,
+): { dx: number; scale: number; flip: boolean; sink: number } {
+  const fx = flip ? 1 - tuft.x : tuft.x;
+  return { dx: (fx - 0.5) * treeWidth, scale: (tuft.scale ?? 1) * scale, flip: (tuft.flip === true) !== flip, sink: tuft.sink ?? 0 };
+}

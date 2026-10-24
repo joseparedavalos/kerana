@@ -38,7 +38,23 @@
       "sourceSize": {
         "w": 188,
         "h": 224
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.3,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.66,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "fallen_logs": {
       "frame": {
@@ -78,7 +94,29 @@
       "sourceSize": {
         "w": 268,
         "h": 256
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.28,
+          "scale": 0.45,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.55,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.73,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "lapacho_yellow": {
       "frame": {
@@ -98,7 +136,29 @@
       "sourceSize": {
         "w": 267,
         "h": 256
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.28,
+          "scale": 0.45,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.55,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.73,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "shade_tree_green": {
       "frame": {
@@ -118,7 +178,29 @@
       "sourceSize": {
         "w": 245,
         "h": 240
-      }
+      },
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.29,
+          "scale": 0.45,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.52,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.72,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "stone_trough": {
       "frame": {

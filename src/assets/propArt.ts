@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
 import { ensurePlaceholder } from '../utils/placeholder';
 import { ART_DETAIL, propAtlasKey } from './manifest';
-import { parsePropId } from './propLayout';
+import { parsePropId, placeTuft, type PropTuft } from './propLayout';
 import { flowFrame, waterMask, type FlowSpec } from './waterFlow';
 
 /** Lo que trae el frame del atlas desde `sheets.<nombre>` del sprite.json (tools/lib/sprite-pipeline.mjs). */
@@ -16,6 +16,8 @@ interface PropFrameData {
   /** S47: [x0, x1, y] en fracciones del dibujo: donde el agua golpea y saltan gotas. */
   splash?: readonly [number, number, number];
   mist?: boolean;
+  /** S48: matas de pasto (otros props) que se colocan solas al pie del árbol. */
+  tufts?: readonly PropTuft[];
 }
 
 /** Textura, frame y escala de un prop. `hang`: cuelga del techo (origen arriba) en vez de apoyarse en el piso. */
@@ -67,12 +69,15 @@ export interface PropOptions {
   front?: boolean;
   /** Partículas para las gotas de los props con `splash` (S47: las salpicaduras de LevelScene). */
   drops?: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** Unidades bajo la línea del suelo, a escala 1: reemplaza el `sink` del frame (S48: las matas de `tufts`). */
+  sink?: number;
 }
 
 /**
  * Dibuja un prop sin choque. (x, y) es el pie del tile donde se colocó: los que se apoyan quedan con la base ahí
  * (o `sink` unidades más abajo, detrás del piso: S47); los que cuelgan, con el borde de arriba en el techo de ese
- * tile (`tile` unidades más arriba). El agua de l6_agua se anima sola (S47): `flow`, `splash` y `mist`.
+ * tile (`tile` unidades más arriba). El agua de l6_agua se anima sola (S47): `flow`, `splash` y `mist`. Los árboles
+ * con `tufts` (S48) llevan matas de pasto al pie, dibujadas después del árbol (delante de él).
  */
 export function addProp(
   scene: Phaser.Scene,
@@ -84,7 +89,7 @@ export function addProp(
 ): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite {
   const look = propLook(scene, id);
   const scale = look.scale * (opts.scale ?? 1);
-  const sink = look.sink * (opts.scale ?? 1);
+  const sink = look.hang ? 0 : (opts.sink ?? look.sink) * (opts.scale ?? 1);
   const flow = look.frame !== undefined && look.data.flow ? flowAnim(scene, look.key, look.frame, look.data.flow) : null;
   const image = flow ? scene.add.sprite(0, 0, flow.texture, flow.first).play(flow.anim) : scene.add.image(0, 0, look.key, look.frame);
   image
@@ -95,6 +100,10 @@ export function addProp(
     .setDepth(opts.front ? GAMEPLAY.props.frontDepth : sink > 0 ? GAMEPLAY.props.sunkDepth : GAMEPLAY.props.depth);
   if (look.data.mist) addMist(scene, image);
   if (look.data.splash && opts.drops) addDrops(scene, image, look.data.splash, opts.drops);
+  for (const tuft of look.data.tufts ?? []) {
+    const at = placeTuft(tuft, image.displayWidth, opts.scale ?? 1, opts.flip === true);
+    addProp(scene, x + at.dx, y, tuft.prop, tile, { scale: at.scale, flip: at.flip, front: opts.front, sink: at.sink });
+  }
   return image;
 }
 
