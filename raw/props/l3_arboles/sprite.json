@@ -36,5 +36,101 @@
       "height": 44,
       "note": "portón: la altura de Kerana"
     }
+  },
+  "sheets": {
+    "dead_tree_termite": {
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.3,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.66,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "lapacho_pink": {
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.28,
+          "scale": 0.45,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.55,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.73,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "lapacho_yellow": {
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.28,
+          "scale": 0.45,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.55,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.73,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "shade_tree_green": {
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.29,
+          "scale": 0.45,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.52,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.72,
+          "scale": 0.45,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    }
   }
 }

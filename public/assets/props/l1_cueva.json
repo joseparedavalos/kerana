@@ -39,7 +39,8 @@
       "sourceSize": {
         "w": 114,
         "h": 96
-      }
+      },
+      "sink": 4
     },
     "crystal_cluster_medium": {
       "frame": {

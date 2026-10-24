@@ -58,7 +58,8 @@
       "sourceSize": {
         "w": 112,
         "h": 52
-      }
+      },
+      "sink": 7
     },
     "fence_post": {
       "frame": {
@@ -118,7 +119,8 @@
       "sourceSize": {
         "w": 80,
         "h": 37
-      }
+      },
+      "sink": 3
     },
     "thorny_scrub": {
       "frame": {

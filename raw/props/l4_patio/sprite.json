@@ -41,5 +41,26 @@
       "height": 56,
       "note": "escalera apoyada"
     }
+  },
+  "sheets": {
+    "mango_tree": {
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "sink": 4,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/wildflowers_clump",
+          "x": 0.3,
+          "scale": 0.5,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.7,
+          "scale": 1,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    }
   }
 }

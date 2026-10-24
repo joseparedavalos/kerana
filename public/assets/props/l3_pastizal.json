@@ -159,7 +159,8 @@
       "sourceSize": {
         "w": 58,
         "h": 72
-      }
+      },
+      "sink": 3
     },
     "termite_mound_small": {
       "frame": {
@@ -179,7 +180,8 @@
       "sourceSize": {
         "w": 57,
         "h": 104
-      }
+      },
+      "sink": 3
     },
     "wildflowers_clump": {
       "frame": {

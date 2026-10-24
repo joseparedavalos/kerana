@@ -38,7 +38,29 @@
       "sourceSize": {
         "w": 228,
         "h": 192
-      }
+      },
+      "sink": 4,
+      "tufts": [
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.12,
+          "scale": 0.4,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/undergrowth",
+          "x": 0.5,
+          "scale": 0.3,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.88,
+          "scale": 0.4,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "ferns": {
       "frame": {

@@ -295,5 +295,8 @@ describe('propFrameData (S47)', () => {
     expect(propFrameData(sheet)).toEqual({ sink: 6, waterOnly: true, flow: { dir: 'down', region: [0, 0, 1, 1] } });
     expect(propFrameData({ hang: true, mist: true, splash: [0.3, 0.7, 0.95] })).toEqual({ hang: true, mist: true, splash: [0.3, 0.7, 0.95] });
     expect(propFrameData()).toEqual({});
+    // S48: las matas de pasto al pie de los árboles.
+    const tufts = [{ prop: 'l3_pastizal/grass_tuft_bent', x: 0.3, scale: 0.45, sink: 2 }];
+    expect(propFrameData({ note: 'x', sink: 3, tufts })).toEqual({ sink: 3, tufts });
   });
 });

@@ -88,6 +88,14 @@
     "mist_spray": {
       "note": "S47: sube despacio y cambia de opacidad (GAMEPLAY.props.water.mist*)",
       "mist": true
+    },
+    "ferns_rock": {
+      "note": "S48: fuera. Es el peñasco de waterfall y thin_stream sin el chorro: no se anima y repite la roca",
+      "ignore": true
+    },
+    "moss_cushions": {
+      "note": "S48: fuera. Es el peñasco de waterfall y thin_stream sin el chorro: no se anima y repite la roca",
+      "ignore": true
     }
   }
 }

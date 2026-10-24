@@ -45,6 +45,14 @@
     "cracked_earth_patch": {
       "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
       "sink": 10
+    },
+    "termite_mound_large": {
+      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado",
+      "sink": 3
+    },
+    "termite_mound_small": {
+      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado",
+      "sink": 3
     }
   }
 }

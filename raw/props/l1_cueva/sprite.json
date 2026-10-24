@@ -50,6 +50,10 @@
     "water_puddle_drips": {
       "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
       "sink": 6
+    },
+    "crystal_cluster_large": {
+      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado. Las puntas de los costados quedan algo levantadas, como cristales que asoman",
+      "sink": 4
     }
   }
 }

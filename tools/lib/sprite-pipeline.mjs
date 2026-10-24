@@ -469,8 +469,8 @@ export function propName(file) {
     .replace(/_transparent$/, '');
 }
 
-/** Datos de `sheets.<nombre>` que viajan en el frame del atlas (S46: hang; S47: sink, waterOnly, flow, splash, mist). */
-export const PROP_FRAME_KEYS = ['hang', 'sink', 'waterOnly', 'flow', 'splash', 'mist'];
+/** Datos de `sheets.<nombre>` que viajan en el frame del atlas (S46: hang; S47: sink, waterOnly, flow, splash, mist; S48: tufts). */
+export const PROP_FRAME_KEYS = ['hang', 'sink', 'waterOnly', 'flow', 'splash', 'mist', 'tufts'];
 
 /** Lo que el juego necesita de `sheets.<nombre>` de un prop (S47): solo las claves de PROP_FRAME_KEYS, sin `note`. */
 export function propFrameData(sheet = {}) {
