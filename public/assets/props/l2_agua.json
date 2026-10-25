@@ -82,8 +82,8 @@
     },
     "rotting_log": {
       "frame": {
-        "x": 2,
-        "y": 116,
+        "x": 813,
+        "y": 2,
         "w": 128,
         "h": 25
       },
@@ -144,26 +144,6 @@
       "sink": 7,
       "waterOnly": true
     },
-    "water_ripples": {
-      "frame": {
-        "x": 813,
-        "y": 2,
-        "w": 96,
-        "h": 30
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 96,
-        "h": 30
-      },
-      "sourceSize": {
-        "w": 96,
-        "h": 30
-      }
-    },
     "wooden_posts": {
       "frame": {
         "x": 2,
@@ -189,8 +169,8 @@
     "image": "l2_agua.png",
     "format": "RGBA8888",
     "size": {
-      "w": 911,
-      "h": 143
+      "w": 943,
+      "h": 116
     },
     "scale": "1",
     "detail": 2

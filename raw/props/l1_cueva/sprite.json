@@ -54,6 +54,78 @@
     "crystal_cluster_large": {
       "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado. Las puntas de los costados quedan algo levantadas, como cristales que asoman",
       "sink": 4
+    },
+    "stalagmites": {
+      "note": "S49: borde de abajo irregular (se veía el fondo entre los bultos): hundido y con cascotes al pie (`tufts` con stone_rubble_pile chico: en la cueva de l1 no hay plantas). x = fracción del ancho del dibujo, scale = la del cascote, sink = su hundido. Son puntas que se estrechan hacia arriba: hundir la base no se lleva nada del dibujo",
+      "sink": 5,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.1,
+          "scale": 0.4,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.58,
+          "scale": 0.3,
+          "sink": 1,
+          "flip": true
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.9,
+          "scale": 0.4,
+          "sink": 1,
+          "flip": true
+        }
+      ]
+    },
+    "crystal_cluster_medium": {
+      "note": "S49: borde de abajo irregular (se veía el fondo entre los bultos): hundido y con cascotes al pie (`tufts` con stone_rubble_pile chico: en la cueva de l1 no hay plantas). x = fracción del ancho del dibujo, scale = la del cascote, sink = su hundido",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.1,
+          "scale": 0.35,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.9,
+          "scale": 0.35,
+          "sink": 1,
+          "flip": true
+        }
+      ]
+    },
+    "gold_ore_vein": {
+      "note": "S49: borde de abajo irregular (se veía el fondo entre los bultos): hundido y con cascotes al pie (`tufts` con stone_rubble_pile chico: en la cueva de l1 no hay plantas). x = fracción del ancho del dibujo, scale = la del cascote, sink = su hundido. Es una roca redonda: los cascotes tapan los costados, que se levantan",
+      "sink": 3,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.1,
+          "scale": 0.45,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.88,
+          "scale": 0.4,
+          "sink": 1,
+          "flip": true
+        }
+      ]
+    },
+    "crystal_cluster_small": {
+      "note": "S49: borde de abajo irregular, hundido (es chico: sin cascotes). Más = más enterrado",
+      "sink": 2
+    },
+    "stone_rubble_pile": {
+      "note": "S49: borde de abajo irregular, hundido. Más = más enterrado. Como cascote al pie de otros props (`tufts`), el hundido lo pone cada uno",
+      "sink": 2
     }
   }
 }
