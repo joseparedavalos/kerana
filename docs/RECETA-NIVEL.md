@@ -764,7 +764,7 @@ Desde el 13 de octubre, la segunda pantalla de «Nivel completado» de una visit
 
 ---
 
-## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3)
+## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3 y en S53 con l4, l5 y l6)
 
 Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se colocan con una línea de cabecera, sin carácter en la grilla: `prop X,Y carpeta/nombre [scale=N] [flip] [front]` (GDD §11.7.1). **(X, Y) es el tile vacío donde se apoya**: el prop queda centrado en el tile y con la base en el borde de abajo; el piso está en la fila Y + 1. Los que cuelgan (`hang`: estalactitas, raíces) van en el tile vacío de debajo del techo, con el techo en la fila Y − 1. No chocan: son solo dibujo.
 
@@ -805,8 +805,9 @@ Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se col
 - **Cueva (l1, y los tramos bajo tierra de otros niveles):** piedra, cristales, cascotes y charcos; sin plantas. Los cristales grandes y las estalagmitas marcan las esquinas; los cascotes llenan sin estorbar. El fondo de la cueva ya trae cristales y pilas dibujados: con menos props se ve igual de rica.
 - **A cielo abierto (ladera, pastizal, orilla):** pasto y piedras chicas como base, una pieza grande (tacurú, roca, árbol) por tramo. Los árboles (96 a 144 de alto) van detrás de Kerana y lejos de las plataformas altas: su copa tapa lo que haya arriba.
 - **Agua (l2, l6):** camalote e irupé solo sobre agua (`waterOnly`, ASSETS §6.1), y nunca donde se parezcan a un camalote que se hunde (objeto `Sinking`, `S`). Junto a la cascada, mirar la espuma quieta de `wet_rock` (S47).
-- **Pueblo (l4):** objetos de pueblo sin vegetación al pie (S50). Cajas, bancos y carretas parecen plataformas: contra las paredes, nunca debajo de un salto.
-- **Selva en altura (l5):** `branch_platform` y `canopy` parecen plataformas de verdad; si se usan, lejos de cualquier cosa que se pueda pisar, o no se usan.
+- **Pueblo (l4):** objetos de pueblo sin vegetación al pie (S50). Cajas, bancos y carretas parecen plataformas: contra las paredes, nunca debajo de un salto. Detalle en §19.8.
+- **Selva en altura (l5):** `branch_platform` y `canopy` parecen plataformas de verdad: no se usan. Tampoco lo que cuelga (§19.8).
+- **Cerro (l6):** roca de `l6_roca`; de `l6_agua`, solo lo quieto. Ninguna cascada de adorno (§19.8).
 
 ### 19.6 Lo que agregó S52: un nivel de agua (l2) y uno de campo abierto (l3)
 
@@ -826,3 +827,23 @@ l1 tiene llanos largos donde no pasa nada; l2 y l3 casi no. Casi todo su recorri
 2. **La mata de pasto seco de l2 parecía karaguatá** en la captura de la zona de ritmo. Corrección: fuera de l2 (también la del inicio y la de la ruta alta: juncos chicos, pasto de bañado y montículos).
 3. **Las hojas de palma tapaban un cartel** por su ancho (56): el test lo encontró. Los props anchos (juncal grande, hojas, pasto de bañado) necesitan 4 a 6 tiles libres; medir con la caja del test, no a ojo.
 
+### 19.8 Lo que agregó S53: un pueblo (l4), una selva vertical (l5) y un cerro (l6)
+
+Quedaron con **11 props en l4 (522 tiles), 9 en l5 (336 de ancho y 100 de alto) y 9 en l6 (516, con 121 de persecución)**: menos que l2 y l3. Los tres son casi todo mecánica (rejas y piedras, la galería de las tejas, el compás, los ascensores, las lajas, la persecución) y lo que queda libre es poco. `floors.mjs` del scratchpad (los tramos de piso de 3 o más tiles con lo que hay encima) mostró los lugares libres antes de empezar; casi todos tenían una pieza, un enemigo o un borde.
+
+- **Pueblo: cada cosa donde alguien la dejó.** Una caja de madera en medio de la calle se ve rara; en l4 todo va contra un muro, bajo un portal o en un rincón de patio: cántaros junto a la casa del inicio, un palenque en el portal del museo, macetas y una carreta en el zaguán (bajo techo: no se salta ahí), la regadera en el rincón del patio, tejas apiladas en los techos, la bomba de agua y un banco vacío junto al fuego 1, el pozo en la antesala. Es la hora de la siesta: un banco vacío, una carreta sin buey y la hamaca de siempre (`point Prop kind=hammock`, de antes) cuentan el pueblo dormido mejor que muchos objetos.
+- **Lo que en el pueblo se lee como pieza:** la tapia baja (`low_whitewashed_wall`) como un pretil de la terraza; la escalera de madera (`wooden_ladder`) como algo que se trepa; un árbol (mango, banana) en la antesala, como las plataformas de la arena. Ninguno se usó. Las tejas apiladas, nunca donde se aterriza: en el primer techo estaban justo donde se cae desde el alero y parecían una caja para pisar (captura); pasaron entre la roca agrietada y el cartel.
+- **Selva vertical: lo que cuelga no sirve.** `lianas_hanging` es una rama horizontal con lazos colgando: debajo de la rama larga y de la copa del fuego 3 se leía como una rama más, a medio tile del techo. `aerial_roots` es una cortina de raíces: bajo la copa 4 era la cortina de la ofrenda. Las dos se sacaron al verlas en la captura; el test no las podía encontrar (estaban bien colgadas). De `l5_altura` quedaron las orquídeas (bajas, sobre el piso de una copa o del tronco) y el tronco con enredaderas (fino y alto, contra el tronco de la cadena).
+- **Lo chato y alto en un nivel vertical es un escalón.** Las raíces tablares (`buttress_roots`) terminan en un tocón cortado: al pie de la cadena de ascensores parecía el primer escalón. Fuera, igual que los troncos caídos, el tronco hueco (parece una entrada), los hongos de repisa (escalones en el tronco) y las bromelias (parecen karaguatá, que en l5 lastima).
+- **Cerro: una sola cascada.** La de l6 es un `rect Waterfall` (por código), y por ahí se entra cayendo a la gruta. Ninguna cascada de adorno (`waterfall`, `thin_stream`) en otro lugar, y el borde de la cumbre 1 desde donde se cae, limpio. De `l6_agua` solo lo quieto, en el fondo de la quebrada (que es una red: no se salta desde ahí): un charco y un tronco con musgo. `rock_ledge` parece una laja.
+- **La persecución, entera limpia.** La cámara avanza sola y el jugador mira el borde derecho: cualquier cosa en el camino tapa el pozo que viene. Lo mismo la galería de las tejas de l4 (toda la zona de ritmo, también su muelle) y el compás de l5; solo la orilla del fuego del compás lleva helechos.
+- **Junto a la ofrenda y a la arena, nada alto.** El árbol torcido de la antesala de l6 quedaba pegado a la cortina de la ofrenda; más a la derecha, su copa caía junto a los pindó de la arena, que se pisan. Quedaron solo las piedras en equilibrio.
+- **Props de exterior en sombra.** Ni l5 ni l6 tienen `rect Cave`: el fondo es el cielo en todo el nivel, también en los pasillos bajo techo. El único caso fue la roca con líquenes en el paso bajo la peña de l6 (bajo techo, con el sol pintado): pasó a la repisa del karakara. Pero en l6 **todos** los props de roca (los 7 de `l6_roca`) traen una luz de tarde cálida y saturada, y el cielo de l6 es de tormenta: se ven más encendidos que el terreno. No es de un sitio, es del bioma entero: no se arregla moviéndolos. Ver PENDIENTES.
+
+### 19.9 Errores de S53 y su corrección
+
+1. **Las lianas y las raíces aéreas de l5** (bajo la rama larga, la copa del fuego 3 y la copa 4) pasaban el test y en la captura eran una rama flotante y la cortina de la ofrenda. Corrección: fuera. Lo que cuelga se mira siempre en captura, no solo con el test.
+2. **El tocón de raíces tablares** al pie de los ascensores de l5 parecía un escalón. Corrección: un arroyito (bajo) y un tronco fino con enredaderas contra el tronco de la cadena.
+3. **Las tejas apiladas del primer techo de l4**, en el lugar donde se aterriza desde el alero. Corrección: entre la roca agrietada y el cartel.
+4. **El árbol de la antesala de l6** tapaba a la vista la cortina de la ofrenda. Corrección: fuera.
+5. **La roca con líquenes bajo la peña de l6**, con su sol pintado bajo techo. Corrección: a la repisa del karakara, a cielo abierto.
