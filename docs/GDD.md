@@ -510,6 +510,8 @@ Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián 
 
 Tres fuegos (x 101, x 184 y la antesala): el nivel es un tercio más ancho que la estructura común. Cruzarlo sin explorar ni pelear lleva **≈ 44 s** de juego por cualquiera de las dos rutas (antes de S19, ≈ 22 s; medido con el piloto del smoke).
 
+**Decoración (S51).** 35 props sin choque (`prop` en `tools/levels/l1.txt`; receta en RECETA-NIVEL §19), sobre el piso de tres baldosas y delante del cerro o de la cueva del fondo. Bajo tierra solo `l1_cueva`, sin plantas: estalagmitas, cristales de tres tamaños, vetas de oro, cascotes y un charco con goteo; una sola estalactita, en el techo alto de la cueva inicial, porque en las galerías y en la arena caen estalactitas de verdad. En la ladera, `l1_ladera`: pasto seco corto y alto, piedras sueltas, dos tacurúes, raíces al aire y dos rocas con musgo. Sin karaguatá (se confundiría con las espinas) ni raíces colgantes (con la liana y la cortina de la ofrenda). Los bordes de los pozos, los pasillos con enemigos, el lugar secreto y el medio de la arena quedan limpios.
+
 **Jefe: Teju Jagua**. 7 cabezas × 2 golpes (14 golpes).
 
 - Presentación: siete pares de ojos de fuego se encienden uno a uno en la oscuridad. Barra: "Teju Jagua · Guardián de las cavernas y los frutos".
