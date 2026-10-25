@@ -200,6 +200,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S49 | 2026-10-24 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S50 | 2026-10-25 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S51 | 2026-10-25 | Opus 5.5 | — | — | plan Pro | 100 | — |
+| S52 | 2026-10-25 | Opus 5.5 | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
