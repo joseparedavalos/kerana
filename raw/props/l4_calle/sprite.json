@@ -42,6 +42,10 @@
     "market_stall_awning": {
       "note": "S47: descartado por Jose al verlo en la vitrina",
       "ignore": true
+    },
+    "wooden_crates_baskets": {
+      "note": "S50: base curva, los extremos quedaban en el aire. Objeto de pueblo (calle de tierra pisada y adoquín): hundido un poco más y sin matas al pie, que lo harían ver abandonado. Más = más enterrado",
+      "sink": 2.5
     }
   }
 }

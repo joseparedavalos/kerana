@@ -134,7 +134,8 @@
       "sourceSize": {
         "w": 84,
         "h": 112
-      }
+      },
+      "sink": 4
     },
     "watering_can": {
       "frame": {

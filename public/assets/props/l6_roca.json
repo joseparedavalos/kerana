@@ -38,7 +38,23 @@
       "sourceSize": {
         "w": 160,
         "h": 99
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "lichen_moss": {
       "frame": {
@@ -58,7 +74,23 @@
       "sourceSize": {
         "w": 160,
         "h": 94
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "rock_ledge": {
       "frame": {
@@ -98,7 +130,23 @@
       "sourceSize": {
         "w": 160,
         "h": 94
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "scree_pile": {
       "frame": {
@@ -118,7 +166,8 @@
       "sourceSize": {
         "w": 144,
         "h": 68
-      }
+      },
+      "sink": 3
     },
     "windbent_tree": {
       "frame": {
@@ -138,7 +187,23 @@
       "sourceSize": {
         "w": 167,
         "h": 192
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     }
   },
   "meta": {

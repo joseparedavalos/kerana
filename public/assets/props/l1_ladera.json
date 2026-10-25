@@ -60,7 +60,23 @@
       "sourceSize": {
         "w": 72,
         "h": 80
-      }
+      },
+      "sink": 2,
+      "tufts": [
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.1,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.88,
+          "scale": 1,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "short_dry_grass": {
       "frame": {
