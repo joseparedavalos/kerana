@@ -72,6 +72,31 @@ rect Offering x=376 y=0 w=1 h=33
 point ChipaReturn x=8 y=32 chipa=2
 point ChipaReturn x=74 y=32 chipa=1
 point ChipaReturn x=198 y=32 chipa=0
+# Props del escenario (S52; receta: docs/RECETA-NIVEL.md §19). l2_agua y l2_tierra. Casi todo el recorrido es agua y
+#   piezas: van en las orillas quietas, los llanos sin saltos, la antesala y las puntas de la arena. Sin camalote de
+#   adorno (es la misma planta que el que se hunde), canoa ni tronco podrido (se leen como balsas) ni matorral espinoso
+#   (como el karaguatá). El irupé, solo sobre agua y lejos de camalotes y balsas. Limpios: las cadenas, las balsas, la
+#   zona de ritmo de los jakare guasu, los ascensos, el hueco del premio y el medio de la arena.
+# A. La orilla
+prop 9,32 l2_tierra/dry_grass_clump
+# B. Los juncales
+prop 80,32 l2_agua/reeds_small
+prop 138,32 l2_tierra/fallen_fronds
+prop 160,32 l2_agua/reeds_large
+prop 168,32 l2_agua/water_lilies scale=0.6
+prop 162,17 l2_agua/marsh_grass
+prop 191,17 l2_tierra/dry_grass_clump flip
+prop 195,32 l2_tierra/pindo_palm
+# C. Cae la noche
+prop 248,11 l2_tierra/sandy_mounds
+prop 255,32 l2_agua/marsh_grass flip
+# D. La zona de ritmo (solo la orilla del fuego: las balsas y los jakare guasu, limpios)
+prop 310,32 l2_tierra/dry_grass_clump
+# Antesala y arena (en la arena, solo la orilla de la izquierda: el agua es de Mbói Tu'i)
+prop 379,32 l2_agua/wooden_posts
+prop 384,32 l2_tierra/sandy_mounds flip
+prop 393,32 l2_agua/reeds_small flip
+prop 400,32 l2_agua/marsh_grass
 ---
 #..................................................................................................................................................................................................................................................................................................................................................................................................................................................#
 #..................................................................................................................................................................................................................................................................................................................................................................................................................................................#
