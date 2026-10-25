@@ -53,6 +53,25 @@
     "termite_mound_small": {
       "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado",
       "sink": 3
+    },
+    "stones_halfburied": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y pasto seco de esta carpeta, chico a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.08,
+          "scale": 0.35,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.92,
+          "scale": 0.35,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     }
   }
 }

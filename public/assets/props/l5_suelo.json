@@ -80,7 +80,23 @@
       "sourceSize": {
         "w": 100,
         "h": 80
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l5_suelo/leaf_litter",
+          "x": 0.14,
+          "scale": 0.3,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/leaf_litter",
+          "x": 0.86,
+          "scale": 0.3,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "leaf_litter": {
       "frame": {
@@ -100,7 +116,23 @@
       "sourceSize": {
         "w": 128,
         "h": 56
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.1,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.9,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "rotting_logs": {
       "frame": {

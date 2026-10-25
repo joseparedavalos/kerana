@@ -61,6 +61,10 @@
           "flip": true
         }
       ]
+    },
+    "stone_well": {
+      "note": "S50: base curva, los extremos quedaban en el aire. Objeto de pueblo (patio de tierra pisada): hundido un poco más y sin matas al pie, que lo harían ver abandonado. Más = más enterrado",
+      "sink": 4
     }
   }
 }

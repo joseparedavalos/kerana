@@ -39,6 +39,86 @@
   "sheets": {
     "deep_crack": {
       "ignore": true
+    },
+    "sandstone_outcrop": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "crevice_grasses": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "lichen_moss": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "windbent_tree": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.08,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l6_roca/scree_pile",
+          "x": 0.92,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "scree_pile": {
+      "note": "S50: base curva, los extremos quedaban en el aire: hundido (es pedregal: perder la base no se lleva nada). Como piedras sueltas al pie de otros props de esta carpeta (`tufts`), el hundido lo pone cada uno",
+      "sink": 3
     }
   }
 }

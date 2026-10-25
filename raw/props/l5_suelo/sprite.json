@@ -1,7 +1,11 @@
 {
   "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1).",
+  "_nota_edge": "S50: los PNG «_transparent» de esta carpeta traen un fleco blanco o gris claro en el contorno (resto del fondo blanco): el borde `white` lo borra (solo blanco y gris neutros; ver docs/ASSETS.md §6.1)",
   "detail": 2,
-  "edge": "chroma",
+  "edge": [
+    "chroma",
+    "white"
+  ],
   "edgePasses": 8,
   "coverage": 0.4,
   "size": {
@@ -59,6 +63,44 @@
           "prop": "l5_suelo/ferns",
           "x": 0.88,
           "scale": 0.4,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "leaf_litter": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y helechos chicos de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.1,
+          "scale": 0.25,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/ferns",
+          "x": 0.9,
+          "scale": 0.25,
+          "sink": 2,
+          "flip": true
+        }
+      ]
+    },
+    "ferns": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y hojarasca chica de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l5_suelo/leaf_litter",
+          "x": 0.14,
+          "scale": 0.3,
+          "sink": 2
+        },
+        {
+          "prop": "l5_suelo/leaf_litter",
+          "x": 0.86,
+          "scale": 0.3,
           "sink": 2,
           "flip": true
         }

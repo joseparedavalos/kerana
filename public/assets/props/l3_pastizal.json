@@ -139,7 +139,23 @@
       "sourceSize": {
         "w": 96,
         "h": 46
-      }
+      },
+      "sink": 1,
+      "tufts": [
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.08,
+          "scale": 0.35,
+          "sink": 2
+        },
+        {
+          "prop": "l3_pastizal/grass_tuft_bent",
+          "x": 0.92,
+          "scale": 0.35,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     },
     "termite_mound_large": {
       "frame": {

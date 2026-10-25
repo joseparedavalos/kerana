@@ -66,6 +66,25 @@
           "flip": true
         }
       ]
+    },
+    "moss_grey_rock": {
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y pasto seco de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
+      "sink": 2,
+      "tufts": [
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.1,
+          "scale": 1,
+          "sink": 2
+        },
+        {
+          "prop": "l1_ladera/short_dry_grass",
+          "x": 0.88,
+          "scale": 1,
+          "sink": 2,
+          "flip": true
+        }
+      ]
     }
   }
 }
