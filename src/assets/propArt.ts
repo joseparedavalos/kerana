@@ -71,6 +71,8 @@ export interface PropOptions {
   drops?: Phaser.GameObjects.Particles.ParticleEmitter;
   /** Unidades bajo la línea del suelo, a escala 1: reemplaza el `sink` del frame (S48: las matas de `tufts`). */
   sink?: number;
+  /** S50: es la mata de otro prop: no lleva matas propias (helechos y hojarasca se usan uno al pie del otro). */
+  asTuft?: boolean;
 }
 
 /**
@@ -100,9 +102,9 @@ export function addProp(
     .setDepth(opts.front ? GAMEPLAY.props.frontDepth : sink > 0 ? GAMEPLAY.props.sunkDepth : GAMEPLAY.props.depth);
   if (look.data.mist) addMist(scene, image);
   if (look.data.splash && opts.drops) addDrops(scene, image, look.data.splash, opts.drops);
-  for (const tuft of look.data.tufts ?? []) {
+  for (const tuft of opts.asTuft ? [] : (look.data.tufts ?? [])) {
     const at = placeTuft(tuft, image.displayWidth, opts.scale ?? 1, opts.flip === true);
-    addProp(scene, x + at.dx, y, tuft.prop, tile, { scale: at.scale, flip: at.flip, front: opts.front, sink: at.sink });
+    addProp(scene, x + at.dx, y, tuft.prop, tile, { scale: at.scale, flip: at.flip, front: opts.front, sink: at.sink, asTuft: true });
   }
   return image;
 }
