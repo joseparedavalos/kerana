@@ -69,7 +69,7 @@ prop 142,12 l1_ladera/short_dry_grass flip
 prop 153,12 l1_ladera/short_dry_grass
 prop 169,12 l1_ladera/short_dry_grass flip
 prop 180,7 l1_ladera/short_dry_grass
-prop 187,7 l1_ladera/termite_mound flip
+prop 182,7 l1_ladera/termite_mound
 # C. Cueva: galerías 1 a 3 y la cámara de la chipa C
 prop 191,10 l1_cueva/gold_ore_vein
 prop 199,13 l1_cueva/stalagmites

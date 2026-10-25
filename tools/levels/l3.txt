@@ -82,6 +82,31 @@ rect Offering x=446 y=0 w=1 h=33
 point ChipaReturn x=2 y=32 chipa=2
 point ChipaReturn x=127 y=32 chipa=1
 point ChipaReturn x=232 y=32 chipa=0
+# Props del escenario (S52; receta: docs/RECETA-NIVEL.md §19). l3_pastizal y l3_arboles. Los árboles, en llanos sin
+#   nada arriba y a escala 0,7-0,8, lejos de las copas que se pisan (cañada, arena) y nunca en la antesala: su copa se
+#   confundiría con las de la arena. Sin karaguatá ni matorral espinoso (como las espinas), tranquera (como una reja)
+#   ni corral o bebedero (parecen escalones). Un solo tacurú, en la antesala, lejos de los agrietados. Limpios: el viento
+#   del llano, las pencas, la cueva del viento, las copas, la cadena de seis, el paso de las ráfagas y el medio de la arena.
+# A. El pastizal
+prop 3,32 l3_pastizal/wildflowers_clump
+prop 54,32 l3_arboles/lapacho_yellow scale=0.8
+prop 95,20 l3_pastizal/grass_tuft_upright
+prop 110,20 l3_arboles/dead_tree_termite scale=0.8
+# B. Las ráfagas
+prop 122,32 l3_pastizal/grass_tuft_bent
+prop 201,8 l3_pastizal/stones_halfburied
+# C. Las islas de monte
+prop 227,32 l3_arboles/lapacho_pink scale=0.8
+prop 254,25 l3_pastizal/cracked_earth_patch
+prop 334,10 l3_pastizal/grass_tuft_bent flip
+# D. El paso de las ráfagas (solo la orilla del fuego: las balsas y el viento, limpios)
+prop 343,32 l3_arboles/shade_tree_green scale=0.7
+# Antesala y arena (en la arena, solo las puntas)
+prop 450,32 l3_arboles/fallen_logs
+prop 467,32 l3_pastizal/termite_mound_small
+prop 472,32 l3_pastizal/grass_tuft_upright flip
+prop 480,32 l3_pastizal/wildflowers_clump flip
+prop 516,32 l3_pastizal/grass_tuft_bent flip
 ---
 ......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
 ......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................

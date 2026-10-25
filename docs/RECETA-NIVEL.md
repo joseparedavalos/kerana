@@ -764,7 +764,7 @@ Desde el 13 de octubre, la segunda pantalla de «Nivel completado» de una visit
 
 ---
 
-## 19. Decorar un nivel con props (S51, hecha sobre l1)
+## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3)
 
 Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se colocan con una línea de cabecera, sin carácter en la grilla: `prop X,Y carpeta/nombre [scale=N] [flip] [front]` (GDD §11.7.1). **(X, Y) es el tile vacío donde se apoya**: el prop queda centrado en el tile y con la base en el borde de abajo; el piso está en la fila Y + 1. Los que cuelgan (`hang`: estalactitas, raíces) van en el tile vacío de debajo del techo, con el techo en la fila Y − 1. No chocan: son solo dibujo.
 
@@ -782,7 +782,7 @@ Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se col
 
 - **Lo que se confunde con un peligro o una pieza.** En l1: el karaguatá (`l1_ladera/spiky_bromeliad`) se parece a las espinas de karaguatá, que lastiman; las raíces colgantes (`l1_cueva/ceiling_roots`) se parecen a la liana que se corta y a la cortina de raíces de la ofrenda. Ninguno de los dos se colocó. En l2 a l6, lo mismo con lo que se parezca a un camalote, a un hongo, a una rama que se quiebra o a una plataforma.
 - **Estalactitas decorativas donde caen estalactitas de verdad.** No se distinguirían de las que caen. En l1 hay una sola, en el techo alto de la cueva inicial (10 tiles sobre el piso, sin `FallingHazard` en esa cueva). Ninguna en las galerías, ni en la antesala, ni en la arena (Teju Jagua hace caer estalactitas en la fase 2).
-- **Plantas bajo tierra** (GDD, decisiones del 13 de octubre): dentro de un `rect Cave`, solo la carpeta de la cueva; afuera, ninguna de la cueva. El test lo comprueba.
+- **Plantas bajo tierra** (GDD, decisiones del 13 de octubre): dentro de un `rect Cave`, solo la carpeta de la cueva; afuera, ninguna de la cueva. El test lo comprueba. **Ojo (S52): el fondo de cueva se dibuja por columnas**, todo el ancho del `rect Cave` de arriba abajo, sin mirar su `y` (`LevelBackdrop`). En l1, el `rect Cave x=186 y=18` de la cámara de la chipa C oscurecía desde x 186 la cima de la ladera, y el tacurú de x 187 quedaba en penumbra con su luz de sol pintada. El test ahora mira las columnas, con la caja entera del prop y sus matas.
 - **Props de otro bioma:** cada nivel usa sus carpetas (`l1_` en l1). El test lo comprueba.
 
 ### 19.3 Errores de S51 y su corrección
@@ -796,7 +796,7 @@ Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se col
 
 ### 19.4 Cómo se comprueba
 
-- **`tests/propPlacement.test.ts`** (corre con `npm test` sobre los `tools/levels/l*.txt` que tengan props): cada prop es de una carpeta de su nivel y existe; bajo tierra solo los de la cueva; apoyado en el piso o colgado del techo, sin columnas en el aire (más de 0,3 tiles fuera del borde) ni metido en la pared, contando sus `tufts`; no tapa plataformas, móviles, pickups, fuegos, rompibles, piedras, rejas, peligros, carteles ni enemigos (ni los `rect` de rompibles, luciérnagas y ofrenda); nada más alto que un tile a menos de 4 tiles de un enemigo del mismo piso (hasta una pared); nada que cuelgue a menos de 8 tiles de una `FallingHazard` ni dentro de la arena. **Si el test pide mover un prop, se mueve el prop**, no se afloja el test.
+- **`tests/propPlacement.test.ts`** (corre con `npm test` sobre los `tools/levels/l*.txt` que tengan props): cada prop es de una carpeta de su nivel y existe; bajo las columnas del fondo de cueva solo los de la cueva, enteros, y los demás ni un borde (S52); los `waterOnly` solo sobre agua (honda o `ShallowWater`) y a más de 3 tiles de un camalote que se hunde o de una balsa (S52); apoyado en el piso o colgado del techo, sin columnas en el aire (más de 0,3 tiles fuera del borde) ni metido en la pared, contando sus `tufts`; no tapa plataformas, móviles, pickups, fuegos, rompibles, piedras, rejas, peligros, carteles ni enemigos (ni los `rect` de rompibles, luciérnagas y ofrenda); nada más alto que un tile a menos de 4 tiles de un enemigo del mismo piso (hasta una pared); nada que cuelgue a menos de 8 tiles de una `FallingHazard` ni dentro de la arena. **Si el test pide mover un prop, se mueve el prop**, no se afloja el test.
 - **El piloto, antes y después**, con el mismo plan: los props no chocan, así que el tiempo no puede cambiar más que lo que cambia entre dos corridas iguales. En l1: 56,7 a 57 s antes y después. A veces ≈ 65 s, con y sin props: el piloto pierde el ascensor del pozo vertical. **Las vueltas de antes y de después se intercalan**, con dos builds que solo difieren en el mapa: corridas en serie, la segunda tanda sale más lenta por el contenedor y parece que el prop estorba (detalle en las notas de S51). Si un plan del piloto necesita cambios por un prop, el prop estorba.
 - **Capturas de cada tramo** con el método de S20 (Kerana teletransportada, `game.loop.sleep()`), antes y después, y mirarlas buscando: un enemigo que se pierde contra un prop, algo que parezca un escalón, un prop que tape un cartel o un borde. El script de S51 (`tmp/s51/shots.mjs`, no se sube) apaga el dibujo de las hitboxes de `debug=1` antes de sacarla.
 
@@ -807,3 +807,22 @@ Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se col
 - **Agua (l2, l6):** camalote e irupé solo sobre agua (`waterOnly`, ASSETS §6.1), y nunca donde se parezcan a un camalote que se hunde (objeto `Sinking`, `S`). Junto a la cascada, mirar la espuma quieta de `wet_rock` (S47).
 - **Pueblo (l4):** objetos de pueblo sin vegetación al pie (S50). Cajas, bancos y carretas parecen plataformas: contra las paredes, nunca debajo de un salto.
 - **Selva en altura (l5):** `branch_platform` y `canopy` parecen plataformas de verdad; si se usan, lejos de cualquier cosa que se pueda pisar, o no se usan.
+
+### 19.6 Lo que agregó S52: un nivel de agua (l2) y uno de campo abierto (l3)
+
+l1 tiene llanos largos donde no pasa nada; l2 y l3 casi no. Casi todo su recorrido es agua con camalotes y balsas, viento, pencas, copas y zonas de ritmo, y eso va limpio. Quedaron con **15 props en l2 (436 tiles) y 15 en l3 (518)**, menos de la mitad que l1 por tile, y alcanza: el fondo del estero y el del campo ya traen juncos, palmeras, árboles y tacurúes dibujados, y l2 tiene además los juncos por código (`reeds`). Contar los lugares libres primero (`floors.mjs` en el scratchpad de S52: los tramos de piso de cada fila con lo que hay encima) y repartir, en vez de buscar una cuota por tile.
+
+- **Agua: lo que flota se confunde con lo que se pisa.** En l2 todo espejo de agua es un salto (camalotes, balsas, jakare). El camalote de adorno (`water_hyacinth`) es la misma planta que el que se hunde: no se usó. El irupé (`water_lilies`) va una sola vez, a escala 0,6, pegado a la orilla bajo el juncal grande de la ruta baja: con el hundido de 7 asoma menos de un tile y se lee como orilla, no como escalón. La arena tampoco: Mbói Tu'i sale del agua en tres puntos (`emergeTiles`), y uno es el charco del borde derecho.
+- **Lo que se lee como balsa o como peligro, fuera.** La canoa y el tronco podrido flotando o junto al agua parecen balsas; el matorral espinoso parece karaguatá, y también la mata de pasto seco de `l2_tierra`, por las puntas violetas (ASSETS §6.1): se vio en la captura de la orilla de la zona de ritmo y se cambió por montículos de arena. Los postes de muelle (`wooden_posts`) parecen el poste del ñakurutu: uno solo, en la antesala, donde no hay enemigos.
+- **Orillas quietas, no orillas de salto.** Los props de l2 están donde se llega caminando (después de un fuego, al pie de una pared que no se salta, la caída de la ruta baja, la cima del timbó) y nunca en la orilla de la que sale una cadena o una balsa. Una palmera (`pindo_palm`, 144 de alto) marca el fuego 2, con la copa debajo de la repisa de la ruta alta.
+- **Campo abierto: los árboles son la pieza grande, y en l3 las copas son plataformas.** Cuatro árboles, a escala 0,7-0,8, en llanos sin nada arriba (el pastizal, la loma, el fuego 2 y el fuego 3), lejos de la cañada y nunca en la antesala: ahí su copa se confundiría con las tres de la arena, que se pisan. Las matas de pasto seco dorado que traen al pie (`tufts`) son las de l3, así que encajan sin tocar nada; un árbol de l3 en otro bioma necesitaría otras matas en su `sprite.json`.
+- **Lo que en l3 es pieza:** el tacurú agrietado (`B`) cierra el paso dos veces, así que tacurú de adorno uno solo, en la antesala, lejos de los dos; la tranquera (`wooden_gate`) se lee como una reja; el karaguatá (`bromeliad_spiky`) y el matorral espinoso, como las espinas; el corral y el bebedero, como escalones. Ninguno se usó.
+- **Zonas de ritmo:** solo la orilla del fuego y lejos del cartel (montículos de arena en l2, un árbol en l3). Desde la orilla tiene que verse el ciclo entero: las balsas, el jakare guasu y el viento.
+- **Los props viejos por código** (`point Prop kind=nest|fence|tacuru` de l2 y l3) quedaron como estaban: decidir si se reemplazan es otra sesión (PENDIENTES 10).
+
+### 19.7 Errores de S52 y su corrección
+
+1. **El tacurú de l1 en penumbra** (lo encontró Jose jugando): el test miraba si el tile del prop estaba dentro del `rect Cave`, pero el juego dibuja la cueva por columnas. Corrección: el tacurú pasó a x 182, a pleno sol junto al fuego de la cima, y el test mira las columnas. Ningún otro prop de l1 estaba del lado equivocado.
+2. **La mata de pasto seco de l2 parecía karaguatá** en la captura de la zona de ritmo. Corrección: fuera de l2 (también la del inicio y la de la ruta alta: juncos chicos, pasto de bañado y montículos).
+3. **Las hojas de palma tapaban un cartel** por su ancho (56): el test lo encontró. Los props anchos (juncal grande, hojas, pasto de bañado) necesitan 4 a 6 tiles libres; medir con la caja del test, no a ojo.
+
