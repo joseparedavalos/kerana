@@ -17,13 +17,17 @@ const PATROL_MAX_HEIGHT = 1;
 // Lo que un prop puede salirse del borde de su piso (tiles) antes de quedar en el aire.
 const OVERHANG = 0.3;
 
-interface Frame { w: number; h: number; hang: boolean; sink: number; tufts: PropTuft[] }
+// S52: lo que un prop que solo va sobre agua (`waterOnly`: camalote, irupé) tiene que quedar lejos de un camalote que
+// se hunde (`S`) o de una balsa (tiles): no se distinguirían de algo que se pisa.
+const WATER_CLEAR = 3;
+
+interface Frame { w: number; h: number; hang: boolean; sink: number; waterOnly: boolean; tufts: PropTuft[] }
 const frames = new Map<string, Frame>();
 const ATLASES = import.meta.glob('../public/assets/props/*.json', { eager: true, import: 'default' }) as Record<string, any>;
 for (const [file, atlas] of Object.entries(ATLASES)) {
   const detail = atlas.meta?.detail ?? 1;
   for (const [name, f] of Object.entries<any>(atlas.frames))
-    frames.set(`${file.replace(/^.*\/|\.json$/g, '')}/${name}`, { w: f.sourceSize.w / detail, h: f.sourceSize.h / detail, hang: f.hang === true, sink: f.sink ?? 0, tufts: f.tufts ?? [] });
+    frames.set(`${file.replace(/^.*\/|\.json$/g, '')}/${name}`, { w: f.sourceSize.w / detail, h: f.sourceSize.h / detail, hang: f.hang === true, sink: f.sink ?? 0, waterOnly: f.waterOnly === true, tufts: f.tufts ?? [] });
 }
 
 /** Caja (en tiles) que ocupa un prop colocado en (x, y), con sus matas. */
@@ -42,15 +46,16 @@ function propBox(p: { x: number; y: number; art: string; scale?: number; flip?: 
   }
   const top = f.hang ? p.y : p.y + 1 - ((f.h - f.sink) * s) / TILE;
   const bottom = f.hang ? p.y + (f.h * s) / TILE : p.y + 1;
-  return { left, right, top, bottom, hang: f.hang };
+  return { left, right, top, bottom, hang: f.hang, waterOnly: f.waterOnly };
 }
 
 const SOURCES = import.meta.glob('../tools/levels/l[0-9].txt', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
 const levels: { id: string; map: any }[] = Object.entries(SOURCES).map(([file, text]) => ({ id: file.replace(/^.*\/|\.txt$/g, ''), map: parseAscii(text) }));
 
 describe('props colocados en los niveles (S51)', () => {
-  it('l1 tiene props', () => {
-    expect(levels.find((l) => l.id === 'l1')!.map.props.length).toBeGreaterThan(20);
+  it('l1, l2 y l3 tienen props', () => {
+    // l2 y l3 llevan menos que l1 (S52): casi todo su recorrido es agua, balsas, viento y copas, que van limpios.
+    for (const [id, min] of [['l1', 20], ['l2', 10], ['l3', 10]] as const) expect(levels.find((l) => l.id === id)!.map.props.length).toBeGreaterThan(min);
   });
 
   for (const { id, map } of levels) {
@@ -58,8 +63,12 @@ describe('props colocados en los niveles (S51)', () => {
     const g: string[] = map.grid;
     const enemyChars = new Set(Object.keys(map.enemies));
     const at = (x: number, y: number) => g[y]?.[x] ?? '#';
-    const inCave = (x: number, y: number) =>
-      map.rects.some((r: any) => r.cls === 'Cave' && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+    // S52: el fondo de cueva se dibuja por columnas (LevelBackdrop): todo el ancho de un `rect Cave`, de arriba abajo,
+    // sin mirar su `y`. Un prop de afuera bajo esas columnas queda en penumbra con su luz de sol pintada.
+    const caveCols = (left: number, right: number) =>
+      map.rects.filter((r: any) => r.cls === 'Cave').reduce((n: number, r: any) => n + Math.max(0, Math.min(right, r.x + r.w) - Math.max(left, r.x)), 0);
+    const isWater = (x: number, y: number) =>
+      at(x, y) === '~' || map.rects.some((r: any) => r.cls === 'ShallowWater' && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
 
     it(`${id}: cada prop es de una carpeta de su nivel y existe`, () => {
       const bad = map.props.filter((p: any) => !frames.has(p.art) || !p.art.startsWith(`${id}_`)).map((p: any) => `${p.art} (${p.x}, ${p.y})`);
@@ -67,10 +76,33 @@ describe('props colocados en los niveles (S51)', () => {
     });
 
     it(`${id}: bajo tierra solo van los de la cueva, y afuera ninguno de la cueva`, () => {
-      if (![...frames.keys()].some((k) => k.startsWith(`${id}_cueva/`))) return;
       const bad = map.props
-        .filter((p: any) => inCave(p.x, p.y) !== p.art.startsWith(`${id}_cueva/`))
+        .filter((p: any) => {
+          const b = propBox(p);
+          const under = caveCols(b.left, b.right);
+          // Los de la cueva, enteros bajo el fondo de cueva; los demás, nada bajo él (S52: el tacurú de x 187 en l1).
+          return p.art.startsWith(`${id}_cueva/`) ? under < b.right - b.left - 1e-6 : under > 0;
+        })
         .map((p: any) => `${p.art} (${p.x}, ${p.y})`);
+      expect(bad).toEqual([]);
+    });
+
+    it(`${id}: los que van sobre agua, solo sobre agua y lejos de los camalotes que se hunden y de las balsas`, () => {
+      const bad: string[] = [];
+      for (const p of map.props as any[]) {
+        const b = propBox(p);
+        if (!b.waterOnly) continue;
+        for (let x = Math.floor(b.left); x < Math.ceil(b.right); x++) {
+          if (Math.min(b.right, x + 1) - Math.max(b.left, x) <= OVERHANG) continue;
+          if (!isWater(x, p.y + 1)) bad.push(`${p.art} (${p.x}, ${p.y}): columna ${x} sin agua debajo`);
+        }
+        for (let x = Math.floor(b.left) - WATER_CLEAR; x < Math.ceil(b.right) + WATER_CLEAR; x++)
+          for (const y of [p.y, p.y + 1])
+            if ('S-+:'.includes(at(x, y))) bad.push(`${p.art} (${p.x}, ${p.y}) junto a "${at(x, y)}" en (${x}, ${y})`);
+        for (const r of map.rects as any[])
+          if (r.cls === 'Sinking' && b.left - WATER_CLEAR < r.x + r.w && b.right + WATER_CLEAR > r.x && p.y + 1 >= r.y && p.y < r.y + r.h)
+            bad.push(`${p.art} (${p.x}, ${p.y}) junto al camalote de (${r.x}, ${r.y})`);
+      }
       expect(bad).toEqual([]);
     });
 
@@ -78,6 +110,7 @@ describe('props colocados en los niveles (S51)', () => {
       const bad: string[] = [];
       for (const p of map.props as any[]) {
         const b = propBox(p);
+        if (b.waterOnly) continue; // sobre agua: la prueba de abajo
         const support = b.hang ? p.y - 1 : p.y + 1;
         if (at(p.x, p.y) === '#' || at(p.x, support) !== '#') bad.push(`${p.art} (${p.x}, ${p.y}): sin piso o techo`);
         for (let x = Math.floor(b.left); x < Math.ceil(b.right); x++) {
