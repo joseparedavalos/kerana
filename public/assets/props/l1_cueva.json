@@ -225,7 +225,7 @@
         "x": 488,
         "y": 2,
         "w": 96,
-        "h": 41
+        "h": 39
       },
       "rotated": false,
       "trimmed": false,
@@ -233,13 +233,28 @@
         "x": 0,
         "y": 0,
         "w": 96,
-        "h": 41
+        "h": 39
       },
       "sourceSize": {
         "w": 96,
-        "h": 41
+        "h": 39
       },
-      "sink": 6
+      "sink": 6,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.08,
+          "scale": 0.35,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.92,
+          "scale": 0.35,
+          "sink": 1,
+          "flip": true
+        }
+      ]
     }
   },
   "meta": {

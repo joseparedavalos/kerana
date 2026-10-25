@@ -48,12 +48,36 @@
       "hang": true
     },
     "water_puddle_drips": {
-      "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado",
-      "sink": 6
+      "note": "S47: unidades que se hunde bajo la línea del suelo (dibujado de arriba, sin hundir parece flotar). Más = más enterrado. S50: cascotes chicos a los dos lados (`tufts`), porque los extremos de la base curva quedaban en el aire. Fleco blanco en el borde de la piedra (resto del fondo): `edge` chroma y white, 16 pasadas porque la franja es más gruesa que en los demás (solo blanco y gris neutros; ver docs/ASSETS.md §6.1)",
+      "sink": 6,
+      "tufts": [
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.08,
+          "scale": 0.35,
+          "sink": 1
+        },
+        {
+          "prop": "l1_cueva/stone_rubble_pile",
+          "x": 0.92,
+          "scale": 0.35,
+          "sink": 1,
+          "flip": true
+        }
+      ],
+      "edge": [
+        "chroma",
+        "white"
+      ],
+      "edgePasses": 16
     },
     "crystal_cluster_large": {
-      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado. Las puntas de los costados quedan algo levantadas, como cristales que asoman",
-      "sink": 4
+      "note": "S48: unidades que se hunde bajo la línea del suelo: el borde de abajo es irregular y entre bulto y bulto se veía el fondo. Más = más enterrado. Las puntas de los costados quedan algo levantadas, como cristales que asoman. S50: fleco blanco en el contorno (resto del fondo): `edge` chroma y white. Los cristales son violetas y azules, no neutros: no los toca",
+      "sink": 4,
+      "edge": [
+        "chroma",
+        "white"
+      ]
     },
     "stalagmites": {
       "note": "S49: borde de abajo irregular (se veía el fondo entre los bultos): hundido y con cascotes al pie (`tufts` con stone_rubble_pile chico: en la cueva de l1 no hay plantas). x = fracción del ancho del dibujo, scale = la del cascote, sink = su hundido. Son puntas que se estrechan hacia arriba: hundir la base no se lleva nada del dibujo",

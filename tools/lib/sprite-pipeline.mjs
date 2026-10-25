@@ -60,6 +60,11 @@ const CYAN_EDGE_MARGIN = 25;
 const MAGENTA_EDGE_MARGIN = 40;
 /** Magenta puro del Chroma key (S46): rojo y azul altos, verde casi nulo. No toca el rosa del lapacho ni el violeta de los cristales. */
 const CHROMA_EDGE = { minRed: 150, minBlue: 100, maxGreen: 60 };
+/**
+ * Fleco blanco de los PNG «_transparent» de l5_suelo (S50): blanco o gris claro neutro (los tres canales casi
+ * iguales). No toca la madera encalada de la carreta ni el crema de los hongos (cálidos), ni el agua (azulada).
+ */
+const WHITE_EDGE = { minLight: 140, maxSpread: 30 };
 
 /** Predicados de color del contorno (r, g, b) → es resto del Chroma key. */
 export const EDGE_COLORS = {
@@ -67,6 +72,7 @@ export const EDGE_COLORS = {
   cyan: (r, g, b) => g - r >= CYAN_EDGE_MARGIN && b - r >= CYAN_EDGE_MARGIN,
   magenta: (r, g, b) => r - g >= MAGENTA_EDGE_MARGIN && b - g >= MAGENTA_EDGE_MARGIN,
   chroma: (r, g, b) => r >= CHROMA_EDGE.minRed && b >= CHROMA_EDGE.minBlue && g <= CHROMA_EDGE.maxGreen,
+  white: (r, g, b) => Math.min(r, g, b) >= WHITE_EDGE.minLight && Math.max(r, g, b) - Math.min(r, g, b) <= WHITE_EDGE.maxSpread,
 };
 
 /**
@@ -439,14 +445,17 @@ export function cropToContent(src) {
  * Props e íconos de la interfaz (raw/props, raw/hud): quita el fondo y el borde de color, recorta al dibujo y lo
  * escala con muestreo por moda. `size` en unidades del mundo ({ height } o { width }); la salida mide `size × detail` px.
  * `coverage`: cobertura mínima de cada bloque (0,5 por defecto; más baja conserva contornos finos).
+ * `edge` puede ser una lista (S50: `["chroma", "white"]`): se borra cada color en orden, `edgePasses` pasadas cada uno.
  * Modifica `img`. Devuelve { image, background } o null si el dibujo está vacío.
  * @param {{ width: number, height: number, data: Uint8Array }} img
- * @param {{ size?: { width?: number, height?: number }, detail?: number, edge?: 'green' | 'cyan' | 'magenta',
+ * @param {{ size?: { width?: number, height?: number }, detail?: number, edge?: string | string[],
  *   edgePasses?: number, tolerance?: number, coverage?: number }} [options]
  */
 export function processIcon(img, { size, detail = 1, edge, edgePasses = 0, tolerance, coverage } = {}) {
   let background = removeBackground(img, tolerance);
-  if (edge && edgePasses > 0) background += ` · borde ${edge} −${removeColorEdge(img, edgePasses, EDGE_COLORS[edge])}px`;
+  for (const color of [edge ?? []].flat()) {
+    if (edgePasses > 0) background += ` · borde ${color} −${removeColorEdge(img, edgePasses, EDGE_COLORS[color])}px`;
+  }
   const crop = cropToContent(img);
   if (!crop) return null;
   let w;

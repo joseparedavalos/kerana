@@ -103,7 +103,9 @@ function processPropAtlases() {
         console.log(`props/${folder}/${file}: ignorado (sheets.${name}.ignore)`);
         continue;
       }
-      const result = processIcon(readPng(join(sub, file)), { ...config, size: config.size?.[name] ?? config.size?.default });
+      // S50: `sheets.<nombre>.edge` y `edgePasses` reemplazan los de la carpeta para un solo prop (el fleco blanco del charco)
+      const edge = { edge: sheet.edge ?? config.edge, edgePasses: sheet.edgePasses ?? config.edgePasses };
+      const result = processIcon(readPng(join(sub, file)), { ...config, ...edge, size: config.size?.[name] ?? config.size?.default });
       if (!result) {
         console.log(`props/${folder}/${file}: vacío, se omite`);
         continue;

@@ -259,6 +259,26 @@ describe('sprite pipeline', () => {
     expect(EDGE_COLORS.chroma(110, 50, 200)).toBe(false);
   });
 
+  it('white borra el fleco blanco y gris neutro, no la madera encalada, el crema de los hongos ni el agua (S50)', () => {
+    expect(EDGE_COLORS.white(235, 235, 235)).toBe(true);
+    expect(EDGE_COLORS.white(170, 172, 168)).toBe(true);
+    expect(EDGE_COLORS.white(230, 215, 190)).toBe(false);
+    expect(EDGE_COLORS.white(220, 190, 150)).toBe(false);
+    expect(EDGE_COLORS.white(170, 205, 240)).toBe(false);
+    expect(EDGE_COLORS.white(60, 60, 60)).toBe(false);
+  });
+
+  it('processIcon acepta una lista de bordes y los borra en orden (S50)', () => {
+    const img = createImage(6, 6) as Img;
+    fillRect(img, 1, 1, 4, 4, [240, 0, 160, 255]);
+    fillRect(img, 2, 2, 2, 2, [240, 240, 240, 255]);
+    expect(processIcon(img, { edge: ['chroma', 'white'], edgePasses: 2 })).toBeNull();
+    const keep = createImage(6, 6) as Img;
+    fillRect(keep, 1, 1, 4, 4, [240, 0, 160, 255]);
+    fillRect(keep, 2, 2, 2, 2, [40, 120, 40, 255]);
+    expect(processIcon(keep, { edge: ['chroma', 'white'], edgePasses: 2 })?.image.width).toBe(2);
+  });
+
   it('packAtlas acomoda sin solapar, deja aire y respeta el ancho máximo (S46)', () => {
     const solid = (w: number, h: number, v: number): Img => {
       const img = createImage(w, h) as Img;
