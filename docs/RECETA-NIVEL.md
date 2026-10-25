@@ -761,3 +761,47 @@ Desde el 13 de octubre, la segunda pantalla de «Nivel completado» de una visit
 3. **El recorrido de un jugador, no solo atajos.** `?level=N&boss=1` abre una página nueva por nivel y nunca encadena dos niveles. El camino título → l1 → Siguiente → l2 es el que juega todo el mundo y tiene que estar en alguna prueba.
 4. **Las zonas de clic se miden desde la esquina del objeto**, no desde su origen: `setInteractive(new Rectangle(-w/2, -h/2, w, h))` en un texto con `setOrigin(0.5)` queda corrida medio texto a la izquierda. Se usa `centerHitArea()` (`src/systems/hitArea.ts`) y, si el texto cambia de ancho, se vuelve a llamar.
 
+
+---
+
+## 19. Decorar un nivel con props (S51, hecha sobre l1)
+
+Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se colocan con una línea de cabecera, sin carácter en la grilla: `prop X,Y carpeta/nombre [scale=N] [flip] [front]` (GDD §11.7.1). **(X, Y) es el tile vacío donde se apoya**: el prop queda centrado en el tile y con la base en el borde de abajo; el piso está en la fila Y + 1. Los que cuelgan (`hang`: estalactitas, raíces) van en el tile vacío de debajo del techo, con el techo en la fila Y − 1. No chocan: son solo dibujo.
+
+### 19.1 Cuántos y dónde
+
+- **Uno cada 8 a 10 tiles de recorrido, como mucho.** l1 tiene 35 en 314 tiles: 5 en la cueva inicial (45 tiles), 15 en la ladera (145), 10 en la cueva (60 tiles, pero de tres galerías y una cámara) y 5 entre la antesala y la arena. Más que eso empieza a ser alfombra.
+- **Por tramo, una pieza grande y una o dos chicas.** La grande (tacurú, cristales grandes, roca musgosa, estalagmitas, raíces al aire) marca el lugar; las chicas (pasto corto, piedras sueltas, cascotes, cristales chicos) lo acompañan. Un tramo con dos grandes juntas se ve amontonado.
+- **Zonas limpias a propósito:** los bordes de un pozo (de donde se salta y donde se cae), los pasillos con enemigos, el pie de una pared que hay que saltar, alrededor de los fuegos, las piedras, las rejas, los carteles y la puerta de la ofrenda, y la arena. En l1 quedaron limpios la zanja y el pozo 1, el borde del pozo 2, la repisa de la piedra de la balsa, el hoyo del hongo y su hongo de salida, el lugar secreto (las luciérnagas son la pista) y el medio de la arena.
+- **Dónde sí:** los llanos donde no pasa nada (entre el arco y el fuego de x 101, la cima, el piso del foso), las esquinas contra una pared que no hay que saltar, las bocas de cueva (marcan el cambio de bioma) y los cuartos de descanso (la antesala, la cámara de la chipa C).
+- **Lo alto y macizo (rocas, tacurúes, estalagmitas, cristales grandes) parece algo que hay que saltar o donde se puede subir.** Va contra una pared, al final de un llano o después de un salto, nunca justo antes de uno ni al pie de un escalón. Lo bajo y de hojas (pasto) no se confunde con nada y puede ir en medio del camino.
+- **Variedad:** el mismo prop no se repite a menos de ≈ 10 tiles; cuando se repite, el siguiente va con `flip` o a otra `scale` (0,6 a 0,8 para variar sin agrandar: por encima de 1 el pixel se ablanda). En l1 el pasto corto se repite seis veces, siempre a 10 o más tiles y alternando `flip`.
+- **`front` con criterio:** solo pasto corto o cascotes (≤ 10 unidades de alto), en un llano sin nada que mirar en el piso. Uno o dos por bioma alcanzan; en l1, el pasto de x 86 y los cascotes de la antesala. Lo alto con `front` tapa a Kerana; lo que va junto a un peligro con `front` tapa el peligro.
+
+### 19.2 Lo que no se pone
+
+- **Lo que se confunde con un peligro o una pieza.** En l1: el karaguatá (`l1_ladera/spiky_bromeliad`) se parece a las espinas de karaguatá, que lastiman; las raíces colgantes (`l1_cueva/ceiling_roots`) se parecen a la liana que se corta y a la cortina de raíces de la ofrenda. Ninguno de los dos se colocó. En l2 a l6, lo mismo con lo que se parezca a un camalote, a un hongo, a una rama que se quiebra o a una plataforma.
+- **Estalactitas decorativas donde caen estalactitas de verdad.** No se distinguirían de las que caen. En l1 hay una sola, en el techo alto de la cueva inicial (10 tiles sobre el piso, sin `FallingHazard` en esa cueva). Ninguna en las galerías, ni en la antesala, ni en la arena (Teju Jagua hace caer estalactitas en la fase 2).
+- **Plantas bajo tierra** (GDD, decisiones del 13 de octubre): dentro de un `rect Cave`, solo la carpeta de la cueva; afuera, ninguna de la cueva. El test lo comprueba.
+- **Props de otro bioma:** cada nivel usa sus carpetas (`l1_` en l1). El test lo comprueba.
+
+### 19.3 Errores de S51 y su corrección
+
+1. **Estalagmitas metidas en la pared.** En x 1 la base (con los cascotes de `tufts`) se metía en la pared de x 0. Corrección: x 2. Las matas y cascotes de `tufts` ensanchan el prop: se miden con él.
+2. **Props altos en la patrulla de un enemigo.** La veta de oro de la galería 2, las estalagmitas de la galería 3 y la pila de piedras del pasillo de los cuatro teju'i quedaban donde el teju'i va y viene (40 unidades a cada lado): pasaba por delante y se leía peor. Corrección: se sacaron o se movieron a otro tramo; en los pasillos con enemigos, solo pasto corto (más bajo que el teju'i).
+3. **La roca musgosa antes del pozo 1** (x 72) parecía un escalón para tomar impulso. Corrección: bajo el arco, entre la reja y el fuego, un llano sin saltos. En la repisa después del pozo 2, la roca pasó al borde de la bajada y el pasto alto al lugar donde se aterriza.
+4. **Cascotes junto a un enemigo en la galería 1.** Bajos, pero era el tercer prop en un tramo con una estalactita que cae, dos espinas y un teju'i. Corrección: afuera; la galería 1 queda con dos (estalagmitas a la entrada, cristales chicos junto al cartel).
+
+### 19.4 Cómo se comprueba
+
+- **`tests/propPlacement.test.ts`** (corre con `npm test` sobre los `tools/levels/l*.txt` que tengan props): cada prop es de una carpeta de su nivel y existe; bajo tierra solo los de la cueva; apoyado en el piso o colgado del techo, sin columnas en el aire (más de 0,3 tiles fuera del borde) ni metido en la pared, contando sus `tufts`; no tapa plataformas, móviles, pickups, fuegos, rompibles, piedras, rejas, peligros, carteles ni enemigos (ni los `rect` de rompibles, luciérnagas y ofrenda); nada más alto que un tile a menos de 4 tiles de un enemigo del mismo piso (hasta una pared); nada que cuelgue a menos de 8 tiles de una `FallingHazard` ni dentro de la arena. **Si el test pide mover un prop, se mueve el prop**, no se afloja el test.
+- **El piloto, antes y después**, con el mismo plan: los props no chocan, así que el tiempo no puede cambiar más que lo que cambia entre dos corridas iguales. En l1: 56,7 a 56,9 s antes y después (detalle en las notas de S51). Si un plan del piloto necesita cambios por un prop, el prop estorba.
+- **Capturas de cada tramo** con el método de S20 (Kerana teletransportada, `game.loop.sleep()`), antes y después, y mirarlas buscando: un enemigo que se pierde contra un prop, algo que parezca un escalón, un prop que tape un cartel o un borde. El script de S51 (`tmp/s51/shots.mjs`, no se sube) apaga el dibujo de las hitboxes de `debug=1` antes de sacarla.
+
+### 19.5 Qué cambia según el bioma
+
+- **Cueva (l1, y los tramos bajo tierra de otros niveles):** piedra, cristales, cascotes y charcos; sin plantas. Los cristales grandes y las estalagmitas marcan las esquinas; los cascotes llenan sin estorbar. El fondo de la cueva ya trae cristales y pilas dibujados: con menos props se ve igual de rica.
+- **A cielo abierto (ladera, pastizal, orilla):** pasto y piedras chicas como base, una pieza grande (tacurú, roca, árbol) por tramo. Los árboles (96 a 144 de alto) van detrás de Kerana y lejos de las plataformas altas: su copa tapa lo que haya arriba.
+- **Agua (l2, l6):** camalote e irupé solo sobre agua (`waterOnly`, ASSETS §6.1), y nunca donde se parezcan a un camalote que se hunde (objeto `Sinking`, `S`). Junto a la cascada, mirar la espuma quieta de `wet_rock` (S47).
+- **Pueblo (l4):** objetos de pueblo sin vegetación al pie (S50). Cajas, bancos y carretas parecen plataformas: contra las paredes, nunca debajo de un salto.
+- **Selva en altura (l5):** `branch_platform` y `canopy` parecen plataformas de verdad; si se usan, lejos de cualquier cosa que se pueda pisar, o no se usan.
