@@ -53,9 +53,10 @@ const SOURCES = import.meta.glob('../tools/levels/l[0-9].txt', { eager: true, qu
 const levels: { id: string; map: any }[] = Object.entries(SOURCES).map(([file, text]) => ({ id: file.replace(/^.*\/|\.txt$/g, ''), map: parseAscii(text) }));
 
 describe('props colocados en los niveles (S51)', () => {
-  it('l1, l2 y l3 tienen props', () => {
-    // l2 y l3 llevan menos que l1 (S52): casi todo su recorrido es agua, balsas, viento y copas, que van limpios.
-    for (const [id, min] of [['l1', 20], ['l2', 10], ['l3', 10]] as const) expect(levels.find((l) => l.id === id)!.map.props.length).toBeGreaterThan(min);
+  it('l1 a l6 tienen props', () => {
+    // l2 y l3 llevan menos que l1 (S52): casi todo su recorrido es agua, balsas, viento y copas, que van limpios. l4 a l6
+    // (S53), menos todavía: casas y rejas, el dosel y la persecución.
+    for (const [id, min] of [['l1', 20], ['l2', 10], ['l3', 10], ['l4', 8], ['l5', 8], ['l6', 8]] as const) expect(levels.find((l) => l.id === id)!.map.props.length).toBeGreaterThan(min);
   });
 
   for (const { id, map } of levels) {
