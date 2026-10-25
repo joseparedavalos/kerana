@@ -45,6 +45,48 @@ point FallingHazard x=230 y=8 delayMs=800
 point FallingHazard x=209 y=16 delayMs=800
 point FallingHazard x=220 y=16 delayMs=800
 point FallingHazard x=224 y=25 delayMs=800
+# Props del escenario (S51; receta: docs/RECETA-NIVEL.md §19). Solo l1_cueva bajo tierra (sin plantas) y l1_ladera
+#   afuera. Sin karaguatá (se confunde con las espinas), sin raíces colgantes (con la liana y la cortina de la ofrenda)
+#   y sin estalactitas donde caen estalactitas de verdad (galerías, antesala y arena).
+# A. Cueva inicial
+prop 2,11 l1_cueva/stalagmites flip
+prop 8,11 l1_cueva/crystal_cluster_small
+prop 18,1 l1_cueva/stalactites
+prop 32,11 l1_cueva/crystal_cluster_medium flip
+prop 37,11 l1_cueva/crystal_cluster_large
+# B. Ladera
+prop 46,11 l1_ladera/short_dry_grass
+prop 53,11 l1_ladera/termite_mound
+prop 60,11 l1_ladera/tall_dry_grass flip
+prop 64,8 l1_ladera/loose_stones_boulders
+prop 82,8 l1_ladera/exposed_tree_roots
+prop 86,8 l1_ladera/short_dry_grass front
+prop 98,8 l1_ladera/moss_grey_rock flip
+prop 106,11 l1_ladera/loose_stones_boulders flip
+prop 131,8 l1_ladera/tall_dry_grass scale=0.7
+prop 134,8 l1_ladera/moss_grey_rock scale=0.8
+prop 142,12 l1_ladera/short_dry_grass flip
+prop 153,12 l1_ladera/short_dry_grass
+prop 169,12 l1_ladera/short_dry_grass flip
+prop 180,7 l1_ladera/short_dry_grass
+prop 187,7 l1_ladera/termite_mound flip
+# C. Cueva: galerías 1 a 3 y la cámara de la chipa C
+prop 191,10 l1_cueva/gold_ore_vein
+prop 199,13 l1_cueva/stalagmites
+prop 206,13 l1_cueva/crystal_cluster_small
+prop 241,21 l1_cueva/crystal_cluster_large flip
+prop 189,30 l1_cueva/crystal_cluster_medium
+prop 196,30 l1_cueva/crystal_cluster_small flip
+prop 207,30 l1_cueva/water_puddle_drips
+prop 228,30 l1_cueva/stone_rubble_pile
+prop 240,30 l1_cueva/stalagmites flip
+prop 245,30 l1_cueva/crystal_cluster_small
+# Antesala y arena (en la arena, poco y en las puntas: ahí caen las estalactitas de Teju Jagua)
+prop 252,30 l1_cueva/crystal_cluster_large
+prop 268,30 l1_cueva/stalagmites
+prop 271,30 l1_cueva/stone_rubble_pile front
+prop 275,30 l1_cueva/stone_rubble_pile flip
+prop 311,30 l1_cueva/crystal_cluster_small flip
 # Musgo sobre el piso. No choca.
 moss
 # Bajo tierra (fondo de cueva): la cueva inicial, la cueva de C con la antesala y la caverna, y la cámara de la pluma C
