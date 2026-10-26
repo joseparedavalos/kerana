@@ -1800,6 +1800,7 @@ export class LevelScene extends Phaser.Scene {
               mode,
             },
             objectProp(obj, 'solid') === true,
+            tilesetKey(this.def.biome),
           );
           this.movers.push(mover);
           const id = objectProp(obj, 'id');
