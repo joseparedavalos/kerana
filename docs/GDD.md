@@ -795,6 +795,8 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 - **Arena: la plaza central del cementerio.** Mausoleos a los lados (sus techos son plataformas) y lápidas.
 - **Tono:** respetuoso. Luisón es quien perturba la paz; al liberarlo, las velas del cementerio se encienden solas.
 
+**Decoración (S54).** 12 props sin choque (`prop` en `tools/levels/l7.txt`; receta en RECETA-NIVEL §19.10). Es de noche y los props traen pintada luz cálida de farol: todos están a menos de un radio de luz (5,5 tiles) de un farol o un fuego, y ninguno tapa un farol. Dos sitios que no se mezclan: **la calle** (x < 292, solo `l7_calle`) y **el camposanto** con la antesala (solo `l7_camposanto`). En la calle, cosas de fachada pegadas a los muros: un balcón con reja sobre el zaguán (junto al farol del portón), la casa del andamio 1 (puerta claveteada con un tejadito encima y una contraventana, junto al farol de pared), el tendedero en el patio de la casona, de un muro al otro (junto al farol encendido del sótano), y una carreta de mano en la plaza de la catedral, entre el fuego 1 y el farol. En el camposanto: un ciprés al bajar y flores secas sobre una lápida entre el fuego 2 y su farol, otro ciprés donde se cae del pozo de 5 (el farol del otro lado), una cruz de hierro junto a la reja del panteón (el farol de la cripta, abajo), y en la antesala unos yuyos y un banco de piedra junto al fuego. Limpios: la ronda del farolero (hay que ver llegar cada ascensor), los tejados de la catedral, el mercado y los tejados de la calle (sin farol cerca), los bordes de los pozos y de las fosas, la cripta y la arena. No se usaron: el toldo enrollado (se lee como la lona de mercado y el toldo plegado, que rebotan), el adoquinado (parado es un murete; hundido, una trampilla como la del sótano), el portal con cajas (no hay muro a ras de la calle junto a un farol), el mausoleo (los mausoleos del nivel se pisan), el portón (parece una reja), la urna, la losa y la cruz torcida (no quedó lugar alumbrado fuera de un borde o de un fuego).
+
 **Jefe: Luisón**. 18 golpes.
 
 - Barra: "Luisón · Señor de la noche y los camposantos".
@@ -1241,19 +1243,23 @@ at 52,21 kind=sleep
 prop X,Y carpeta/nombre [scale=N] [flip] [front]
 ```
 
-- `X,Y`: el tile, en unidades de tile como `at`. Un prop que se apoya queda con la base en el borde de abajo de ese tile, centrado: se pone en la primera fila de aire sobre el piso (la del `P`). Uno que cuelga (`sheets.<nombre>.hang` en su `sprite.json`: estalactitas, raíces, lianas) queda con el borde de arriba en el techo del tile: se pone en la primera fila de aire bajo el techo.
+- `X,Y`: el tile, en unidades de tile como `at`. Un prop que se apoya queda con la base en el borde de abajo de ese tile, centrado: se pone en la primera fila de aire sobre el piso (la del `P`). Uno que cuelga (`sheets.<nombre>.hang` en su `sprite.json`: estalactitas, raíces, lianas) queda con el borde de arriba en el techo del tile: se pone en la primera fila de aire bajo el techo. S54: `X` e `Y` aceptan decimales (`prop 57.5,59 …` centra el prop entre dos tiles; como el `x` de un `point`).
 - `carpeta/nombre`: la carpeta de `raw/props/` y el nombre del archivo sin `prop_` ni `_transparent` (`raw/props/l3_pastizal/prop_termite_mound_large.png` → `l3_pastizal/termite_mound_large`). Si no está en ningún atlas de `public/assets/props/`, `npm run maps` da error.
 - `scale=N` (1 por defecto) multiplica el tamaño de `sprite.json`. Sirve para probar; si un prop siempre se ve chico o grande, mejor cambiar su `size` y correr `npm run sprites`: el pixel queda nítido.
 - `flip` lo espeja. `front` lo pone delante de Kerana (como la capa `Foreground`); sin `front` queda detrás de Kerana y de los enemigos.
 - No choca: es decoración. Lo que se pisa sigue siendo la grilla.
 - Hundidos (S47): los props anchos y planos dibujados desde arriba (`sheets.<nombre>.sink` en su `sprite.json`) se dibujan unas unidades bajo la línea del suelo, detrás del piso, para que no parezcan flotar; se colocan igual que los demás. `l2_agua/water_hyacinth` y `l2_agua/water_lilies` (`waterOnly`) van **solo sobre agua**, nunca sobre tierra firme: su base queda dentro de la lámina de agua.
 - El agua de `l6_agua` (`waterfall`, `thin_stream`, `shallow_pool`, `mist_spray`) se anima sola (S47): no hace falta nada en la línea `prop`.
+- **De fachada (S54):** los que van pegados a un muro y no se apoyan en el piso (puerta, balcón, contraventana, portal, tejado de `l7_calle`) llevan `sheets.<nombre>.wall` en su `sprite.json`; la línea es la misma. `(X, Y)` es un tile del muro (`#`) y la base del prop queda en el borde de abajo de ese tile, a la altura que se elija: una puerta, con `Y` en la última fila del muro sobre la calle; un balcón, más arriba. Se dibuja sobre los tiles del muro y detrás de Kerana. El test pide que caiga entero sobre el muro.
+- **Entre dos puntos (S54):** `prop X1-X2,Y carpeta/nombre [flip] [front]` escala el dibujo (sin deformarlo) para que vaya del borde izquierdo del tile `X1` al derecho del `X2`, con la base en el borde de abajo de la fila `Y`; el alto sale de la proporción. No lleva `scale`. `sheets.<nombre>.span` dice qué toca cada extremo, el izquierdo y el derecho (`wall`: la cara de un muro, en todo el alto del prop; `floor`: el suelo bajo esa columna); con `flip` se invierten. El tendedero (`l7_calle/clothesline_balconies`, `["wall", "wall"]`) va de un muro al otro: `X1` y `X2` son la primera y la última columna de aire entre los dos; el toldo (`l7_calle/market_awning_rolled`, `["floor", "wall"]`) lleva el poste al suelo y la punta contra un muro.
 
 ```
 prop 104,26 l3_pastizal/termite_mound_large
 prop 110,26 l2_tierra/pindo_palm scale=0.75 flip
 prop 116,26 l4_patio/wooden_chair front
 prop 108,9 l1_cueva/stalactites
+prop 57.5,59 l7_calle/wooden_door_studs
+prop 87-91,55 l7_calle/clothesline_balconies
 ```
 
 Los props viejos con `point Prop x=… y=… kind=nest|tacuru|fence|chair|hammock|trunk|liana` (16 de octubre) siguen funcionando igual. Todos los props nuevos, por carpeta y a su tamaño: `?debug=1&level=vitrina&boss=1` (empieza en el fuego de la zona de props).

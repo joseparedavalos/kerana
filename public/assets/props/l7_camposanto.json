@@ -1,0 +1,214 @@
+{
+  "frames": {
+    "cemetery_gate": {
+      "frame": {
+        "x": 67,
+        "y": 2,
+        "w": 93,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 93,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 93,
+        "h": 128
+      }
+    },
+    "cypress_tree": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 63,
+        "h": 224
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 224
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 224
+      }
+    },
+    "dried_flowers": {
+      "frame": {
+        "x": 502,
+        "y": 2,
+        "w": 80,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 41
+      }
+    },
+    "grave_slab": {
+      "frame": {
+        "x": 682,
+        "y": 2,
+        "w": 96,
+        "h": 29
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 29
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 29
+      }
+    },
+    "iron_cross": {
+      "frame": {
+        "x": 394,
+        "y": 2,
+        "w": 52,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 56
+      }
+    },
+    "iron_cross_leaning": {
+      "frame": {
+        "x": 448,
+        "y": 2,
+        "w": 52,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 56
+      }
+    },
+    "mausoleum": {
+      "frame": {
+        "x": 162,
+        "y": 2,
+        "w": 115,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 115,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 115,
+        "h": 128
+      }
+    },
+    "overgrown_weeds": {
+      "frame": {
+        "x": 279,
+        "y": 2,
+        "w": 80,
+        "h": 66
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 66
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 66
+      }
+    },
+    "stone_bench": {
+      "frame": {
+        "x": 584,
+        "y": 2,
+        "w": 96,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 32
+      }
+    },
+    "stone_urn": {
+      "frame": {
+        "x": 361,
+        "y": 2,
+        "w": 31,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 31,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 31,
+        "h": 64
+      }
+    }
+  },
+  "meta": {
+    "image": "l7_camposanto.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 780,
+      "h": 228
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}

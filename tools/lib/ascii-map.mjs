@@ -17,6 +17,8 @@
 //     Bouncer: kind=once (un solo uso) | kind=sleep (dormido hasta un tajo cargado)
 //   Props por bioma (S46) con la línea "prop X,Y carpeta/nombre [scale=N] [flip] [front]": objeto Prop con
 //   art=carpeta/nombre en el pie del tile (X, Y). Los que cuelgan (sheets.<nombre>.hang) van del techo del tile.
+//   S54: X e Y aceptan decimales, y "prop X1-X2,Y …" (entre dos puntos: tendedero, toldo con poste) escala el dibujo
+//   para que vaya del borde izquierdo del tile X1 al derecho del X2 (span=X2-X1+1 tiles, centrado entre los dos).
 import { TILE, TILESET_COLUMNS, TILESET_ROWS, TILES } from './tileset-layout.mjs';
 
 const TILED_VERSION = '1.10.2';
@@ -42,13 +44,22 @@ function parsePairs(tokens) {
 /** Banderas sin valor de la línea "prop". */
 const PROP_FLAGS = new Set(['flip', 'front']);
 
-/** "prop X,Y carpeta/nombre [scale=N] [flip] [front]" → { x, y, art, scale?, flip?, front? } (S46). */
+/**
+ * "prop X,Y carpeta/nombre [scale=N] [flip] [front]" → { x, y, art, scale?, flip?, front? } (S46). S54: X e Y con
+ * decimales, y "prop X1-X2,Y …" → { x: centro, y, art, span: tiles } (el ancho lo da el tramo: no lleva scale).
+ */
 function parsePropLine(rest, line) {
-  const m = /^(\d+),(\d+)$/.exec(rest[0] ?? '');
+  const m = /^(\d+(?:\.\d+)?)(?:-(\d+))?,(\d+(?:\.\d+)?)$/.exec(rest[0] ?? '');
   const art = rest[1] ?? '';
   if (!m || !/^[a-z0-9_]+\/[a-z0-9_]+$/.test(art))
-    throw new Error(`"prop" inválido (se espera "prop X,Y carpeta/nombre [scale=N] [flip] [front]"): ${line}`);
-  const out = { x: Number(m[1]), y: Number(m[2]), art };
+    throw new Error(`"prop" inválido (se espera "prop X,Y carpeta/nombre [scale=N] [flip] [front]" o "prop X1-X2,Y …"): ${line}`);
+  const out = { x: Number(m[1]), y: Number(m[3]), art };
+  if (m[2] !== undefined) {
+    const x2 = Number(m[2]);
+    if (!Number.isInteger(out.x) || x2 <= out.x) throw new Error(`"prop": el tramo X1-X2 va de un tile entero a otro más a la derecha: ${line}`);
+    out.span = x2 - out.x + 1;
+    out.x = (out.x + x2) / 2;
+  }
   for (const tok of rest.slice(2)) {
     if (PROP_FLAGS.has(tok)) {
       out[tok] = true;
@@ -58,6 +69,7 @@ function parsePropLine(rest, line) {
     if (pairs.scale === undefined) throw new Error(`"prop": opción desconocida "${tok}" (scale=N, flip, front)`);
     const scale = Number(pairs.scale);
     if (!(scale > 0)) throw new Error(`"prop": scale tiene que ser un número mayor que 0: ${line}`);
+    if (out.span !== undefined) throw new Error(`"prop": con X1-X2 el tamaño lo da el tramo, sin scale: ${line}`);
     out.scale = scale;
   }
   return out;
@@ -415,7 +427,7 @@ export function buildTiledMap(parsed, options = {}) {
   for (const r of parsed.rects) addObject(r.cls, r.x * TILE, r.y * TILE, r.w * TILE, r.h * TILE, r.props);
   for (const p of parsed.points) addObject(p.cls, px(p.x), py(p.y), 0, 0, p.props, true);
   for (const { x, y, ...props } of parsed.props ?? []) {
-    if (x >= width || y >= height) throw new Error(`prop ${props.art} en (${x}, ${y}): fuera del mapa`);
+    if (x >= width || y >= height || x + (props.span ?? 1) / 2 + 0.5 > width) throw new Error(`prop ${props.art} en (${x}, ${y}): fuera del mapa`);
     if (options.propCatalog && !options.propCatalog.has(props.art))
       throw new Error(`prop desconocido "${props.art}" en (${x}, ${y}): no está en public/assets/props/<carpeta>.json`);
     addObject('Prop', px(x), py(y), 0, 0, props, true);

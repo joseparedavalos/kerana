@@ -101,6 +101,28 @@ rect Offering x=479 y=0 w=1 h=66 front=54
 point ChipaReturn x=2 y=59 chipa=2
 point ChipaReturn x=148 y=59 chipa=1
 point ChipaReturn x=410 y=59 chipa=0
+# S54: props (RECETA-NIVEL §19.10). Es de noche y traen luz de farol pintada: todos cerca de un farol o de un fuego. La
+#   calle (x < 292) solo lleva l7_calle; el camposanto, la antesala y la arena, solo l7_camposanto. La ronda del farolero
+#   y los tejados de la catedral, limpios. Fachada (wall en sprite.json): sobre los tiles de un muro; entre dos puntos:
+#   prop X1-X2,Y (GDD §11.7.1).
+# A. La calle: un balcón sobre el zaguán (farol del portón); la casa del andamio 1 (puerta, tejadito y contraventana,
+#    junto al farol de pared); el tendedero en el patio de la casona, entre sus dos muros (el farol encendido del sótano)
+prop 30,52 l7_calle/wrought_iron_grille_balcony
+prop 57.5,59 l7_calle/wooden_door_studs
+prop 57.5,56 l7_calle/tiled_rooftop_chimney
+prop 55.5,52 l7_calle/shuttered_windows
+prop 87-91,55 l7_calle/clothesline_balconies
+# B. La plaza de la catedral: la carreta entre el fuego 1 y el farol
+prop 151,59 l7_calle/wooden_handcart
+# C. El camposanto: un ciprés al bajar y flores entre el fuego 2 y su farol; otro ciprés donde se cae del pozo de 5 (el
+#    farol del otro lado); una cruz junto a la reja del panteón (el farol de la cripta, abajo)
+prop 301,59 l7_camposanto/cypress_tree
+prop 307.5,59 l7_camposanto/dried_flowers
+prop 360,59 l7_camposanto/cypress_tree flip
+prop 393.5,59 l7_camposanto/iron_cross
+# Antesala: yuyos y un banco junto al fuego
+prop 488,65 l7_camposanto/overgrown_weeds
+prop 492,65 l7_camposanto/stone_bench
 ---
 ............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
 ............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................

@@ -113,6 +113,8 @@ export const PROP_ATLASES = [
   'l5_suelo',
   'l6_agua',
   'l6_roca',
+  'l7_calle',
+  'l7_camposanto',
 ] as const;
 export const propAtlasKey = (folder: string): string => `props_${folder}`;
 

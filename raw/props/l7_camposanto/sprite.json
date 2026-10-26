@@ -1,0 +1,49 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1). Todos son de suelo.",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "cemetery_gate": {
+      "height": 64,
+      "note": "portón del cementerio"
+    },
+    "cypress_tree": {
+      "height": 112,
+      "note": "ciprés: dos Keranas y media"
+    },
+    "dried_flowers": {
+      "width": 40,
+      "note": "flores secas sobre una lápida baja"
+    },
+    "grave_slab": {
+      "width": 48,
+      "note": "losa de tumba"
+    },
+    "iron_cross": {
+      "height": 28,
+      "note": "cruz de hierro"
+    },
+    "iron_cross_leaning": {
+      "height": 28,
+      "note": "cruz de hierro torcida"
+    },
+    "mausoleum": {
+      "height": 64,
+      "note": "mausoleo chico"
+    },
+    "overgrown_weeds": {
+      "width": 40,
+      "note": "yuyos sobre cascotes"
+    },
+    "stone_bench": {
+      "width": 48,
+      "note": "banco de piedra"
+    },
+    "stone_urn": {
+      "height": 32,
+      "note": "urna sobre pedestal: dos tiles"
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "frames": {
+    "clothesline_balconies": {
+      "frame": {
+        "x": 708,
+        "y": 2,
+        "w": 128,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 48
+      },
+      "span": [
+        "wall",
+        "wall"
+      ]
+    },
+    "market_awning_rolled": {
+      "frame": {
+        "x": 235,
+        "y": 2,
+        "w": 128,
+        "h": 97
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 97
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 97
+      },
+      "span": [
+        "floor",
+        "wall"
+      ]
+    },
+    "shuttered_windows": {
+      "frame": {
+        "x": 365,
+        "y": 2,
+        "w": 65,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 96
+      },
+      "wall": true
+    },
+    "stacked_crates_doorway": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 75,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 75,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 75,
+        "h": 112
+      },
+      "wall": true
+    },
+    "stone_kerb_cobblestone": {
+      "frame": {
+        "x": 838,
+        "y": 2,
+        "w": 128,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 30
+      }
+    },
+    "tiled_rooftop_chimney": {
+      "frame": {
+        "x": 432,
+        "y": 2,
+        "w": 160,
+        "h": 89
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 160,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 160,
+        "h": 89
+      },
+      "wall": true
+    },
+    "wooden_door_studs": {
+      "frame": {
+        "x": 79,
+        "y": 2,
+        "w": 75,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 75,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 75,
+        "h": 112
+      },
+      "wall": true
+    },
+    "wooden_handcart": {
+      "frame": {
+        "x": 594,
+        "y": 2,
+        "w": 112,
+        "h": 70
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 70
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 70
+      }
+    },
+    "wrought_iron_grille_balcony": {
+      "frame": {
+        "x": 156,
+        "y": 2,
+        "w": 77,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 77,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 77,
+        "h": 112
+      },
+      "wall": true
+    }
+  },
+  "meta": {
+    "image": "l7_calle.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 968,
+      "h": 116
+    },
+    "scale": "1",
+    "detail": 2
+  }
+}
