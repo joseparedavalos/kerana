@@ -105,7 +105,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l5',
     mapSource: 'ascii',
     biome: 'selva',
-    backgrounds: { far: 'bg_l5_far' },
+    // S59: arriba del dosel, la luz que se filtra (no negro); la lluvia pintada cae.
+    backgrounds: { far: 'bg_l5_far', fillTop: '#a9bf98', rain: true },
     terrainShell: 3,
     musicKey: '',
     boss: 'kurupi',
@@ -135,7 +136,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l7',
     mapSource: 'ascii',
     biome: 'ciudad',
-    backgrounds: { far: 'bg_l7_far' },
+    // S59: la niebla baja entre los mausoleos corre despacio.
+    backgrounds: { far: 'bg_l7_far', mist: { region: [0, 0.69, 1, 0.8] } },
     musicKey: '',
     boss: 'luison',
     gift: null,

@@ -1268,6 +1268,47 @@ export const GAMEPLAY = {
     fillSampleRows: 4,
     /** Alto (unidades) del fundido sobre el borde de arriba de la imagen, para que no se vea la costura con el relleno. */
     fillEdgeHeight: 24,
+    /**
+     * Relleno por columnas (S59): el color del borde se toma en `fillColumns` tramos a lo ancho de la imagen (en l5, el
+     * dosel oscuro a los costados y la neblina clara al medio), cada uno ensanchado `fillBlur` px de arte.
+     */
+    fillColumns: 64,
+    fillBlur: 16,
+    /**
+     * Lluvia pintada en el fondo (S59; l5, `rain` en levels.ts). Las rayas se separan del dibujo y caen en fotogramas
+     * de la misma imagen (como el agua de S47), detrás de todo el nivel (Kerana, los enemigos y el terreno, delante).
+     */
+    rain: {
+      /** Velocidad de caída en unidades por segundo (la vista mide 360 de alto): más alto = más rápida. */
+      speed: 70,
+      /** Opacidad de las rayas que caen (0-1): más bajo = menos densa (la imagen limpia se ve más). */
+      alpha: 0.75,
+      /**
+       * Cuánto bajan las rayas en un ciclo (px de arte) y en cuántos fotogramas: el paso es period / frames px.
+       * Cada fotograma es la imagen entera (≈ 3,7 MB): más fotogramas = más suave y más memoria.
+       */
+      period: 32,
+      frames: 8,
+      /** Qué es una raya: contraste con sus vecinas, lo liso de los costados y cuántos vecinos verticales la siguen (ambientLogic.ts). */
+      contrast: 6,
+      smooth: 20,
+      run: 3,
+    },
+    /**
+     * Niebla pintada en el fondo (S59; l7, `mist` en levels.ts): una copia de la niebla de la franja corre de costado,
+     * despacio, sobre la quieta.
+     */
+    mist: {
+      /** Velocidad en unidades por segundo (hacia la derecha; negativa, a la izquierda). */
+      speed: 4,
+      /** Opacidad de la copia que corre (0-1). */
+      alpha: 0.55,
+      /** Qué es niebla: canal más claro mínimo y cuánto más azul que rojo (ambientLogic.ts). */
+      minBright: 60,
+      minBlue: 16,
+      /** Filas de arte en las que la copia se desvanece arriba y abajo de la franja. */
+      feather: 10,
+    },
     /** Terreno como repisa (`terrainShell` en levels.ts): opacidad de la última fila antes del fondo. */
     terrainFadeAlpha: 0.55,
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */
