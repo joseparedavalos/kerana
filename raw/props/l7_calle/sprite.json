@@ -1,0 +1,75 @@
+{
+  "_nota": "Tamaños en unidades del mundo (Kerana ≈ 46 de alto, un tile = 16). Cambiá height o width y corré npm run sprites (docs/ASSETS.md §6.1). S54: tres clases. De suelo, como siempre; de fachada (`wall`), pegados a la cara de un muro, con la base en el borde de abajo del tile; entre dos puntos (`span`), con la línea `prop X1-X2,Y`: el dibujo se escala para ir del borde izquierdo de X1 al derecho de X2 (GDD §11.7.1).",
+  "detail": 2,
+  "edge": "chroma",
+  "edgePasses": 8,
+  "coverage": 0.4,
+  "size": {
+    "clothesline_balconies": {
+      "width": 64,
+      "note": "tendedero entre dos balcones (entre dos puntos: en el nivel, el ancho lo da la línea prop X1-X2,Y)"
+    },
+    "market_awning_rolled": {
+      "width": 64,
+      "note": "toldo enrollado con su poste (entre dos puntos: el poste al suelo, la punta en un muro)"
+    },
+    "shuttered_windows": {
+      "height": 48,
+      "note": "contraventana cerrada (fachada): tres tiles"
+    },
+    "stacked_crates_doorway": {
+      "height": 56,
+      "note": "portal tapiado con cajas (fachada, a ras de la calle): más alto que Kerana"
+    },
+    "stone_kerb_cobblestone": {
+      "width": 64,
+      "note": "adoquinado con cordón de piedra (suelo)"
+    },
+    "tiled_rooftop_chimney": {
+      "width": 80,
+      "note": "tejado con chimenea (fachada)"
+    },
+    "wooden_door_studs": {
+      "height": 56,
+      "note": "puerta claveteada con candado (fachada, a ras de la calle): más alta que Kerana"
+    },
+    "wooden_handcart": {
+      "width": 56,
+      "note": "carreta de mano (suelo)"
+    },
+    "wrought_iron_grille_balcony": {
+      "height": 56,
+      "note": "balcón con reja (fachada)"
+    }
+  },
+  "sheets": {
+    "clothesline_balconies": {
+      "note": "S54: entre dos puntos. span = qué toca cada extremo (izquierdo, derecho): wall = la cara de un muro, floor = el suelo. Los dos balcones van contra un muro",
+      "span": ["wall", "wall"]
+    },
+    "market_awning_rolled": {
+      "note": "S54: entre dos puntos. El poste (izquierda del dibujo) llega al suelo; la punta del toldo, a un muro. Con flip, al revés",
+      "span": ["floor", "wall"]
+    },
+    "shuttered_windows": {
+      "note": "S54: fachada. Va sobre los tiles de un muro, a la altura que se elija: no se apoya en el piso",
+      "wall": true
+    },
+    "stacked_crates_doorway": {
+      "note": "S54: fachada. Va sobre los tiles de un muro, a la altura que se elija: no se apoya en el piso",
+      "wall": true
+    },
+    "tiled_rooftop_chimney": {
+      "note": "S54: fachada. Va sobre los tiles de un muro, a la altura que se elija: no se apoya en el piso",
+      "wall": true
+    },
+    "wooden_door_studs": {
+      "note": "S54: fachada. Va sobre los tiles de un muro, a la altura que se elija: no se apoya en el piso",
+      "wall": true
+    },
+    "wrought_iron_grille_balcony": {
+      "note": "S54: fachada. Va sobre los tiles de un muro, a la altura que se elija: no se apoya en el piso",
+      "wall": true
+    }
+  }
+}
