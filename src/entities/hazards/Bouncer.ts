@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { hasArt } from '../../assets/art';
+import { ART_DETAIL } from '../../assets/manifest';
 import { GAMEPLAY } from '../../config/gameplay';
 import { BouncerMotor, type BouncerKind, type BouncerState } from './BouncerMotor';
 
@@ -14,6 +16,8 @@ const STEM_DARK = 0xa07854;
 const AWNING_COLOR = 0xa8443a;
 const AWNING_STRIPE = 0xe8dcc0;
 const POLE_COLOR = 0x5a4632;
+/** S58: arte del hongo (raw/piezas/hongo.jpg, un hongo por tile; mide `mushroomHeight` con el tallo acortado). */
+const ART = 'piece_mushroom';
 
 /** Cómo se dibuja: hongo (por defecto) o toldo (bioma ciudad). */
 export type BouncerLook = 'mushroom' | 'awning';
@@ -29,6 +33,8 @@ export class Bouncer {
   private readonly spots: Phaser.GameObjects.Rectangle;
   private readonly art: Phaser.GameObjects.Container;
   private readonly pieces: Phaser.GameObjects.Rectangle[] = [];
+  /** S58: con arte, un sprite por tile en vez de las piezas por código. */
+  private readonly sprites: Phaser.GameObjects.Image[] = [];
   private readonly topY: number;
 
   constructor(
@@ -68,8 +74,16 @@ export class Bouncer {
     const tiles = Math.max(1, Math.round(zone.width / 16));
     const tileW = zone.width / tiles;
     const s = tileW / 16;
+    const withArt = hasArt(scene, ART);
     for (let i = 0; i < tiles; i++) {
       const x = zone.x + tileW * (i + 0.5);
+      if (withArt) {
+        // Apoyado en el suelo: el sombrero llega a la altura del rebote (topY).
+        const img = scene.add.image(x, 0, ART).setOrigin(0.5, 1).setScale(s / ART_DETAIL, 1 / ART_DETAIL);
+        this.sprites.push(img);
+        this.art.add(img);
+        continue;
+      }
       this.piece(scene, x, 0, 4 * s, 4, STEM, 'stem');
       this.piece(scene, x + s, 0, s, 4, STEM_DARK, 'stem');
       this.piece(scene, x, -4, 14 * s, 1, CAP_DARK, 'cap');
@@ -146,6 +160,10 @@ export class Bouncer {
       return;
     }
     const dull = state === 'deflated' ? VARIANTS.deflatedColor : state === 'asleep' ? VARIANTS.asleepColor : 0;
+    for (const img of this.sprites) {
+      if (dull) img.setTint(dull);
+      else img.clearTint();
+    }
     for (const rect of this.pieces) {
       const role = rect.getData('role') as PieceRole;
       if (role === 'spot') {

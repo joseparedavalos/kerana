@@ -95,6 +95,15 @@ export const ART_IMAGES = {
   prop_hammock: 'props/hammock.png',
   prop_trunk: 'props/trunk.png',
   prop_liana: 'props/liana.png',
+  // Piezas (S58, `npm run pieces`: raw/piezas → pieces/). Sin arte, cada pieza se dibuja por código.
+  piece_mushroom: 'pieces/mushroom.png',
+  piece_gate_top: 'pieces/gate_top.png',
+  piece_gate_mid: 'pieces/gate_mid.png',
+  piece_gate_bottom: 'pieces/gate_bottom.png',
+  piece_switch_off: 'pieces/switch_off.png',
+  piece_switch_on: 'pieces/switch_on.png',
+  piece_raft_32: 'pieces/raft_32.png',
+  piece_raft_48: 'pieces/raft_48.png',
 } as const;
 export type ArtKey = keyof typeof ART_IMAGES;
 

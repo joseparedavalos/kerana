@@ -321,6 +321,25 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 - `l2_agua/prop_water_ripples.png`: las ondas son marrones y violetas, no se leen como agua sobre el fondo del estero. Fuera con `ignore` desde S49; si se regenera, se saca el `ignore`.
 - Las doce carpetas traen transparencia real (ninguna con el damero pintado) y lienzos razonables (de 228 a 1792 px). `l3_pastizal` y `l5_altura` vienen recortados al dibujo; las demás, en lienzos de 1408 × 1408.
 
+### 6.2 Piezas (S58): hongo, reja, interruptor y balsa
+
+Cuatro piezas que se dibujaban con rectángulos llevan arte de Jose desde S58. Los originales están en `raw/piezas/` (JPG de 1408 × 1408 o 1792 × 1008, con el damero de «transparencia» pintado en los píxeles: el generador no daba PNG). `npm run pieces` (`tools/build-pieces.mjs`, funciones en `tools/lib/pieces-build.mjs`, ajustes en `raw/piezas/piezas.json`) los pasa a `public/assets/pieces/*.png` en 1,4 s:
+
+- **Quita el damero** como el tileset de S56: todo píxel claro y gris unido al borde de la imagen es fondo (relleno desde afuera). Además, en la reja y la balsa (`holes`), los huecos cerrados de color de fondo con 5000 px o más: entre los barrotes el damero queda encerrado por los travesaños y el relleno no llega. Los blancos chicos de adentro (brillos, flores) miden menos y quedan.
+- **Reduce sin interpolar** (el medoide de cada bloque, `reduceBlocks` de S56) a detail 2, como Kerana y los props: 2 px de arte por unidad.
+- **Corta cada pieza como la usa el juego:**
+
+| Pieza | PNG | Tamaño en el juego | Cómo encaja |
+|---|---|---|---|
+| Hongo (`Bouncer`) | `mushroom.png`, 30 × 20 | 15 × 10 unidades, uno por tile de la zona | El tallo del arte se acorta de 9 a 5 filas (se sacan de su mitad; el borde de abajo queda): el sombrero llega justo a la altura del rebote (`mushroomHeight`, 10) y el tallo apenas asoma. Dormido y desinflado, el sprite se tiñe con los colores de `bouncerVariants`. |
+| Reja (`Gate`) | `gate_top.png` 32 × 13, `gate_mid.png` 32 × 63, `gate_bottom.png` 32 × 11 | 16 de ancho; alto de cada reja (48, 64 o 96) | Tres barrotes del medio de los siete del arte, de borde a borde. Arriba y abajo, el travesaño atado con su cuerda, a su tamaño; la parte del medio (barrotes solos) se **estira** a lo alto que falte. La veta es vertical: estirada solo se alarga; repetida, dejaría una costura horizontal cada 31 unidades. Abierta, el conjunto se recoge hacia arriba como antes. |
+| Interruptor (`Switch`) | `switch_off.png`, `switch_on.png`, 21 × 30 | 10,5 × 15, apoyado en el piso del tile | La imagen se parte al medio. El encendido trae un resplandor pintado sobre el damero, que no se puede separar: se recorta con la silueta del apagado, corrida hasta su lugar (se alinean por el poste), y el halo lo sigue poniendo el juego. La piedra queda de 10,5 unidades, como el rombo de antes (10): no hizo falta cambiar la escala. |
+| Balsa (`Sinking`) | `raft_32.png` 64 × 13, `raft_48.png` 96 × 19 | 32 o 48 de ancho (los anchos de l2) | Un PNG por ancho, para no estirar. La fila de arriba de las hojas (la 1 y la 2: encima solo asoman las flores) va en el borde de arriba del cuerpo, donde se para Kerana; las raíces cuelgan debajo. |
+
+El cuerpo físico, el comportamiento y `gameplay.ts` no cambian: el rectángulo del cuerpo queda invisible y el sprite se dibuja encima. **Sin el PNG**, cada pieza vuelve a su dibujo por código (las claves `piece_*` están en `ART_IMAGES` con `codePlaceholder`). El toldo de l7 (el hongo de ciudad) sigue por código: no tiene arte.
+
+En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) y `cascada.jpg`, sin conectar todavía.
+
 ---
 
 ## 7. Interfaz [MVP con placeholders por código]
@@ -383,6 +402,7 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 | Ao Ao + taitetu, ao_ao_cria | MVP | S11 | ☑ sprite (S13b) |
 | Luisón + pora, jagua_hu | MVP | S12 | ☑ sprite (S13b) |
 | Tilesets (8 biomas; campo hecho en S56, RECETA-TILESET) | Núcleo | S13 | ☐ |
+| Piezas: hongo, reja, interruptor, balsa (§6.2) | Núcleo | S58 | ◐ (las cuatro con arte; faltan conectar la rama y la cascada, y el toldo de l7 no tiene arte) |
 | Fondos: capa lejana (7) | MVP | S13 | ☐ |
 | Fondos: capas media y cercana (14) | Núcleo | S13 | ☐ |
 | Retratos (13) | Núcleo | S13 | ☐ (hoy la cara de Kerana sale de su sprite; estos retratos pintados no están) |
