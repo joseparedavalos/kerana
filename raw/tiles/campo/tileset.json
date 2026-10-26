@@ -1,0 +1,18 @@
+{
+  "note": "Cómo se monta tiles/campo.png con tools/build-tileset.mjs (S56). Escalas en píxeles de la imagen por píxel del tile.",
+  "dirt": { "file": "tierra.jpg", "scale": 12, "speck": 60, "blob": 16 },
+  "grass": { "file": "pasto.jpg", "scaleX": 10, "scaleY": 22, "rows": 7, "fringe": 560 },
+  "edge": { "outer": 0.5, "inner": 0.75 },
+  "platform": { "rows": 6, "grassRows": 3 },
+  "specials": {
+    "file": "especiales.jpg",
+    "order": ["waterSurface", "waterDeep", "grass", "flowers", "stones"]
+  },
+  "hazard": { "file": "espinas.jpg", "maxWidth": 16, "maxHeight": 14 },
+  "decor": {
+    "grass": { "maxWidth": 12, "maxHeight": 9 },
+    "flowers": { "maxWidth": 14, "maxHeight": 9 },
+    "stones": { "maxWidth": 12, "maxHeight": 7 }
+  },
+  "waterAlpha": 200
+}

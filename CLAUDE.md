@@ -14,6 +14,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `docs/PENDIENTES.md`: lo que falta hoy. Única lista de pendientes. Léela al empezar y al cerrar.
 - `docs/RECETA-NIVEL.md`: cómo se rediseña un nivel (salió de siete rediseños). Léela antes de tocar cualquier mapa.
 - `docs/RECETA-SPRITES.md`: cómo se encarga y se conecta el sprite de un jefe (salió de la cabeza de Moñái, S42 y S43). Léela antes de pedir datos para generar arte o de conectar hojas nuevas de `raw/`.
+- `docs/RECETA-TILESET.md`: cómo se monta el tileset de un bioma con los materiales del generador y `npm run tileset` (salió de campo, S56). Léela antes de tocar un tileset.
 - `docs/REVIEW.md`: la auditoría de diseño de S16, como referencia histórica. No es una lista de tareas.
 - `docs/ASSETS.md`: sprites, tiles, fondos y audio. Léelo antes de tocar arte o audio.
 - Al cerrar una sesión se actualizan `PLAN.md` y `PENDIENTES.md` en el mismo cambio. Si no coinciden, manda `PENDIENTES.md`.
@@ -49,6 +50,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `npm test`: Vitest (lógica pura)
 - `npm run maps`: `tools/levels/*.txt` → `public/assets/maps/*.json`
 - `npm run sprites`: `raw/` → `public/assets/sprites/` (ver `docs/ASSETS.md`)
+- `npm run tileset -- <bioma>`: `raw/tiles/<bioma>/` → `public/assets/tiles/<bioma>.png` (ver `docs/RECETA-TILESET.md`)
 - `npm run smoke`: prueba de humo con navegador headless (si está disponible)
 - `npm run preview`: sirve `dist/`
 
