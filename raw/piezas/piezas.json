@@ -1,0 +1,7 @@
+{
+  "detail": 2,
+  "mushroom": { "file": "hongo.jpg", "width": 30, "stemRows": 5 },
+  "gate": { "file": "reja.jpg", "holes": 5000, "bars": 3, "width": 32, "ropeRows": 1 },
+  "switch": { "file": "interruptor.jpg", "height": 30 },
+  "raft": { "file": "balsa.jpg", "holes": 5000, "widths": [64, 96] }
+}
