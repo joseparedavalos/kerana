@@ -992,6 +992,8 @@ Colores de referencia para la interfaz y para guiar la generación de arte:
 - **Destello blanco** al recibir un golpe (tinte).
 - **Liberación:** anillo de luz, cámara lenta y partículas ascendentes.
 - **Ambiente:** lluvia (N5), niebla (N4 y N7), relámpagos (N6), luciérnagas (N2).
+  - **Hecho (S59):** la lluvia de N5 y la niebla baja de N7 vienen pintadas en el fondo y se mueven por código, detrás de toda la acción: la lluvia cae en fotogramas de la imagen (solo se mueven las rayas, como el agua de S47) y una copia de la niebla corre despacio de costado. Arriba de N5, en vez de negro, el dosel oscuro se abre hacia una luz verde clara. Valores en `GAMEPLAY.backdrop.rain` y `mist`.
+  - **No existen todavía** (decidir aparte): niebla de ambiente en N4 (la niebla del sueño es una mecánica), relámpagos en N6 y luciérnagas de ambiente en N2 (las que hay marcan secretos).
 
 ### 9.8 Tipografía
 

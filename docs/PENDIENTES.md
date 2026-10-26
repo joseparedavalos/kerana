@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 26 de octubre de 2026 en S58, contra lo que ya está en `main` hasta S57 (pull request 112).
+Revisado el 26 de octubre de 2026 en S59, contra lo que ya está en `main` hasta S58 (pull request 113).
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -51,6 +51,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - El campo (l3) tiene su primer tileset real (S56): tierra rojiza, pasto seco arriba, karaguatá, mata, flores y agua, montados por un script con los materiales que Jose generó (`npm run tileset -- campo`). Las casillas del suelo se arman con la regla de los vecinos. El PNG anterior está en `raw/tiles/anteriores/`. La receta para los otros biomas está en [docs/RECETA-TILESET.md](RECETA-TILESET.md).
 - Las plataformas móviles usan el tileset de su nivel (S57): las mismas casillas que la plataforma fija, con un canto en sombra abajo que las hace un poco más gruesas. Ya no son el rectángulo marrón. Se mueven y se pisan igual.
 - El hongo, la reja, el interruptor y la balsa tienen arte (S58): la seta violeta, los barrotes de madera atados con cuerda, la piedra con el ñandutí sobre un poste (apagada y encendida) y la balsa de camalotes, sacados de los JPG de Jose con `npm run pieces` (sin el damero, sin interpolar). Se pisan, se abren y se hunden igual. Sin los PNG vuelve el dibujo por código. El toldo de l7 sigue por código.
+- Arriba de l5 ya no hay franja negra (S59): el dosel oscuro de los costados se abre hacia una luz verde clara al medio. La lluvia pintada en el fondo de l5 cae y la niebla baja del camposanto de l7 corre despacio, las dos detrás de Kerana y de los enemigos.
 
 ## Ahora
 
@@ -70,6 +71,8 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 14. Los tilesets de los otros siete biomas (`cerro`, `estero`, `pueblo`, `selva`, `montana`, `ciudad`, `cielo`). Campo ya está (S56). Para cada uno, Jose genera los cuatro materiales (tierra, franja del borde, especiales y espinas) con lo que dice [docs/RECETA-TILESET.md](RECETA-TILESET.md) §2 y la paleta del bioma de las notas de S55, y los sube a `raw/tiles/<bioma>/`; una sesión copia `tileset.json`, guarda el PNG anterior en `raw/tiles/anteriores/` (cada uno tiene el piso del 16 de octubre, commit `cc72245`), corre `npm run tileset -- <bioma>` y lo revisa con capturas. El script espera un borde amarillo o verde: para la piedra de cerro, el revoque de pueblo o el adoquín de ciudad hay que ajustar `hueRatio` o cómo separa el borde de la tierra.
 15. Mirar el tileset de campo jugando l3 (Jose, `?debug=1&level=3`) y decir si convence; si no, volver al anterior con `cp raw/tiles/anteriores/campo-2026-10-16.png public/assets/tiles/campo.png`. Lo que quedó a medias está en las notas de S56: el relleno es una sola casilla repetida (sin variantes se nota un poco el patrón de 16 px), la mata es verde y el pasto seco, la plataforma ya no es de madera y el karaguatá es oscuro.
 16. El siguiente lote de arte (S57, S58): siguen dibujadas por código la rama que se quiebra (`raw/piezas/rama.jpg`, `Crumble`) y la cascada (`raw/piezas/cascada.jpg`), ya subidas: se conectan con el mismo camino que S58 (`npm run pieces`, ASSETS §6.2). El toldo de l7, la versión de ciudad del hongo, no tiene arte: hay que generarlo. El hongo, la reja, el interruptor y la balsa ya tienen arte (S58); para que Jose mire jugando: el ñandutí del interruptor no se lee a ese tamaño, las raíces de la balsa casi no se ven y el hongo dormido sale violeta oscuro (notas de S58). Además, la plataforma móvil de l7: con el tileset, una móvil quieta junto a una repisa fija a la misma altura se funde con ella en la noche (notas de S57). Hace falta arte propio, con las formas de ciudad de l7: balcón, carro, andamio. En l1 la móvil es de la misma piedra que el suelo. Se lee, pero conviene que Jose la mire jugando.
+17. Mirar la lluvia de l5 y la niebla de l7 jugando (Jose, S59) y ajustar `GAMEPLAY.backdrop.rain` (`speed` 70, `alpha` 0,75) y `mist` (`speed` 4, `alpha` 0,55), y el color de la luz arriba de l5 (`fillTop` en `levels.ts`). La lluvia pesa 8 fotogramas de la imagen (≈ 29 MB de textura) y entrar a l5 tarda ~0,5 s más en el contenedor: si en un celular pesa, bajar `rain.frames` (notas de S59).
+18. Efectos de ambiente del GDD §9.7 que no existen (S59, decidir si se hacen): niebla de ambiente en l4 (hoy solo la del sueño, que es mecánica), relámpagos en l6 (nada pintado ni por código; ojo con la opción de destellos de Opciones) y luciérnagas de ambiente en l2 (las que hay marcan secretos: si se suman otras, que no se confundan con esas pistas).
 
 ## itch.io
 
