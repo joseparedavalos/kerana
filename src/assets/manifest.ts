@@ -12,6 +12,8 @@ export const TILE_SIZE = 16;
 /** Tileset placeholder: 4 columnas × 7 filas (ver tools/make-placeholder-tiles.mjs). */
 export const TILESET_COLUMNS = 4;
 export const TILESET_ROWS = 7;
+/** Casillas de la plataforma de un solo sentido (como `TILES` de tools/lib/tileset-layout.mjs). */
+export const PLATFORM_TILES = { left: 16, center: 17, right: 18 } as const;
 
 /** Kerana provisional (se genera en PreloadScene) si falta el sprite real. */
 export const PLAYER_PLACEHOLDER_KEY = 'kerana_placeholder';

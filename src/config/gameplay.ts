@@ -816,6 +816,14 @@ export const GAMEPLAY = {
     thickness: 8,
     /** Tolerancia (px) entre los pies y la cara de arriba para contar que algo viaja encima. */
     rideTolerancePx: 3,
+    /** Filas de arte de las casillas 16 a 18 del tileset (la plataforma fija dibuja solo estas). */
+    artRows: 6,
+    /**
+     * La móvil mide `thickness` (8): las filas que sobran bajo el arte repiten la última fila del tileset
+     * oscurecida con este negro (0 a 1). Tapa el cuerpo entero y la deja un poco más gruesa que la fija.
+     */
+    undersideShade: 0.45,
+    /** Sin tileset (o la versión sólida): rectángulo liso de estos colores. */
     color: 0x8a6a48,
     edgeColor: 0xc9a67a,
   },

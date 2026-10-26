@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 26 de octubre de 2026 en S56, contra lo que ya está en `main` hasta S55 (pull request 110).
+Revisado el 26 de octubre de 2026 en S57, contra lo que ya está en `main` hasta S56 (pull request 111).
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -49,6 +49,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Los niveles 4, 5 y 6 están decorados con props (S53): 11 en l4, siempre junto a un muro, bajo un portal o en un patio (el pueblo vacío de la siesta); 9 en l5, abajo, sin nada que cuelgue ni que parezca una rama o un escalón; 9 en l6, de roca, sin cascadas de adorno (la única es la del secreto). La galería de las tejas, la persecución, el compás y los lugares secretos quedan limpios.
 - El nivel 7 está decorado con props (S54): 12, todos junto a un farol o un fuego, porque es de noche y traen luz de farol pintada. En la calle, fachadas pegadas a los muros (un balcón sobre el zaguán, la casa del andamio con puerta, tejadito y contraventana, el tendedero en el patio de la casona) y una carreta en la plaza; en el camposanto, cipreses, flores secas, una cruz de hierro, yuyos y un banco. La calle y el camposanto no se mezclan, la ronda del farolero queda limpia y ningún prop tapa un farol. Hay dos clases nuevas de prop: de fachada (sobre un muro, a cualquier altura) y entre dos puntos (`prop X1-X2,Y`: el tendedero y el toldo), en GDD §11.7.1.
 - El campo (l3) tiene su primer tileset real (S56): tierra rojiza, pasto seco arriba, karaguatá, mata, flores y agua, montados por un script con los materiales que Jose generó (`npm run tileset -- campo`). Las casillas del suelo se arman con la regla de los vecinos. El PNG anterior está en `raw/tiles/anteriores/`. La receta para los otros biomas está en [docs/RECETA-TILESET.md](RECETA-TILESET.md).
+- Las plataformas móviles usan el tileset de su nivel (S57): las mismas casillas que la plataforma fija, con un canto en sombra abajo que las hace un poco más gruesas. Ya no son el rectángulo marrón. Se mueven y se pisan igual.
 
 ## Ahora
 
@@ -67,6 +68,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 13. Los props de roca de l6 se ven más encendidos que el nivel (S53): traen pintada una luz de tarde cálida y saturada, y el cielo de l6 es de tormenta. Son los 7 de `l6_roca` colocados, en todo el nivel, no en un sitio: moverlos no lo arregla. Una sesión aparte podría teñir los props según la luz del sitio (por nivel o por zona, como el tinte del fondo). En l4 y l5 no pasa, y el único prop bajo techo en sombra (la roca del paso bajo la peña de l6) se movió.
 14. Los tilesets de los otros siete biomas (`cerro`, `estero`, `pueblo`, `selva`, `montana`, `ciudad`, `cielo`). Campo ya está (S56). Para cada uno, Jose genera los cuatro materiales (tierra, franja del borde, especiales y espinas) con lo que dice [docs/RECETA-TILESET.md](RECETA-TILESET.md) §2 y la paleta del bioma de las notas de S55, y los sube a `raw/tiles/<bioma>/`; una sesión copia `tileset.json`, guarda el PNG anterior en `raw/tiles/anteriores/` (cada uno tiene el piso del 16 de octubre, commit `cc72245`), corre `npm run tileset -- <bioma>` y lo revisa con capturas. El script espera un borde amarillo o verde: para la piedra de cerro, el revoque de pueblo o el adoquín de ciudad hay que ajustar `hueRatio` o cómo separa el borde de la tierra.
 15. Mirar el tileset de campo jugando l3 (Jose, `?debug=1&level=3`) y decir si convence; si no, volver al anterior con `cp raw/tiles/anteriores/campo-2026-10-16.png public/assets/tiles/campo.png`. Lo que quedó a medias está en las notas de S56: el relleno es una sola casilla repetida (sin variantes se nota un poco el patrón de 16 px), la mata es verde y el pasto seco, la plataforma ya no es de madera y el karaguatá es oscuro.
+16. El siguiente lote de arte: las piezas que siguen dibujadas por código (S57). La rama que se quiebra, la balsa que se hunde (el camalote), el hongo, el toldo, la reja, el interruptor y la cascada. Además, la plataforma móvil de l7: con el tileset, una móvil quieta junto a una repisa fija a la misma altura se funde con ella en la noche (notas de S57). Hace falta arte propio, con las formas de ciudad de l7: balcón, carro, andamio. En l1 la móvil es de la misma piedra que el suelo. Se lee, pero conviene que Jose la mire jugando.
 
 ## itch.io
 
