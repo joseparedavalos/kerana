@@ -1,9 +1,9 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 18 de octubre de 2026, contra lo que ya está en `main` (pull requests 82 a 95). Al día con S54.
+Revisado el 26 de octubre de 2026 en S55, contra lo que ya está en `main` hasta S54 (pull request 109).
 
-Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34, 16 de octubre).
+Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
 ## Hecho
 
@@ -64,6 +64,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 11. Regenerar `raw/props/l6_roca/prop_deep_crack.png` (Jose): viene cortado arriba y abajo y queda afuera (`sheets.deep_crack.ignore` en su `sprite.json`; al llegar el nuevo, se saca el `ignore`). Revisar también, sin apuro: los tacurús de `l3_pastizal` con los nombres al revés (`small` es el alto) y las puntas violetas de `l2_tierra/prop_dry_grass_clump.png`. Si Jose quiere ondas en l2, regenerar `l2_agua/prop_water_ripples.png` (fuera con `ignore` desde S49: salieron marrones). Quedan puntos blancos sueltos en el contorno de la roca de `l6_agua/waterfall`, `thin_stream` y `wet_rock` (S50): el borde `white` se comería el agua y la espuma, así que si molestan al colocarlos, regenerar. Detalle en ASSETS §6.1.
 12. El peso del juego subió 2,37 MB con los props (S46; `dist` 11,03 MB tras S53: colocar los de l1 a l6 sumó 20 KB, solo los mapas; 11,36 MB tras S54: los dos atlas de l7, 272 KB, y los mapas de l7 y de la vitrina). Si molesta para itch.io o Google Play: cargar solo los atlas del nivel que se juega, o comprimir los PNG.
 13. Los props de roca de l6 se ven más encendidos que el nivel (S53): traen pintada una luz de tarde cálida y saturada, y el cielo de l6 es de tormenta. Son los 7 de `l6_roca` colocados, en todo el nivel, no en un sitio: moverlos no lo arregla. Una sesión aparte podría teñir los props según la luz del sitio (por nivel o por zona, como el tinte del fondo). En l4 y l5 no pasa, y el único prop bajo techo en sombra (la roca del paso bajo la peña de l6) se movió.
+14. Encargar los tilesets de los ocho biomas (Jose). Las medidas, el orden de los 26 tiles, el autotile, la paleta de cada bioma sacada de los fondos y qué probar primero están en las notas de S55 (`docs/PLAN.md`). Lo que más importa: el PNG mide exactamente 64 × 112 px (4 columnas × 7 filas de 16 px) y va a `public/assets/tiles/<bioma>.png` con el mismo nombre. Reemplazar un PNG entero borra el piso redibujado del 16 de octubre y el borde de las baldosas 23 y 24 de ese bioma (siguen en git, commit `cc72245`). Nada avisa si el orden está mal: el juego se ve mal y se juega igual. ASSETS §6 dice que un `raw/tiles/<bioma>.json` puede reordenar un tileset: ese paso no existe en el pipeline, el PNG tiene que venir ya en orden.
 
 ## itch.io
 
