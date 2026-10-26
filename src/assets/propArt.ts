@@ -18,6 +18,10 @@ interface PropFrameData {
   mist?: boolean;
   /** S48: matas de pasto (otros props) que se colocan solas al pie del árbol. */
   tufts?: readonly PropTuft[];
+  /** S54: de fachada: va sobre los tiles de un muro, no se apoya en el piso (solo lo mira el test de props). */
+  wall?: boolean;
+  /** S54: entre dos puntos (`prop X1-X2,Y`): qué toca cada extremo, izquierdo y derecho (solo lo mira el test). */
+  span?: readonly ('wall' | 'floor')[];
 }
 
 /** Textura, frame y escala de un prop. `hang`: cuelga del techo (origen arriba) en vez de apoyarse en el piso. */
@@ -73,13 +77,17 @@ export interface PropOptions {
   sink?: number;
   /** S50: es la mata de otro prop: no lleva matas propias (helechos y hojarasca se usan uno al pie del otro). */
   asTuft?: boolean;
+  /** S54: entre dos puntos (`prop X1-X2,Y`): ancho del tramo en unidades; reemplaza a `scale` (el alto, en proporción). */
+  width?: number;
 }
 
 /**
  * Dibuja un prop sin choque. (x, y) es el pie del tile donde se colocó: los que se apoyan quedan con la base ahí
  * (o `sink` unidades más abajo, detrás del piso: S47); los que cuelgan, con el borde de arriba en el techo de ese
  * tile (`tile` unidades más arriba). El agua de l6_agua se anima sola (S47): `flow`, `splash` y `mist`. Los árboles
- * con `tufts` (S48) llevan matas de pasto al pie, dibujadas después del árbol (delante de él).
+ * con `tufts` (S48) llevan matas de pasto al pie, dibujadas después del árbol (delante de él). S54: los de fachada
+ * (`wall`) se dibujan igual que los que se apoyan, con (x, y) en un tile del muro; los que van entre dos puntos, con
+ * `width` (el tramo de la línea `prop X1-X2,Y`).
  */
 export function addProp(
   scene: Phaser.Scene,
@@ -90,8 +98,10 @@ export function addProp(
   opts: PropOptions = {},
 ): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite {
   const look = propLook(scene, id);
-  const scale = look.scale * (opts.scale ?? 1);
-  const sink = look.hang ? 0 : (opts.sink ?? look.sink) * (opts.scale ?? 1);
+  const frameWidth = look.frame !== undefined ? scene.textures.getFrame(look.key, look.frame).width * look.scale : 0;
+  const size = opts.width !== undefined && frameWidth > 0 ? opts.width / frameWidth : (opts.scale ?? 1);
+  const scale = look.scale * size;
+  const sink = look.hang ? 0 : (opts.sink ?? look.sink) * size;
   const flow = look.frame !== undefined && look.data.flow ? flowAnim(scene, look.key, look.frame, look.data.flow) : null;
   const image = flow ? scene.add.sprite(0, 0, flow.texture, flow.first).play(flow.anim) : scene.add.image(0, 0, look.key, look.frame);
   image
@@ -103,7 +113,7 @@ export function addProp(
   if (look.data.mist) addMist(scene, image);
   if (look.data.splash && opts.drops) addDrops(scene, image, look.data.splash, opts.drops);
   for (const tuft of opts.asTuft ? [] : (look.data.tufts ?? [])) {
-    const at = placeTuft(tuft, image.displayWidth, opts.scale ?? 1, opts.flip === true);
+    const at = placeTuft(tuft, image.displayWidth, size, opts.flip === true);
     addProp(scene, x + at.dx, y, tuft.prop, tile, { scale: at.scale, flip: at.flip, front: opts.front, sink: at.sink, asTuft: true });
   }
   return image;

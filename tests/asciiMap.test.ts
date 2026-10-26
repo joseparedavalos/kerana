@@ -276,4 +276,14 @@ describe('prop por bioma (S46)', () => {
     expect(() => objectsOf('prop 2,0 a/c', new Set(['a/b']))).toThrow(/desconocido "a\/c"/);
     expect(objectsOf('prop 2,0 a/b', new Set(['a/b']))).toHaveLength(1);
   });
+
+  it('S54: X e Y con decimales, y "prop X1-X2,Y" centra el prop entre los dos tiles con span (sin scale)', () => {
+    const [half, span] = objectsOf('prop 2.5,0 l7_calle/wooden_door_studs\nprop 1-4,0 l7_calle/clothesline_balconies flip');
+    expect([half!.x, half!.y]).toEqual([48, 16]);
+    expect([span!.x, span!.y]).toEqual([48, 16]);
+    expect(props(span!)).toEqual({ art: 'l7_calle/clothesline_balconies', span: 4, flip: true });
+    expect(() => objectsOf('prop 1-4,0 a/b scale=2')).toThrow(/sin scale/);
+    expect(() => objectsOf('prop 4-2,0 a/b')).toThrow(/tramo/);
+    expect(() => objectsOf('prop 3-6,0 a/b')).toThrow(/fuera del mapa/);
+  });
 });

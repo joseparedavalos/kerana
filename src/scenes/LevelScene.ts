@@ -1644,8 +1644,11 @@ export class LevelScene extends Phaser.Scene {
           // Props por bioma (S46): "prop X,Y carpeta/nombre" del mapa ASCII (GDD §11.7.1).
           const art = objectProp(obj, 'art');
           if (art !== undefined) {
+            // S54: "prop X1-X2,Y" (entre dos puntos) trae `span` en tiles: el dibujo va de un extremo al otro.
+            const span = objectProp(obj, 'span');
             addProp(this, x, y, String(art), this.map.tileHeight, {
               scale: Number(objectProp(obj, 'scale') ?? 1),
+              width: span !== undefined ? Number(span) * this.map.tileWidth : undefined,
               flip: objectProp(obj, 'flip') === true,
               front: objectProp(obj, 'front') === true,
               drops: this.splashes,

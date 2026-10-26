@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseAscii } from '../tools/lib/ascii-map.mjs';
 import { placeTuft, type PropTuft } from '../src/assets/propLayout';
+import { GAMEPLAY } from '../src/config/gameplay';
 
 // Props colocados en los niveles (S51, RECETA-NIVEL §19): son decorado y no pueden estorbar.
 const TILE = 16;
@@ -21,19 +22,33 @@ const OVERHANG = 0.3;
 // se hunde (`S`) o de una balsa (tiles): no se distinguirían de algo que se pisa.
 const WATER_CLEAR = 3;
 
-interface Frame { w: number; h: number; hang: boolean; sink: number; waterOnly: boolean; tufts: PropTuft[] }
+// S54: un farol (point Lantern) ocupa ≈ 1,5 tiles de ancho y 2,25 de alto sobre su pie: ningún prop lo tapa. Su luz
+// sale a la altura de la cabeza (`postHeight` + 4 px sobre el pie, como en Lantern.ts) y alcanza `radius`; la de un
+// fuego encendido, 12 px sobre el pie (LevelScene).
+const LANTERN_HALF_W = 0.75;
+const LANTERN_H = 2.25;
+const LANTERN_LIGHT_UP = (GAMEPLAY.lantern.postHeight + 4) / TILE;
+const FIRE_LIGHT_UP = 12 / TILE;
+const LIGHT_RADIUS = GAMEPLAY.lantern.radius / TILE;
+// S54: l7 tiene dos sitios que no se mezclan (cabecera de tools/levels/l7.txt): la calle y la catedral (x < 292, solo
+// l7_calle) y el camposanto con la antesala y la arena (x ≥ 292, solo l7_camposanto). La torre de la ronda del
+// farolero (x 172-189) no lleva props: el jugador mira cuándo llega cada ascensor.
+const L7_CAMPOSANTO_X = 292;
+const L7_RONDA = [172, 190];
+
+interface Frame { w: number; h: number; hang: boolean; sink: number; waterOnly: boolean; tufts: PropTuft[]; wall: boolean; span?: string[] }
 const frames = new Map<string, Frame>();
 const ATLASES = import.meta.glob('../public/assets/props/*.json', { eager: true, import: 'default' }) as Record<string, any>;
 for (const [file, atlas] of Object.entries(ATLASES)) {
   const detail = atlas.meta?.detail ?? 1;
   for (const [name, f] of Object.entries<any>(atlas.frames))
-    frames.set(`${file.replace(/^.*\/|\.json$/g, '')}/${name}`, { w: f.sourceSize.w / detail, h: f.sourceSize.h / detail, hang: f.hang === true, sink: f.sink ?? 0, waterOnly: f.waterOnly === true, tufts: f.tufts ?? [] });
+    frames.set(`${file.replace(/^.*\/|\.json$/g, '')}/${name}`, { w: f.sourceSize.w / detail, h: f.sourceSize.h / detail, hang: f.hang === true, sink: f.sink ?? 0, waterOnly: f.waterOnly === true, tufts: f.tufts ?? [], wall: f.wall === true, span: f.span });
 }
 
-/** Caja (en tiles) que ocupa un prop colocado en (x, y), con sus matas. */
-function propBox(p: { x: number; y: number; art: string; scale?: number; flip?: boolean }) {
+/** Caja (en tiles) que ocupa un prop colocado en (x, y), con sus matas. S54: con `span` (prop X1-X2,Y), el tramo da la escala. */
+function propBox(p: { x: number; y: number; art: string; scale?: number; flip?: boolean; span?: number }) {
   const f = frames.get(p.art)!;
-  const s = p.scale ?? 1;
+  const s = p.span !== undefined ? (p.span * TILE) / f.w : (p.scale ?? 1);
   const cx = (p.x * TILE + TILE / 2) / TILE;
   let left = cx - (f.w * s) / 2 / TILE;
   let right = cx + (f.w * s) / 2 / TILE;
@@ -46,17 +61,23 @@ function propBox(p: { x: number; y: number; art: string; scale?: number; flip?: 
   }
   const top = f.hang ? p.y : p.y + 1 - ((f.h - f.sink) * s) / TILE;
   const bottom = f.hang ? p.y + (f.h * s) / TILE : p.y + 1;
-  return { left, right, top, bottom, hang: f.hang, waterOnly: f.waterOnly };
+  return { left, right, top, bottom, hang: f.hang, waterOnly: f.waterOnly, wall: f.wall, span: p.span !== undefined ? f.span : undefined };
 }
+
+/** S54: lo que más se acerca la caja a un punto (tiles). */
+const boxDistance = (b: { left: number; right: number; top: number; bottom: number }, x: number, y: number) =>
+  Math.hypot(Math.max(b.left - x, 0, x - b.right), Math.max(b.top - y, 0, y - b.bottom));
+
 
 const SOURCES = import.meta.glob('../tools/levels/l[0-9].txt', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
 const levels: { id: string; map: any }[] = Object.entries(SOURCES).map(([file, text]) => ({ id: file.replace(/^.*\/|\.txt$/g, ''), map: parseAscii(text) }));
 
 describe('props colocados en los niveles (S51)', () => {
-  it('l1 a l6 tienen props', () => {
+  it('l1 a l7 tienen props', () => {
     // l2 y l3 llevan menos que l1 (S52): casi todo su recorrido es agua, balsas, viento y copas, que van limpios. l4 a l6
-    // (S53), menos todavía: casas y rejas, el dosel y la persecución.
-    for (const [id, min] of [['l1', 20], ['l2', 10], ['l3', 10], ['l4', 8], ['l5', 8], ['l6', 8]] as const) expect(levels.find((l) => l.id === id)!.map.props.length).toBeGreaterThan(min);
+    // (S53), menos todavía: casas y rejas, el dosel y la persecución. l7 (S54): la ronda y los tejados de la catedral van
+    // limpios, y en el camposanto solo hay lugar junto a una luz.
+    for (const [id, min] of [['l1', 20], ['l2', 10], ['l3', 10], ['l4', 8], ['l5', 8], ['l6', 8], ['l7', 10]] as const) expect(levels.find((l) => l.id === id)!.map.props.length).toBeGreaterThan(min);
   });
 
   for (const { id, map } of levels) {
@@ -112,8 +133,28 @@ describe('props colocados en los niveles (S51)', () => {
       for (const p of map.props as any[]) {
         const b = propBox(p);
         if (b.waterOnly) continue; // sobre agua: la prueba de abajo
+        const covers = (x: number, y: number) => Math.min(b.right, x + 1) - Math.max(b.left, x) > OVERHANG && Math.min(b.bottom, y + 1) - Math.max(b.top, y) > OVERHANG;
+        if (b.wall) {
+          // S54: de fachada: entero sobre los tiles de un muro (no se apoya en nada).
+          for (let y = Math.floor(b.top); y < Math.ceil(b.bottom); y++)
+            for (let x = Math.floor(b.left); x < Math.ceil(b.right); x++)
+              if (covers(x, y) && at(x, y) !== '#') bad.push(`${p.art} (${p.x}, ${p.y}): fachada fuera del muro en (${x}, ${y})`);
+          continue;
+        }
+        if (b.span) {
+          // S54: entre dos puntos: por dentro, aire; cada extremo, contra un muro (en todo su alto) o con el suelo debajo.
+          const ends = p.flip ? [...b.span].reverse() : b.span;
+          const rows = Array.from({ length: Math.ceil(b.bottom) - Math.floor(b.top) }, (_, i) => Math.floor(b.top) + i);
+          for (const y of rows)
+            for (let x = Math.floor(b.left); x < Math.ceil(b.right); x++) if (covers(x, y) && at(x, y) === '#') bad.push(`${p.art} (${p.x}, ${p.y}): metido en la pared en (${x}, ${y})`);
+          for (const [end, inside, outside] of [[ends[0], Math.round(b.left), Math.round(b.left) - 1], [ends[1], Math.round(b.right) - 1, Math.round(b.right)]] as const) {
+            if (end === 'wall' && rows.some((y) => at(outside, y) !== '#')) bad.push(`${p.art} (${p.x}, ${p.y}): sin muro en la columna ${outside}`);
+            if (end === 'floor' && at(inside, Math.floor(p.y) + 1) !== '#') bad.push(`${p.art} (${p.x}, ${p.y}): sin suelo bajo la columna ${inside}`);
+          }
+          continue;
+        }
         const support = b.hang ? p.y - 1 : p.y + 1;
-        if (at(p.x, p.y) === '#' || at(p.x, support) !== '#') bad.push(`${p.art} (${p.x}, ${p.y}): sin piso o techo`);
+        if (at(Math.floor(p.x), p.y) === '#' || at(Math.floor(p.x), support) !== '#') bad.push(`${p.art} (${p.x}, ${p.y}): sin piso o techo`);
         for (let x = Math.floor(b.left); x < Math.ceil(b.right); x++) {
           const cover = Math.min(b.right, x + 1) - Math.max(b.left, x);
           if (cover <= OVERHANG) continue;
@@ -137,9 +178,13 @@ describe('props colocados en los niveles (S51)', () => {
         for (const r of map.rects as any[])
           if (HIDDEN_RECTS.has(r.cls) && b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y)
             bad.push(`${p.art} (${p.x}, ${p.y}) tapa ${r.cls} en (${r.x}, ${r.y})`);
+        // S54: ni un farol (en l7 son la mecánica del nivel).
+        for (const l of map.points as any[])
+          if (l.cls === 'Lantern' && b.left < l.x + 0.5 + LANTERN_HALF_W && b.right > l.x + 0.5 - LANTERN_HALF_W && b.top < l.y + 1 && b.bottom > l.y + 1 - LANTERN_H)
+            bad.push(`${p.art} (${p.x}, ${p.y}) tapa el farol de (${l.x}, ${l.y})`);
         if (!b.hang && b.bottom - b.top > PATROL_MAX_HEIGHT)
           // Hacia cada lado, hasta una pared (un enemigo del otro lado no llega).
-          for (const [from, to, dir] of [[p.x, Math.floor(b.left - PATROL_CLEAR), -1], [p.x, Math.ceil(b.right + PATROL_CLEAR), 1]])
+          for (const [from, to, dir] of [[Math.floor(p.x), Math.floor(b.left - PATROL_CLEAR), -1], [Math.floor(p.x), Math.ceil(b.right + PATROL_CLEAR), 1]])
             for (let x = from; x !== to && at(x, p.y) !== '#'; x += dir)
               if (enemyChars.has(at(x, p.y))) bad.push(`${p.art} (${p.x}, ${p.y}) es alto y está en la patrulla del enemigo de (${x}, ${p.y})`);
         if (b.hang)
@@ -149,5 +194,22 @@ describe('props colocados en los niveles (S51)', () => {
       }
       expect(bad).toEqual([]);
     });
+
+    if (id === 'l7')
+      it('l7: la calle y el camposanto no se mezclan, la ronda va limpia y cada prop está cerca de un farol o un fuego', () => {
+        // S54: es de noche y los props traen luz de farol pintada: lejos de toda luz se verían encendidos en lo oscuro.
+        const lights: [number, number][] = [];
+        for (const l of map.points as any[]) if (l.cls === 'Lantern') lights.push([l.x + 0.5, l.y + 1 - LANTERN_LIGHT_UP]);
+        g.forEach((row, y) => [...row].forEach((c, x) => c === 'C' && lights.push([x + 0.5, y + 1 - FIRE_LIGHT_UP])));
+        const bad: string[] = [];
+        for (const p of map.props as any[]) {
+          const b = propBox(p);
+          const folder = b.left >= L7_CAMPOSANTO_X ? 'l7_camposanto/' : b.right <= L7_CAMPOSANTO_X ? 'l7_calle/' : '(en el borde)';
+          if (!p.art.startsWith(folder)) bad.push(`${p.art} (${p.x}, ${p.y}): de este lado van los de ${folder}`);
+          if (b.left < L7_RONDA[1] && b.right > L7_RONDA[0]) bad.push(`${p.art} (${p.x}, ${p.y}): en la torre de la ronda`);
+          if (!lights.some(([lx, ly]) => boxDistance(b, lx, ly) <= LIGHT_RADIUS)) bad.push(`${p.art} (${p.x}, ${p.y}): lejos de toda luz`);
+        }
+        expect(bad).toEqual([]);
+      });
   }
 });
