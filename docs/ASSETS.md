@@ -254,7 +254,7 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 ### 6.1 Props por bioma (S46)
 
-Jose los generó en Grok, sueltos y con fondo transparente, en doce carpetas de `raw/props/`. `npm run sprites` hace un atlas por carpeta (`public/assets/props/<carpeta>.png` + `.json`); el juego los carga todos al inicio (`PROP_ATLASES` en `manifest.ts`). Se colocan con la línea `prop` del mapa ASCII (GDD §11.7.1). Vitrina: `?debug=1&level=vitrina&boss=1`.
+Jose los generó en Grok, sueltos y con fondo transparente, en doce carpetas de `raw/props/` (S46) y dos más para l7 (S54). `npm run sprites` hace un atlas por carpeta (`public/assets/props/<carpeta>.png` + `.json`); el juego los carga todos al inicio (`PROP_ATLASES` en `manifest.ts`). Se colocan con la línea `prop` del mapa ASCII (GDD §11.7.1). Vitrina: `?debug=1&level=vitrina&boss=1`.
 
 **Un atlas por carpeta**, y no uno por nivel ni uno general: la carpeta es la unidad que Jose genera y regenera (rehacer un prop toca un solo atlas), cada carpeta es un bioma que se puede cargar solo en su nivel si el peso empieza a importar, y todos entran en 1024 px de ancho (cualquier celular). Uno general pasaría de 1024 × 2000 px; uno por nivel mezclaría dos carpetas sin ganar nada.
 
@@ -276,6 +276,8 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 | `l5_suelo` | 916 × 221 | 161 KB | bracket_fungi 36 × 64, buttress_roots 114 × 96, ferns 50 × 40, leaf_litter 64 × 28, rotting_logs 72 × 36,5, saplings 34 × 80, stream_bed 80 × 11,5, undergrowth 80 × 24,5 |
 | `l6_agua` | 821 × 228 | 219 KB | mist_spray 43 × 64, mossy_trunk 80 × 29,5, shallow_pool 72 × 25, thin_stream 61,5 × 112, waterfall 96 × 112, wet_rock 51 × 56 |
 | `l6_roca` | 961 × 258 | 206 KB | balanced_boulders 78 × 64, crevice_grasses 80 × 49,5, lichen_moss 80 × 47, rock_ledge 72 × 30, sandstone_outcrop 80 × 47, scree_pile 72 × 34, windbent_tree 83,5 × 96 |
+| `l7_calle` (S54) | 968 × 116 | 151 KB | clothesline_balconies 64 × 24 (entre dos puntos), market_awning_rolled 64 × 48,5 (entre dos puntos), shuttered_windows 32,5 × 48 (fachada), stacked_crates_doorway 37,5 × 56 (fachada), stone_kerb_cobblestone 64 × 15, tiled_rooftop_chimney 80 × 44,5 (fachada), wooden_door_studs 37,5 × 56 (fachada), wooden_handcart 56 × 35, wrought_iron_grille_balcony 38,5 × 56 (fachada) |
+| `l7_camposanto` (S54) | 780 × 228 | 121 KB | cemetery_gate 46,5 × 64, cypress_tree 31,5 × 112, dried_flowers 40 × 20,5, grave_slab 48 × 14,5, iron_cross 26 × 28, iron_cross_leaning 26 × 28, mausoleum 57,5 × 64, overgrown_weeds 40 × 33, stone_bench 48 × 16, stone_urn 15,5 × 32 |
 
 **Ajustes de S47** (después de que Jose recorrió la vitrina):
 
@@ -303,6 +305,12 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 - **Pueblo, sin vegetación:** `l4_patio/stone_well` (`sink` 4) y `l4_calle/wooden_crates_baskets` (`sink` 2,5) solo se hunden más. Una caja con matas creciendo a los lados se ve abandonada, y la calle de l4 es tierra pisada y adoquín.
 - **Fleco blanco:** los PNG «_transparent» de `l5_suelo` (`ferns`, `buttress_roots`, `bracket_fungi`, `rotting_logs`, `undergrowth`; `saplings` apenas) traían un contorno blanco o gris claro, resto del fondo blanco de la exportación: el mismo defecto que el magenta de S46. Borde nuevo `white` (blanco y gris neutros: los tres canales a menos de 30 entre sí y todos sobre 140), y `edge` acepta una lista: `l5_suelo` usa `["chroma", "white"]`. No toca la madera encalada de la carreta ni el crema de los hongos (cálidos) ni el agua (azulada). Además, `sheets.<nombre>.edge` y `edgePasses` reemplazan los de la carpeta para un solo prop: `l1_cueva/water_puddle_drips` (contorno blanco alrededor de la piedra, 16 pasadas porque la franja es más gruesa) y `l1_cueva/crystal_cluster_large` (puntos blancos en el contorno; los cristales son violetas y azules y no se tocan). Los demás atlas salen idénticos byte a byte.
 - **Fleco blanco que queda:** `l6_agua/waterfall`, `thin_stream` y `wet_rock` tienen algunos puntos blancos sueltos en el contorno de la roca, pero el agua y la espuma, blancas de verdad, también tocan el borde: el borde `white` se las comería. Se dejaron como están; si molestan al colocarlos, regenerarlos o limpiar a mano en `raw/` (copia aparte).
+
+**Props de l7 (S54).** Jose subió `l7_calle` (9) y `l7_camposanto` (10): PNG sueltos con fondo transparente; los de la calle en lienzos de 1408 × 1408, los del camposanto recortados al dibujo. Varios traían el fleco de magenta puro en el borde (hasta 1500 píxeles en la puerta): el borde `chroma` con 8 pasadas, como las doce carpetas de S46, lo limpia entero (cero píxeles magenta en el borde de los dos atlas). Los blancos que quedan en el contorno del camposanto son la piedra encalada del mausoleo, no fleco. Tamaños con la regla de S46: la puerta, el portal y el balcón, 56 de alto (más que Kerana); la contraventana, 48; el tejado, 80 de ancho; el ciprés, 112 de alto (árbol); el mausoleo y el portón, 64; cruces y urna, 28 a 32; lo bajo (flores, losa, banco), 40 a 48 de ancho. Peso: `dist` 11 028 704 → 11 358 233 bytes (+322 KB: los dos atlas, 272 KB, y el mapa de l7 y el de la vitrina).
+
+- **Tres clases de prop** (GDD §11.7.1): **de suelo**, como siempre (la carreta, el adoquinado y todo el camposanto); **de fachada**, `sheets.<nombre>.wall` (la puerta, el balcón, la contraventana, el portal con cajas y el tejado): se pegan a la cara de un muro (los tiles `#`), a la altura que se elija, y no se apoyan en el piso; **entre dos puntos**, `sheets.<nombre>.span` y la línea `prop X1-X2,Y` (el tendedero, de un muro al otro, y el toldo, con el poste al suelo y la punta contra un muro): el tramo da la escala.
+- **Pintan su propio farol:** el tendedero (en el balcón de la izquierda), el toldo (en el poste) y la carreta (colgado adelante). Son chicos al lado de un farol del juego (32 de alto, en su poste), pero brillan: no van junto a un farol que sea un disparador (RECETA-NIVEL §19.10).
+- **Vitrina:** `vitrina.txt` pasó de 688 a 800 tiles de ancho (`rect PropShowcase` hasta x 791; la salida, a x 795) para que entren las dos carpetas.
 
 **Para regenerar o revisar (S46):**
 
