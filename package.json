@@ -11,6 +11,7 @@
     "test": "vitest run",
     "maps": "node tools/build-maps.mjs",
     "tiles": "node tools/make-placeholder-tiles.mjs",
+    "tileset": "node tools/build-tileset.mjs",
     "sprites": "node tools/sprites.mjs",
     "smoke": "node tools/smoke.mjs",
     "backgrounds": "node tools/backgrounds.mjs"
