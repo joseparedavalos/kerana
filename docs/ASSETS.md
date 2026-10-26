@@ -237,19 +237,20 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 ---
 
-## 6. Tilesets [Núcleo; mientras tanto, placeholders por código]
+## 6. Tilesets [Núcleo; campo ya tiene el suyo (S56), los otros siete siguen con el placeholder pintado]
 
+- **Campo (l3) se monta con un script desde S56:** `npm run tileset -- campo` arma `public/assets/tiles/campo.png` con los materiales de `raw/tiles/campo/` (tierra, franja de pasto, agua, mata, flores, piedras y karaguatá, en JPG del generador) y sus ajustes en `raw/tiles/campo/tileset.json`. Las casillas 0 a 15 se construyen con la regla de los vecinos. La receta, qué pedirle al generador y qué revisar: [docs/RECETA-TILESET.md](RECETA-TILESET.md). El PNG anterior (el piso del 16 de octubre) está en `raw/tiles/anteriores/campo-2026-10-16.png`.
 - Tiles de 16 × 16. Un PNG por bioma en `public/assets/tiles/<bioma>.png`: `cerro`, `estero`, `campo`, `pueblo`, `selva`, `montana`, `ciudad`, `cielo` (Yvága: nubes y estrellas).
 - **Contenido mínimo:** suelo (relleno y bordes) · plataforma de un solo sentido (izquierda, centro, derecha) · peligro (espinas o karaguatá) · agua (superficie y fondo, donde haga falta) · variante agrietada · decoración (pasto, flores, piedras).
 - **Terreno como repisa (S28):** en los niveles con `terrainShell` en `levels.ts` (hoy l1 a l6, con 3) la capa `Ground` se dibuja solo hasta 3 tiles del aire más cercano (en las 8 direcciones); la tercera fila va tenue (`GAMEPLAY.backdrop.terrainFadeAlpha`) y más adentro no se dibuja: se ve el fondo. Las colisiones no cambian. **Desde S29** el piso que llega al borde de abajo del mapa se dibuja entero, salvo en l1 (`solidFloor: false`): ahí también es una franja. l7 y Yvága no usan repisa. Un tileset nuevo no necesita relleno profundo, pero sí bordes que se lean con el fondo detrás. En la cueva de l1 no hay plantas: la piedra es gris y el musgo queda en la ladera.
-- **Piso redibujado (16 de octubre de 2026):** las baldosas 0 a 15 de cada bioma ya no son una franja plana. Tierra (estero, campo, selva, montana): hojas de alto distinto arriba y manchas en el cuerpo. Cerro: piedra. Pueblo: revoque con tapa. Ciudad: adoquín. Cielo: suave. De la 16 en adelante no se tocó. No correr `tools/make-placeholder-tiles.mjs`: las pisa, y también la decoración de las baldosas 23 a 25.
+- **Piso redibujado (16 de octubre de 2026):** las baldosas 0 a 15 de cada bioma (campo, hasta S56) ya no son una franja plana. Tierra (estero, campo, selva, montana): hojas de alto distinto arriba y manchas en el cuerpo. Cerro: piedra. Pueblo: revoque con tapa. Ciudad: adoquín. Cielo: suave. De la 16 en adelante no se tocó. No correr `tools/make-placeholder-tiles.mjs`: las pisa, y también la decoración de las baldosas 23 a 25.
 - **Adorno del escenario (16 de octubre, sin choque):** `props/nest.png` (nido, nivel 2), `props/tacuru.png` y `props/fence.png` (nivel 3), `props/chair.png` y `props/hammock.png` (nivel 4), `props/trunk.png` y `props/liana.png` (nivel 5; la liana cuelga y no se corta). La canoa se sacó. El borde (pasto, junco, flor, baldosa, alero, raíz, hoja) vive en las baldosas 23 y 24, en la celda de aire sobre el piso.
 - **Rompibles (S22):** la roca agrietada (`B`, tajo cargado), el fardo frágil (`%`, tajo normal) y las ataduras y hojas de la liana se dibujan por código encima del tile (`src/entities/BreakableLook.ts`, colores en `GAMEPLAY.breakable`): piedra gris azulada con grietas que laten en el dorado de la onda, y paja clara con hebras y atadura. La "variante agrietada" del tileset queda tapada. Si algún día hay arte, que mantenga la regla: la roca se ve como piedra con luz adentro y el fardo como paja; las dos distintas del suelo del bioma.
-- **Orden para autotile (opcional pero recomendado):** las 16 variantes del suelo en una grilla de 4 × 4 al inicio del tileset. Para cada tile, se suman los vecinos que también son suelo: arriba = 1, derecha = 2, abajo = 4, izquierda = 8. La suma es la posición en la grilla (fila = suma ÷ 4, columna = resto). Ejemplo: superficie con suelo a los lados y debajo = 2 + 4 + 8 = 14. Si tu tileset viene en otro orden, un pequeño `raw/tiles/<bioma>.json` puede traducir posiciones y el pipeline lo reordena.
+- **Orden para autotile (opcional pero recomendado):** las 16 variantes del suelo en una grilla de 4 × 4 al inicio del tileset. Para cada tile, se suman los vecinos que también son suelo: arriba = 1, derecha = 2, abajo = 4, izquierda = 8. La suma es la posición en la grilla (fila = suma ÷ 4, columna = resto). Ejemplo: superficie con suelo a los lados y debajo = 2 + 4 + 8 = 14. No hay paso que reordene un tileset hecho en otro orden: el PNG tiene que venir en este, o salir de `tools/build-tileset.mjs`, que ya lo arma así.
 - **De dónde sacarlos:**
   - **Kenney** (kenney.nl): licencia CC0, libre para cualquier uso.
   - **itch.io** y **OpenGameArt**: revisa la licencia de cada pack (uso comercial, atribución).
-  - **IA:** suele fallar en que los tiles empalmen; mejor úsala para decoración.
+  - **IA:** suele fallar en que los tiles empalmen. Por eso no se le piden tiles sino materiales (una textura que repite, la franja del borde, los dibujos sueltos) y el script arma los tiles (S56, RECETA-TILESET).
   - **Cambio de paleta:** un tileset base recoloreado por bioma (el pipeline puede hacerlo). Es la forma más barata de tener 7 biomas coherentes.
 
 ### 6.1 Props por bioma (S46)
@@ -381,7 +382,7 @@ Tamaño en el juego (ancho × alto, en unidades) y peso del atlas:
 | Kurupi + kuati, kai | MVP | S10 | ☑ sprite (S13b) |
 | Ao Ao + taitetu, ao_ao_cria | MVP | S11 | ☑ sprite (S13b) |
 | Luisón + pora, jagua_hu | MVP | S12 | ☑ sprite (S13b) |
-| Tilesets (7 biomas) | Núcleo | S13 | ☐ |
+| Tilesets (8 biomas; campo hecho en S56, RECETA-TILESET) | Núcleo | S13 | ☐ |
 | Fondos: capa lejana (7) | MVP | S13 | ☐ |
 | Fondos: capas media y cercana (14) | Núcleo | S13 | ☐ |
 | Retratos (13) | Núcleo | S13 | ☐ (hoy la cara de Kerana sale de su sprite; estos retratos pintados no están) |
