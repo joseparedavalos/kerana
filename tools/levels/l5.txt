@@ -76,6 +76,28 @@ rect Offering x=264 y=75 w=1 h=5
 point ChipaReturn x=3 y=91 chipa=2
 point ChipaReturn x=80 y=13 chipa=1
 point ChipaReturn x=80 y=13 chipa=0
+# S53: props (RECETA-NIVEL §19). Abajo, l5_suelo; en la altura, solo las orquídeas de l5_altura. Nada que parezca
+#   pisable: sin branch_platform ni canopy (son ramas y copas como las de verdad), sin lianas colgantes (son una rama
+#   horizontal con lazos: bajo la rama larga se leía como una rama más), sin raíces aéreas (bajo la copa 4 se leían como
+#   la cortina de la ofrenda), sin tronco hueco (parece una entrada), sin hongos de repisa (bracket_fungi: escalones en
+#   el tronco), sin raíces tablares ni troncos caídos (el tocón chato parecía un escalón al pie de los ascensores) y sin
+#   bromelias (como el karaguatá). Limpios: el túnel de raíces, la cadena de hongos, la zanja y el pozo de las ramas,
+#   la cadena de ascensores, el compás, el claro (lugar secreto), las patrullas de kuati y ka'i, los mbói colgados y
+#   la arena.
+# A. El sotobosque: monte bajo al inicio
+prop 5,91 l5_suelo/undergrowth
+# B. La subida: orquídeas en el tronco de 8, un arroyito y un tronco con enredaderas al pie del tronco de la cadena,
+#    helechos en la orilla del fuego 2 y hojarasca en el pasillo bajo el nudo
+prop 114,83 l5_altura/orchids
+prop 140,91 l5_suelo/stream_bed
+prop 148,91 l5_altura/vines_trunk
+prop 92,53 l5_suelo/ferns
+prop 106,53 l5_suelo/leaf_litter
+# C. El dosel: orquídeas junto al fuego 3
+prop 76,13 l5_altura/orchids flip
+# Antesala: helechos donde se cae del tronco y un arbolito antes del fuego 4
+prop 268,91 l5_suelo/ferns flip
+prop 274,91 l5_suelo/saplings
 ---
 ##...................................................................................................................................................................................................................................^..........................................................................................................
 ##...................................................................................................................................................................................................................................^..........................................................................................................

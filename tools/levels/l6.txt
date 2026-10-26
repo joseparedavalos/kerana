@@ -80,6 +80,27 @@ rect Offering x=452 y=0 w=1 h=46 front=41
 point ChipaReturn x=3 y=59 chipa=2
 point ChipaReturn x=105 y=44 chipa=1
 point ChipaReturn x=262 y=15 chipa=0
+# S53: props (RECETA-NIVEL §19). Afuera, roca (l6_roca); en el fondo de la quebrada, agua quieta (l6_agua). Sin cascadas
+#   de adorno (waterfall, thin_stream): la única cascada es la del secreto, y el borde de la cumbre 1 desde donde se cae
+#   a través de ella queda limpio. Sin rock_ledge (parece una laja). Limpios: la persecución entera (rect ChaseZone: hay
+#   que ver hacia dónde se corre), las lajas, la columna de roca, el pozo de la piedra, la grieta del viento, las rocas
+#   que caen, las manadas, la gruta (lugar secreto) y la arena.
+# A. La falda: un árbol torcido al inicio; en el fondo de la quebrada (la red), un charco y un tronco con musgo
+prop 4,59 l6_roca/windbent_tree
+prop 46,61 l6_agua/shallow_pool
+prop 58,61 l6_agua/mossy_trunk scale=0.8
+# A3 y B1. Nada en el paso bajo la peña (está bajo techo, y la roca trae pintado el sol: S52); pedregal en el techo de
+#    la peña y roca con líquenes en la repisa del karakara
+prop 70,37 l6_roca/scree_pile scale=0.7
+prop 48,22 l6_roca/lichen_moss
+# B2. El filo: peñasco con pastos donde se llega, pedregal antes de la grieta
+prop 64,16 l6_roca/crevice_grasses
+prop 110,16 l6_roca/scree_pile scale=0.6 flip
+# D. Después de la persecución, junto al fuego 3
+prop 397,29 l6_roca/sandstone_outcrop scale=0.7
+# Antesala: piedras en equilibrio antes de la arena (el árbol, junto a la cortina de la ofrenda, la tapaba a la vista;
+#    más a la derecha, su copa se confundiría con los pindó de la arena, que se pisan)
+prop 472,45 l6_roca/balanced_boulders scale=0.7
 ---
 ....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
 ....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................

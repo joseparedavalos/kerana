@@ -658,6 +658,8 @@ El suelo base es la calle, en la fila 37; el mapa crece hacia arriba con tres as
 - **Antesala (x 462–481).** Fuego 4 y una guavirá.
 - **Arena: la plaza (x 482–521).** La de S17: el lapacho al centro (sus ramas son plataformas), bancos y dos techos a los lados. Niebla del sueño en la pelea.
 
+**Decoración (S53).** 11 props sin choque (`prop` en `tools/levels/l4.txt`; receta en RECETA-NIVEL §19.8), de `l4_calle` y `l4_patio`, siempre donde alguien los dejó antes de la siesta: cántaros junto a la casa del inicio, un palenque en el portal del museo, macetas y una carreta en el zaguán, una regadera en el rincón del patio del jagua, tejas apiladas en dos techos, una bomba de agua y un banco vacío junto al fuego 1, el pozo de piedra en la antesala y cántaros en el rincón de la plaza de la arena. Nada en medio de la calle ni debajo de un salto (cajas, bancos y carretas parecen escalones). Sin tapia baja (parece un pretil), escalera (parece que se trepa), plantas de banana ni mango (no hay patio sin enemigos donde quepan) ni tendedero. Limpios: la galería de las tejas entera, la niebla, los bordes de la zanja y del pozo, las patrullas de jagua y vacas, las piedras y rejas, el corral (lugar secreto), las plazas con jagua y el medio de la arena.
+
 **Medidas (S27).** Ruta principal con el piloto (`god=1`, con tajo cargado y salto doble, sin dash): antes ≈ 30 s (el l4 de Jose), después ≈ 121 s (ver PLAN, notas de S27).
 
 **Jefe: Jasy Jatere**. 9 golpes, más quitarle el bastón.
@@ -705,6 +707,8 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 - **Antesala (x 266–295).** Fuego y una guavirá.
 - **Arena: el claro (x 296–335).** La de S10: dos niveles de ramas.
 
+**Decoración (S53).** 9 props sin choque (`prop` en `tools/levels/l5.txt`; receta en RECETA-NIVEL §19.8): de `l5_suelo` abajo (monte bajo, un arroyito, helechos, hojarasca, un arbolito) y de `l5_altura` solo orquídeas y un tronco con enredaderas. En un nivel vertical lo que parece pisable confunde más: sin rama gruesa ni follaje del dosel (son las ramas y copas de verdad), sin lianas colgantes (una rama horizontal con lazos que, bajo la rama larga, se leía como otra rama), sin raíces aéreas (se leían como la cortina de la ofrenda), sin tronco hueco (parece una entrada), sin hongos de repisa (escalones en el tronco), sin raíces tablares ni troncos caídos (el tocón chato parecía un escalón al pie de los ascensores) y sin bromelias (como el karaguatá). Limpios: el túnel de raíces, la cadena de hongos, la zanja y el pozo de las ramas, la cadena de ascensores, el compás, el claro (lugar secreto), las patrullas, los mbói colgados y la arena.
+
 **Medidas (S30).** Ruta principal con el piloto (`god=1`, con los tres dones): antes ≈ 28 s, después ≈ 157 s (ver PLAN, notas de S30).
 
 **Jefe: Kurupi**. 12 golpes.
@@ -747,6 +751,8 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 - **D. A la meseta.** Checkpoint 3, una cadena de bajada (ascensor, balsa, ascensor, balsa) y un último par de balsas.
 - **Checkpoint 4 (antesala).**
 - **Arena: la meseta.** Dos pindó (uno a cada lado) y dos rocas grandes.
+
+**Decoración (S53).** 9 props sin choque (`prop` en `tools/levels/l6.txt`; receta en RECETA-NIVEL §19.8): de `l6_roca` (un árbol torcido al inicio, peñascos con pastos y con líquenes, pedregales, un afloramiento junto al fuego 3 y piedras en equilibrio en la antesala) y de `l6_agua` solo lo quieto, en el fondo de la quebrada (un charco y un tronco con musgo). Sin cascadas de adorno (`waterfall`, `thin_stream`): la única es la del lugar secreto, y el borde de la cumbre 1 desde donde se cae a través de ella queda limpio. Sin `rock_ledge` (parece una laja). Limpios: la persecución entera (hay que ver hacia dónde se corre), las lajas, la columna de roca, el pozo de la piedra, el paso bajo la peña (está bajo techo), la grieta del viento, las rocas que caen, las manadas, la gruta y la arena (sus pindó se pisan: ningún árbol cerca). Los props de roca traen pintada una luz de tarde cálida y el cielo de l6 es de tormenta: se ven más encendidos que el resto (PENDIENTES).
 
 **Jefe: Ao Ao**. 15 golpes.
 

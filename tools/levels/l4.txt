@@ -100,6 +100,24 @@ rect Offering x=462 y=0 w=1 h=37 front=32
 point ChipaReturn x=4 y=36 chipa=2
 point ChipaReturn x=148 y=36 chipa=1
 point ChipaReturn x=257 y=24 chipa=0
+# S53: props (RECETA-NIVEL §19). Un pueblo a la hora de la siesta: todo vacío y quieto, cada cosa donde la dejaron,
+#   junto a un muro, bajo un portal o en un patio. Limpios: la galería de las tejas, la niebla, los bordes de la zanja y
+#   del pozo, las patrullas, las piedras y rejas, el corral (lugar secreto), las plazas con jagua y el medio de la arena.
+# A. La calle: cántaros junto a la casa del inicio, palenque en el portal del museo, macetas y carreta en el zaguán,
+#    regadera en el rincón del patio del jagua, tejas apiladas en el techo
+prop 3,36 l4_calle/clay_water_jars
+prop 29,36 l4_calle/hitching_post
+prop 44,36 l4_patio/potted_plants
+prop 54,36 l4_calle/wooden_cart
+prop 84,34 l4_patio/watering_can
+prop 108,22 l4_calle/terracotta_tile_stacks
+# B. El galpón: bomba de agua al pie de la casa y un banco vacío junto al fuego 1; tejas en el techo del galpón
+prop 140,36 l4_calle/hand_water_pump
+prop 144,36 l4_calle/wooden_bench_wall
+prop 249,22 l4_calle/terracotta_tile_stacks flip scale=0.8
+# Antesala y arena: el pozo de piedra del patio y cántaros en el rincón derecho de la plaza
+prop 477,36 l4_patio/stone_well
+prop 519,36 l4_calle/clay_water_jars flip scale=0.8
 ---
 ..........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
 ..........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
