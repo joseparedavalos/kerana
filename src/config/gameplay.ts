@@ -1309,6 +1309,62 @@ export const GAMEPLAY = {
       /** Filas de arte en las que la copia se desvanece arriba y abajo de la franja. */
       feather: 10,
     },
+    /**
+     * El dosel de l5 (S60; `canopy` en levels.ts), en el relleno de arriba de la imagen. Todo por código y detrás de
+     * todo el nivel: las copas van horneadas en el relleno (no cuestan cuadros); la niebla y los rayos se mueven.
+     */
+    canopy: {
+      /** Siluetas de copas: color (más oscuro que el degradado) y opacidad (0-1). */
+      crownColor: '#1d3320',
+      crownAlpha: 0.85,
+      /** Lo más que suben las copas sobre los árboles de los costados (fracción del alto del relleno). */
+      crownHeight: 0.5,
+      /** Cuánto varía ese alto de un árbol a otro (0 = todas iguales, 1 = de nada a todo). */
+      crownVary: 0.6,
+      /** Opacidad relativa de las copas arriba (la neblina se come las lejanas; 1 = igual que abajo). */
+      hazeTop: 0.4,
+      /** Fracción de abajo del relleno donde las copas se funden con los árboles de la imagen (sin costura). */
+      bottomFade: 0.14,
+      /** El dosel que cuelga del borde de arriba: cuánto baja sobre lo claro y sobre lo oscuro (fracción del alto) y su opacidad. */
+      fringeMin: 0.03,
+      fringeMax: 0.2,
+      fringeAlpha: 0.8,
+      /** Radio de cada copa (unidades): más grande = copas más redondas y menos. */
+      radiusMin: 9,
+      radiusMax: 22,
+      /** Qué columna del borde es dosel: oscuridad frente al color de arriba, de `darkLo` (nada) a `darkHi` (todo). */
+      darkLo: 0.45,
+      darkHi: 0.75,
+      /** Semilla del azar (cambiarla da otras copas, otros rayos y otra niebla). */
+      seed: 5,
+      /** Rayos de luz entre las copas: se suman a lo de atrás (modo ADD). */
+      rays: {
+        count: 4,
+        /** Ancho de cada rayo (unidades) y largo (fracción del alto del relleno). */
+        width: 24,
+        length: 0.9,
+        /** Inclinación (grados; positivo = baja hacia la izquierda). */
+        tiltDeg: 12,
+        color: '#f3f6c6',
+        /** Opacidad media y cuánto sube y baja (0-1): tenues. */
+        alpha: 0.12,
+        pulse: 0.06,
+        /** Cada cuánto respira un rayo (ms) y cuánto se mece de costado (unidades). */
+        periodMs: 7000,
+        sway: 6,
+      },
+      /**
+       * Bandas de niebla que cruzan despacio, hechas de jirones sueltos (una banda entera a lo ancho costaba ~5 cuadros
+       * por segundo con el render por software; los jirones tapan menos pantalla). `at`: dónde va el centro de la banda
+       * (fracción del alto del relleno, 0 = arriba); `puffs` jirones de `width` × `height` unidades repartidos a lo ancho.
+       */
+      mistColor: '#e2ebd6',
+      mist: [
+        /** Velocidad en unidades por segundo (positiva, a la derecha) y opacidad (0-1). */
+        { at: 0.36, puffs: 3, width: 170, height: 30, speed: 5, alpha: 0.32 },
+        { at: 0.74, puffs: 3, width: 190, height: 34, speed: 9, alpha: 0.28 },
+      ],
+    },
     /** Terreno como repisa (`terrainShell` en levels.ts): opacidad de la última fila antes del fondo. */
     terrainFadeAlpha: 0.55,
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */

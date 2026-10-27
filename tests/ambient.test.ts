@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  canopyFill,
+  canopyWeights,
   edgeColumns,
   isMistPixel,
   mistLayer,
+  mistPuffAlpha,
   mixColor,
   rainFrame,
   rainMask,
+  rayAlpha,
+  rayAnchors,
   scrollOffset,
+  seeded,
   splitRain,
 } from "../src/systems/ambientLogic";
 
@@ -176,5 +182,77 @@ describe("niebla pintada (S59)", () => {
     expect(scrollOffset(6000, 10, 50)).toBe(10);
     expect(scrollOffset(1000, -10, 50)).toBe(40);
     expect(scrollOffset(1000, 10, 0)).toBe(0);
+  });
+});
+
+// S60: el dosel de l5. Borde como el de l5: oscuro a los costados, claro al medio.
+describe("dosel (S60)", () => {
+  const DARK = 0x0f1a0e;
+  const LIGHT = 0x708268;
+  const TOP = 0xa9bf98;
+  const edge = [DARK, DARK, DARK, LIGHT, LIGHT, DARK, DARK, DARK];
+  const look = (weights: number[]) => ({
+    weights,
+    crownColor: 0x1d3320,
+    crownAlpha: 0.85,
+    crownHeight: 0.5,
+    crownVary: 0.6,
+    hazeTop: 0.4,
+    bottomFade: 0.14,
+    fringeMin: 0.03,
+    fringeMax: 0.2,
+    fringeAlpha: 0.8,
+    rMin: 6,
+    rMax: 14,
+    seed: 5,
+  });
+
+  it("el azar con semilla se repite", () => {
+    const a = seeded(5);
+    const b = seeded(5);
+    const xs = Array.from({ length: 5 }, () => a());
+    expect(xs).toEqual(Array.from({ length: 5 }, () => b()));
+    expect(xs.every((v) => v >= 0 && v < 1)).toBe(true);
+  });
+
+  it("los costados oscuros son dosel; el medio claro, no", () => {
+    const w = canopyWeights(edge, TOP, 0.45, 0.75);
+    expect(w[0]).toBe(1);
+    expect(w[3]).toBe(0);
+  });
+
+  it("las copas suben sobre los costados, el medio queda abierto, y abajo no hay costura con la imagen", () => {
+    const W = 160;
+    const H = 80;
+    const out = new Uint8ClampedArray(W * H * 4);
+    canopyFill(edge, TOP, W, H, look(canopyWeights(edge, TOP, 0.45, 0.75)), out);
+    const at = (x: number, y: number) => (out[(y * W + x) * 4]! << 16) | (out[(y * W + x) * 4 + 1]! << 8) | out[(y * W + x) * 4 + 2]!;
+    // Sin copas, cerca de abajo el degradado sería mezcla del color de arriba y del borde.
+    const plain = mixColor(TOP, DARK, 60 / (H - 1));
+    const sideDarker = [4, 10, 16].some((x) => (at(x, 60) & 0xff00) < (plain & 0xff00));
+    expect(sideDarker).toBe(true);
+    // En el medio, a media altura: el degradado limpio (ni copas ni dosel colgante).
+    expect(at(80, 40)).toBe(mixColor(TOP, mixColor(LIGHT, LIGHT, 0), 40 / (H - 1)));
+    // La fila de abajo es el color del borde (sigue con el fundido sobre la imagen).
+    expect(at(2, H - 1)).toBe(DARK);
+    expect(out.every((v, i) => i % 4 !== 3 || v === 255)).toBe(true);
+  });
+
+  it("los rayos bajan en lo claro", () => {
+    const w = canopyWeights(edge, TOP, 0.45, 0.75);
+    const xs = rayAnchors(w, 4, seeded(1));
+    expect(xs).toHaveLength(4);
+    expect(xs.every((x) => x >= 3 / 8 && x <= 5 / 8)).toBe(true);
+    expect(rayAnchors([1, 1], 3, seeded(1))).toEqual([]);
+  });
+
+  it("rayo y jirón se apagan en los bordes", () => {
+    const ray = rayAlpha(16, 64);
+    expect(ray[0]).toBe(0); // arriba asoma
+    expect(ray[63 * 16 + 8]).toBe(0); // abajo se apaga
+    expect(ray[20 * 16 + 8]!).toBeGreaterThan(ray[20 * 16]!); // más fuerte al medio
+    const puff = mistPuffAlpha(64, 16, seeded(2));
+    for (let y = 0; y < 16; y++) expect(puff[y * 64]!).toBeLessThan(8);
+    expect(Math.max(...puff)).toBeGreaterThan(100);
   });
 });

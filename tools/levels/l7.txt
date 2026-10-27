@@ -107,9 +107,14 @@ point ChipaReturn x=410 y=59 chipa=0
 #   prop X1-X2,Y (GDD §11.7.1).
 # A. La calle: un balcón sobre el zaguán (farol del portón); la casa del andamio 1 (puerta, tejadito y contraventana,
 #    junto al farol de pared); el tendedero en el patio de la casona, entre sus dos muros (el farol encendido del sótano)
+# S60: dónde estaría en un edificio de verdad (RECETA-NIVEL §19.12). El balcón, en la planta alta sobre el zaguán (no
+#    al ras del borde de abajo del bloque: S54 lo vio colgar). La casa del andamio 1 (torre x 53-64, filas 46-59):
+#    la puerta al ras de la calle (fila 59, como el andamio y la vereda), junto al farol; la contraventana un piso más
+#    arriba, sobre la puerta; el tejado arriba de todo, rematando el muro (fila 48: la cumbrera al borde de arriba),
+#    lejos de la puerta. Fuera de las DarkZone la luna alumbra las fachadas.
 prop 30,52 l7_calle/wrought_iron_grille_balcony
-prop 57.5,59 l7_calle/wooden_door_studs
-prop 57.5,56 l7_calle/tiled_rooftop_chimney
+prop 55.5,59 l7_calle/wooden_door_studs
+prop 58.5,48 l7_calle/tiled_rooftop_chimney
 prop 55.5,52 l7_calle/shuttered_windows
 prop 87-91,55 l7_calle/clothesline_balconies
 # B. La plaza de la catedral: la carreta entre el fuego 1 y el farol

@@ -764,7 +764,7 @@ Desde el 13 de octubre, la segunda pantalla de «Nivel completado» de una visit
 
 ---
 
-## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3, en S53 con l4, l5 y l6 y en S54 con l7)
+## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3, en S53 con l4, l5 y l6, en S54 con l7 y en S60 con la altura de las fachadas)
 
 Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se colocan con una línea de cabecera, sin carácter en la grilla: `prop X,Y carpeta/nombre [scale=N] [flip] [front]` (GDD §11.7.1). **(X, Y) es el tile vacío donde se apoya**: el prop queda centrado en el tile y con la base en el borde de abajo; el piso está en la fila Y + 1. Los que cuelgan (`hang`: estalactitas, raíces) van en el tile vacío de debajo del techo, con el techo en la fila Y − 1. Los de fachada (`wall`, S54) van sobre los tiles de un muro, y los que van entre dos puntos, con `prop X1-X2,Y` (§19.10). No chocan: son solo dibujo.
 
@@ -867,4 +867,16 @@ l7 quedó con **12 props en 540 tiles**: 6 en la calle y 6 en el camposanto y la
 2. **La cruz torcida junto a la fosa abierta** pasaba el test (a 4 tiles del farol de la cripta) y en la captura, con el farol encendido y Kerana en la cripta, no se veía. Corrección: fuera. El test mide la distancia; la captura, si la luz llega.
 3. **El balcón sobre el zaguán**, con la base en el borde de abajo del edificio: colgaba. Un tile más arriba quedó a 5,7 tiles del farol del portón (el test lo marcó) y medio tile a la izquierda, a 5,4.
 4. **La carreta en el zaguán**, junto a la reja del portón, con su farolito encendido (antes de colocarla). Corrección: a la plaza (§19.10).
+5. **El tejado como alero sobre la puerta** (§19.10 lo daba por bueno). Jose lo vio jugando: puerta y tejado juntos parecían una casita de muñecas colgada del muro. Un tejado corona un edificio entero, no una puerta. Corrección en S60 (§19.12).
+
+### 19.12 Dónde va cada prop de fachada (S60)
+
+La pregunta para cada uno: **¿dónde estaría esto en un edificio de verdad?** En l7 los edificios son bloques sólidos y su cara es la que mira la cámara; un prop de fachada se pinta sobre esa cara, y la cara sigue hacia abajo con los mismos ladrillos que el suelo (no hay una raya de piso delante de la casa). Por eso la altura se lee contra lo que hay al lado, y hay que elegirla a propósito:
+
+- **Puerta y portal con cajas: al ras del piso por donde camina Kerana.** La base en la última fila del muro sobre el suelo de la calle (en l7, fila 59: el mismo borde que la vereda y el andamio en reposo). Mejor pegada al borde del bloque donde termina la vereda: así la raya del piso de al lado llega hasta ella. Un farol al lado le queda natural (sin taparlo: el test mide su caja).
+- **Ventanas y contraventanas: a la altura de un piso.** Con Kerana de 46 unidades (≈ 1,6 m), un piso mide ≈ 86 unidades (5,4 tiles) y un antepecho ≈ 29: la ventana de la planta alta tiene la base ≈ 7 tiles sobre la calle (en l7, fila 52). Encima de la puerta se lee como la misma casa.
+- **Balcón: en la planta alta, sobre la calle.** Igual que la ventana, nunca al ras del borde de abajo del bloque (S54: parecía colgar del aire).
+- **Tejado: arriba del todo, rematando el muro.** Dentro del muro, con la cumbrera casi en el borde de arriba (en la torre de l7, base en la fila 48 para un borde en la 46) y centrado en el bloque, lejos de la puerta. No sobre el borde que se pisa: ahí se leería como el techo de verdad (§19.10).
+- **La luz.** El tejado arriba queda lejos de los faroles de la vereda. En la calle de l7 hay luna (fuera de las `DarkZone`): el muro y lo que tiene pegado se oscurecen igual, así que los props de fachada de la calle no necesitan un farol cerca (el test los exime; los demás props de l7, sí).
+- **Comprobarlo:** una captura de cada uno con Kerana en la vereda de al lado, no solo el test: el test dice que está sobre el muro, no a qué altura.
 

@@ -247,3 +247,215 @@ export function scrollOffset(
   if (period <= 0) return 0;
   return ((((ms / 1000) * speed) % period) + period) % period;
 }
+
+// S60: el dosel de l5. El relleno de arriba de la imagen lleva siluetas de copas (sobre los árboles de los costados y
+// colgando del borde de arriba), y por encima cruzan bandas de niebla y bajan rayos de luz entre las copas.
+
+/** Generador con semilla (mulberry32): las copas, los rayos y la niebla salen iguales en cada partida. */
+export function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Luminancia aproximada (0-255) de un color 0xRRGGBB. */
+export function luminance(c: number): number {
+  return 0.299 * ((c >> 16) & 0xff) + 0.587 * ((c >> 8) & 0xff) + 0.114 * (c & 0xff);
+}
+
+const smoothstep = (lo: number, hi: number, v: number) => {
+  const k = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
+  return k * k * (3 - 2 * k);
+};
+
+/**
+ * Cuánto es dosel cada columna del borde (0 = claro, 1 = copa oscura): qué tan oscura es frente a `top`, el color de
+ * arriba del degradado, entre `lo` y `hi`.
+ */
+export function canopyWeights(edge: readonly number[], top: number, lo: number, hi: number): number[] {
+  const lt = Math.max(1, luminance(top));
+  return edge.map((c) => smoothstep(lo, hi, 1 - luminance(c) / lt));
+}
+
+/** Valor de una lista de columnas en `x` (0 a `width`), interpolado entre los centros de las columnas. */
+function columnAt(values: readonly number[], x: number, width: number): [number, number, number] {
+  const f = Math.min(values.length - 1, Math.max(0, (x / width) * values.length - 0.5));
+  const i = Math.floor(f);
+  const j = Math.min(values.length - 1, i + 1);
+  return [i, j, f - i];
+}
+
+function colorAt(colors: readonly number[], x: number, width: number): number {
+  const [i, j, t] = columnAt(colors, x, width);
+  return mixColor(colors[i]!, colors[j]!, t);
+}
+
+function weightAt(weights: readonly number[], x: number, width: number): number {
+  const [i, j, t] = columnAt(weights, x, width);
+  return weights[i]! * (1 - t) + weights[j]! * t;
+}
+
+/**
+ * Borde festoneado: la envolvente de arriba de círculos puestos uno al lado del otro. `base(x)` da a qué distancia
+ * del borde (px) va el centro de cada copa; el radio sale entre `rMin` y `rMax`. Devuelve, por columna, hasta dónde
+ * llega la silueta medida desde el borde (≤ 0: nada).
+ */
+export function scallop(width: number, base: (x: number) => number, rMin: number, rMax: number, rand: () => number): Float32Array {
+  const out = new Float32Array(width).fill(-1);
+  let x = -rMax;
+  while (x < width + rMax) {
+    const r = rMin + (rMax - rMin) * rand();
+    const cx = x + r;
+    const cy = base(Math.min(width - 1, Math.max(0, cx))) - r * (0.3 + 0.5 * rand());
+    for (let px = Math.max(0, Math.floor(cx - r)); px < Math.min(width, Math.ceil(cx + r)); px++) {
+      const dx = px + 0.5 - cx;
+      if (Math.abs(dx) < r) out[px] = Math.max(out[px]!, cy + Math.sqrt(r * r - dx * dx));
+    }
+    x += r * (1 + 0.5 * rand());
+  }
+  return out;
+}
+
+export interface CanopyLook {
+  /** Cuánto es dosel cada columna (`canopyWeights`). */
+  weights: readonly number[];
+  /** Color (0xRRGGBB) y opacidad de las copas. */
+  crownColor: number;
+  crownAlpha: number;
+  /** Lo más que suben las copas de los costados sobre el borde de la imagen (fracción del alto del relleno). */
+  crownHeight: number;
+  /** Cuánto varía ese alto de un árbol a otro (0 = todas iguales, 1 = de nada a todo). */
+  crownVary: number;
+  /** Opacidad relativa de las copas arriba del todo (la neblina se come las lejanas; abajo, 1). */
+  hazeTop: number;
+  /** Fracción de abajo del relleno donde las copas se funden con el borde de la imagen (sin costura). */
+  bottomFade: number;
+  /** El dosel que cuelga del borde de arriba: cuánto baja en lo claro y en lo oscuro (fracciones del alto) y su opacidad. */
+  fringeMin: number;
+  fringeMax: number;
+  fringeAlpha: number;
+  /** Radio de cada copa (px de la textura). */
+  rMin: number;
+  rMax: number;
+  seed: number;
+}
+
+/**
+ * Relleno con dosel (S60): el degradado de S59 (`top` arriba, el color del borde abajo, por columnas) con las
+ * siluetas de las copas encima, horneadas en la misma textura (no cuesta dibujar nada más). Escribe RGBA en `out`.
+ */
+export function canopyFill(
+  edge: readonly number[],
+  top: number,
+  width: number,
+  height: number,
+  look: CanopyLook,
+  out: Uint8ClampedArray,
+): void {
+  const rand = seeded(look.seed);
+  const w = (x: number) => weightAt(look.weights, x, width);
+  const vary = waves(width, rand);
+  const tall = (x: number, k: number) => w(x) * look.crownHeight * height * k * (1 - look.crownVary + look.crownVary * vary(x));
+  // Dos filas de copas: atrás, más altas y comidas por la neblina; adelante, más bajas y oscuras.
+  const rows = [
+    { edge: leafy(scallop(width, (x) => tall(x, 1), look.rMin, look.rMax, rand), look.rMin, rand), alpha: 0.45 },
+    { edge: leafy(scallop(width, (x) => tall(x, 0.6), look.rMin * 0.8, look.rMax * 0.8, rand), look.rMin, rand), alpha: 1 },
+  ];
+  const varyTop = waves(width, rand);
+  const fringeAt = (x: number) => (look.fringeMin + (look.fringeMax - look.fringeMin) * w(x)) * height * (0.4 + 0.6 * varyTop(x));
+  const fringe = leafy(scallop(width, fringeAt, look.rMin * 0.6, look.rMax * 0.8, rand), look.rMin, rand);
+  for (let x = 0; x < width; x++) {
+    const ec = colorAt(edge, x, width);
+    for (let y = 0; y < height; y++) {
+      const t = height > 1 ? y / (height - 1) : 1;
+      let c = mixColor(top, ec, t);
+      // Copas que suben desde el borde de la imagen (borde suave de 1 px).
+      const up = height - 1 - y;
+      const haze = look.hazeTop + (1 - look.hazeTop) * t;
+      const fade = smoothstep(1, 1 - look.bottomFade, t);
+      for (const row of rows) {
+        const inCrown = Math.min(1, Math.max(0, row.edge[x]! - up + 0.5));
+        if (inCrown > 0) c = mixColor(c, look.crownColor, inCrown * row.alpha * look.crownAlpha * haze * fade);
+      }
+      const inFringe = Math.min(1, Math.max(0, fringe[x]! - y + 0.5));
+      if (inFringe > 0) c = mixColor(c, look.crownColor, inFringe * look.fringeAlpha);
+      const i = (y * width + x) * 4;
+      out[i] = (c >> 16) & 0xff;
+      out[i + 1] = (c >> 8) & 0xff;
+      out[i + 2] = c & 0xff;
+      out[i + 3] = 255;
+    }
+  }
+}
+
+/** Borde de hojas: copitas chicas sobre el borde de las grandes (como el dibujo del fondo, no círculos lisos). */
+function leafy(edge: Float32Array, rMin: number, rand: () => number): Float32Array {
+  const small = scallop(edge.length, (x) => edge[Math.round(x)]!, rMin * 0.25, rMin * 0.5, rand);
+  return edge.map((v, x) => (v > 0 ? Math.max(v, small[x]!) : v));
+}
+
+/** Ondas suaves a lo ancho (0 a 1): de un árbol a otro las copas no miden lo mismo. */
+function waves(width: number, rand: () => number): (x: number) => number {
+  const parts = [2, 3, 7].map((k) => ({ k, phase: rand() * Math.PI * 2 }));
+  return (x) => 0.5 + parts.reduce((s, p) => s + Math.sin((2 * Math.PI * p.k * x) / width + p.phase), 0) / (2 * parts.length);
+}
+
+/** Dónde bajan los rayos (fracciones del ancho): repartidos en lo claro del dosel (peso < 0,5), con un poco de azar. */
+export function rayAnchors(weights: readonly number[], count: number, rand: () => number): number[] {
+  const open = weights.map((v, i) => [v, i] as const).filter(([v]) => v < 0.5).map(([, i]) => i);
+  if (open.length === 0 || count <= 0) return [];
+  const from = open[0]! / weights.length;
+  const to = (open[open.length - 1]! + 1) / weights.length;
+  const step = (to - from) / count;
+  return Array.from({ length: count }, (_, k) => from + step * (k + 0.25 + 0.5 * rand()));
+}
+
+/** Textura de un rayo (alfa 0-255): suave a los costados, asoma arriba y se apaga hacia abajo. */
+export function rayAlpha(width: number, height: number): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height);
+  for (let y = 0; y < height; y++) {
+    const t = y / Math.max(1, height - 1);
+    const v = smoothstep(0, 0.12, t) * Math.pow(1 - t, 1.3);
+    for (let x = 0; x < width; x++) {
+      const d = (x + 0.5) / width - 0.5;
+      out[y * width + x] = Math.round(255 * v * Math.exp(-(d * d) / 0.035));
+    }
+  }
+  return out;
+}
+
+/** Jirón de niebla (alfa 0-255): un trozo de banda que se apaga hacia los dos extremos. */
+export function mistPuffAlpha(width: number, height: number, rand: () => number): Uint8ClampedArray {
+  const out = mistBandAlpha(width, height, rand);
+  for (let x = 0; x < width; x++) {
+    const ends = Math.pow(Math.sin((Math.PI * (x + 0.5)) / width), 2);
+    for (let y = 0; y < height; y++) out[y * width + x] = Math.round(out[y * width + x]! * ends);
+  }
+  return out;
+}
+
+/**
+ * Banda de niebla (alfa 0-255) que se repite de costado sin costura: ondas de frecuencia entera a lo ancho, que se
+ * corren un poco con la altura, dentro de una campana vertical.
+ */
+export function mistBandAlpha(width: number, height: number, rand: () => number): Uint8ClampedArray {
+  const waves = [1, 2, 3, 5, 8].map((k) => ({ k, a: 1 / Math.sqrt(k), phase: rand() * Math.PI * 2, tilt: (rand() - 0.5) * 2 }));
+  const total = waves.reduce((s, wv) => s + wv.a, 0);
+  const out = new Uint8ClampedArray(width * height);
+  for (let y = 0; y < height; y++) {
+    const v = y / Math.max(1, height - 1);
+    const bell = Math.pow(Math.sin(Math.PI * v), 2);
+    for (let x = 0; x < width; x++) {
+      let n = 0;
+      for (const wv of waves) n += wv.a * Math.sin((2 * Math.PI * wv.k * x) / width + wv.phase + wv.tilt * v * Math.PI);
+      const cloud = 0.4 + 0.6 * smoothstep(-0.6, 0.8, n / total);
+      out[y * width + x] = Math.round(255 * bell * cloud);
+    }
+  }
+  return out;
+}
