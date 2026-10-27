@@ -120,6 +120,11 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
+  /** El tajo corta proyectiles propios que toca (payé del payesero, S62); devuelve si cortó alguno. */
+  cutProjectiles(_rect: Phaser.Geom.Rectangle): boolean {
+    return false;
+  }
+
   /** El póra solo recibe daño iluminado (GDD §5.3); los demás, siempre. */
   get vulnerable(): boolean {
     return takesDamage(this.def.needsLight === true, this.lit);
@@ -145,6 +150,11 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     this.purified = true;
     this.body.enable = false;
     this.onPurified?.(this);
+    this.purifyEffect();
+  }
+
+  /** Lo que se ve al purificarse; el payesero, humano, tiene el suyo (S62). */
+  protected purifyEffect(): void {
     this.scene.tweens.add({
       targets: this,
       alpha: 0,

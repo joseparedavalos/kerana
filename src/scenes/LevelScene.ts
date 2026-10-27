@@ -15,7 +15,7 @@ import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { onRefuge, refugeUnder, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
-import { createEnemy } from '../entities/enemies';
+import { Caster, createEnemy } from '../entities/enemies';
 import { Diver } from '../entities/enemies/Diver';
 import { Lurker } from '../entities/enemies/Lurker';
 import { rhythmFromMovers } from '../entities/enemies/LurkerMotor';
@@ -56,6 +56,7 @@ import { playLiberation } from '../systems/LiberationSequence';
 import { SaveManager } from '../systems/SaveManager';
 import type { SfxKey } from '../systems/sfxPresets';
 import { ensurePlaceholder } from '../utils/placeholder';
+import { ensureSoftGlow } from '../utils/softGlow';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
@@ -1052,6 +1053,8 @@ export class LevelScene extends Phaser.Scene {
     if (!this.player.motor.attackHitboxActive) return;
     const rect = this.player.attackRect;
     for (const sw of swordStrikes(this.switches, rect, this.player.swingHits, this.struck)) this.hitSwitch(sw);
+    // S62: el sable corta el payé del payesero.
+    for (const enemy of this.enemies) if (enemy.active && enemy.cutProjectiles(rect)) AudioManager.play('hit');
     for (const lantern of swordStrikes(this.lanterns, rect, this.player.swingHits, this.struckLanterns)) this.lightLantern(lantern, true);
     for (const b of this.bouncers) {
       if (b.motor.state !== 'asleep' || this.player.hasHitThisSwing(b) || !Phaser.Geom.Rectangle.Overlaps(b.zone, rect)) continue;
@@ -1706,6 +1709,8 @@ export class LevelScene extends Phaser.Scene {
             enemy.solidAt = (px, py) => this.isSolidAt(px, py);
             enemy.tileSize = this.map.tileWidth;
           }
+          // El payé del payesero (S62) se deshace contra el suelo y las paredes; las plataformas de un sentido no lo frenan.
+          if (enemy instanceof Caster) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
           this.glowEnemyParts(enemy);
           if (enemy.def.purifiesInto === 'vaca') enemy.onPurified = (e) => this.cowFromEnemy(e);
           this.enemies.push(enemy);
@@ -2104,7 +2109,8 @@ export class LevelScene extends Phaser.Scene {
     if (!enemy.vulnerable) return;
     enemy.hit(this.player.attackDamage, this.player.motor.facing);
     this.hitStop(GAMEPLAY.hitStop.onHitMs);
-    this.impactSparks(enemy.body.center);
+    // Un humano que se purifica no echa chispas (S62): se lee como que se deshizo.
+    if (!(enemy.purified && enemy.def.human)) this.impactSparks(enemy.body.center);
     AudioManager.play(enemy.purified ? 'purify' : 'hit');
   }
 
@@ -2414,23 +2420,4 @@ export class LevelScene extends Phaser.Scene {
 
 function isGroundedEnemy(obj: unknown): boolean {
   return (obj as EnemyBase).collidesWithGround ?? true;
-}
-
-/** Brillo suave por código: degradado radial de `color` (alfa 1 en el centro → 0 en el borde), sin borde marcado. */
-function ensureSoftGlow(scene: Phaser.Scene, size: number, color: number): string {
-  const key = `soft_glow_${color.toString(16)}`;
-  if (scene.textures.exists(key)) return key;
-  const tex = scene.textures.createCanvas(key, size, size);
-  if (!tex) return key;
-  const ctx = tex.getContext();
-  const r = size / 2;
-  const rgb = `${(color >> 16) & 0xff}, ${(color >> 8) & 0xff}, ${color & 0xff}`;
-  const grad = ctx.createRadialGradient(r, r, 0, r, r, r);
-  grad.addColorStop(0, `rgba(${rgb}, 1)`);
-  grad.addColorStop(0.5, `rgba(${rgb}, 0.45)`);
-  grad.addColorStop(1, `rgba(${rgb}, 0)`);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
-  tex.refresh();
-  return key;
 }

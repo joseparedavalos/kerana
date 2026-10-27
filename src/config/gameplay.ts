@@ -1227,6 +1227,93 @@ export const GAMEPLAY = {
     emergeHeight: 20,
   },
 
+  /**
+   * Payesero (S62, GDD §5.3): el hechicero que lanza payé. Quieto en su sitio, mira a Kerana y, si ella entra en su
+   * alcance, carga el hechizo (el aura sube: es el aviso) y lo lanza desde la punta de la mano. Todo esto se afina
+   * jugando, no calculando. Kerana corre a 150 px/s; un tile son 16 px.
+   */
+  payesero: {
+    /** Golpes que aguanta (el tajo cargado cuenta `chargedSlash.damage`). */
+    hp: 3,
+    /** Alcance (px, distancia en línea recta a Kerana): fuera de él no ataca. ≈ 9 tiles. */
+    range: 150,
+    /** Hasta dónde la sigue con la mirada (px): gira cuando ella le pasa al otro lado, aunque esté fuera de alcance. */
+    watchRadius: 240,
+    /** Carga del hechizo (ms): el aura sube y levanta el mbaraka. Es el aviso del ataque. */
+    chargeMs: 900,
+    /** Espera después de lanzar hasta poder cargar otro (ms). */
+    cooldownMs: 2400,
+    /** Punta de la mano en el cuadro del ataque, desde los pies (unidades): hacia adelante y hacia arriba. */
+    hand: { forward: 26, rise: 46 },
+    /** Mitad del cuerpo de Kerana: el payé apunta al pecho, no a los pies (px). */
+    targetLift: 20,
+    /** Cada cuántos px mira si hay roca entre la mano y Kerana (sin camino libre no carga). */
+    losStep: 8,
+    paye: {
+      /** Velocidad (px/s). Lento a propósito: ≈ 40 % de la carrera de Kerana. */
+      speed: 60,
+      /** Cuánto tiempo corrige el rumbo hacia Kerana desde que sale (ms). Después sigue recto. */
+      homingMs: 1200,
+      /** Cuánto gira por segundo mientras corrige (grados). Más alto = más difícil de esquivar. */
+      turnRateDeg: 90,
+      /** Cuánto vive (ms): al cumplirlo se deshace en humo. 5 s a 60 px/s ≈ 19 tiles. */
+      lifeMs: 5000,
+      /** Radio que lastima a Kerana (px): el núcleo del cometa, no la estela. */
+      hitRadius: 3.5,
+      /** Radio que corta el sable (px): más generoso que el que lastima, para premiar el tajo. */
+      cutRadius: 6,
+      /** Cuántos puede tener en el aire a la vez. */
+      pool: 2,
+      /** Núcleo del cometa en el PNG (fracción del ancho desde la cabeza; la estela va detrás). */
+      coreX: 0.13,
+      /** Respaldo sin el PNG: radio y color del círculo. */
+      fallbackRadius: 4,
+      fallbackColor: 0x9b4dff,
+      /** Humo al deshacerse (cortado, contra una pared o al caducar): duración (ms). */
+      puffMs: 260,
+    },
+    /** Aura violeta por código (filtro Glow sobre la silueta): no está en el sprite porque cambia de estado. */
+    aura: {
+      color: 0xa45cff,
+      /** En reposo: tenue y constante. */
+      idleStrength: 2,
+      /** Al final de la carga (sube desde el reposo durante `chargeMs`, con un latido). */
+      chargeStrength: 5,
+      /** Latido de la carga (Hz) y cuánto oscila (fracción de la fuerza). */
+      chargePulseHz: 6,
+      chargePulse: 0.2,
+      /** Después de lanzar vuelve al reposo en este tiempo (ms). */
+      settleMs: 400,
+    },
+    /**
+     * Purificación de un humano (GDD §4.1): humo violeta que sube, destello cálido, el aura se apaga y se desvanece.
+     * Nada de chispas ni de agrandarse: un humano que se disuelve se lee como que murió.
+     */
+    purify: {
+      smokeCount: 12,
+      smokeColor: 0x7a3fb0,
+      smokeAlpha: 0.7,
+      /** Lado (px) de cada bocanada al salir, cuánto crece y cada cuánto sale la siguiente (ms). */
+      smokeSize: 14,
+      smokeGrow: 2.2,
+      smokeStaggerMs: 45,
+      /** Cuánto sube (px) y en cuánto tiempo (ms). */
+      smokeRise: 44,
+      smokeMs: 1500,
+      /** Destello cálido en el pecho: color, lado máximo (px) y duración (ms). */
+      flashColor: 0xffd27a,
+      flashSize: 70,
+      flashMs: 420,
+      /** Lado (px) de la textura suave del humo y del destello (se escala). */
+      softSize: 32,
+      /** El aura se apaga en este tiempo (ms). */
+      auraOffMs: 600,
+      /** Se desvanece después de `fadeDelayMs` en `fadeMs` (ms). */
+      fadeDelayMs: 600,
+      fadeMs: 1400,
+    },
+  },
+
   pickups: {
     /** Corazones que cura un guavirá (GDD §4.3). */
     guaviraHeal: 1,
