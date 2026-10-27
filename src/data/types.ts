@@ -12,6 +12,15 @@ export interface LevelBackgrounds {
   brightness?: number;
   /** Ajuste vertical del fondo (unidades del mundo; positivo lo sube). 0 por defecto: centrado. */
   shiftY?: number;
+  /**
+   * Color de arriba del relleno (S59, '#rrggbb'): lo que destapa la vista arriba de la imagen pasa en degradado del
+   * borde de la imagen a este color. Sin él, el relleno es del color del borde.
+   */
+  fillTop?: string;
+  /** La imagen trae lluvia pintada (S59): se separa del dibujo y cae (GAMEPLAY.backdrop.rain). */
+  rain?: boolean;
+  /** La imagen trae niebla pintada en esta franja (S59; fracciones x0, y0, x1, y1): una copia corre de costado. */
+  mist?: { region: readonly [number, number, number, number] };
 }
 
 export interface LevelDef {

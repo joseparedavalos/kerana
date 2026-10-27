@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../config/gameplay';
 import type { LevelBackgrounds } from '../data/types';
 import type { Area } from './lightLogic';
-import { averageColor, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
+import { edgeColumns, mistLayer, mixColor, rainFrame, rainMask, scrollOffset, splitRain } from './ambientLogic';
+import { backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
@@ -15,12 +16,20 @@ const FILL_KEY = 'bg_fill_';
 // en la boca se ven los dos, con un degradado oscuro en el borde. Si falta la imagen, queda el color de la cámara.
 // S29: la escala no depende del alto del nivel (la imagen conserva su tamaño y su proporción); lo que destapa el
 // desplazamiento vertical arriba de la imagen lo cubre el color de su borde de arriba, con un fundido sobre el borde.
+// S59: ese relleno va por columnas (el color del borde en cada tramo) y, si el nivel define `fillTop`, pasa en
+// degradado a ese color hacia arriba (l5: la luz que se filtra por el dosel). La lluvia pintada (l5) cae en
+// fotogramas de la propia imagen, como el agua de S47; la niebla pintada (l7) tiene una copia que corre de costado.
 export class LevelBackdrop {
   private readonly far?: Phaser.GameObjects.Image;
-  /** Relleno de la franja destapada arriba de la imagen lejana (S29): el color de su borde de arriba. */
-  private readonly fill?: Phaser.GameObjects.Image;
+  /** Relleno de la franja destapada arriba de la imagen lejana (S29; S59 por columnas y en degradado). */
+  private fill?: Phaser.GameObjects.Image;
   /** Fundido sobre el borde de arriba de la imagen lejana (S29): del color del relleno a transparente. */
-  private readonly fillEdge?: Phaser.GameObjects.Image;
+  private fillEdge?: Phaser.GameObjects.Image;
+  /** Lluvia que cae (S59): fotogramas de la imagen lejana (`<clave>__rain`, `rain_0`…); vacío si el nivel no tiene. */
+  private rainFrames: string[] = [];
+  /** Copia de la niebla pintada que corre de costado (S59), y dónde está su franja en la imagen (px de arte). */
+  private mist?: Phaser.GameObjects.TileSprite;
+  private mistAt = { x: 0, y: 0 };
   private readonly cave?: Phaser.GameObjects.Image;
   private readonly edges: Phaser.GameObjects.Image[] = [];
   private readonly caves: Area[] = [];
@@ -28,6 +37,8 @@ export class LevelBackdrop {
   private readonly fit: { scale: number; top: number };
   /** Cuánto baja el fondo con la vista arriba del nivel (S28; 0 si el nivel no tiene alto para desplazarse). Lo de arriba lo cubre `fill`. */
   private readonly travelY: number;
+  /** Lo más que puede destapar el desplazamiento arriba de la imagen (unidades de la vista; ≤ 0 si nunca). */
+  private readonly maxUncovered: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -38,16 +49,12 @@ export class LevelBackdrop {
     this.brightness = defs.brightness ?? 1;
     this.travelY = CFG.panYRange * Math.max(0, mapHeight - VIEW.height);
     this.fit = backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0);
-    this.fill = this.makeFill(defs.far);
+    this.maxUncovered = this.fit.top + this.travelY;
     this.far = this.makeImage(defs.far);
-    if (this.fill && this.far) {
-      this.fillEdge = scene.add
-        .image(0, 0, FILL_KEY + defs.far + '_edge')
-        .setOrigin(0)
-        .setScrollFactor(0)
-        .setDisplaySize(VIEW.width, CFG.fillEdgeHeight)
-        .setDepth(CFG.depth + 0.5)
-        .setVisible(false);
+    if (this.far && defs.far) {
+      if (this.maxUncovered > 0) this.makeFill(defs.far, defs.fillTop);
+      if (defs.rain) this.makeRain(defs.far);
+      if (defs.mist) this.makeMist(defs.far, defs.mist.region);
     }
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
@@ -77,6 +84,13 @@ export class LevelBackdrop {
     return [this.far, this.cave].filter((img): img is Phaser.GameObjects.Image => img !== undefined);
   }
 
+  /** Todo lo que dibuja el fondo (para que la luz del nivel oscuro no lo toque). */
+  get layers(): Phaser.GameObjects.GameObject[] {
+    return [this.far, this.cave, this.fill, this.fillEdge, this.mist].filter(
+      (o): o is NonNullable<typeof o> => o !== undefined,
+    );
+  }
+
   addCave(area: Area): void {
     this.caves.push(area);
   }
@@ -95,11 +109,15 @@ export class LevelBackdrop {
     const show = uncovered > 0 && this.far?.visible === true;
     this.fill?.setVisible(show);
     this.fillEdge?.setVisible(show);
+    // El relleno sigue a la imagen como si fuera su continuación hacia arriba (S59): el degradado no se aprieta.
+    const left = off.x + panX;
+    const imageTop = off.y + uncovered;
     if (show) {
-      this.fill?.setPosition(off.x, off.y).setDisplaySize(VIEW.width, Math.ceil(uncovered));
-      this.fillEdge?.setPosition(off.x, off.y + uncovered);
+      this.fill?.setPosition(left, imageTop - this.maxUncovered);
+      this.fillEdge?.setPosition(left, imageTop);
     }
     if (this.cave) this.updateCave(cam.worldView.x, off, panX);
+    this.updateAmbient(left, imageTop);
     if (ambient !== undefined) this.applyTint(ambient);
   }
 
@@ -125,6 +143,23 @@ export class LevelBackdrop {
     if (show) edge.setPosition(off.x + x, off.y);
   }
 
+  /** Lluvia y niebla (S59): siguen a la imagen y corren con el tiempo de juego (se paran con la pausa). */
+  private updateAmbient(left: number, imageTop: number): void {
+    const visible = this.far?.visible === true;
+    const now = this.scene.time.now;
+    if (this.rainFrames.length > 0 && visible) {
+      const rc = CFG.rain;
+      // Un ciclo corre `period` px de arte; a `speed` unidades/s (px de arte = unidades / escala de la imagen).
+      const at = scrollOffset(now, rc.speed / this.far!.scaleY, rc.period) / rc.period;
+      this.far!.setFrame(this.rainFrames[Math.floor(at * this.rainFrames.length) % this.rainFrames.length]!);
+    }
+    if (this.mist) {
+      const scale = this.mist.scaleX;
+      this.mist.setVisible(visible).setPosition(left + this.mistAt.x * scale, imageTop + this.mistAt.y * this.mist.scaleY);
+      this.mist.tilePositionX = -scrollOffset(now, GAMEPLAY.backdrop.mist.speed / scale, this.mist.frame.width);
+    }
+  }
+
   /** Estado para la prueba de humo. */
   get debugState(): { images: number; far: boolean; cave: boolean; edges: number } {
     return {
@@ -140,44 +175,136 @@ export class LevelBackdrop {
     for (const img of this.images) img.setTint(tint);
     this.fill?.setTint(tint);
     this.fillEdge?.setTint(tint);
+    this.mist?.setTint(tint);
+  }
+
+  /** Píxeles de la imagen `key` (lienzo de trabajo; se descarta después). */
+  private pixels(key: string): ImageData | undefined {
+    const src = this.scene.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
+    const probe = document.createElement('canvas');
+    probe.width = src.width;
+    probe.height = src.height;
+    const ctx = probe.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return undefined;
+    ctx.drawImage(src, 0, 0);
+    return ctx.getImageData(0, 0, src.width, src.height);
+  }
+
+  /** Textura de lienzo con estos píxeles (una vez por partida). */
+  private canvasTexture(key: string, width: number, height: number, data: Uint8ClampedArray): boolean {
+    if (this.scene.textures.exists(key)) return true;
+    const tex = this.scene.textures.createCanvas(key, width, height);
+    if (!tex) return false;
+    const img = tex.getContext().createImageData(width, height);
+    img.data.set(data);
+    tex.getContext().putImageData(img, 0, 0);
+    tex.refresh();
+    return true;
   }
 
   /**
-   * Relleno de lo que destapa el desplazamiento vertical: el color medio de las filas de arriba de la imagen, y su
-   * fundido (de opaco a transparente) para el borde. Solo se dibujan cuando hay franja destapada (ver `update`): una
-   * imagen más a pantalla completa costaba muchos cuadros por segundo con el render por software del smoke.
+   * Lluvia (S59), como el agua de S47: se separan las rayas pintadas del resto del dibujo y se arman `frames`
+   * fotogramas de la imagen entera en los que solo las rayas bajan; la imagen lejana va cambiando de fotograma.
+   * No se dibuja nada más (una capa aparte a pantalla completa costaba ~13 cuadros por segundo con el render por
+   * software del contenedor); a cambio, la textura pesa `frames` veces la imagen (8 × 1280 × 720 × 4 B ≈ 29 MB).
+   * En grilla: lado ≤ 4096 px.
    */
-  private makeFill(key?: string): Phaser.GameObjects.Image | undefined {
-    if (!key || !this.scene.textures.exists(key)) return undefined;
-    const fillKey = FILL_KEY + key;
-    if (!this.scene.textures.exists(fillKey)) {
-      const src = this.scene.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
-      const probe = document.createElement('canvas');
-      probe.width = src.width;
-      probe.height = CFG.fillSampleRows;
-      const pctx = probe.getContext('2d', { willReadFrequently: true });
-      if (!pctx) return undefined;
-      pctx.drawImage(src, 0, 0);
-      const top = averageColor(pctx.getImageData(0, 0, src.width, CFG.fillSampleRows).data);
-      const rgba = (a: number) => `rgba(${(top >> 16) & 0xff},${(top >> 8) & 0xff},${top & 0xff},${a})`;
-      const h = 64;
-      const tex = this.scene.textures.createCanvas(fillKey, 4, 4);
-      if (!tex) return undefined;
-      tex.getContext().fillStyle = rgba(1);
-      tex.getContext().fillRect(0, 0, 4, 4);
+  private makeRain(key: string): void {
+    const rc = CFG.rain;
+    const rainKey = key + '__rain';
+    const names = Array.from({ length: rc.frames }, (_, k) => `rain_${k}`);
+    if (!this.scene.textures.exists(rainKey)) {
+      const src = this.pixels(key);
+      if (!src) return;
+      const { width, height } = src;
+      const perRow = Math.max(1, Math.floor(4096 / width));
+      const cols = Math.min(rc.frames, perRow);
+      const tex = this.scene.textures.createCanvas(rainKey, width * cols, height * Math.ceil(rc.frames / cols));
+      if (!tex) return;
+      const mask = rainMask(src.data, width, height, rc);
+      const clean = new Uint8ClampedArray(width * height * 4);
+      const rain = new Uint8ClampedArray(width * height * 4);
+      splitRain(src.data, width, height, mask, clean, rain);
+      const out = tex.getContext().createImageData(width, height);
+      names.forEach((name, k) => {
+        rainFrame(clean, rain, width, height, rc.period, k / rc.frames, rc.alpha, out.data);
+        const x = (k % cols) * width;
+        const y = Math.floor(k / cols) * height;
+        tex.getContext().putImageData(out, x, y);
+        tex.add(name, 0, x, y, width, height);
+      });
       tex.refresh();
-      const edge = this.scene.textures.createCanvas(fillKey + '_edge', 4, h);
-      if (edge) {
-        const ectx = edge.getContext();
-        const eg = ectx.createLinearGradient(0, 0, 0, h);
-        eg.addColorStop(0, rgba(1));
-        eg.addColorStop(1, rgba(0));
-        ectx.fillStyle = eg;
-        ectx.fillRect(0, 0, 4, h);
-        edge.refresh();
-      }
     }
-    return this.scene.add.image(0, 0, fillKey).setOrigin(0).setScrollFactor(0).setDepth(CFG.depth - 1).setVisible(false);
+    this.far!.setTexture(rainKey, names[0]);
+    this.rainFrames = names;
+  }
+
+  /** Niebla (S59): una copia de la niebla de la franja que corre de costado sobre la quieta, repitiéndose. */
+  private makeMist(key: string, region: readonly [number, number, number, number]): void {
+    const far = this.far!;
+    const mistKey = key + '__mist';
+    const src = this.pixels(key);
+    if (!src) return;
+    const layer = mistLayer(src.data, src.width, src.height, region, CFG.mist, CFG.mist.feather);
+    if (layer.width <= 0 || layer.height <= 0) return;
+    if (!this.canvasTexture(mistKey, layer.width, layer.height, layer.data)) return;
+    this.mistAt = { x: layer.x, y: layer.y };
+    this.mist = this.scene.add
+      .tileSprite(0, 0, layer.width, layer.height, mistKey)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setScale(far.scaleX, far.scaleY)
+      .setAlpha(CFG.mist.alpha)
+      .setDepth(CFG.depth + 0.25);
+  }
+
+  /**
+   * Relleno de lo que destapa el desplazamiento vertical (S29): el color de las filas de arriba de la imagen, ahora
+   * por columnas (S59), y su fundido (de opaco a transparente) para el borde. Con `fillTop`, el relleno pasa en
+   * degradado del borde a ese color hacia arriba. Texturas chicas con filtro lineal: se estiran sin escalones.
+   * Solo se dibujan cuando hay franja destapada (ver `update`): una imagen más a pantalla completa costaba muchos
+   * cuadros por segundo con el render por software del smoke.
+   */
+  private makeFill(key: string, fillTop?: string): void {
+    const fillKey = FILL_KEY + key;
+    const edgeKey = fillKey + '_edge';
+    const cols = CFG.fillColumns;
+    // Alto que no es potencia de 2: WebGL no repite la textura y el filtro lineal no mezcla la fila de arriba con la de abajo.
+    const rows = 31;
+    if (!this.scene.textures.exists(fillKey)) {
+      const src = this.pixels(key);
+      if (!src) return;
+      const edge = edgeColumns(src.data, src.width, CFG.fillSampleRows, cols, CFG.fillBlur);
+      const top = fillTop ? Phaser.Display.Color.HexStringToColor(fillTop).color : undefined;
+      const fill = new Uint8ClampedArray(cols * rows * 4);
+      const fade = new Uint8ClampedArray(cols * rows * 4);
+      for (let y = 0; y < rows; y++) {
+        const t = y / (rows - 1);
+        for (let x = 0; x < cols; x++) {
+          const c = top === undefined ? edge[x]! : mixColor(top, edge[x]!, t);
+          const i = (y * cols + x) * 4;
+          fill.set([(c >> 16) & 0xff, (c >> 8) & 0xff, c & 0xff, 255], i);
+          fade.set([(edge[x]! >> 16) & 0xff, (edge[x]! >> 8) & 0xff, edge[x]! & 0xff, Math.round(255 * (1 - t))], i);
+        }
+      }
+      if (!this.canvasTexture(fillKey, cols, rows, fill) || !this.canvasTexture(edgeKey, cols, rows, fade)) return;
+      for (const k of [fillKey, edgeKey]) this.scene.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+    const width = this.far!.displayWidth;
+    this.fill = this.scene.add
+      .image(0, 0, fillKey)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDisplaySize(width, Math.ceil(this.maxUncovered) + 1)
+      .setDepth(CFG.depth - 1)
+      .setVisible(false);
+    this.fillEdge = this.scene.add
+      .image(0, 0, edgeKey)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDisplaySize(width, CFG.fillEdgeHeight)
+      .setDepth(CFG.depth + 0.5)
+      .setVisible(false);
   }
 
   /** Franja horizontal transparente → oscura → transparente (se estira a lo alto de la vista). */

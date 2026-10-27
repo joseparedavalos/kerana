@@ -370,7 +370,7 @@ export class LevelScene extends Phaser.Scene {
     this.buildMap();
     this.backdrop = new LevelBackdrop(this, this.def.backgrounds, this.map.widthInPixels, this.map.heightInPixels);
     // El fondo no recibe la luz del nivel oscuro: se tiñe con el ambiente (la oscuridad sigue por encima).
-    for (const img of this.backdrop.images) this.darkness?.glow(img);
+    for (const layer of this.backdrop.layers) this.darkness?.glow(layer);
     if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
     const spawn = this.buildObjects();
     this.linkBreakables();
