@@ -106,7 +106,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapSource: 'ascii',
     biome: 'selva',
     // S59: arriba del dosel, la luz que se filtra (no negro); la lluvia pintada cae.
-    backgrounds: { far: 'bg_l5_far', fillTop: '#a9bf98', rain: true },
+    // S60: el dosel (copas, niebla en bandas y rayos de luz) en el relleno de arriba.
+    backgrounds: { far: 'bg_l5_far', fillTop: '#a9bf98', rain: true, canopy: true },
     terrainShell: 3,
     musicKey: '',
     boss: 'kurupi',

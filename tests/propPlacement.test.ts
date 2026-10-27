@@ -198,6 +198,11 @@ describe('props colocados en los niveles (S51)', () => {
     if (id === 'l7')
       it('l7: la calle y el camposanto no se mezclan, la ronda va limpia y cada prop está cerca de un farol o un fuego', () => {
         // S54: es de noche y los props traen luz de farol pintada: lejos de toda luz se verían encendidos en lo oscuro.
+        // S60: salvo los de fachada en la calle a la luz de la luna (fuera de las DarkZone): son parte de la casa, y el
+        // tejado va arriba del todo, lejos de los faroles de la vereda. La luna los oscurece como al muro.
+        const dark = (map.rects as any[]).filter((r) => r.cls === 'DarkZone');
+        const moonlit = (b: { left: number; right: number; top: number; bottom: number }) =>
+          b.right <= L7_CAMPOSANTO_X && !dark.some((r) => b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y);
         const lights: [number, number][] = [];
         for (const l of map.points as any[]) if (l.cls === 'Lantern') lights.push([l.x + 0.5, l.y + 1 - LANTERN_LIGHT_UP]);
         g.forEach((row, y) => [...row].forEach((c, x) => c === 'C' && lights.push([x + 0.5, y + 1 - FIRE_LIGHT_UP])));
@@ -207,7 +212,7 @@ describe('props colocados en los niveles (S51)', () => {
           const folder = b.left >= L7_CAMPOSANTO_X ? 'l7_camposanto/' : b.right <= L7_CAMPOSANTO_X ? 'l7_calle/' : '(en el borde)';
           if (!p.art.startsWith(folder)) bad.push(`${p.art} (${p.x}, ${p.y}): de este lado van los de ${folder}`);
           if (b.left < L7_RONDA[1] && b.right > L7_RONDA[0]) bad.push(`${p.art} (${p.x}, ${p.y}): en la torre de la ronda`);
-          if (!lights.some(([lx, ly]) => boxDistance(b, lx, ly) <= LIGHT_RADIUS)) bad.push(`${p.art} (${p.x}, ${p.y}): lejos de toda luz`);
+          if (!(b.wall && moonlit(b)) && !lights.some(([lx, ly]) => boxDistance(b, lx, ly) <= LIGHT_RADIUS)) bad.push(`${p.art} (${p.x}, ${p.y}): lejos de toda luz`);
         }
         expect(bad).toEqual([]);
       });

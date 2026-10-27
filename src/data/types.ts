@@ -21,6 +21,8 @@ export interface LevelBackgrounds {
   rain?: boolean;
   /** La imagen trae niebla pintada en esta franja (S59; fracciones x0, y0, x1, y1): una copia corre de costado. */
   mist?: { region: readonly [number, number, number, number] };
+  /** El relleno de arriba es dosel (S60): siluetas de copas, niebla en bandas y rayos de luz (GAMEPLAY.backdrop.canopy). */
+  canopy?: boolean;
 }
 
 export interface LevelDef {
