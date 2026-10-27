@@ -338,6 +338,7 @@ Si hay que recortar (§12), los tres dones de habilidad pueden darse desde el pr
 - **Hit-stop:** la acción se congela un instante al golpear y al recibir daño, para dar peso al impacto.
 - Sacudida leve de cámara en golpes fuertes (desactivable, §4.9).
 - **Purificación:** los enemigos vencidos no mueren. La marca de Tau se desprende como humo violeta, un destello de luz cálida y el animal huye o se disuelve en chispas.
+- **Purificar a un humano (S62, el payesero):** sin chispas y sin agrandarse. Un humano que se disuelve se lee como que murió, justo lo contrario de lo que cuenta el juego. Humo violeta que sube, un destello cálido, **su aura se apaga** y se desvanece: quedó libre.
 - Tocar a un enemigo hace daño a Kerana, salvo con la Luz de Arasy activa o durante el dash.
 
 ### 4.2 Checkpoints: los fuegos [MVP]
@@ -414,7 +415,7 @@ La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) m�
 
 ### 5.1 Principios
 
-- Son animales o espíritus menores **marcados por Tau**: una espiral violeta en el cuerpo y ojos con brillo violeta.
+- Son animales o espíritus menores **marcados por Tau**: una espiral violeta en el cuerpo y ojos con brillo violeta. La excepción es el **payesero** (S62), el primer enemigo humano: una persona viva maldita por Tau, no un villano ni un no-muerto; al purificarlo queda libre como los animales.
 - Al vencerlos se purifican (§4.1).
 - Cada nivel presenta 1 o 2 enemigos nuevos y reutiliza otros.
 - Todo enemigo se lee en medio segundo: silueta clara y un aviso antes de atacar.
@@ -432,6 +433,7 @@ La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) m�
 | **Thrower** | Lanza proyectiles en arco desde un punto fijo | cadencia, velocidad del proyectil |
 | **Jumper** | Salta hacia Kerana cada cierto tiempo | fuerza del salto, espera |
 | **Swarm** | Enjambre de partículas que persigue un tiempo y se dispersa | duración, velocidad |
+| **Caster** (S62) | Quieto; mira a Kerana y gira si le pasa al otro lado; dentro de su alcance y con camino libre carga (aviso) y lanza un proyectil que la sigue un rato | alcance, carga (ms), espera; el proyectil, en `GAMEPLAY.payesero.paye` |
 
 ### 5.3 Catálogo
 
@@ -453,6 +455,16 @@ La Luz de Arasy usa el sistema de **filtros** de Phaser 4 (por ejemplo, Glow) m�
 | `ao_ao_cria` | Cría de Ao Ao | Jumper | 6 | 1 | |
 | `pora` | Póra (fantasma) | Flyer | 7 | 2 | Solo es vulnerable cuando está iluminado |
 | `jagua_hu` | Jagua hũ (perro negro) | Charger | 7 | 2 | Ojos brillantes como aviso en la oscuridad |
+| `payesero` | Payesero (hechicero que lanza payé) | Caster | 1 | 3 | El primer humano (S62). Más alto que Kerana (58 de alto; su cuerpo, 18 × 54, es el torso y las piernas). Aura violeta por código; lanza payé. Ver abajo |
+
+**El payesero y el payé (S62).** Un hechicero guaraní que lanza payé, un maleficio. No patrulla ni persigue: se queda en su sitio. **Gira para mirar a Kerana** cuando ella le pasa al otro lado (si no, se lo golpearía por la espalda sin riesgo). Fuera de su **alcance** (150 px) o con roca entre su mano y ella, no ataca. Al cargar levanta el mbaraka y **su aura violeta sube** con un latido (0,9 s): ese es el aviso. Después empuja la palma y el payé sale de **la punta de la mano** (el sprite ya trae una esfera dibujada en el pecho: si saliera de ahí, se verían dos). El aura no está en el sprite porque cambia de estado: tenue y constante en reposo, intensa al cargar, apagada al purificarlo; un contorno se ve a cualquier distancia, la marca del pecho no.
+
+El **payé** es el primer proyectil del juego que sigue al jugador. Tres frenos para que sea justo, y los tres importan:
+- Va **despacio**: 60 px/s, ≈ 40 % de la carrera de Kerana.
+- **Corrige el rumbo solo los primeros 1,2 s** (90° por segundo como mucho) y después sigue recto. Si persiguiera para siempre, no habría cómo escapar.
+- **Se corta con el sable** (con un radio más generoso que el que lastima). Premia reaccionar en vez de castigar.
+
+Vive 5 s y se deshace en humo al caducar, contra el suelo o una pared, al cortarlo o al pegar. Las plataformas de un sentido no lo frenan. Quita 1 corazón y empuja lejos del payesero. Todos los valores, comentados, en `GAMEPLAY.payesero`: se afinan jugando.
 
 Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián y no enemigo común, quita 2).
 
@@ -491,7 +503,7 @@ Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián 
 | Hora | Amanecer |
 | Tamaño | 314 × 34 tiles (S19) |
 | Idea nueva | Lo básico: correr, saltar, atacar, fuegos, curación y Luz de Arasy; pozos, plataformas móviles, piedras que abren rejas y hongos |
-| Enemigos | `teju_i`, `mbopi` |
+| Enemigos | `teju_i`, `mbopi`, `payesero` (S62) |
 | Peligros | Espinas de karaguatá; estalactitas que caen (aviso: polvo) |
 | Música | Flauta suave y mbaraka; se oscurece al bajar a la caverna |
 | Jefe | Teju Jagua |
@@ -504,7 +516,8 @@ Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián 
   - *Ruta baja:* **Luz de Arasy** justo antes de un pasillo con cuatro teju'i (el jugador descubre que con la luz los purifica al tocarlos); al final, un **hongo de un solo uso** sube a la cima (la pared mide 5).
   - *Ruta alta:* quien se deja caer al hoyo del hongo rebota a unas repisas en el cielo con un guavirá y un mbopi. *Pluma B (saltar):* en el arco del salto sobre el hueco más alto. Caerse deja en la ruta baja.
   - **Fuego** en la cima (x 184).
-- **C. La cueva (x 190–249, vertical).** El camino entra al cerro y baja en zigzag: galería 1 hacia la derecha (estalactitas con aviso, karaguatá, teju'i) hasta un hueco por el que se cae a la galería 2, que vuelve hacia la izquierda; al final, una **plataforma vertical** sobre un **pozo** baja a la galería 3, que sale a la caverna. Secreto: un guavirá tras una liana al final de la galería 1 (luciérnagas). *Pluma C (tajo cargado, volver después):* en la pared de la galería 2 hay una piedra encerrada en la roca; la onda del tajo cargado la enciende y abre la cámara junto al pozo vertical, donde un **hongo dormido** (también con el tajo cargado) lleva a la repisa de la pluma.
+  - *Payesero de la ladera (S62):* en el bloque x 70-75, del otro lado de la zanja con piso y con el pozo 1 detrás. Hay que cruzar la zanja hacia él; su payé empuja hacia la zanja (tiene piso), nunca hacia el pozo. La zanja sirve de reparo: el payé que la sigue choca con la pared. Queda fuera de alcance mientras se aprende el salto alto (cartel 4, x 58).
+- **C. La cueva (x 190–249, vertical).** El camino entra al cerro y baja en zigzag: galería 1 hacia la derecha (estalactitas con aviso, karaguatá, teju'i) hasta un hueco por el que se cae a la galería 2, que vuelve hacia la izquierda; al final, una **plataforma vertical** sobre un **pozo** baja a la galería 3, que sale a la caverna. Secreto: un guavirá tras una liana al final de la galería 1 (luciérnagas). *Payesero de la cueva (S62):* en la galería 3 (x 230), justo antes de las espinas (x 232-233): guarda ese salto. La galería mide 6 filas y no se lo puede saltar por arriba: se lo purifica o se lo cruza con el dash. Su payé empuja hacia atrás, a piso firme; queda lejos del pozo vertical (x 200-203) y del fuego de la antesala. *Pluma C (tajo cargado, volver después):* en la pared de la galería 2 hay una piedra encerrada en la roca; la onda del tajo cargado la enciende y abre la cámara junto al pozo vertical, donde un **hongo dormido** (también con el tajo cargado) lleva a la repisa de la pluma.
 - **Checkpoint (antesala, x 250–273).** Una planta de guavirá. Mainumby: "Algo grande respira ahí abajo…".
 - **Arena: la caverna del tesoro (x 274–313).** Suelo plano, dos repisas laterales, cristales y oro al fondo. El cuerpo enorme de Teju Jagua es una silueta en la penumbra del fondo; solo las cabezas, sobre sus cuellos, salen a la luz.
 
