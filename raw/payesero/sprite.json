@@ -1,0 +1,12 @@
+{
+  "detail": 2,
+  "frame": [108, 142],
+  "height": 116,
+  "sheets": { "idle": { "ref": 0 }, "attack": { "ref": 0 } },
+  "anims": {
+    "idle": { "fps": 8, "loop": true },
+    "charge": { "source": "attack", "frames": [0, 4], "fps": 7 },
+    "cast": { "source": "attack", "frames": [6, 9], "fps": 10 },
+    "attack": { "skip": true }
+  }
+}

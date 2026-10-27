@@ -137,3 +137,14 @@ const minInk = (img) => Math.round(Math.min(img.width, img.height) * 0.01);
     console.log(`  superficie en la fila ${surfaceRow(small)}`);
   }
 }
+
+// Payé (S62): el proyectil del payesero, un cometa con la cabeza a la izquierda. El JPG está en raw/payesero/ (es
+// de ese enemigo) y trae el mismo damero; las motas violetas sueltas de la estela son parte del dibujo.
+{
+  const cfg = config.paye;
+  const img = load(cfg.file);
+  const mask = pieceMask(img);
+  const box = inkBounds(mask, img.width, { x: 0, y: 0, w: img.width, h: img.height }, minInk(img));
+  save('paye', reduceBlocks(img, box, cfg.width, Math.round((box.h * cfg.width) / box.w), inkOf(mask, img.width)));
+  console.log(`  dibujo ${box.w} × ${box.h} px en el JPG`);
+}

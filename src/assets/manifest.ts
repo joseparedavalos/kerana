@@ -67,6 +67,7 @@ export const ENEMY_SPRITES: Record<string, [number, number]> = {
   ao_ao_cria: [40, 32],
   pora: [44, 60],
   jagua_hu: [52, 40],
+  payesero: [108, 142],
 };
 
 /** Píxeles de arte por unidad del mundo de los props e íconos (raw/props y raw/hud → `sprite.json`). */
@@ -104,6 +105,7 @@ export const ART_IMAGES = {
   piece_switch_on: 'pieces/switch_on.png',
   piece_raft_32: 'pieces/raft_32.png',
   piece_raft_48: 'pieces/raft_48.png',
+  piece_paye: 'pieces/paye.png',
 } as const;
 export type ArtKey = keyof typeof ART_IMAGES;
 
