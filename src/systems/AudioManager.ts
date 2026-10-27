@@ -1,5 +1,5 @@
 import { GAMEPLAY } from '../config/gameplay';
-import { BOSS_LAYER, INSTRUMENTS, TRACKS, type MusicKey, type TrackId } from '../data/music';
+import { BOSS_LAYER, BOSS_LEVEL_TRACKS, INSTRUMENTS, TRACKS, type MusicKey, type TrackId } from '../data/music';
 import { bossVariant, normalize, peak, renderTrack, rms, type TrackDef } from './musicLogic';
 import { SaveManager } from './SaveManager';
 import type { MusicJob, MusicResult } from './musicWorker';
@@ -28,6 +28,8 @@ export class AudioManager {
   private static ducked = false;
   /** La pista que pidió la escena (puede no estar sonando todavía: falta el gesto o se está generando). */
   private static wanted: MusicKey | null = null;
+  /** Pistas que la escena va a pedir pronto: se generan de antemano para que el cambio sea un fundido cruzado. */
+  private static upcoming: MusicKey[] = [];
   private static playing: Playing | null = null;
   private static musicBus: GainNode | null = null;
   private static readonly buffers = new Map<MusicKey, AudioBuffer>();
@@ -74,9 +76,15 @@ export class AudioManager {
   /**
    * La música de la escena. La misma pista que ya suena sigue sin cortarse; otra entra con fundido y la
    * anterior se va con el suyo. `null` = silencio (con fundido).
+   * `upcoming`: las que la escena va a pedir después (S61: la pelea y la liberación). Se generan de antemano, detrás de
+   * esta, para que al pedirlas la anterior se vaya y la nueva entre a la vez, sin hueco mientras se genera.
    */
-  static music(key: MusicKey | null): void {
-    if (key === this.wanted) return;
+  static music(key: MusicKey | null, upcoming: MusicKey[] = []): void {
+    this.upcoming = upcoming;
+    if (key === this.wanted) {
+      this.prefetchUpcoming();
+      return;
+    }
     this.wanted = key;
     this.switchMusic();
   }
@@ -140,6 +148,14 @@ export class AudioManager {
       this.fadeOutCurrent(ctx);
       this.startTrack(ctx, key, buffer);
     });
+    this.prefetchUpcoming();
+  }
+
+  /** Después de la pista pedida (el worker las genera en orden): las que vienen, si no están ya. */
+  private static prefetchUpcoming(): void {
+    const ctx = this.zz?.ZZFX.audioContext;
+    if (!ctx || !this.gestured) return;
+    for (const key of this.upcoming) if (key !== this.wanted && !this.buffers.has(key)) void this.buffer(ctx, key);
   }
 
   private static startTrack(ctx: AudioContext, key: MusicKey, buffer: AudioBuffer): void {
@@ -307,20 +323,20 @@ export class AudioManager {
       gestured: this.gestured,
       ducked: this.ducked,
       started: [...this.started],
+      cached: [...this.buffers.keys()],
       failures: [...this.failures],
       busGain: this.musicBus?.gain.value ?? 0,
       renderer: this.worker ? 'worker' : this.worker === null ? 'hilo principal' : 'sin usar',
     };
   }
 
-  /** Genera las diez pistas y sus variantes de jefe; devuelve duración, intensidad y pico de cada una. */
+  /** Genera todas las pistas y las variantes de jefe; devuelve duración, intensidad y pico de cada una. */
   private static async debugRenderAll() {
     const out: { key: string; seconds: number; rms: number; peak: number }[] = [];
-    for (const id of Object.keys(TRACKS) as TrackId[]) {
-      for (const key of [id, `${id}_boss`] as MusicKey[]) {
-        const samples = await this.renderSamples(trackDef(key)!);
-        out.push({ key, seconds: samples.length / CFG.musicSampleRate, rms: rms(samples), peak: peak(samples) });
-      }
+    const keys: MusicKey[] = [...(Object.keys(TRACKS) as TrackId[]), ...BOSS_LEVEL_TRACKS.map((id) => `${id}_boss` as const)];
+    for (const key of keys) {
+      const samples = await this.renderSamples(trackDef(key)!);
+      out.push({ key, seconds: samples.length / CFG.musicSampleRate, rms: rms(samples), peak: peak(samples) });
     }
     return { tracks: out, musicGain: CFG.musicGain };
   }
@@ -339,5 +355,5 @@ function trackDef(key: MusicKey): TrackDef | null {
   const boss = key.endsWith('_boss');
   const base = TRACKS[(boss ? key.slice(0, -'_boss'.length) : key) as TrackId];
   if (!base) return null;
-  return boss ? bossVariant(base, BOSS_LAYER) : base;
+  return boss ? bossVariant(base, BOSS_LAYER, INSTRUMENTS) : base;
 }

@@ -16,6 +16,8 @@ export interface VoiceDef {
   /** Semitonos que se suman a todas las notas (12 = una octava arriba). */
   octave?: number;
   gain?: number;
+  /** La melodía de la pieza: en la variante de jefe queda solo el motivo (S61). */
+  lead?: boolean;
   /**
    * Un token por paso, separados por espacios; `|` separa compases y no cuenta.
    * `.` silencio · `-` sigue la nota anterior · número = semitonos sobre la tónica · `x` = 0 ·
@@ -88,7 +90,7 @@ export function loopSeconds(def: TrackDef): number {
   return trackSteps(def) * stepSeconds(def);
 }
 
-/** Capa de jefe (S37): bombo en cada pulso, takuapu en cada paso y un bajo que late en la tónica. */
+/** Capa de jefe (S37, S61): la pieza del nivel más rápida, más grave, en menor y con percusión que empuja. */
 export interface BossLayer {
   tempo: number;
   drum: string;
@@ -97,35 +99,76 @@ export interface BossLayer {
   /** Octava del bajo: la tónica cae entre `bassLowHz` y el doble. */
   bassLowHz: number;
   gains: { drum: number; pulse: number; bass: number };
+  /** Una voz con notas que no bajan de esto suena una octava más abajo. */
+  dropAboveHz: number;
+  /** La melodía conserva solo su primera frase (esta fracción de compases, para reconocer el lugar) y suena más bajo. */
+  leadKeep: number;
+  leadGain: number;
+  /** Grados (semitonos sobre la tónica, 0 a 11) que bajan medio tono: tercera, sexta y séptima mayores → menor. */
+  darken: readonly number[];
 }
 
-/** Variante tensa de una pista: la misma pieza, más rápida y con la capa de jefe encima. */
-export function bossVariant(def: TrackDef, layer: BossLayer): TrackDef {
+/**
+ * Variante tensa de una pista: el acompañamiento y los timbres del nivel (se reconoce el lugar), pero más rápida,
+ * más grave, en menor, con la melodía reducida a su primera frase y una capa de tambor, takuapu y bajo encima.
+ */
+export function bossVariant(def: TrackDef, layer: BossLayer, instruments: Record<string, InstrumentDef>): TrackDef {
   const bar = def.stepsPerBeat * def.beatsPerBar;
+  const lastBeat = bar - def.stepsPerBeat;
   const drum: string[] = [];
   const pulse: string[] = [];
   const bass: string[] = [];
-  for (let i = 0; i < bar; i++) {
-    const onBeat = i % def.stepsPerBeat === 0;
-    drum.push(i === 0 ? 'x!' : onBeat ? 'x' : '.');
-    pulse.push(onBeat ? '.' : 'x');
-    // Tónica en los pulsos y la quinta en el último, para empujar hacia el compás siguiente.
-    bass.push(!onBeat ? '.' : i === bar - def.stepsPerBeat ? '7' : '0');
+  // Dos compases: el segundo cierra con medio tono arriba de la tónica, que no deja descansar.
+  for (let b = 0; b < 2; b++) {
+    for (let i = 0; i < bar; i++) {
+      const onBeat = i % def.stepsPerBeat === 0;
+      drum.push(i === 0 ? 'x!' : onBeat || i === bar - 1 ? 'x' : '.');
+      pulse.push(onBeat ? '.' : 'x');
+      bass.push(i === 0 ? '0!' : i >= lastBeat ? (b === 0 ? '7' : '1') : '0');
+    }
   }
   let octave = 0;
   while (def.root * 2 ** (octave / 12) >= layer.bassLowHz * 2) octave -= 12;
   while (def.root * 2 ** (octave / 12) < layer.bassLowHz) octave += 12;
+  const voices = def.voices.map((v) => {
+    if (instruments[v.inst]?.freq !== undefined) return v; // percusión: igual
+    let pattern = darkenPattern(v.pattern, layer.darken);
+    let gain = v.gain ?? 1;
+    if (v.lead) {
+      pattern = keepHead(pattern, bar, layer.leadKeep);
+      gain *= layer.leadGain;
+    }
+    let vOctave = v.octave ?? 0;
+    const low = Math.min(...parsePattern(pattern).notes.flatMap((n) => n.semis));
+    if (Number.isFinite(low) && def.root * 2 ** ((low + vOctave) / 12) >= layer.dropAboveHz) vOctave -= 12;
+    return { ...v, octave: vOctave, gain, pattern };
+  });
   return {
     ...def,
     id: `${def.id}_boss`,
     bpm: def.bpm * layer.tempo,
     voices: [
-      ...def.voices,
+      ...voices,
       { inst: layer.drum, gain: layer.gains.drum, pattern: drum.join(' ') },
       { inst: layer.pulse, gain: layer.gains.pulse, pattern: pulse.join(' ') },
       { inst: layer.bass, octave, gain: layer.gains.bass, pattern: bass.join(' ') },
     ],
   };
+}
+
+/** Baja medio tono los grados de `darken` en cada nota del patrón. */
+export function darkenPattern(src: string, darken: readonly number[]): string {
+  return src.replace(/-?\d+/g, (n) => {
+    const s = Number(n);
+    return String(darken.includes(((s % 12) + 12) % 12) ? s - 1 : s);
+  });
+}
+
+/** Deja sonar los primeros compases (la fracción `keep`, al menos uno); el resto, en silencio. */
+export function keepHead(src: string, barSteps: number, keep: number): string {
+  const tokens = src.split(/[\s|]+/).filter(Boolean);
+  const bars = Math.max(1, Math.ceil((tokens.length / barSteps) * keep));
+  return tokens.map((t, i) => (i < bars * barSteps ? t : '.')).join(' ');
 }
 
 /** Lo que hace el sintetizador: parámetros de ZzFX → muestras. */

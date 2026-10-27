@@ -8,7 +8,7 @@ import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import { liberationDialogue } from '../data/dialogues';
 import { getLevel, WORLD_LEVELS } from '../data/levels';
-import { bossTrack, levelTrack } from '../data/music';
+import { bossTrack, levelTrack, liberationTrack } from '../data/music';
 import { endingSlides } from '../data/story';
 import type { BossId, LevelDef, LevelId } from '../data/types';
 import { createBoss, type Boss, type BossContext } from '../entities/bosses';
@@ -315,7 +315,8 @@ export class LevelScene extends Phaser.Scene {
       this.scene.start(this.def.order > 0 ? 'Map' : 'Title');
       return;
     }
-    AudioManager.music(levelTrack(this.def.id));
+    // La antesala es calma; la pelea entra al cerrarse la arena. Las dos que vienen quedan listas para fundirse.
+    AudioManager.music(levelTrack(this.def.id), this.upcomingMusic());
     this.inputs = new InputManager(this);
     this.enemies = [];
     this.pickups = [];
@@ -784,7 +785,7 @@ export class LevelScene extends Phaser.Scene {
     this.fighting = true;
     this.arena!.lock(this.cameras.main);
     AudioManager.play('arenaLock');
-    AudioManager.music(bossTrack(this.def.id));
+    AudioManager.music(bossTrack(this.def.id), [liberationTrack(this.def.id)]);
     this.shake(GAMEPLAY.boss.lockShakeMs, GAMEPLAY.boss.lockShakeIntensity);
     this.boss!.begin();
     this.syncArenaLuz();
@@ -827,7 +828,8 @@ export class LevelScene extends Phaser.Scene {
   private resetBossFight(): void {
     if (!this.fighting) return;
     this.fighting = false;
-    AudioManager.music(levelTrack(this.def.id));
+    // La pelea vuelve a empezar de cero con el próximo intento; mientras, la del nivel.
+    AudioManager.music(levelTrack(this.def.id), this.upcomingMusic());
     this.boss?.resetFight();
     this.arena?.unlock(this.cameras.main, this.map.widthInPixels, this.map.heightInPixels);
     this.clearOneShotHazards();
@@ -838,12 +840,18 @@ export class LevelScene extends Phaser.Scene {
     this.removeArenaLuz();
   }
 
+  /** Lo que va a sonar después del recorrido: la pelea y la liberación (S61). */
+  private upcomingMusic() {
+    return [bossTrack(this.def.id), liberationTrack(this.def.id)];
+  }
+
   private startLiberation(): void {
     const boss = this.boss!;
     this.cutscene = true;
     this.fighting = false;
-    // Silencio para que el arpegio de la liberación se oiga solo; "Nivel completado" trae la del mapa.
-    AudioManager.music(null);
+    // La pelea se va con su fundido; al estallar la marca entra la liberación (o el sellado) y "Nivel completado"
+    // trae la del mapa.
+    AudioManager.music(null, [liberationTrack(this.def.id)]);
     this.clearOneShotHazards();
     this.clearFlowers();
     this.clearBossMinions();
@@ -856,6 +864,7 @@ export class LevelScene extends Phaser.Scene {
       scene: this,
       boss,
       giftText,
+      music: liberationTrack(this.def.id),
       flashes: SaveManager.current.settings.flashes,
       showDialogue: (done) => {
         const lines = liberationDialogue(this.def.id);
