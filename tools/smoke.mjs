@@ -704,8 +704,30 @@ async function main() {
       return info;
     };
     check((await payInfo()).xs === '73,230', `payesero: dos en l1, en la ladera (x 73) y en la cueva (x 230) (${(await payInfo()).xs})`);
+    // Cada golpe a Kerana y cada caída se anotan dentro del juego: con el contenedor cargado, sondear desde afuera
+    // llega tarde (en S62 el chequeo vio dos corazones menos: ya había pegado el segundo payé).
+    await payPage.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const pl = window.__KERANA_DEBUG__.player;
+      const log = (window.__PAYE_LOG__ = { hits: [], respawns: [] });
+      const take = pl.takeDamage.bind(pl);
+      pl.takeDamage = (...args) => {
+        const applied = take(...args);
+        if (applied) {
+          const hit = { x: pl.x, after: null };
+          log.hits.push(hit);
+          s.time.delayedCall(600, () => (hit.after = pl.x));
+        }
+        return applied;
+      };
+      const respawn = s.respawn.bind(s);
+      s.respawn = (why) => {
+        log.respawns.push(why);
+        return respawn(why);
+      };
+    });
+    const payLog = () => payPage.evaluate(() => window.__PAYE_LOG__);
     // En el bloque, entre la zanja y el payesero: la mira y carga con el aura encendida.
-    const heartsBefore = (await payInfo()).hearts;
     await payPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(71 * 16 + 8, 8 * 16));
     const charging = await payWait((i) => i.state === 'windup' && i.aura > 3);
     check(charging.state === 'windup' && charging.facing === -1, `payesero: mira a Kerana y carga (${JSON.stringify(charging)})`);
@@ -713,39 +735,61 @@ async function main() {
     const launched = await payWait((i) => i.paye !== null);
     // La punta de la mano: 26 unidades adelante y 46 arriba de los pies (x 73 → 1176 - 26 = 1150; pies en 144).
     check(launched.paye && Math.abs(launched.paye.x - 1150) < 12 && Math.abs(launched.paye.y - 98) < 12, `payesero: el payé sale de la punta de la mano (${JSON.stringify(launched.paye)})`);
-    // Le pega (sin god): el empujón la manda hacia la zanja, lejos del pozo 1 (x 76-78).
-    const struck = await payWait((i) => i.hearts < heartsBefore, 12000);
-    await sleep(1200);
-    const after = await payInfo();
-    // Un solo corazón: si el empujón la tirara al pozo 1, perdería otro.
-    check(struck.hearts === heartsBefore - 1 && after.px <= struck.px && after.hearts === heartsBefore - 1, `payesero: el payé quita un corazón y la empuja hacia la zanja, no al pozo (x ${(struck.px / 16).toFixed(1)} → ${(after.px / 16).toFixed(1)}, corazones ${heartsBefore} → ${after.hearts})`);
-    // Gira cuando le pasa al otro lado.
+    // Le pega (sin god): el empujón la manda hacia la zanja, lejos del pozo 1 (x 76-78), y no cae.
+    for (let t = 0; t < 15000 && (await payLog()).hits[0]?.after == null; t += 100) await sleep(100);
+    const first = (await payLog()).hits[0];
+    check(
+      first && first.after !== null && first.after <= first.x && (await payLog()).respawns.length === 0,
+      `payesero: el payé la empuja hacia la zanja, no al pozo (x ${(first?.x / 16).toFixed(1)} → ${(first?.after / 16).toFixed(1)}, caídas ${JSON.stringify((await payLog()).respawns)})`,
+    );
+    // Gira cuando le pasa al otro lado (y Kerana sale enseguida de ahí: detrás de él está el pozo 1).
+    const clearPayes = () =>
+      payPage.evaluate(() => {
+        for (const e of window.__KERANA_DEBUG__.scene.enemies.filter((en) => en.def.id === 'payesero')) for (const p of e.payes) p.alive = false;
+      });
+    await clearPayes();
     await payPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(75 * 16 + 8, 8 * 16));
     const turned = await payWait((i) => i.facing === 1, 4000);
+    await payPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(64 * 16 + 8, 8 * 16));
     check(turned.facing === 1, `payesero: gira para mirarla cuando le pasa al otro lado (${JSON.stringify(turned)})`);
-    // El sable corta el payé: Kerana del lado de la zanja mirando al payesero; tajo cuando el payé llega.
+    // El sable corta el payé: Kerana en x 64 mirando al payesero (de más cerca el payé llega todavía alto, por encima
+    // del tajo; el mbopi que vuela sobre x 60 se purifica antes para que no la toque). Cuando el payé llega, el juego se congela
+    // (así el tajo no depende de lo cargado que esté el contenedor), se aprieta el ataque y se descongela.
+    await clearPayes();
     await payPage.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
-      window.__PAYE_CUTS__ = 0;
-      for (const e of s.enemies.filter((en) => en.def.id === 'payesero')) {
-        const cut = e.cutProjectiles.bind(e);
-        e.cutProjectiles = (r) => {
-          const c = cut(r);
-          if (c) window.__PAYE_CUTS__++;
-          return c;
-        };
-      }
       const pl = window.__KERANA_DEBUG__.player;
+      window.__PAYE_CUTS__ = 0;
+      window.__PAYE_CLOSE__ = false;
+      for (const b of s.enemies.filter((en) => en.def.id === 'mbopi' && Math.abs(en.x - pl.x) < 200)) b.purify();
+      const e = s.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === 73);
+      const cut = e.cutProjectiles.bind(e);
+      e.cutProjectiles = (r) => {
+        const c = cut(r);
+        if (c) window.__PAYE_CUTS__++;
+        return c;
+      };
       pl.health.current = pl.health.max;
-      pl.body.reset(64 * 16 + 8, 8 * 16);
       pl.motor.facing = 1;
+      window.__PAYE_LOG__.hits.length = 0;
+      const close = () => {
+        const p = e.payes.find((q) => q.alive);
+        if (!p || p.x - pl.x > 34) return;
+        s.events.off('postupdate', close);
+        window.__KERANA_GAME__.loop.sleep();
+        window.__PAYE_CLOSE__ = true;
+      };
+      s.events.on('postupdate', close);
     });
-    let cutInfo = await payWait((i) => i.paye !== null && i.paye.x - i.px < 34, 15000);
-    if (cutInfo.paye) await payPage.keyboard.press('KeyX');
+    for (let t = 0; t < 15000 && !(await payPage.evaluate(() => window.__PAYE_CLOSE__)); t += 50) await sleep(50);
+    await payPage.keyboard.down('KeyX');
+    await payPage.evaluate(() => window.__KERANA_GAME__.loop.wake());
+    await sleep(200);
+    await payPage.keyboard.up('KeyX');
     await sleep(600);
     const cuts = await payPage.evaluate(() => window.__PAYE_CUTS__);
-    cutInfo = await payInfo();
-    check(cuts >= 1 && cutInfo.hearts === (await payPage.evaluate(() => window.__KERANA_DEBUG__.player.health.max)), `payesero: el sable corta el payé y no lastima (${cuts} cortado, corazones ${cutInfo.hearts})`);
+    const hitsAfter = (await payLog()).hits.length;
+    check(cuts >= 1 && hitsAfter === 0, `payesero: el sable corta el payé y no lastima (${cuts} cortado, ${hitsAfter} golpes)`);
     // La purificación: humo, destello, el aura se apaga y se desvanece; después ya no está.
     await payPage.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
@@ -753,11 +797,16 @@ async function main() {
       const e = s.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === 73);
       e.hit(e.hp, 1);
     });
-    await sleep(400);
-    const fading = await payPage.evaluate(() => {
-      const e = window.__KERANA_DEBUG__.scene.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === 73);
-      return e ? { purified: e.purified, aura: e.auraLevel, active: e.active } : null;
-    });
+    const fadingAt = () =>
+      payPage.evaluate(() => {
+        const e = window.__KERANA_DEBUG__.scene.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === 73);
+        return e ? { purified: e.purified, aura: e.auraLevel, active: e.active } : null;
+      });
+    let fading = await fadingAt();
+    for (let t = 0; t < 3000 && fading?.active && fading.aura >= 2; t += 50) {
+      await sleep(50);
+      fading = await fadingAt();
+    }
     check(fading?.purified && fading.aura < 2, `payesero: al purificarlo el aura se apaga (${JSON.stringify(fading)})`);
     await sleep(3000);
     check((await payInfo()).xs === '230', `payesero: purificado, se desvanece y se va (${(await payInfo()).xs})`);
