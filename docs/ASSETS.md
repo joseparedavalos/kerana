@@ -190,6 +190,11 @@ side view facing left, small 2D platformer enemy, 16-bit pixel art
 | `pora` | `raw/pora/` | `A translucent pale green ghost with a sad face and a wispy tail` | Idle (flotando) | 48 × 48 | S12 |
 | `jagua_hu` | `raw/jagua_hu/` | `A black dog with glowing eyes` | Run | 64 × 64 | S12 |
 | `abejas` | — | Hechas con partículas por código | — | — | S9 |
+| `payesero` | `raw/payesero/` | Un hechicero guaraní con poncho oscuro y un mbaraka (calabaza) en la mano; el primer humano | Idle (`idle_10x1`: respira y mueve la maraca) · Attack (`attack_10x1`: levanta el mbaraka, la calabaza se carga de violeta y empuja la palma) | 108 × 142 (58 de alto en el juego) | S62 |
+
+**Payesero (S62).** Las dos hojas vinieron con transparencia de verdad (sin damero ni fondo que quitar) y miran a la izquierda. `raw/payesero/sprite.json`: detail 2, `height` 116 (58 unidades, bastante más alto que Kerana, 46), cada hoja escalada por su cuadro 0 de pie (la `idle` mide 529 px y la `attack` 1056: Grok las dio a escalas distintas). Sin `greenEdge`: el contorno y el poncho oscuros quedan enteros (comprobado en la vista ampliada). Animaciones: `payesero_idle` (los 10 cuadros, 8 fps), `payesero_charge` (cuadros 0-4 de `attack`, 7 fps, se queda en el 4 con el mbaraka en alto) y `payesero_cast` (cuadros 6-9, 10 fps, la palma empujando); el 5 (baja el mbaraka cargado) se salta. Sin hoja de daño (el juego ya parpadea en blanco) ni de caminata (no camina). El aura violeta es un filtro Glow por código, no está en el sprite. La punta de la mano en el cuadro 6 queda 26 unidades adelante y 46 arriba de los pies (`GAMEPLAY.payesero.hand`). El PNG pesa 156 KB: es el sprite de enemigo más pesado (el arte tiene muchos colores).
+
+**El payé** (`raw/payesero/paye.jpg`, 1408 × 1408, con el damero pintado): lo limpia `npm run pieces` como las piezas de S58 (`paye` en `raw/piezas/piezas.json`, que apunta al JPG de `raw/payesero/`): relleno desde los bordes (se va también el recuadro blanco tenue de abajo) y reducción sin interpolar a 48 × 16 px (24 × 8 unidades). Sale a `public/assets/pieces/paye.png` (`piece_paye` en `ART_IMAGES`). Las motas violetas sueltas de la estela son parte del dibujo. El juego lo gira hacia donde vuela con el núcleo como centro (`paye.coreX`); sin el PNG es un círculo violeta.
 
 ---
 
@@ -338,7 +343,7 @@ Cuatro piezas que se dibujaban con rectángulos llevan arte de Jose desde S58. L
 
 El cuerpo físico, el comportamiento y `gameplay.ts` no cambian: el rectángulo del cuerpo queda invisible y el sprite se dibuja encima. **Sin el PNG**, cada pieza vuelve a su dibujo por código (las claves `piece_*` están en `ART_IMAGES` con `codePlaceholder`). El toldo de l7 (el hongo de ciudad) sigue por código: no tiene arte.
 
-En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) y `cascada.jpg`, sin conectar todavía.
+En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) y `cascada.jpg`, sin conectar todavía. El mismo script limpia desde S62 el payé del payesero, que vive en `raw/payesero/` (§3.5).
 
 ---
 
@@ -402,6 +407,7 @@ En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) 
 | Ao Ao + taitetu, ao_ao_cria | MVP | S11 | ☑ sprite (S13b) |
 | Luisón + pora, jagua_hu | MVP | S12 | ☑ sprite (S13b) |
 | Tilesets (8 biomas; campo hecho en S56, RECETA-TILESET) | Núcleo | S13 | ☐ |
+| Payesero (`idle`, `attack`) y payé (§3.5) | Núcleo | S62 | ☑ (aura y purificación por código) |
 | Piezas: hongo, reja, interruptor, balsa (§6.2) | Núcleo | S58 | ◐ (las cuatro con arte; faltan conectar la rama y la cascada, y el toldo de l7 no tiene arte) |
 | Fondos: capa lejana (7) | MVP | S13 | ☐ |
 | Fondos: capas media y cercana (14) | Núcleo | S13 | ☐ |

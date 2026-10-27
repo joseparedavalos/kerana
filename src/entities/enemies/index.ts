@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getEnemyDef } from '../../data/enemies';
+import { Caster } from './Caster';
 import { Charger } from './Charger';
 import { Diver } from './Diver';
 import type { EnemyBase } from './EnemyBase';
@@ -26,6 +27,8 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
       return new Jumper(scene, x, y, def, facing);
     case 'thrower':
       return new Thrower(scene, x, y, def, facing);
+    case 'caster':
+      return new Caster(scene, x, y, def, facing);
     case 'diver':
       return new Diver(scene, x, y, def, facing);
     default:
@@ -33,4 +36,5 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
   }
 }
 
+export { Caster } from './Caster';
 export { EnemyBase } from './EnemyBase';

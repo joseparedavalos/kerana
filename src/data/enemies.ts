@@ -4,7 +4,7 @@ import type { SfxKey } from '../systems/sfxPresets';
 // Enemigos comunes (GDD §5.2). Los IDs con nombre real llegan con cada nivel (§5.3);
 // por ahora hay uno por arquetipo para el nivel de prueba, con color placeholder.
 
-export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm' | 'jumper' | 'thrower';
+export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm' | 'jumper' | 'thrower' | 'caster';
 
 export interface EnemyDef {
   id: string;
@@ -36,6 +36,8 @@ export interface EnemyDef {
   purifiesInto?: 'vaca';
   /** Ojos que brillan en la oscuridad y se encienden en el aviso (jagua hũ, N7). */
   glowEyes?: boolean;
+  /** Humano (payesero, S62): al purificarse no hay chispas; humo, destello cálido y se desvanece. */
+  human?: boolean;
   /** Solo recibe daño iluminado (póra, N7; GDD §5.3). */
   needsLight?: boolean;
 
@@ -75,6 +77,10 @@ export interface EnemyDef {
   flightMsPerPx?: number;
   projectileRadius?: number;
   projectilePool?: number;
+
+  // Caster (payesero, S62): `detectRadius` es el alcance, `telegraphMs` la carga del hechizo y `cooldownMs` la
+  // espera; el payé y el aura, en GAMEPLAY.payesero. `castSfx` suena al lanzar (`warnSfx`, al empezar a cargar).
+  castSfx?: SfxKey;
 }
 
 export const ENEMIES: Record<string, EnemyDef> = {
@@ -96,6 +102,22 @@ export const ENEMIES: Record<string, EnemyDef> = {
   // Nivel 1 (GDD §5.3)
   teju_i: { id: 'teju_i', archetype: 'walker', hp: 1, width: 18, height: 10, speed: 38, patrolDistance: 40 },
   mbopi: { id: 'mbopi', archetype: 'flyer', hp: 1, width: 14, height: 10, speed: 36, patrolDistance: 48, amplitude: 18, frequencyHz: 1.4 },
+  // Payesero (S62): el primer enemigo humano. Quieto, mira a Kerana y lanza payé; valores en GAMEPLAY.payesero. El
+  // cuerpo (18 × 54) es el torso y las piernas: el sprite mide 58 de alto y el mbaraka y el brazo quedan afuera.
+  payesero: {
+    id: 'payesero',
+    archetype: 'caster',
+    human: true,
+    hp: GAMEPLAY.payesero.hp,
+    width: 18,
+    height: 54,
+    detectRadius: GAMEPLAY.payesero.range,
+    telegraphMs: GAMEPLAY.payesero.chargeMs,
+    cooldownMs: GAMEPLAY.payesero.cooldownMs,
+    projectilePool: GAMEPLAY.payesero.paye.pool,
+    warnSfx: 'hornGlow',
+    castSfx: 'spit',
+  },
 
   // Nivel 2 (GDD §5.3)
   jakare: {
