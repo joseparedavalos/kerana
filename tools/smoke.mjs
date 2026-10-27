@@ -672,6 +672,97 @@ async function main() {
     check(ofrOld.door === 'open' && ofrOld.hud === 0, `puerta de la ofrenda: con el hijo ya libre (partida vieja) está abierta de entrada (${JSON.stringify(ofrOld)})`);
     await ofr.close();
 
+    // 1b5) S62: los payeseros de l1 (ladera x 73, cueva x 230). Miran a Kerana y giran si les pasa al otro lado, cargan
+    // con el aura encendida y lanzan el payé desde la mano; el sable lo corta; su golpe empuja hacia la zanja, no al pozo
+    // 1; la purificación termina sin errores. Sin god=1: el payé tiene que pegar.
+    const payPage = await open('/?debug=1&level=1');
+    await payPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const payInfo = () =>
+      payPage.evaluate(() => {
+        const s = window.__KERANA_DEBUG__.scene;
+        const pl = window.__KERANA_DEBUG__.player;
+        const list = s.enemies.filter((e) => e.def.id === 'payesero' && e.active);
+        const near = list.find((e) => Math.abs(e.x - pl.x) < 240);
+        const paye = near?.payes.find((p) => p.alive);
+        return {
+          xs: list.map((e) => Math.floor(e.x / 16)).join(','),
+          state: near?.motor.state,
+          facing: near?.facing,
+          aura: near?.auraLevel,
+          paye: paye ? { x: Math.round(paye.x), y: Math.round(paye.y), age: Math.round(paye.ageMs) } : null,
+          px: pl.x,
+          hearts: pl.health.current,
+        };
+      });
+    const payWait = async (cond, ms = 15000) => {
+      let info = await payInfo();
+      for (let t = 0; t < ms && !cond(info); t += 50) {
+        await sleep(50);
+        info = await payInfo();
+      }
+      return info;
+    };
+    check((await payInfo()).xs === '73,230', `payesero: dos en l1, en la ladera (x 73) y en la cueva (x 230) (${(await payInfo()).xs})`);
+    // En el bloque, entre la zanja y el payesero: la mira y carga con el aura encendida.
+    const heartsBefore = (await payInfo()).hearts;
+    await payPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(71 * 16 + 8, 8 * 16));
+    const charging = await payWait((i) => i.state === 'windup' && i.aura > 3);
+    check(charging.state === 'windup' && charging.facing === -1, `payesero: mira a Kerana y carga (${JSON.stringify(charging)})`);
+    check(charging.aura > 3, `payesero: el aura sube mientras carga, es el aviso (${charging.aura?.toFixed(2)})`);
+    const launched = await payWait((i) => i.paye !== null);
+    // La punta de la mano: 26 unidades adelante y 46 arriba de los pies (x 73 → 1176 - 26 = 1150; pies en 144).
+    check(launched.paye && Math.abs(launched.paye.x - 1150) < 12 && Math.abs(launched.paye.y - 98) < 12, `payesero: el payé sale de la punta de la mano (${JSON.stringify(launched.paye)})`);
+    // Le pega (sin god): el empujón la manda hacia la zanja, lejos del pozo 1 (x 76-78).
+    const struck = await payWait((i) => i.hearts < heartsBefore, 12000);
+    await sleep(1200);
+    const after = await payInfo();
+    // Un solo corazón: si el empujón la tirara al pozo 1, perdería otro.
+    check(struck.hearts === heartsBefore - 1 && after.px <= struck.px && after.hearts === heartsBefore - 1, `payesero: el payé quita un corazón y la empuja hacia la zanja, no al pozo (x ${(struck.px / 16).toFixed(1)} → ${(after.px / 16).toFixed(1)}, corazones ${heartsBefore} → ${after.hearts})`);
+    // Gira cuando le pasa al otro lado.
+    await payPage.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(75 * 16 + 8, 8 * 16));
+    const turned = await payWait((i) => i.facing === 1, 4000);
+    check(turned.facing === 1, `payesero: gira para mirarla cuando le pasa al otro lado (${JSON.stringify(turned)})`);
+    // El sable corta el payé: Kerana del lado de la zanja mirando al payesero; tajo cuando el payé llega.
+    await payPage.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      window.__PAYE_CUTS__ = 0;
+      for (const e of s.enemies.filter((en) => en.def.id === 'payesero')) {
+        const cut = e.cutProjectiles.bind(e);
+        e.cutProjectiles = (r) => {
+          const c = cut(r);
+          if (c) window.__PAYE_CUTS__++;
+          return c;
+        };
+      }
+      const pl = window.__KERANA_DEBUG__.player;
+      pl.health.current = pl.health.max;
+      pl.body.reset(64 * 16 + 8, 8 * 16);
+      pl.motor.facing = 1;
+    });
+    let cutInfo = await payWait((i) => i.paye !== null && i.paye.x - i.px < 34, 15000);
+    if (cutInfo.paye) await payPage.keyboard.press('KeyX');
+    await sleep(600);
+    const cuts = await payPage.evaluate(() => window.__PAYE_CUTS__);
+    cutInfo = await payInfo();
+    check(cuts >= 1 && cutInfo.hearts === (await payPage.evaluate(() => window.__KERANA_DEBUG__.player.health.max)), `payesero: el sable corta el payé y no lastima (${cuts} cortado, corazones ${cutInfo.hearts})`);
+    // La purificación: humo, destello, el aura se apaga y se desvanece; después ya no está.
+    await payPage.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      window.__KERANA_DEBUG__.player.body.reset(60 * 16 + 8, 11 * 16);
+      const e = s.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === 73);
+      e.hit(e.hp, 1);
+    });
+    await sleep(400);
+    const fading = await payPage.evaluate(() => {
+      const e = window.__KERANA_DEBUG__.scene.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === 73);
+      return e ? { purified: e.purified, aura: e.auraLevel, active: e.active } : null;
+    });
+    check(fading?.purified && fading.aura < 2, `payesero: al purificarlo el aura se apaga (${JSON.stringify(fading)})`);
+    await sleep(3000);
+    check((await payInfo()).xs === '230', `payesero: purificado, se desvanece y se va (${(await payInfo()).xs})`);
+    await payPage.close();
+
     // 1c) Nivel 2: el mapa carga, ?boss=1 lleva a la antesala y Mbói Tu'i ataca.
     const l2Page = await open('/?debug=1&level=2&boss=1&god=1');
     await l2Page.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
