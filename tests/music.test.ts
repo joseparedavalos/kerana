@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { LEVELS } from '../src/data/levels';
-import { BOSS_LAYER, bossTrack, INSTRUMENTS, levelTrack, TRACKS, type TrackId } from '../src/data/music';
-import { applyEcho, bossVariant, loopSeconds, normalize, parsePattern, peak, renderTrack, rms, trackSteps, type Synth } from '../src/systems/musicLogic';
+import { BOSS_LAYER, BOSS_LEVEL_TRACKS, bossTrack, INSTRUMENTS, levelTrack, liberationTrack, TRACKS, type TrackId } from '../src/data/music';
+import { applyEcho, bossVariant, darkenPattern, keepHead, loopSeconds, normalize, parsePattern, peak, renderTrack, rms, trackSteps, type Synth } from '../src/systems/musicLogic';
 
 // S37: la música generada por código. ZzFX crea un AudioContext al importarse: en Node se le da uno de mentira.
 let zzfxBuild: Synth;
@@ -43,9 +43,9 @@ describe('parsePattern', () => {
   });
 });
 
-describe('las diez pistas', () => {
-  it('son título, mapa, l1 a l7 y Yvága', () => {
-    expect(IDS.sort()).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'map', 'title', 'yvaga']);
+describe('las trece pistas', () => {
+  it('son título, mapa, l1 a l7, Yvága y (S61) la pelea con Tau, la liberación y el sellado', () => {
+    expect([...IDS].sort()).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'liberation', 'map', 'seal', 'tau', 'title', 'yvaga']);
   });
 
   it.each(IDS)('%s: cada voz entra justa en el bucle, con instrumentos que existen', (id) => {
@@ -84,33 +84,64 @@ describe('las diez pistas', () => {
   });
 });
 
-describe('variante de jefe', () => {
-  it('es la misma pieza, más rápida y con tres voces más que entran justas', () => {
-    for (const id of IDS) {
-      const base = TRACKS[id];
-      const boss = bossVariant(base, BOSS_LAYER);
-      expect(boss.id).toBe(`${id}_boss`);
-      expect(boss.bpm).toBeGreaterThan(base.bpm);
-      expect(boss.voices.slice(0, base.voices.length)).toEqual(base.voices);
-      expect(boss.voices.length).toBe(base.voices.length + 3);
-      const steps = trackSteps(boss);
-      expect(steps).toBe(trackSteps(base));
-      for (const v of boss.voices) expect(steps % parsePattern(v.pattern).steps).toBe(0);
-      // El bajo de la capa cae en su octava.
-      const bass = boss.voices[boss.voices.length - 1];
-      const hz = base.root * 2 ** ((bass.octave ?? 0) / 12);
-      expect(hz).toBeGreaterThanOrEqual(BOSS_LAYER.bassLowHz);
-      expect(hz).toBeLessThan(BOSS_LAYER.bassLowHz * 2);
-    }
+describe('variante de jefe (S61)', () => {
+  const bossOf = (id: TrackId) => bossVariant(TRACKS[id], BOSS_LAYER, INSTRUMENTS);
+
+  it('baja medio tono la tercera, la sexta y la séptima mayores, en todas las octavas y en los acordes', () => {
+    expect(darkenPattern('0 4 7 . 9 - 11 16 -1 | -7+-5+-1 x!', [4, 9, 11])).toBe('0 3 7 . 8 - 10 15 -2 | -7+-5+-2 x!');
+  });
+
+  it('la melodía conserva solo su primera frase', () => {
+    expect(keepHead('1 2 | 3 4 | 5 6 | 7 8', 2, 0.5)).toBe('1 2 3 4 . . . .');
+    expect(keepHead('1 2 | 3 4 | 5 6', 2, 0.5)).toBe('1 2 3 4 . .');
+    expect(keepHead('1 2', 2, 0.5)).toBe('1 2');
+  });
+
+  it.each(BOSS_LEVEL_TRACKS)('%s: más rápida, con la percusión del nivel intacta y tres voces más que entran justas', (id) => {
+    const base = TRACKS[id];
+    const boss = bossOf(id);
+    expect(boss.id).toBe(`${id}_boss`);
+    expect(boss.bpm).toBeCloseTo(base.bpm * 1.25);
+    expect(boss.voices.length).toBe(base.voices.length + 3);
+    base.voices.forEach((v, i) => {
+      expect(boss.voices[i].inst).toBe(v.inst);
+      if (INSTRUMENTS[v.inst].freq !== undefined) expect(boss.voices[i]).toEqual(v);
+    });
+    const steps = trackSteps(boss);
+    expect(steps).toBe(trackSteps(base));
+    for (const v of boss.voices) expect(steps % parsePattern(v.pattern).steps).toBe(0);
+    const bass = boss.voices[boss.voices.length - 1];
+    const hz = base.root * 2 ** ((bass.octave ?? 0) / 12);
+    expect(hz).toBeGreaterThanOrEqual(BOSS_LAYER.bassLowHz);
+    expect(hz).toBeLessThan(BOSS_LAYER.bassLowHz * 2);
+  });
+
+  it.each(BOSS_LEVEL_TRACKS)('%s: menos melódica, más grave y más golpeada que el recorrido', (id) => {
+    const base = TRACKS[id];
+    const boss = bossOf(id);
+    // Notas por vuelta de las voces elegidas (una voz corta se repite hasta llenar el bucle).
+    const count = (def: typeof base, pick: (inst: string, lead: boolean) => boolean) =>
+      def.voices
+        .filter((v) => pick(v.inst, !!v.lead))
+        .reduce((n, v) => n + parsePattern(v.pattern).notes.length * (trackSteps(def) / parsePattern(v.pattern).steps), 0);
+    const leadNotes = (def: typeof base) => count(def, (_, lead) => lead);
+    const hits = (def: typeof base) => count(def, (inst) => INSTRUMENTS[inst].freq !== undefined);
+    expect(leadNotes(base), id).toBeGreaterThan(0);
+    expect(leadNotes(boss)).toBeLessThanOrEqual(leadNotes(base) * 0.6);
+    expect(hits(boss)).toBeGreaterThanOrEqual(hits(base) + trackSteps(base) / 2);
+    const lowest = (def: typeof base) =>
+      Math.min(...def.voices.filter((v) => v.lead).flatMap((v) => parsePattern(v.pattern).notes.flatMap((n) => n.semis.map((x) => x + (v.octave ?? 0)))));
+    expect(lowest(boss)).toBeLessThan(lowest(base));
   });
 });
 
 describe('qué suena dónde', () => {
-  it('cada nivel tiene su pista y su pelea; las salas de prueba usan la de l1', () => {
+  it('cada nivel tiene su pista, su pelea y su liberación; Tau pelea con la suya y se sella; las salas de prueba usan la de l1', () => {
     for (const level of Object.values(LEVELS)) {
       const track = levelTrack(level.id);
       expect(TRACKS[track], level.id).toBeDefined();
-      expect(bossTrack(level.id)).toBe(`${track}_boss`);
+      expect(bossTrack(level.id)).toBe(level.id === 'yvaga' ? 'tau' : `${track}_boss`);
+      expect(liberationTrack(level.id)).toBe(level.id === 'yvaga' ? 'seal' : 'liberation');
     }
     expect(levelTrack('test')).toBe('l1');
     expect(levelTrack('l7')).toBe('l7');
@@ -189,10 +220,11 @@ describe('volumen parejo', () => {
     expect(buf[15]).toBeCloseTo(0.25);
   });
 
-  it('con ZzFX de verdad, las diez pistas y sus peleas salen parejas, sin recortar y sin NaN', async () => {
+  it('con ZzFX de verdad, las trece pistas y las peleas salen parejas, sin recortar y sin NaN', async () => {
     const levels: number[] = [];
     for (const id of IDS) {
-      for (const def of [TRACKS[id], bossVariant(TRACKS[id], BOSS_LAYER)]) {
+      const defs = (BOSS_LEVEL_TRACKS as readonly string[]).includes(id) ? [TRACKS[id], bossVariant(TRACKS[id], BOSS_LAYER, INSTRUMENTS)] : [TRACKS[id]];
+      for (const def of defs) {
         const samples = await renderTrack(def, INSTRUMENTS, zzfxBuild, { sampleRate: GAMEPLAY.audio.musicSampleRate });
         expect(samples.every(Number.isFinite), def.id).toBe(true);
         expect(rms(samples), `${def.id} suena`).toBeGreaterThan(0);

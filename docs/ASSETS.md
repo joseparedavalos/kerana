@@ -374,9 +374,9 @@ En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) 
 
 ## 9. Audio
 
-- **Música, hoy (S37): generada por código con ZzFX, sin archivos.** Diez piezas en `src/data/music.ts`: título («Canto de Eichu»), mapa, `l1` a `l7` y Yvága (la pelea con Tau incluida). Cada jefe usa una variante tensa de la pista de su nivel (`l1_boss`…), que el código arma sola. Pesan unos 18 KB de código (6 KB comprimidos) y no hay licencias que revisar. Se generan al entrar a la escena (≈ 0,3 s, en un Web Worker para no trabar el juego) y se guardan en memoria las últimas cuatro.
+- **Música, hoy (S37): generada por código con ZzFX, sin archivos.** Trece piezas en `src/data/music.ts`: título («Canto de Eichu»), mapa, `l1` a `l7`, Yvága y, desde S61, la pelea con Tau (`tau`), la liberación (`liberation`) y el sellado de Tau (`seal`). Cada jefe de l1 a l7 usa una variante tensa de la pista de su nivel (`l1_boss`…), que el código arma sola (GDD §10.1). Pesan unos 18 KB de código (6 KB comprimidos) y no hay licencias que revisar. Se generan al entrar a la escena (≈ 0,3 s, en un Web Worker para no trabar el juego) y se guardan en memoria las últimas cuatro.
   - Para cambiar una pieza: notas, instrumentos y tempo en `src/data/music.ts` (el formato de los patrones está en `src/systems/musicLogic.ts`). Volúmenes y fundidos en `GAMEPLAY.audio`. Cada pista se normaliza sola: las diez suenan parejas.
-- **Música, más adelante:** si llegan grabaciones (`public/assets/audio/music/*.mp3`, 128 kbps), el `AudioManager` las puede tomar en lugar de la pista generada sin tocar las escenas; las escenas piden una clave (`title`, `map`, `l1`…, `l1_boss`…). Falta todavía: la liberación (5 a 8 s; hoy es el efecto `liberation`) y el tema del final y los créditos (hoy, el del título).
+- **Música, más adelante:** si llegan grabaciones (`public/assets/audio/music/*.mp3`, 128 kbps), el `AudioManager` las puede tomar en lugar de la pista generada sin tocar las escenas; las escenas piden una clave (`title`, `map`, `l1`…, `l1_boss`…). Falta todavía el tema del final y los créditos (hoy, el del título).
   - Dirección musical en GDD §10.1.
 - **De dónde sacar grabaciones:** bibliotecas libres de derechos (revisa uso comercial y atribución), generadores de música con IA (revisa la licencia del plan que uses), o un músico local: un arpa paraguaya real le daría mucha identidad.
 - **Efectos:** al principio, generados por código con ZzFX (sin archivos). Para reemplazarlos: Kenney (packs de audio CC0) o freesound.org (revisa la licencia de cada sonido).
@@ -409,7 +409,7 @@ En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) 
 | Logo y mapa del mundo | Núcleo | S13 | ☐ |
 | Iconos y props de interfaz | Núcleo | S13 | ◐ (corazones, chipa, tereré, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
 | Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas; S20: cuerpo más chico, onda del coletazo y señal de cabeza expuesta) |
-| Música de niveles (7), liberación y final | Núcleo | S13 | ◐ (S37: los siete niveles y Yvága, por código; faltan la liberación y el tema del final) |
+| Música de niveles (7), liberación y final | Núcleo | S13 | ◐ (S37: los siete niveles y Yvága, por código; S61: la liberación, el sellado y la pelea con Tau; falta el tema del final) |
 | Tau (disfraz y forma real) + `yvaga_far.png` y `final.png` | MVP | S12c | ☑ sprite (S13b) y fondos |
 
 Si un asset no está listo cuando llega su sesión, **no pasa nada**: Claude usa un placeholder y lo anota. Se integra después (S13).

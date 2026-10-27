@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
 import type { Boss } from '../entities/bosses';
+import type { MusicKey } from '../data/music';
 import { AudioManager } from './AudioManager';
 import { fixedOffset, VIEW } from './View';
 
@@ -16,6 +17,8 @@ export interface LiberationOptions {
   showDialogue: (done: () => void) => void;
   /** Texto del cartel "Don obtenido" (ya traducido), o null si el nivel no da don. */
   giftText: string | null;
+  /** La pieza que entra cuando estalla la marca (S61): el reencuentro, o el sellado de Tau. */
+  music: MusicKey | null;
   /** Destellos de pantalla permitidos (Opciones, GDD §4.9). */
   flashes: boolean;
   onDone: () => void;
@@ -41,6 +44,8 @@ export function playLiberation(o: LiberationOptions): void {
   // 2. La marca se agrieta y estalla en luz.
   function burst(): void {
     AudioManager.play('liberation');
+    // La pelea ya se fue con su fundido; la pieza de la liberación entra con el suyo y dura toda la secuencia.
+    AudioManager.music(o.music);
     const ring = scene.add.circle(mark.x, mark.y, 6, MARK_COLOR, 0.9).setDepth(30);
     scene.tweens.add({ targets: ring, scale: 8, alpha: 0, duration: CFG.markBurstMs, ease: 'Cubic.easeOut', onComplete: () => ring.destroy() });
     const sparks = scene.add

@@ -1,15 +1,19 @@
 import type { LevelId } from './types';
 import type { BossLayer, InstrumentDef, TrackDef } from '../systems/musicLogic';
 
-// Música de Kerana (S37, GDD §10.1 y §10.2): diez piezas generadas con ZzFX, sin archivos.
+// Música de Kerana (S37, GDD §10.1 y §10.2): piezas generadas con ZzFX, sin archivos. S61 sumó la pelea con Tau,
+// la liberación y el sellado, y rehízo la variante de jefe de cada nivel.
 // Registro: arpa paraguaya y guitarra para el título, el mapa y los pueblos; takuapu (bastón de ritmo), mbaraka
 // (maraca) y mimby (flauta de caña guaraní, grave y sin soplido de quena) para la naturaleza. Nada de zampoña ni
 // huayno: son de otra región. Cada pista es un bucle; Jose puede cambiar notas e instrumentos acá sin tocar el sistema.
 // Patrones: ver `VoiceDef.pattern` en src/systems/musicLogic.ts.
 
-export type TrackId = 'title' | 'map' | 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6' | 'l7' | 'yvaga';
-/** Una pista o su variante de jefe (`l1_boss`). */
-export type MusicKey = TrackId | `${TrackId}_boss`;
+/** Los niveles con jefe que pelea sobre una variante tensa de su pista (Tau tiene pieza propia). */
+export const BOSS_LEVEL_TRACKS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'] as const;
+export type BossLevelTrack = (typeof BOSS_LEVEL_TRACKS)[number];
+export type TrackId = 'title' | 'map' | BossLevelTrack | 'yvaga' | 'tau' | 'liberation' | 'seal';
+/** Una pista o la variante de jefe de un nivel (`l1_boss`). */
+export type MusicKey = TrackId | `${BossLevelTrack}_boss`;
 
 // Parámetros de ZzFX: [volumen, aleatoriedad, frecuencia, ataque, sostenido, caída, forma, curva, slide, deltaSlide,
 //  saltoDeTono, tiempoSaltoDeTono, repetición, ruido, modulación, bitCrush, delay, sostenidoVol, decay, trémolo, filtro]
@@ -38,14 +42,21 @@ export const INSTRUMENTS: Record<string, InstrumentDef> = {
   angua: { freq: 75, params: [1, 0, 0, 0.002, 0, 0.32, 0, 1, -1, 0, 0, 0, 0, 0.1, 0, 0, 0, 0.6, 0.05, 0, -500] },
 };
 
-/** Capa de los jefes: la pieza del nivel, más rápida, con tambor, takuapu y un bajo que late (S37). */
+/**
+ * Capa de los jefes (S37, rehecha en S61): la pieza del nivel un 25 % más rápida, en menor, una octava más grave,
+ * con la melodía reducida a su primera frase (la otra mitad de la vuelta es solo percusión) y tambor, takuapu y bajo en corcheas que empujan.
+ */
 export const BOSS_LAYER: BossLayer = {
-  tempo: 1.15,
+  tempo: 1.25,
   drum: 'angua',
   pulse: 'takuapu',
   bass: 'bajo',
   bassLowHz: 55,
-  gains: { drum: 0.9, pulse: 0.35, bass: 0.6 },
+  gains: { drum: 1, pulse: 0.4, bass: 0.55 },
+  dropAboveHz: 150,
+  leadKeep: 0.5,
+  leadGain: 0.7,
+  darken: [4, 9, 11],
 };
 
 // Tónicas.
@@ -125,6 +136,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       { inst: 'mbaraka', gain: 0.4, pattern: '. . . . . . x . | . . . . . . . .' },
       {
         inst: 'mimby',
+        lead: true,
         octave: 12,
         gain: 0.7,
         pattern:
@@ -149,6 +161,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       },
       {
         inst: 'mimby',
+        lead: true,
         octave: 12,
         gain: 0.6,
         pattern: '7 - - 9 - 7 | 4 - - 2 - 0 | 2 - - 5 - 2 | -1 - - - - . | 7 - - 9 - 12 | 11 - - 9 - 7 | 5 - - 4 - 2 | -1 - - 2 - -',
@@ -180,6 +193,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       },
       {
         inst: 'mimby',
+        lead: true,
         octave: 12,
         gain: 0.6,
         pattern:
@@ -208,6 +222,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       },
       {
         inst: 'arpa',
+        lead: true,
         gain: 0.65,
         pattern: '7 . 4 7 . 12 | 11 - . 7 . 5 | 2 . 5 7 . 11 | 12 - - . . . | 16 . 14 12 . 7 | 9 - . 12 . 9 | 7 . 5 2 . -1 | 0 - - . . .',
       },
@@ -229,6 +244,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       { inst: 'arpa', octave: 12, gain: 0.35, pattern: '0 . 3 . 5 . 3 . | 0 . -2 . -3 . -2 .' },
       {
         inst: 'mimby',
+        lead: true,
         octave: 12,
         gain: 0.55,
         pattern:
@@ -250,6 +266,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       { inst: 'voz', octave: 12, gain: 0.3, pattern: '0+7 - - - - - - - - - - - - - - -' },
       {
         inst: 'cuerno',
+        lead: true,
         octave: 12,
         gain: 0.55,
         pattern:
@@ -274,6 +291,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       },
       {
         inst: 'guitarra',
+        lead: true,
         octave: 12,
         gain: 0.6,
         pattern: '7 - - 8 7 3 | 5 - - - 3 0 | 2 - - 3 5 2 | 3 - - - - . | 0 - - 3 8 7 | 5 - - 3 2 0 | -1 - - 2 -1 -5 | 0 - - - - .',
@@ -306,6 +324,77 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       },
     ],
   },
+  // La pelea con Tau (S61): pieza propia, no variante. Los tonos enteros de Yvága, ahora con dientes: tambor en 3+3+2,
+  // un bajo que no sale del tritono y la flauta de Tau que seduce y se tuerce. Si bemol grave, rápida.
+  tau: {
+    id: 'tau',
+    bpm: 138,
+    stepsPerBeat: 2,
+    beatsPerBar: 4,
+    root: 123.47,
+    echo: { ms: 330, feedback: 0.3 },
+    voices: [
+      { inst: 'angua', gain: 1, pattern: 'x! . . x . . x . | x! . . x . . x x' },
+      { inst: 'takuapu', gain: 0.45, pattern: '. x x . x x . x' },
+      { inst: 'mbaraka', gain: 0.3, pattern: 'x x x x x x x x' },
+      { inst: 'bajo', octave: -12, gain: 0.7, pattern: '0! 0 6 0 0 6 0 5 | 0! 0 6 0 0 6 7 6' },
+      { inst: 'voz', gain: 0.35, pattern: '0+6 - - - - - - - - - - - - - - - | -1+5 - - - - - - - - - - - - - - -' },
+      {
+        inst: 'mimby',
+        lead: true,
+        octave: 12,
+        gain: 0.55,
+        pattern:
+          '12 - - 14 16 - 18 - | 16 - 14 - 12 - - - | 18 - 16 - 14 - 12 10 | 12 - - - - - . . | 12 - - 14 16 - 18 - | 20 - 18 - 16 - - - | 17 - 16 - 14 - 13 12 | 11 - - - - - . .',
+      },
+      { inst: 'cuerno', octave: -12, gain: 0.45, pattern: '0 - . . . . . . | . . . . . . . . | -1 - . . . . . . | . . . . . . . .' },
+      { inst: 'campana', octave: 12, gain: 0.2, pattern: '6 . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . 5 . . .' },
+    ],
+  },
+  // La liberación (S61): el reencuentro, breve y cálido. Vals lento en sol mayor, arpa que sube como la luz del hijo,
+  // un coro tenido y el mimby con una frase sencilla. Sin percusión.
+  liberation: {
+    id: 'liberation',
+    bpm: 63,
+    stepsPerBeat: 2,
+    beatsPerBar: 3,
+    root: G3,
+    echo: { ms: 380, feedback: 0.35 },
+    voices: [
+      { inst: 'arpa', gain: 0.6, pattern: '0 4 7 12 16 19 | -3 0 4 9 12 16 | -7 -3 0 5 9 12 | -5 -1 2 7 11 14' },
+      { inst: 'voz', gain: 0.35, pattern: '0+7 - - - - - | -3+4 - - - - - | -7+0 - - - - - | -5+2 - - - - -' },
+      { inst: 'bajo', octave: -12, gain: 0.55, pattern: '0 . . . . . | -3 . . . . . | -7 . . . . . | -5 . . . . .' },
+      {
+        inst: 'mimby',
+        lead: true,
+        octave: 12,
+        gain: 0.5,
+        pattern: '4 - - - 7 - | 9 - - - 7 - | 5 - - 4 2 - | 2 - - - . . | 4 - - - 7 - | 12 - - - 11 - | 9 - - 7 5 - | 7 - - - - .',
+      },
+    ],
+  },
+  // El sellado de Tau (S61): no es un reencuentro sino un cierre. Grave y solemne: órgano y coro en re menor, una campana
+  // que dobla lento; el último acorde se abre a mayor, como un alivio que todavía no es alegría.
+  seal: {
+    id: 'seal',
+    bpm: 54,
+    stepsPerBeat: 2,
+    beatsPerBar: 4,
+    root: D3,
+    echo: { ms: 560, feedback: 0.4 },
+    voices: [
+      { inst: 'organo', gain: 0.4, pattern: '0+3+7 - - - - - - - | -4+0+3 - - - - - - - | -7+-4+0 - - - - - - - | -5+-1+2 - - - - - - - | 0+3+7 - - - - - - - | -2+2+5 - - - - - - - | -7+-4+0 - - - - - - - | 0+4+7 - - - - - - -' },
+      { inst: 'voz', octave: -12, gain: 0.35, pattern: '0 - - - - - - - | -4 - - - - - - - | -7 - - - - - - - | -5 - - - - - - -' },
+      { inst: 'campana', gain: 0.3, pattern: '12 . . . . . . . | 10 . . . . . . . | 7 . . . . . . . | 9 . . . . . . .' },
+      { inst: 'angua', gain: 0.4, pattern: 'x . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . .' },
+      {
+        inst: 'mimby',
+        lead: true,
+        gain: 0.4,
+        pattern: '. . . . 7 - 5 - | 3 - - - . . . . | . . . . 3 - 2 - | 1 - - - . . . . | . . . . 7 - 8 - | 10 - - - 8 - 7 - | 5 - 3 - 2 - 1 - | 2 - - - - - . .',
+      },
+    ],
+  },
 };
 
 /** Pista de cada nivel. Las salas de prueba usan la de l1. */
@@ -319,7 +408,13 @@ export function levelTrack(levelId: LevelId): TrackId {
   }
 }
 
-/** La pelea con el jefe del nivel: la misma pieza, tensa. */
+/** La pelea con el jefe del nivel: la misma pieza, tensa; Tau tiene la suya. */
 export function bossTrack(levelId: LevelId): MusicKey {
-  return `${levelTrack(levelId)}_boss`;
+  const track = levelTrack(levelId);
+  return track === 'yvaga' ? 'tau' : `${track as BossLevelTrack}_boss`;
+}
+
+/** Lo que suena mientras dura la secuencia del jefe vencido: el reencuentro, o el sellado de Tau. */
+export function liberationTrack(levelId: LevelId): TrackId {
+  return levelId === 'yvaga' ? 'seal' : 'liberation';
 }

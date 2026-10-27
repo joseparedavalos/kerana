@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 27 de octubre de 2026 en S60, contra lo que ya está en `main` hasta S59 (pull request 114).
+Revisado el 27 de octubre de 2026 en S61, contra lo que ya está en `main` hasta S60 (pull request 115).
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -52,11 +52,12 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Las plataformas móviles usan el tileset de su nivel (S57): las mismas casillas que la plataforma fija, con un canto en sombra abajo que las hace un poco más gruesas. Ya no son el rectángulo marrón. Se mueven y se pisan igual.
 - El hongo, la reja, el interruptor y la balsa tienen arte (S58): la seta violeta, los barrotes de madera atados con cuerda, la piedra con el ñandutí sobre un poste (apagada y encendida) y la balsa de camalotes, sacados de los JPG de Jose con `npm run pieces` (sin el damero, sin interpolar). Se pisan, se abren y se hunden igual. Sin los PNG vuelve el dibujo por código. El toldo de l7 sigue por código.
 - Arriba de l5, el dosel (S60): copas oscuras sobre los árboles de los costados y colgando arriba, rayos de luz entre las copas y niebla que cruza despacio. En l7, la casa del andamio 1 se lee como una casa: la puerta al ras de la calle, la contraventana encima y el tejado arriba de todo.
+- Los jefes suenan a pelea (S61): la variante de cada nivel va en menor, más rápida y más grave, con la melodía reducida a su primera frase y tambor, takuapu y bajo que empujan; Tau tiene pieza propia. Entra al cerrarse la arena, no en la antesala. Al vencer, la pelea se funde y suena «Reencuentro», breve y cálido, mientras dura la liberación; con Tau, «Sellado», grave. Cada cambio es un fundido cruzado, sin hueco.
 - Arriba de l5 ya no hay franja negra (S59): el dosel oscuro de los costados se abre hacia una luz verde clara al medio. La lluvia pintada en el fondo de l5 cae y la niebla baja del camposanto de l7 corre despacio, las dos detrás de Kerana y de los enemigos.
 
 ## Ahora
 
-1. Escuchar la música (Jose) y ajustarla en `src/data/music.ts`: Claude no puede oír. Volumen y fundidos en `GAMEPLAY.audio`. Faltan el remate de la liberación (hoy calla la música) y el tema del final (hoy suena el del título).
+1. Escuchar la música (Jose) y ajustarla en `src/data/music.ts`: Claude no puede oír. Sobre todo las peleas, la pieza de Tau, «Reencuentro» y «Sellado» de S61 (qué es cada una y qué perilla toca qué, en las notas de S61). Volumen y fundidos en `GAMEPLAY.audio`. Falta el tema del final (hoy suena el del título).
 2. Nivel 6, el detalle del escenario: laja con pasto en el borde, una palma y unas rocas. Sin choque. Después el 7: losa y vela, una cruz y un ramo seco. l6 ya lleva props (S53): esto es el dibujo del piso, aparte.
 3. Jugar las veintiuna chipas como jugador nuevo, ahora que son obligatorias (S36): que cada una se encuentre sin saber dónde está, y que la puerta de la ofrenda se entienda a la primera. La lista de qué pide cada una está en las notas de S36 (`docs/PLAN.md`).
 4. El smoke no siempre pasa tres veces seguidas en el contenedor (S37): con el juego a menos de ≈ 10 FPS el piloto se traba en el paso 1 de l2 (también sin música) y alguna vez en la copa 3 de l3. En S48 fallaron en l3 los mismos 2 chequeos (paso 42, x 279) en la rama y en `main`. En S49, una corrida de la rama se trabó en el paso 1 de l2 y la siguiente pasó entera (`main`, entera). No es del juego: es el piloto, afinado para 10-12 FPS. Detalle en las notas de S37. En S51 (una corrida, 184 de 190): l2 trabado en el paso 38, l7 sin dos guavirá, y l1 sin la tercera chipa (paso 14 trabado; también le pasó al build de `main` en una vuelta suelta del piloto). En S52, el piloto de l3 se trabó en el paso 42 (la copa 3) en 3 de 8 vueltas, con y sin props (2 de 5 con `main`), y el smoke se trabó una vez en el paso 1 de l2 (6 vueltas sueltas con el mismo mapa pasaron enteras). En S54, el smoke se trabó otra vez en el paso 1 de l2; 4 vueltas sueltas intercaladas (`main` y la rama) pasaron enteras. En S56 (una corrida, 188 de 190), l7 otra vez sin dos guavirá y la Luz de Arasy del camino; la rama solo cambiaba el tileset de campo, que l7 no usa.

@@ -300,7 +300,7 @@ async function main() {
     const spreadDb = 20 * Math.log10(Math.max(...levels) / Math.min(...levels));
     check(
       rendered.tracks.length === 20 && rendered.tracks.every((tr) => tr.seconds > 8 && tr.peak <= 1 && Number.isFinite(tr.rms)) && spreadDb < 1.5,
-      `música: 10 pistas y 10 variantes de jefe generadas, parejas (${spreadDb.toFixed(2)} dB entre la más fuerte y la más suave)`,
+      `música: 13 pistas (S61: Tau, liberación y sellado) y 7 variantes de jefe generadas, parejas (${spreadDb.toFixed(2)} dB entre la más fuerte y la más suave)`,
     );
     const sfxLevels = await title.evaluate(() => window.__KERANA_AUDIO__.sfxRms(['jump', 'slash', 'hit', 'hurt', 'bossWarn']));
     const quietestSfx = Math.min(...sfxLevels.map((x) => x.rms));
@@ -337,6 +337,13 @@ async function main() {
     check(true, 'Mapa → nivel 1 listo');
     const l1Music = await waitMusic(title, 'l1');
     check(l1Music?.playing === 'l1' && l1Music.context === 'running', `música: el nivel 1 suena con la suya (${l1Music?.context})`);
+    // S61: la pelea y la liberación se generan de antemano, para que los cambios sean fundidos cruzados sin hueco.
+    let l1Cached = await audioState(title);
+    for (let t = 0; t < 15000 && !['l1_boss', 'liberation'].every((k) => l1Cached?.cached.includes(k)); t += 250) {
+      await sleep(250);
+      l1Cached = await audioState(title);
+    }
+    check(['l1_boss', 'liberation'].every((k) => l1Cached?.cached.includes(k)), `música: la pelea y la liberación quedan listas desde el recorrido (${JSON.stringify(l1Cached?.cached)})`);
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
     // Fondos (S12e, S13a): l1_cave solo dentro de las zonas Cave y l1_far solo fuera; en la boca, los dos con un degradado.
@@ -421,13 +428,13 @@ async function main() {
       if (await inDialogue()) {
         const s = await audioState(title);
         duckedInDialogue ||= s?.ducked === true;
-        liberationMusic = String(s?.wanted);
+        liberationMusic = `${s?.wanted}/${s?.playing}`;
         await title.keyboard.press('Space');
       }
       await sleep(300);
     }
     check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
-    check(duckedInDialogue && liberationMusic === 'null', `música: baja con el diálogo y calla en la liberación (${liberationMusic})`);
+    check(duckedInDialogue && liberationMusic === 'liberation/liberation', `música: en la liberación suena el reencuentro, bajo el diálogo (${liberationMusic})`);
     const completeMusic = await waitMusic(title, 'map');
     check(completeMusic?.playing === 'map' && !completeMusic.ducked, 'música: "Nivel completado" vuelve a la del mapa, sin el volumen bajo del diálogo');
     await sleep(300);
@@ -447,6 +454,8 @@ async function main() {
     await sleep(500);
     const bx = await bossPage.evaluate(() => window.__KERANA_DEBUG__.player.x);
     check(bx > 250 * TILE && bx < 274 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
+    const anteMusic = await audioState(bossPage);
+    check(anteMusic?.wanted === 'l1', `música: la antesala sigue con la del nivel, la calma de antes (${anteMusic?.wanted})`);
     await walkIntoArena(bossPage);
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
     const bossMusic = await waitMusic(bossPage, 'l1_boss');
@@ -458,6 +467,11 @@ async function main() {
     check(bgBoss.cave && !bgBoss.far, 'nivel 1: la caverna de Teju Jagua usa solo el fondo de cueva');
     const bstate = await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
     check(bstate !== 'waiting', `Teju Jagua ataca (estado ${bstate})`);
+    // S61: vencido, la pelea se funde y entra la pieza de la liberación.
+    await bossPage.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    const freedMusic = await waitMusic(bossPage, 'liberation');
+    const order = freedMusic?.started.slice(-2).join(' → ');
+    check(freedMusic?.playing === 'liberation' && order === 'l1_boss → liberation', `música: al liberar al hijo cambia otra vez (${order})`);
     await bossPage.close();
 
     // 1b2) l1 de punta a punta (S19): el piloto (tools/lib/pilot.mjs, plan en pilot-plans.mjs) maneja a Kerana con las teclas en cada
@@ -2476,6 +2490,8 @@ async function main() {
     await sleep(500);
     await walkIntoArena(tauPage, 8000);
     check(await tauPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'Yvága: la arena de Tau se cierra');
+    const tauMusic = await waitMusic(tauPage, 'tau');
+    check(tauMusic?.playing === 'tau', `música: Tau pelea con su pieza propia (${JSON.stringify(tauMusic?.started)})`);
     // S36: por estado (con 4 s fijos, con la máquina cargada seguía en 'waiting').
     const tauState = () =>
       tauPage.evaluate(() => {
@@ -2517,11 +2533,14 @@ async function main() {
     await tauPage.screenshot({ path: join(SHOTS, 'tau-3.png') });
     await tauPage.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     const tauActive = (key) => tauPage.evaluate((k) => window.__KERANA_GAME__?.scene.isActive(k) ?? false, key);
+    let sealMusic = false;
     for (let i = 0; i < PRESS_MAX && !(await tauActive('Story')); i++) {
+      sealMusic ||= (await audioState(tauPage))?.playing === 'seal';
       await tauPage.keyboard.press('Space');
       await sleep(300);
     }
     check(await tauActive('Story'), 'Tau sellado → final verdadero (diapositivas)');
+    check(sealMusic, 'música: el sellado de Tau suena con la suya, no con la del reencuentro');
     const tauSave = await tauPage.evaluate(() => JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}'));
     check(tauSave.freed?.includes('tau'), 'guardado: Tau sellado (el mapa recupera sus colores)');
     check(tauSave.playTimeMs > 0, `guardado: tiempo de juego (${tauSave.playTimeMs} ms)`);
