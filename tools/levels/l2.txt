@@ -30,6 +30,8 @@ biome estero
 reeds
 point Prop x=20 y=32 kind=nest
 enemy m=mboi j=jakare n=nakurutu g=nakurutu_guasu y=jakare_guasu
+# S64: el payesero se midió para l2 y no se colocó (el golpe frena el salto: los de 5 tiles de aire la tiran al agua);
+#   el único lugar que pasa es la orilla x 32-38, la del mbói. Números y opciones en docs/RECETA-NIVEL.md §20 y PLAN S64.
 sign 1=hint.l2.camalote 2=hint.l2.shallow 3=hint.l2.jakare 4=hint.l2.nakurutu 5=hint.l2.antesala 6=hint.l2.cracked 7=hint.l2.sealed 8=hint.l2.sleep 9=hint.l2.ritmo
 # Piezas de motor (S18): piedra encerrada y balsa, plataformas, hongos
 at 86,31 target=balsa
@@ -91,8 +93,14 @@ prop 195,32 l2_tierra/pindo_palm
 # C. Cae la noche
 prop 248,11 l2_tierra/sandy_mounds
 prop 255,32 l2_agua/marsh_grass flip
+# S64: pindó contra el muro de la cima, en la orilla de la Luz: la copa (filas 24-28) queda a 4,7 tiles de la orilla de la
+#   que sale la cadena larga (x 263), muy por debajo del salto a la chipa C (fila 12), y la bajada desde la cima cae al lado
+#   de las hojas, sobre el piso de la orilla.
+prop 256,32 l2_tierra/pindo_palm flip
 # D. La zona de ritmo (solo la orilla del fuego: las balsas y los jakare guasu, limpios)
 prop 310,32 l2_tierra/sandy_mounds
+# S64: pindó más chico entre el fuego y el cartel, detrás de Kerana: no tapa las balsas (desde x 319) ni el ciclo.
+prop 310,32 l2_tierra/pindo_palm scale=0.8
 # Antesala y arena (en la arena, solo la orilla de la izquierda: el agua es de Mbói Tu'i)
 prop 379,32 l2_agua/wooden_posts
 prop 384,32 l2_tierra/sandy_mounds flip
