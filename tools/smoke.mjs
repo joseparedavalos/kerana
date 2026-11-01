@@ -703,7 +703,9 @@ async function main() {
       }
       return info;
     };
-    check((await payInfo()).xs === '73,230', `payesero: dos en l1, en la ladera (x 73) y en la cueva (x 230) (${(await payInfo()).xs})`);
+    // S63: cuatro. Los dos de S62 y dos más: la ruta alta de la ladera (x 156) y la repisa del secreto en la cueva (x 242).
+    const payXs = async () => (await payInfo()).xs.split(',').map(Number).sort((a, b) => a - b).join(',');
+    check((await payXs()) === '73,156,230,242', `payesero: cuatro en l1, ladera x 73 y x 156, cueva x 230 y x 242 (${await payXs()})`);
     // Cada golpe a Kerana y cada caída se anotan dentro del juego: con el contenedor cargado, sondear desde afuera
     // llega tarde (en S62 el chequeo vio dos corazones menos: ya había pegado el segundo payé).
     await payPage.evaluate(() => {
@@ -809,8 +811,90 @@ async function main() {
     }
     check(fading?.purified && fading.aura < 2, `payesero: al purificarlo el aura se apaga (${JSON.stringify(fading)})`);
     await sleep(3000);
-    check((await payInfo()).xs === '230', `payesero: purificado, se desvanece y se va (${(await payInfo()).xs})`);
+    check((await payXs()) === '156,230,242', `payesero: purificado, se desvanece y se va (${await payXs()})`);
+    // S63: los dos nuevos llegan a donde pasa Kerana y su payé no la tira a un pozo. Ladera: en la primera repisa de la ruta
+    // alta (x 151, donde se cae del rebote del hongo). Cueva: en la galería 1, antes del hueco a la galería 2 (x 234).
+    for (const [where, kx, feet, px] of [
+      ['ruta alta de la ladera', 151, 8, 156],
+      ['galería 1 de la cueva', 234, 14, 242],
+    ]) {
+      await clearPayes();
+      await payPage.evaluate(
+        (kx, feet) => {
+          const s = window.__KERANA_DEBUG__.scene;
+          const pl = window.__KERANA_DEBUG__.player;
+          for (const en of s.enemies.filter((e) => e.def.id !== 'payesero' && Math.abs(e.x - kx * 16) < 260)) en.purify();
+          pl.health.current = pl.health.max;
+          window.__PAYE_LOG__.hits.length = 0;
+          window.__PAYE_LOG__.respawns.length = 0;
+          pl.body.reset(kx * 16 + 8, feet * 16 - 24);
+        },
+        kx,
+        feet,
+      );
+      const near = () =>
+        payPage.evaluate((px) => {
+          const e = window.__KERANA_DEBUG__.scene.enemies.find((en) => en.def.id === 'payesero' && Math.floor(en.x / 16) === px);
+          return e ? { state: e.motor.state, facing: e.facing } : null;
+        }, px);
+      let seen = await near();
+      for (let t = 0; t < 8000 && seen?.state !== 'windup'; t += 50) {
+        await sleep(50);
+        seen = await near();
+      }
+      check(seen?.state === 'windup' && seen.facing === -1, `payesero x ${px}: la mira y carga con Kerana en la ${where} (${JSON.stringify(seen)})`);
+      for (let t = 0; t < 12000 && (await payLog()).hits[0]?.after == null; t += 100) await sleep(100);
+      const hit = (await payLog()).hits[0];
+      check(
+        hit && hit.after !== null && hit.after <= hit.x && (await payLog()).respawns.length === 0,
+        `payesero x ${px}: el payé la alcanza en la ${where} y la empuja lejos de él, sin caer a un pozo (x ${(hit?.x / 16).toFixed(1)} → ${(hit?.after / 16).toFixed(1)})`,
+      );
+    }
     await payPage.close();
+
+    // 1b6) S63: los carteles nombran el control del dispositivo en uso y cambian en la misma partida. Con `touch=1` arranca en
+    // el celular (los dibujos de los botones en pantalla); una tecla pasa al teclado; un mando (de mentira: navigator.getGamepads)
+    // al apretar A pasa a los botones del mando; un botón en pantalla vuelve al táctil.
+    const signPage = await open('/?debug=1&level=1&touch=1&god=1');
+    await signPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const signText = (key) => signPage.evaluate((k) => window.__KERANA_DEBUG__.scene.signs.find((sg) => sg.key === k)?.text.text, key);
+    const nextFrames = () => sleep(400);
+    check((await signText('hint.l1.move')) === '◄ ►' && (await signText('hint.l1.jump')) === '▲', `carteles: en el celular, los botones en pantalla (${await signText('hint.l1.move')} / ${await signText('hint.l1.jump')})`);
+    await signPage.keyboard.press('KeyA');
+    await nextFrames();
+    check((await signText('hint.l1.move')) === '← →' && (await signText('hint.l1.jump')) !== '▲', `carteles: una tecla los pasa al teclado (${await signText('hint.l1.move')} / ${await signText('hint.l1.jump')})`);
+    await signPage.evaluate(() => {
+      const pad = {
+        id: 'Xbox 360 Controller (XInput STANDARD GAMEPAD)',
+        index: 0,
+        connected: true,
+        mapping: 'standard',
+        // Phaser descarta lecturas más viejas que el mando: la hora va siempre adelante.
+        get timestamp() {
+          return performance.now() + 1e6;
+        },
+        axes: [0, 0, 0, 0],
+        buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })),
+      };
+      window.__SMOKE_PAD__ = pad;
+      navigator.getGamepads = () => [pad, null, null, null];
+    });
+    await nextFrames();
+    check((await signText('hint.l1.jump')) !== 'A', 'carteles: un mando conectado sin tocar no los cambia');
+    await signPage.evaluate(() => (window.__SMOKE_PAD__.buttons[0] = { pressed: true, touched: true, value: 1 }));
+    await nextFrames();
+    await signPage.evaluate(() => (window.__SMOKE_PAD__.buttons[0] = { pressed: false, touched: false, value: 0 }));
+    await nextFrames();
+    check((await signText('hint.l1.jump')) === 'A' && (await signText('hint.l1.attack'))?.startsWith('X'), `carteles: apretar A en el mando los pasa al mando (${await signText('hint.l1.jump')})`);
+    await signPage.evaluate(() => {
+      const inputs = window.__KERANA_DEBUG__.scene.inputs;
+      inputs.setVirtual('right', true);
+      inputs.setVirtual('right', false);
+    });
+    await nextFrames();
+    check((await signText('hint.l1.jump')) === '▲', `carteles: un botón en pantalla los vuelve al táctil (${await signText('hint.l1.jump')})`);
+    await signPage.close();
 
     // 1c) Nivel 2: el mapa carga, ?boss=1 lleva a la antesala y Mbói Tu'i ataca.
     const l2Page = await open('/?debug=1&level=2&boss=1&god=1');

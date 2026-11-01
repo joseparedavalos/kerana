@@ -246,7 +246,7 @@ Teclado [MVP]; mando y táctil [Núcleo].
 | Pausa | Esc o P | Start | Botón ⏸ |
 | Avanzar diálogo | Saltar o Atacar | A | Tocar la pantalla |
 
-Los textos de ayuda muestran las teclas del dispositivo que se esté usando.
+Los textos de ayuda muestran las teclas del dispositivo que se esté usando. **Hecho en S63:** el último dispositivo usado (una tecla, un botón del mando recién apretado o un botón en pantalla) manda, y los carteles cambian en la misma partida. Teclado: la tecla (Espacio, X, C, ← →). Mando: A, X, RB, Start y ◄ ► (en uno de PlayStation, ✕, □, R1, Options). Celular: el dibujo de cada botón en pantalla (▲ salto, † sable, ►► dash, ◄ ►). El mando se lee en `InputManager` con el mapeo estándar del navegador (sirve también en los menús); la lógica, en `src/systems/inputDevice.ts`.
 
 ### 3.3 Movimiento y acciones
 
@@ -503,7 +503,7 @@ Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián 
 | Hora | Amanecer |
 | Tamaño | 314 × 34 tiles (S19) |
 | Idea nueva | Lo básico: correr, saltar, atacar, fuegos, curación y Luz de Arasy; pozos, plataformas móviles, piedras que abren rejas y hongos |
-| Enemigos | `teju_i`, `mbopi`, `payesero` (S62) |
+| Enemigos | `teju_i`, `mbopi`, `payesero` (cuatro: dos de S62 y dos de S63) |
 | Peligros | Espinas de karaguatá; estalactitas que caen (aviso: polvo) |
 | Música | Flauta suave y mbaraka; se oscurece al bajar a la caverna |
 | Jefe | Teju Jagua |
@@ -517,7 +517,8 @@ Todo enemigo común quita 1 corazón al contacto (el ñakurutu guasu, guardián 
   - *Ruta alta:* quien se deja caer al hoyo del hongo rebota a unas repisas en el cielo con un guavirá y un mbopi. *Pluma B (saltar):* en el arco del salto sobre el hueco más alto. Caerse deja en la ruta baja.
   - **Fuego** en la cima (x 184).
   - *Payesero de la ladera (S62):* en el bloque x 70-75, del otro lado de la zanja con piso y con el pozo 1 detrás. Hay que cruzar la zanja hacia él; su payé empuja hacia la zanja (tiene piso), nunca hacia el pozo. La zanja sirve de reparo: el payé que la sigue choca con la pared. Queda fuera de alcance mientras se aprende el salto alto (cartel 4, x 58).
-- **C. La cueva (x 190–249, vertical).** El camino entra al cerro y baja en zigzag: galería 1 hacia la derecha (estalactitas con aviso, karaguatá, teju'i) hasta un hueco por el que se cae a la galería 2, que vuelve hacia la izquierda; al final, una **plataforma vertical** sobre un **pozo** baja a la galería 3, que sale a la caverna. Secreto: un guavirá tras una liana al final de la galería 1 (luciérnagas). *Payesero de la cueva (S62):* en la galería 3 (x 230), justo antes de las espinas (x 232-233): guarda ese salto. La galería mide 6 filas y no se lo puede saltar por arriba: se lo purifica o se lo cruza con el dash. Su payé empuja hacia atrás, a piso firme; queda lejos del pozo vertical (x 200-203) y del fuego de la antesala. *Pluma C (tajo cargado, volver después):* en la pared de la galería 2 hay una piedra encerrada en la roca; la onda del tajo cargado la enciende y abre la cámara junto al pozo vertical, donde un **hongo dormido** (también con el tajo cargado) lleva a la repisa de la pluma.
+  - *Payesero de la ruta alta (S63):* en la punta izquierda de la segunda repisa (x 156, fila 7). Jose lo pidió en x 146, sobre la primera, pero ahí cae Kerana al rebotar en el hongo del hoyo (el arco va de x 147 a x 153): se corrió 10 tiles, a la primera repisa firme fuera del rebote. Ataca a quien llega a la primera repisa y, desde arriba, a la ruta baja entre x 148 y x 165 (el payé atraviesa las repisas). Para seguir por arriba hay que cruzar el hueco x 153-155 hacia él: purificarlo (tres tajos o uno cargado) o pasarlo con el dash, como el de la galería 3. Su payé empuja hacia la izquierda, sobre la primera repisa (8 tiles de ancho); en la ruta baja, junto al hoyo, el empujón es de un par de píxeles y el hoyo no atrapa (con el hongo gastado mide 2). Con la Luz de Arasy (x 140) Kerana cruza inmune: casi siempre lo purifica al tocarlo.
+- **C. La cueva (x 190–249, vertical).** El camino entra al cerro y baja en zigzag: galería 1 hacia la derecha (estalactitas con aviso, karaguatá, teju'i) hasta un hueco por el que se cae a la galería 2, que vuelve hacia la izquierda; al final, una **plataforma vertical** sobre un **pozo** baja a la galería 3, que sale a la caverna. Secreto: un guavirá tras una liana al final de la galería 1 (luciérnagas). *Payesero del secreto (S63):* en la repisa de ese secreto (x 242, fila 13), delante del oro del fondo, del otro lado del hueco a la galería 2 y a 2 tiles de la liana: no la tapa. Alcanza la galería 1 desde x 233; a quien pasa corriendo y se deja caer por el hueco casi nunca llega a tirarle, a quien se queda a mirar o va por el secreto, sí. Su payé empuja hacia la galería 1 o por el hueco, que es el camino. *Payesero de la cueva (S62):* en la galería 3 (x 230), justo antes de las espinas (x 232-233): guarda ese salto. La galería mide 6 filas y no se lo puede saltar por arriba: se lo purifica o se lo cruza con el dash. Su payé empuja hacia atrás, a piso firme; queda lejos del pozo vertical (x 200-203) y del fuego de la antesala. *Pluma C (tajo cargado, volver después):* en la pared de la galería 2 hay una piedra encerrada en la roca; la onda del tajo cargado la enciende y abre la cámara junto al pozo vertical, donde un **hongo dormido** (también con el tajo cargado) lleva a la repisa de la pluma.
 - **Checkpoint (antesala, x 250–273).** Una planta de guavirá. Mainumby: "Algo grande respira ahí abajo…".
 - **Arena: la caverna del tesoro (x 274–313).** Suelo plano, dos repisas laterales, cristales y oro al fondo. El cuerpo enorme de Teju Jagua es una silueta en la penumbra del fondo; solo las cabezas, sobre sus cuellos, salen a la luz.
 
@@ -1351,7 +1352,7 @@ interface SaveData {
 - Ningún texto visible escrito directamente en el código de las escenas: todo pasa por `t('clave', variables)`.
 - `src/i18n/es.ts` completo; `en.ts` [Extra].
 - Si falta una clave, se muestra `⟦clave⟧` y se avisa en consola (solo en desarrollo).
-- Los textos de ayuda usan variables para las teclas: `t('hint.jump', { key: input.label('jump') })`.
+- Los textos de ayuda usan variables para las teclas: `t('hint.jump', { key: input.label('jump') })`. `label` da el control del dispositivo en uso (S63, §3.2) y los carteles se rearman al cambiar de dispositivo.
 
 ### 11.11 Depuración [MVP]
 Parámetros de URL (activos en `npm run dev` o con `?debug=1`):
