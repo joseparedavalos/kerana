@@ -19,7 +19,7 @@
 //   art=carpeta/nombre en el pie del tile (X, Y). Los que cuelgan (sheets.<nombre>.hang) van del techo del tile.
 //   S54: X e Y aceptan decimales, y "prop X1-X2,Y …" (entre dos puntos: tendedero, toldo con poste) escala el dibujo
 //   para que vaya del borde izquierdo del tile X1 al derecho del X2 (span=X2-X1+1 tiles, centrado entre los dos).
-import { TILE, TILESET_COLUMNS, TILESET_ROWS, TILES } from './tileset-layout.mjs';
+import { TILE, TILESET_COLUMNS, TILESET_ROWS, TILES, hazardTileAt } from './tileset-layout.mjs';
 
 const TILED_VERSION = '1.10.2';
 const MAP_VERSION = '1.10';
@@ -326,7 +326,7 @@ export function buildTiledMap(parsed, options = {}) {
           break;
         }
         case '^':
-          data.Hazards[i] = gid(TILES.hazard);
+          data.Hazards[i] = gid(hazardTileAt(x));
           break;
         case '~':
           // Debajo de un camalote o de una balsa el agua ya es honda (la superficie está arriba).

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTiledMap, groundMask, parseAscii, parseValue } from '../tools/lib/ascii-map.mjs';
-import { TILES } from '../tools/lib/tileset-layout.mjs';
+import { TILES, hazardTileAt } from '../tools/lib/tileset-layout.mjs';
 
 const SAMPLE = `# muestra
 size 8x5
@@ -87,7 +87,7 @@ describe('buildTiledMap', () => {
     expect([at('Platforms', 2, 2), at('Platforms', 3, 2), at('Platforms', 4, 2)]).toEqual([
       TILES.platformLeft + 1, TILES.platformCenter + 1, TILES.platformRight + 1,
     ]);
-    expect(at('Hazards', 6, 3)).toBe(TILES.hazard + 1);
+    expect(at('Hazards', 6, 3)).toBe(hazardTileAt(6) + 1);
     expect(at('Water', 3, 3)).toBe(TILES.waterSurface + 1);
   });
 
