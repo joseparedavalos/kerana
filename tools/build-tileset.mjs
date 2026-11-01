@@ -13,6 +13,7 @@ import {
   cropWrapped,
   findDrawings,
   fitSize,
+  mirrorX,
   placeInTile,
   platformCell,
   reduceBlocks,
@@ -148,19 +149,29 @@ placeInTile(sheet, TILES.flowers, sprite(spSrc, spInk, rectOf.flowers, decor.flo
 placeInTile(sheet, TILES.stones, sprite(spSrc, spInk, rectOf.stones, decor.stones.maxWidth, decor.stones.maxHeight));
 
 // 6. Espinas (19): la planta sola, apoyada abajo.
-const hzSrc = load(config.hazard.file);
-const hzBg = backdropMask(hzSrc);
-const [hzRect] = findDrawings(hzBg, hzSrc.width, hzSrc.height);
-placeInTile(sheet, TILES.hazard, sprite(hzSrc, (x, y) => !hzBg[y * hzSrc.width + x], hzRect, config.hazard.maxWidth, config.hazard.maxHeight));
+// Sin `hazard` en tileset.json, el peligro queda para `npm run hazards` (dibujado por código, S64).
+if (config.hazard) {
+  const hzSrc = load(config.hazard.file);
+  const hzBg = backdropMask(hzSrc);
+  const [hzRect] = findDrawings(hzBg, hzSrc.width, hzSrc.height);
+  const hzInk = (x, y) => !hzBg[y * hzSrc.width + x];
+  const hz = config.hazard;
+  placeInTile(sheet, TILES.hazard, sprite(hzSrc, hzInk, hzRect, hz.maxWidth, hz.maxHeight));
+  // Variantes (S64): 26, la misma planta en espejo; 27, una más chica (`smallHeight`). Así una fila de ^ no se ve estampada.
+  placeInTile(sheet, TILES.hazardB, mirrorX(sprite(hzSrc, hzInk, hzRect, hz.maxWidth, hz.maxHeight)));
+  placeInTile(sheet, TILES.hazardC, sprite(hzSrc, hzInk, hzRect, hz.maxWidth, hz.smallHeight ?? hz.maxHeight - 3));
+} else {
+  console.log('  sin espinas.jpg: el peligro (19, 26, 27) se dibuja con npm run hazards');
+}
 
-// 22 (roca agrietada) queda vacía: la tapa BreakableLook. 26 y 27, sin uso.
+// 22 (roca agrietada) queda vacía: la tapa BreakableLook.
 
 const out = join('public', 'assets', 'tiles', `${biome}.png`);
 const png = new PNG({ width: sheet.width, height: sheet.height });
 sheet.data.forEach((v, i) => (png.data[i] = v));
 writeFileSync(out, PNG.sync.write(png));
 console.log(`+ ${out} (${sheet.width} × ${sheet.height}); tierra desde (${dirtAt.x}, ${dirtAt.y}), pasto desde x ${grassAt.x}`);
-console.log(`  dibujos: ${drawings.map((d) => `${d.w}×${d.h}@${d.x},${d.y}`).join(' · ')} · espinas ${hzRect.w}×${hzRect.h}`);
+console.log(`  dibujos: ${drawings.map((d) => `${d.w}×${d.h}@${d.x},${d.y}`).join(' · ')}`);
 
 if (process.argv.includes('--preview')) {
   const k = 8;

@@ -295,6 +295,15 @@ export function platformCell(part, dirt, grass, edge, rows, grassRows) {
 }
 
 /** Hoja vacía del tamaño del tileset (64 × 112). */
+/** La misma imagen en espejo (izquierda ↔ derecha). */
+export function mirrorX(img) {
+  const out = createImage(img.width, img.height);
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) out.data.set(img.data.subarray(at(img, x, y), at(img, x, y) + 4), at(out, img.width - 1 - x, y));
+  }
+  return out;
+}
+
 export function createTileset() {
   return createImage(TILE * TILESET_COLUMNS, TILE * TILESET_ROWS);
 }
