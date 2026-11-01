@@ -19,7 +19,7 @@ Cuatro imágenes en `raw/tiles/<bioma>/`. El tamaño da igual: el script las red
 | `tierra.jpg` | El relleno del suelo | Una textura de pixel art que **repita sin costura** en las dos direcciones, sin piedras grandes ni manchas fuertes: solo grano. Plana, sin luz de un lado. |
 | `pasto.jpg` | El borde de arriba | Una franja horizontal: el borde de arriba (pasto, musgo, nieve…) sobre la misma tierra, con **fondo blanco liso** encima. Que el borde sea de un solo alto y repita a lo ancho. |
 | `especiales.jpg` | Agua y decoración | **Cinco dibujos en fila**, de izquierda a derecha y separados: agua con ola (superficie), agua honda, una mata, flores, piedras. Fondo blanco liso. Las dos aguas, cuadradas y llenas hasta el borde. |
-| `espinas.jpg` | El peligro | La planta o el objeto que lastima (karaguatá en campo), entero, apoyado abajo, sobre fondo blanco liso. |
+| `espinas.jpg` | El peligro (opcional desde S64: sin él, el peligro se dibuja por código con `npm run hazards`, ASSETS §6) | La planta o el objeto que lastima (karaguatá en campo), entero, apoyado abajo, sobre fondo blanco liso. |
 
 Reglas para los prompts:
 
@@ -44,7 +44,7 @@ Reglas para los prompts:
    Las esquinas de adentro (suelo arriba y al costado, aire en la diagonal) no se distinguen: el autotile de 4 vecinos no las ve, y quedan lisas.
 6. **La plataforma** (16 a 18, `platformCell`): solo las `platform.rows` filas de arriba (6): `grassRows` filas del borde, la tierra debajo, la fila de abajo y los extremos oscurecidos y las esquinas de abajo de los extremos recortadas. El resto, transparente.
 7. **Los especiales**: separa los dibujos por columnas vacías (`findDrawings`; si no son cinco, para con un error). Las aguas se reducen a 24 px de ancho, se elige la ventana de 16 que mejor repite a lo ancho y llevan alfa `waterAlpha` (200). En la superficie, todo lo que está debajo de la primera tinta de cada columna es agua: la espuma de la cresta toca el fondo y el relleno se la comería. La mata, las flores, las piedras (23 a 25) y las espinas (19) se reducen sin deformarse hasta entrar en su `maxWidth` × `maxHeight`, centradas y apoyadas abajo.
-8. **La 22** (roca agrietada) queda vacía: la tapa `BreakableLook`. 26 y 27, sin uso.
+8. **La 22** (roca agrietada) queda vacía: la tapa `BreakableLook`. 26 y 27 son variantes del peligro (S64): la misma planta en espejo y una más chica (`hazard.smallHeight`).
 
 `tileset.json` de campo, con lo que se probó:
 
