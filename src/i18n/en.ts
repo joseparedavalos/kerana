@@ -12,9 +12,6 @@ export const en: Record<TextKey, string> = {
   'title.credits': 'Credits',
   'loading': 'Loading…',
   'key.space': 'Space',
-  'key.jump': 'Jump',
-  'key.attack': 'Sword',
-  'key.dash': 'Dash',
 
   'level.test.name': 'Test level',
   'level.vitrina.name': 'Parts showcase',
@@ -117,6 +114,7 @@ export const en: Record<TextKey, string> = {
   'story.skip': 'Skip',
   'story.skip_hint': 'Hold {key} to skip',
   'story.advance_hint': 'Press {key} to continue',
+  'story.advance_hint_touch': 'Tap the screen to continue',
   'dialogue.advance_marker': '▼',
 
   // Final (GDD §2.6).
@@ -205,6 +203,7 @@ export const en: Record<TextKey, string> = {
   'options.text_speed': 'Text speed',
   'options.erase_save': 'Delete save',
   'options.erase_confirm': 'Are you sure? Press {key} again to confirm',
+  'options.erase_confirm_touch': 'Are you sure? Tap again to confirm',
   'options.back': 'Back',
   'buttons.title': 'Buttons',
   'buttons.hint': 'Drag to move. + grows, − shrinks.',
@@ -234,4 +233,5 @@ export const en: Record<TextKey, string> = {
   'credits.play_time': 'Play time: {time}',
   'credits.font_test': "Mbói Tu'i, Yvy Marane'ỹ, ñe'ẽ, Ñeembucú, Paraguarí",
   'credits.back_hint': 'Press {key} to go back',
+  'credits.back_hint_touch': 'Tap the screen to go back',
 };
