@@ -50,7 +50,7 @@ import { Waterfall } from '../entities/Waterfall';
 import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
 import { EventBus, GameEvents } from '../systems/EventBus';
-import { InputManager } from '../systems/InputManager';
+import { InputManager, inputDevices } from '../systems/InputManager';
 import { TouchControls } from '../systems/TouchControls';
 import { playLiberation } from '../systems/LiberationSequence';
 import { SaveManager } from '../systems/SaveManager';
@@ -83,6 +83,8 @@ interface Checkpoint {
 interface Sign {
   zone: Phaser.Geom.Rectangle;
   text: Phaser.GameObjects.Text;
+  /** Clave del texto: se vuelve a armar si se cambia de dispositivo (teclado, mando, táctil). */
+  key: string;
 }
 
 /**
@@ -517,7 +519,10 @@ export class LevelScene extends Phaser.Scene {
     this.registry.set('chipaReturn', false);
     // Al volver de la pausa (y de Opciones) se relee el modo asistido: se puede cambiar en cualquier momento.
     this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
+    // S63: los carteles nombran el control del dispositivo en uso; si se pasa del teclado al mando o al táctil, cambian.
+    const offDevice = inputDevices().onChange(() => this.relabelSigns());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      offDevice();
       AudioManager.duck(false);
       this.touchControls?.destroy();
       this.scene.stop('UI');
@@ -1687,13 +1692,10 @@ export class LevelScene extends Phaser.Scene {
         case 'Sign': {
           const look = artOrPlaceholder(this, 'prop_sign', 'sign', SIGN_PLACEHOLDER, SIGN_PLACEHOLDER);
           this.add.image(x, y, look.key).setOrigin(0.5, 1).setScale(look.scale);
-          const text = this.add
-            .text(x, y - 48, t(String(objectProp(obj, 'textKey') ?? ''), this.keyVars()), TEXT_STYLE)
-            .setOrigin(0.5, 1)
-            .setDepth(20)
-            .setVisible(false);
+          const key = String(objectProp(obj, 'textKey') ?? '');
+          const text = this.add.text(x, y - 48, t(key, this.keyVars()), TEXT_STYLE).setOrigin(0.5, 1).setDepth(20).setVisible(false);
           const zone = new Phaser.Geom.Rectangle(x - SIGN_RANGE, y - 32, SIGN_RANGE * 2, 32);
-          this.signs.push({ zone, text });
+          this.signs.push({ zone, text, key });
           break;
         }
         case 'Enemy': {
@@ -1874,6 +1876,12 @@ export class LevelScene extends Phaser.Scene {
       }
     }
     return spawn;
+  }
+
+  /** Vuelve a armar el texto de los carteles con los controles del dispositivo en uso. */
+  private relabelSigns(): void {
+    const vars = this.keyVars();
+    for (const sign of this.signs) sign.text.setText(t(sign.key, vars));
   }
 
   private keyVars(): Record<string, string> {

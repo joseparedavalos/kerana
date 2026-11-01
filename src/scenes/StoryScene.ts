@@ -8,7 +8,7 @@ import { addDawn, addEichu, addNightSky } from '../systems/Backdrops';
 import { t } from '../i18n';
 import { SaveManager } from '../systems/SaveManager';
 import { charsToShow } from '../systems/textReveal';
-import { InputManager } from '../systems/InputManager';
+import { InputManager, inputDevices } from '../systems/InputManager';
 import { setupView, VIEW } from '../systems/View';
 
 const HOLD_TO_SKIP_MS = 500;
@@ -126,7 +126,8 @@ export class StoryScene extends Phaser.Scene {
       return;
     }
 
-    this.hint.setText(t('story.advance_hint', { key: this.inputs.label('attack') }));
+    // S63: en el celular se avanza tocando la pantalla (en el prólogo no hay botones en pantalla).
+    this.hint.setText(inputDevices().current === 'touch' ? t('story.advance_hint_touch') : t('story.advance_hint', { key: this.inputs.label('attack') }));
     if (advance) this.advanceSlide();
   }
 

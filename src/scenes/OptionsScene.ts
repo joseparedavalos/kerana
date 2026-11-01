@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
-import { InputManager } from '../systems/InputManager';
+import { InputManager, inputDevices } from '../systems/InputManager';
 import { SaveManager, type SaveSettings } from '../systems/SaveManager';
 import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
@@ -133,7 +133,10 @@ export class OptionsScene extends Phaser.Scene {
       },
       {
         labelKey: 'options.erase_save',
-        valueText: () => (this.eraseArmedUntil > 0 ? t('options.erase_confirm', { key: this.inputs.label('confirm') }) : ''),
+        valueText: () => {
+          if (this.eraseArmedUntil <= 0) return '';
+          return inputDevices().current === 'touch' ? t('options.erase_confirm_touch') : t('options.erase_confirm', { key: this.inputs.label('confirm') });
+        },
         onChange: () => this.onEraseChange(),
       },
       { labelKey: 'options.back', valueText: () => '', onChange: () => this.scene.start(this.returnScene) },

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
-import { InputManager } from '../systems/InputManager';
+import { InputManager, inputDevices } from '../systems/InputManager';
 import { formatPlayTime, SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
 
@@ -41,7 +41,7 @@ export class CreditsScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height - 18, t('credits.back_hint', { key: this.inputs.label('pause') }), {
+      .text(width / 2, height - 18, inputDevices().current === 'touch' ? t('credits.back_hint_touch') : t('credits.back_hint', { key: this.inputs.label('pause') }), {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#CFE3F2',

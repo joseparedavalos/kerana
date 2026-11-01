@@ -10,9 +10,6 @@ export const es = {
   'title.credits': 'Créditos',
   'loading': 'Cargando…',
   'key.space': 'Espacio',
-  'key.jump': 'Salto',
-  'key.attack': 'Sable',
-  'key.dash': 'Dash',
 
   'level.test.name': 'Nivel de prueba',
   'level.vitrina.name': 'Vitrina de piezas',
@@ -116,6 +113,7 @@ export const es = {
   'story.skip': 'Saltar',
   'story.skip_hint': 'Mantené {key} para saltar',
   'story.advance_hint': 'Pulsá {key} para continuar',
+  'story.advance_hint_touch': 'Tocá la pantalla para continuar',
   'dialogue.advance_marker': '▼',
 
   // Final (GDD §2.6).
@@ -204,6 +202,7 @@ export const es = {
   'options.text_speed': 'Velocidad del texto',
   'options.erase_save': 'Borrar partida',
   'options.erase_confirm': '¿Seguro? Pulsá {key} de nuevo para confirmar',
+  'options.erase_confirm_touch': '¿Seguro? Tocá de nuevo para confirmar',
   'options.back': 'Volver',
   'buttons.title': 'Botones',
   'buttons.hint': 'Arrastrá para mover. + agranda, − achica.',
@@ -233,6 +232,7 @@ export const es = {
   'credits.play_time': 'Tiempo de juego: {time}',
   'credits.font_test': "Mbói Tu'i, Yvy Marane'ỹ, ñe'ẽ, Ñeembucú, Paraguarí",
   'credits.back_hint': 'Pulsá {key} para volver',
+  'credits.back_hint_touch': 'Tocá la pantalla para volver',
 } as const;
 
 export type TextKey = keyof typeof es;
