@@ -1344,6 +1344,13 @@ async function main() {
     check(l3x > 448 * TILE && l3x < 478 * TILE, `nivel 3 con boss=1 empieza en la antesala (x ${Math.round(l3x / TILE)} tiles)`);
     await walkIntoArena(l3Page);
     check(await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'nivel 3: la arena de Moñái se cierra');
+    // S66: la pared llega al suelo. Antes terminaba en la copa del medio (3 tiles arriba) y retrocediendo se salía de la
+    // arena en plena pelea: Moñái caía sobre Kerana fuera de cuadro y solo se veía su cuerpo entrando por el borde.
+    await l3Page.keyboard.down('ArrowLeft');
+    await sleep(1500);
+    await l3Page.keyboard.up('ArrowLeft');
+    const l3gate = await l3Page.evaluate(() => { const d = window.__KERANA_DEBUG__; return { px: Math.round(d.player.x), left: d.scene.arenaRect.left, fighting: d.scene.fighting }; });
+    check(l3gate.fighting && l3gate.px > l3gate.left, `nivel 3: la arena de Moñái queda cerrada en plena pelea (${JSON.stringify(l3gate)})`);
     await sleep(6000);
     await l3Page.screenshot({ path: join(SHOTS, 'boss-l3.png') });
     const l3state = await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
