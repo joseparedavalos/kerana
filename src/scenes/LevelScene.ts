@@ -61,6 +61,7 @@ import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
 import { isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
+import { addEarthBackdrop, cullEarth, type EarthChunk } from '../systems/EarthBackdrop';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
@@ -230,6 +231,8 @@ export class LevelScene extends Phaser.Scene {
   /** Oscuridad del nivel 7 (GDD §4.8): solo en los niveles con `dark`. */
   private darkness?: Darkness;
   private backdrop!: LevelBackdrop;
+  /** Fondo de tierra (S68) detrás de la repisa, en trozos; vacío si el nivel no lo tiene. */
+  earth: EarthChunk[] = [];
   /** Faroles que se encienden al tocarlos (GDD §6.7). */
   private lanterns: Lantern[] = [];
   /** Onda de luz del tajo cargado (una sola en pantalla). */
@@ -541,6 +544,7 @@ export class LevelScene extends Phaser.Scene {
     if (!this.dialogueBox?.active && !this.cutscene) this.tryAutoAttack();
     this.inputs.update();
     this.backdrop.update(this.darkness?.ambientColor);
+    cullEarth(this.earth, this.cameras.main.worldView);
     SaveManager.addPlayTime(delta);
 
     if (this.dialogueBox.active) {
@@ -1600,6 +1604,7 @@ export class LevelScene extends Phaser.Scene {
         if (tile.index !== -1) tile.setCollision(false, false, true, false);
       });
     }
+    this.earth = [];
     if (this.def.terrainShell) this.drawTerrainAsLedges(this.def.terrainShell);
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
@@ -1612,7 +1617,9 @@ export class LevelScene extends Phaser.Scene {
     if (!ground) return;
     const { width, height } = this.map;
     const solid = (x: number, y: number) => (ground.getTileAt(x, y)?.index ?? -1) !== -1;
-    const depth = terrainDepths(solid, width, height, tiles);
+    const earth = this.def.earthBackdrop === true;
+    // Con fondo de tierra se mide más hondo: la tierra se oscurece hacia adentro (GAMEPLAY.backdrop.earth.deepTiles).
+    const depth = terrainDepths(solid, width, height, tiles + (earth ? GAMEPLAY.backdrop.earth.deepTiles : 0));
     const floor = terrainFloor(solid, width, height);
     const keepFloor = this.def.solidFloor !== false;
     ground.forEachTile((tile) => {
@@ -1621,6 +1628,11 @@ export class LevelScene extends Phaser.Scene {
       if (alpha <= 0) tile.setVisible(false);
       else tile.setAlpha(alpha);
     });
+    this.earth = earth
+      ? addEarthBackdrop(this, this.def.id, tilesetKey(this.def.biome), depth, width, height, this.map.tileWidth, tiles, (i) =>
+          keepFloor ? isFloorTile(floor, i % width, Math.floor(i / width)) : false,
+        )
+      : [];
   }
 
   /** Crea checkpoints, carteles, enemigos y objetos; devuelve el punto de inicio (pies). */
