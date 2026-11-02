@@ -6,6 +6,19 @@ import type { Box } from '../slashRect';
 
 const CFG = GAMEPLAY.monai;
 
+/** Qué parte de Moñái expone la ventana: ninguna, la cabeza aturdida (descenso, pulso) o la cola (robo). */
+export type MonaiExposed = 'none' | 'body' | 'tail';
+
+/**
+ * Qué partes reciben el tajo según la ventana (S66). La cabeza vale en toda ventana abierta (en la del robo, según
+ * `headInTailWindow`); la cola, solo en la del robo.
+ */
+export function strikeTargets(exposed: MonaiExposed, vulnerable: boolean, headInTailWindow: boolean = CFG.headInTailWindow): { head: boolean; tail: boolean } {
+  if (!vulnerable || exposed === 'none') return { head: false, tail: false };
+  if (exposed === 'body') return { head: true, tail: false };
+  return { head: headInTailWindow, tail: true };
+}
+
 /** Altura del centro de la cabeza apoyada en el suelo (aturdida, el pulso, el final del robo). */
 export function groundHeadY(floorY: number): number {
   return floorY - CFG.headHeight / 2;

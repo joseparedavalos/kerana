@@ -18,7 +18,7 @@ import {
   headOrigin,
   HORNS_TEXTURE,
 } from './monaiArt';
-import { groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeZone, type Trunk } from './monaiLogic';
+import { groundHeadY, HeartThief, type MonaiExposed, pulseBlocked, restingSegmentY, strikeTargets, strikeZone, type Trunk } from './monaiLogic';
 import { DEBUG } from '../../config/debug';
 import { hasSprite, spriteDetail } from '../../systems/SpriteSkin';
 
@@ -84,7 +84,7 @@ export class Monai extends Boss {
   private perch = 1;
   private harmful = false;
   /** Qué parte se puede golpear en la ventana. */
-  private exposed: 'none' | 'body' | 'tail' = 'none';
+  private exposed: MonaiExposed = 'none';
   /** El cuerpo se apoya en el suelo (aturdido). */
   private grounded = false;
   private stealing = false;
@@ -278,11 +278,11 @@ export class Monai extends Boss {
   // ── Daño ──────────────────────────────────────────────────────────────────
 
   protected applyHit(rect: Phaser.Geom.Rectangle, damage: number): number {
-    if (!this.brain.vulnerable || this.exposed === 'none') return 0;
-    if (this.exposed === 'tail') {
-      if (!Phaser.Geom.Rectangle.Overlaps(this.tailStrikeBounds(), rect)) return 0;
+    const targets = strikeTargets(this.exposed, this.brain.vulnerable);
+    // La cola devuelve el corazón robado; la cabeza (S66: también en la ventana del robo) solo resta vida.
+    if (targets.tail && Phaser.Geom.Rectangle.Overlaps(this.tailStrikeBounds(), rect)) {
       if (this.thief.recover((n) => this.ctx.healPlayer(n))) this.ctx.sfx('heartBack');
-    } else if (!Phaser.Geom.Rectangle.Overlaps(this.headStrikeBounds(), rect) && !(CFG.bodyIsTarget && this.touchesBody(rect))) {
+    } else if (!(targets.head && Phaser.Geom.Rectangle.Overlaps(this.headStrikeBounds(), rect)) && !(targets.head && CFG.bodyIsTarget && this.touchesBody(rect))) {
       return 0;
     }
     this.flash();
@@ -370,7 +370,7 @@ export class Monai extends Boss {
   /** Cara según lo que hace (fauces abiertas = hace daño; ojo cerrado = aturdida) y cuernos pegados a la cabeza. */
   private updateHead(perched: boolean): void {
     const head = this.head;
-    const mood = this.harmful ? 'attack' : this.exposed === 'body' ? 'daze' : 'idle';
+    const mood = this.harmful ? 'attack' : this.headDazed() ? 'daze' : 'idle';
     if (this.headSprite) {
       // Las fauces abren y quedan abiertas (la animación no se repite) mientras dure el daño.
       if (mood !== this.headMood) head.play(`${HEAD_SPRITE}_${mood}`);
@@ -401,6 +401,11 @@ export class Monai extends Boss {
     } else if (this.horns.isTinted && !this.flashing) {
       this.horns.clearTint();
     }
+  }
+
+  /** La cabeza en el suelo se le puede pegar (aturdida; S66: también en la ventana del robo): ojo cerrado y estrellitas. */
+  private headDazed(): boolean {
+    return this.exposed === 'body' || (this.exposed === 'tail' && CFG.headInTailWindow);
   }
 
   /** Dónde sale el cuello: detrás de la cabeza. */
@@ -516,7 +521,7 @@ export class Monai extends Boss {
       const side = this.head.flipX ? -1 : 1;
       g.fillStyle(color, HORN_GLOW.alpha * this.head.alpha).fillCircle(this.head.x + side * HORN_GLOW.dx, this.head.y + HORN_GLOW.dy, HORN_GLOW.r);
     }
-    if (this.exposed === 'body' && this.brain.vulnerable) drawDazeStars(g, this.head.x, this.head.y - STARS_RISE, this.scene.time.now, this.head.alpha);
+    if (this.headDazed() && this.brain.vulnerable) drawDazeStars(g, this.head.x, this.head.y - STARS_RISE, this.scene.time.now, this.head.alpha);
     if (DEBUG.debug && this.head.alpha > 0) this.drawDebugZones(g);
   }
 
@@ -525,11 +530,11 @@ export class Monai extends Boss {
    * (cabeza y cola; amarillo cuando es la parte expuesta en la ventana, gris si no).
    */
   private drawDebugZones(g: Phaser.GameObjects.Graphics): void {
-    const open = this.brain.vulnerable;
+    const targets = strikeTargets(this.exposed, this.brain.vulnerable);
     const head = this.headStrikeBounds();
     const tail = this.tailStrikeBounds();
-    g.lineStyle(1, open && this.exposed === 'body' ? 0xffe27a : 0x9a9a9a, 1).strokeRect(head.x, head.y, head.width, head.height);
-    g.lineStyle(1, open && this.exposed === 'tail' ? 0xffe27a : 0x9a9a9a, 1).strokeRect(tail.x, tail.y, tail.width, tail.height);
+    g.lineStyle(1, targets.head ? 0xffe27a : 0x9a9a9a, 1).strokeRect(head.x, head.y, head.width, head.height);
+    g.lineStyle(1, targets.tail ? 0xffe27a : 0x9a9a9a, 1).strokeRect(tail.x, tail.y, tail.width, tail.height);
     if (this.harmful) {
       const hurt = this.headBounds();
       g.lineStyle(1, 0xe04848, 1).strokeRect(hurt.x, hurt.y, hurt.width, hurt.height);

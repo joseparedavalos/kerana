@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeZone, type Trunk } from '../src/entities/bosses/monaiLogic';
+import { groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeTargets, strikeZone, type Trunk } from '../src/entities/bosses/monaiLogic';
 import { BossBrain } from '../src/entities/bosses/BossBrain';
 import { boxesOverlap, slashRect, type Box } from '../src/entities/slashRect';
 import { Health } from '../src/systems/Health';
@@ -209,5 +209,46 @@ describe('El último golpe a Moñái entra (S65)', () => {
     expect(head.y + head.height).toBe(FLOOR);
     expect(head.width).toBe(cfg.headWidth);
     expect(head.height).toBe(cfg.headHeight + cfg.strikeRise);
+  });
+});
+
+describe('La cabeza de Moñái es blanco en toda ventana (S66)', () => {
+  it('en la ventana del robo, el tajo a la cabeza cuenta (hasta S65 solo valía la cola)', () => {
+    expect(GAMEPLAY.monai.headInTailWindow).toBe(true);
+    expect(strikeTargets('tail', true)).toEqual({ head: true, tail: true });
+    // Con el valor viejo, la cabeza no era blanco: el fallo de S66.
+    expect(strikeTargets('tail', true, false)).toEqual({ head: false, tail: true });
+  });
+
+  it('aturdida (descenso o pulso) solo la cabeza; fuera de la ventana, nada', () => {
+    expect(strikeTargets('body', true)).toEqual({ head: true, tail: false });
+    for (const exposed of ['none', 'body', 'tail'] as const) expect(strikeTargets(exposed, false)).toEqual({ head: false, tail: false });
+    expect(strikeTargets('none', true)).toEqual({ head: false, tail: false });
+  });
+
+  it('con 4 de vida (fase 3) se vence solo con golpes a la cabeza, aunque toquen ventanas de robo', () => {
+    let seed = 11;
+    const rng = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const brain = new BossBrain(getBossDef('monai'), { rng });
+    brain.start();
+    brain.damage(brain.maxHp - 4);
+    expect(brain.phase).toBe(2);
+    const hitIn = new Set<string>();
+    let wasOpen = false;
+    for (let t = 0; t < 600000 && brain.state !== 'defeated'; t += 50) {
+      brain.step(50);
+      // Un golpe a la cabeza por ventana, si la ventana la acepta.
+      const open = brain.vulnerable;
+      if (open && !wasOpen && brain.attack) {
+        const exposed = brain.attack.id === 'steal' ? 'tail' : 'body';
+        if (strikeTargets(exposed, true).head) {
+          hitIn.add(brain.attack.id);
+          brain.damage(1);
+        }
+      }
+      wasOpen = open;
+    }
+    expect(brain.state).toBe('defeated');
+    expect(hitIn.has('steal')).toBe(true);
   });
 });
