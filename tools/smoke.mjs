@@ -365,6 +365,7 @@ async function main() {
     await sleep(1200);
     const bgSlope = await backdropState(title);
     check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
+    check((await title.evaluate(() => window.__KERANA_DEBUG__.scene.earth.length)) === 0, 'nivel 1: sin fondo de tierra (S68: tiene su fondo de cueva)');
     await title.screenshot({ path: join(SHOTS, 'bg-l1-ladera.png') });
 
     // Plumas (S17): se guardan al tocarlas, no reaparecen al volver a entrar y el conteo no baja.
@@ -1425,6 +1426,15 @@ async function main() {
     const l3Run = await open('/?debug=1&level=3&god=1');
     await l3Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
+    await freshLevel(l3Run, 'l3', 'monai');
+    // Fondo de tierra (S68): dentro de la meseta se ve tierra, no el cielo; solo los trozos a la vista se dibujan.
+    await l3Run.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(200 * 16, 8 * 16));
+    await sleep(1200);
+    const l3Earth = await l3Run.evaluate(() => {
+      const e = window.__KERANA_DEBUG__.scene.earth;
+      return { chunks: e.length, visible: e.filter((c) => c.img.visible).length, depth: e[0]?.img.depth };
+    });
+    check(l3Earth.chunks > 0 && l3Earth.visible > 0 && l3Earth.visible < l3Earth.chunks && l3Earth.depth === -19, `nivel 3: fondo de tierra detrás de la repisa, solo los trozos a la vista (${JSON.stringify(l3Earth)})`);
     await freshLevel(l3Run, 'l3', 'monai');
     const l3Info = await l3Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;

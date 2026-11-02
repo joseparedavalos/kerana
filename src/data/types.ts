@@ -43,6 +43,11 @@ export interface LevelDef {
   terrainShell?: number;
   /** false: también el piso largo es una franja y debajo se ve el fondo. Por defecto se dibuja hasta abajo. */
   solidFloor?: boolean;
+  /**
+   * Fondo de tierra (S68): con `terrainShell`, lo que asoma detrás de la repisa dentro de la tierra maciza es tierra
+   * (el color del relleno del tileset, oscurecido; GAMEPLAY.backdrop.earth) y no el fondo lejano. Solo dibujo.
+   */
+  earthBackdrop?: boolean;
   musicKey: string;
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;

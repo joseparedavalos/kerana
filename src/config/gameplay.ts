@@ -1512,6 +1512,23 @@ export const GAMEPLAY = {
      * apenas se ve) para que la roca enmarque el fondo de cueva. 0xffffff = sin cambio.
      */
     caveRockTint: 0x343a58,
+    /**
+     * Fondo de tierra (S68, `earthBackdrop: true` en levels.ts): dentro de la tierra maciza, detrás de la repisa, se ve
+     * tierra y no el cielo. Color: el medio de la casilla `fillTile` del tileset del bioma (campo: tierra colorada),
+     * multiplicado por `shade` en la primera fila de tierra y por `deepShade` a `deepTiles` tiles más adentro.
+     * `fadeAlpha`: opacidad detrás de la fila tenue (`terrainFadeAlpha`): la tierra asoma de a poco, sin línea dura.
+     */
+    earth: {
+      fillTile: 15,
+      shade: 0.8,
+      deepShade: 0.66,
+      deepTiles: 3,
+      /** Ancho de cada trozo (tiles): cada uno se recorta a la caja de su tierra y no dibuja lo transparente. */
+      chunkTiles: 16,
+      fadeAlpha: 0.6,
+      /** Justo encima del fondo lejano (-20) y detrás de todo lo demás (props hundidos, jefes, tiles). */
+      depth: -19,
+    },
   },
 
   /**

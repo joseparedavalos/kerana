@@ -61,6 +61,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'estero',
     backgrounds: { far: 'bg_l2_far' },
     terrainShell: 3,
+    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
+    earthBackdrop: false,
     musicKey: '',
     boss: 'mboi_tui',
     gift: 'heart_up',
@@ -76,6 +78,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'campo',
     backgrounds: { far: 'bg_l3_far' },
     terrainShell: 3,
+    // S68: dentro de la tierra maciza se ve tierra colorada, no el cielo. l2, l4, l5 y l6: la misma línea.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'monai',
     gift: 'double_jump',
@@ -92,6 +96,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // Fondo lejano (cerros, campanario, lapacho). La calle es el tileset, como en l3.
     backgrounds: { far: 'bg_l4_far', shiftY: 0 },
     terrainShell: 3,
+    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
+    earthBackdrop: false,
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',
@@ -109,6 +115,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // S60: el dosel (copas, niebla en bandas y rayos de luz) en el relleno de arriba.
     backgrounds: { far: 'bg_l5_far', fillTop: '#a9bf98', rain: true, canopy: true },
     terrainShell: 3,
+    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
+    earthBackdrop: false,
     musicKey: '',
     boss: 'kurupi',
     gift: 'heart_up',
@@ -124,6 +132,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'montana',
     backgrounds: { far: 'bg_l6_far' },
     terrainShell: 3,
+    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
+    earthBackdrop: false,
     musicKey: '',
     boss: 'ao_ao',
     gift: 'heart_up',
