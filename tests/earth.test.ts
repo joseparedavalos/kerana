@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { LEVELS } from '../src/data/levels';
-import { earthChunks, earthPixels, terrainAlpha, terrainDepths } from '../src/systems/terrainLogic';
+import { earthCells, terrainAlpha, terrainDepths } from '../src/systems/terrainLogic';
 
-const LOOK = { fadeAlpha: 0.6, shade: 0.8, deepShade: 0.6, deepTiles: 2 };
+const LOOK = { shade: 0.5, deepShade: 0.4, deepTiles: 2, jitter: 0 };
 
 // Bloque macizo de 12 × 12 con aire alrededor (un tile de margen).
 function block(size = 12): { solid: (x: number, y: number) => boolean; w: number; h: number } {
@@ -11,52 +11,66 @@ function block(size = 12): { solid: (x: number, y: number) => boolean; w: number
   return { solid: (x, y) => x > 0 && y > 0 && x <= size && y <= size, w, h: w };
 }
 
-describe('fondo de tierra (S68)', () => {
-  it('nunca hay tierra en el aire ni al lado del aire; la fila tenue lleva fadeAlpha y más adentro es opaca', () => {
+describe('fondo de tierra (S68, S69)', () => {
+  it('nunca hay tierra en el aire ni en las filas que la repisa dibuja enteras; sí en la tenue y más adentro', () => {
     const { solid, w, h } = block();
     const depth = terrainDepths(solid, w, h, 3 + LOOK.deepTiles);
-    const px = earthPixels(depth, 3, 0x864925, LOOK);
+    const cells = earthCells(depth, w, 3, LOOK);
+    const has = new Set(cells.map((c) => c.y * w + c.x));
     for (let i = 0; i < depth.length; i++) {
-      const a = px[i * 4 + 3];
-      const d = depth[i];
-      if (d <= 1) expect(a).toBe(0);
-      if (d === 3) expect(a).toBe(Math.round(LOOK.fadeAlpha * 255));
-      if (d > 3) expect(a).toBe(255);
-      // Donde la repisa dibuja entero (y no es la fila tenue), la tierra solo puede estar tapada.
-      if (a > 0 && d < 3) expect(terrainAlpha(d, 3, GAMEPLAY.backdrop.terrainFadeAlpha)).toBe(1);
+      expect(has.has(i)).toBe(depth[i] >= 3);
+      // Donde hay tierra, la repisa encima es la fila tenue o no se dibuja: nunca un tile entero.
+      if (has.has(i)) expect(terrainAlpha(depth[i], 3, GAMEPLAY.backdrop.terrainFadeAlpha)).toBeLessThan(1);
     }
   });
 
-  it('se oscurece hacia adentro, del shade al deepShade, con el color del relleno', () => {
+  it('se oscurece hacia adentro, de shade a deepShade, sin pasar de ahí', () => {
     const { solid, w, h } = block();
     const depth = terrainDepths(solid, w, h, 3 + LOOK.deepTiles);
-    const px = earthPixels(depth, 3, 0x864925, LOOK);
-    const red = (d: number) => px[depth.findIndex((v) => v === d) * 4];
-    expect(red(3)).toBe(Math.round(0x86 * 0.8));
-    expect(red(5)).toBe(Math.round(0x86 * 0.6));
-    expect(red(4)).toBeLessThan(red(3));
-    expect(red(4)).toBeGreaterThan(red(5));
+    const cells = earthCells(depth, w, 3, LOOK);
+    const gray = (d: number) => cells.find((c) => depth[c.y * w + c.x] === d)!.gray;
+    expect(gray(3)).toBe(Math.round(255 * 0.5));
+    expect(gray(5)).toBe(Math.round(255 * 0.4));
+    expect(gray(4)).toBeLessThan(gray(3));
+    expect(gray(4)).toBeGreaterThan(gray(5));
+  });
+
+  it('el tinte del juego es sombra (más oscuro que la mitad) y el jitter no lo saca de rango', () => {
+    const look = GAMEPLAY.backdrop.earth;
+    expect(look.shade).toBeLessThanOrEqual(0.6);
+    expect(look.deepShade).toBeLessThanOrEqual(look.shade);
+    const { solid, w, h } = block(40);
+    const depth = terrainDepths(solid, w, h, 3 + look.deepTiles);
+    const cells = earthCells(depth, w, 3, look);
+    const max = Math.round(255 * look.shade * (1 + look.jitter));
+    for (const c of cells) expect(c.gray).toBeLessThanOrEqual(max);
+  });
+
+  it('no es papel tapiz: las ocho orientaciones aparecen y dos vecinas casi nunca coinciden', () => {
+    const { solid, w, h } = block(40);
+    const depth = terrainDepths(solid, w, h, 5);
+    const cells = earthCells(depth, w, 3, LOOK);
+    const key = (c: { turn: number; flip: boolean }) => c.turn + (c.flip ? 4 : 0);
+    const seen = new Set(cells.map(key));
+    expect(seen.size).toBe(8);
+    const at = new Map(cells.map((c) => [c.y * w + c.x, key(c)]));
+    let same = 0;
+    let pairs = 0;
+    for (const c of cells) {
+      const right = at.get(c.y * w + c.x + 1);
+      if (right === undefined) continue;
+      pairs++;
+      if (right === key(c)) same++;
+    }
+    expect(same / pairs).toBeLessThan(0.25);
+    // Determinista: la misma tierra en cada partida.
+    expect(earthCells(depth, w, 3, LOOK)).toEqual(cells);
   });
 
   it('lo que se dibuja entero igual (el piso) no lleva tierra', () => {
     const { solid, w, h } = block();
     const depth = terrainDepths(solid, w, h, 5);
-    const px = earthPixels(depth, 3, 0x864925, LOOK, () => true);
-    expect(px.filter((_, i) => i % 4 === 3 && px[i] > 0).length).toBe(0);
-  });
-
-  it('los trozos cubren toda la tierra, con margen vacío, y saltean los tramos sin tierra', () => {
-    const w = 40;
-    const h = 14;
-    // Un bloque en x 1-12 y otro en x 25-38: el tramo del medio no tiene tierra.
-    const solid = (x: number, y: number) => y > 0 && y < 13 && ((x >= 1 && x <= 12) || (x >= 25 && x <= 38));
-    const depth = terrainDepths(solid, w, h, 5);
-    const px = earthPixels(depth, 3, 0x864925, LOOK);
-    const chunks = earthChunks(px, w, h, 8);
-    const inside = (x: number, y: number) => chunks.some((c) => x >= c.x && x < c.x + c.width && y >= c.y && y < c.y + c.height);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (px[(y * w + x) * 4 + 3] > 0) expect(inside(x, y)).toBe(true);
-    expect(chunks.some((c) => c.x >= 16 && c.x + c.width <= 24)).toBe(false);
-    for (const c of chunks) expect(c.x % 8 === 0 || px[(c.y * w + c.x) * 4 + 3] === 0).toBe(true);
+    expect(earthCells(depth, w, 3, LOOK, () => true)).toEqual([]);
   });
 
   it('solo l3 lo tiene encendido; l1 sigue con su fondo de cueva y todo el que lo tenga usa la repisa', () => {

@@ -61,7 +61,7 @@ import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
 import { isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
-import { addEarthBackdrop, cullEarth, type EarthChunk } from '../systems/EarthBackdrop';
+import { addEarthBackdrop } from '../systems/EarthBackdrop';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
@@ -232,7 +232,7 @@ export class LevelScene extends Phaser.Scene {
   private darkness?: Darkness;
   private backdrop!: LevelBackdrop;
   /** Fondo de tierra (S68) detrás de la repisa, en trozos; vacío si el nivel no lo tiene. */
-  earth: EarthChunk[] = [];
+  earth: Phaser.Tilemaps.TilemapLayer | null = null;
   /** Faroles que se encienden al tocarlos (GDD §6.7). */
   private lanterns: Lantern[] = [];
   /** Onda de luz del tajo cargado (una sola en pantalla). */
@@ -544,7 +544,6 @@ export class LevelScene extends Phaser.Scene {
     if (!this.dialogueBox?.active && !this.cutscene) this.tryAutoAttack();
     this.inputs.update();
     this.backdrop.update(this.darkness?.ambientColor);
-    cullEarth(this.earth, this.cameras.main.worldView);
     SaveManager.addPlayTime(delta);
 
     if (this.dialogueBox.active) {
@@ -1604,15 +1603,15 @@ export class LevelScene extends Phaser.Scene {
         if (tile.index !== -1) tile.setCollision(false, false, true, false);
       });
     }
-    this.earth = [];
-    if (this.def.terrainShell) this.drawTerrainAsLedges(this.def.terrainShell);
+    this.earth = null;
+    if (this.def.terrainShell) this.drawTerrainAsLedges(tileset, this.def.terrainShell);
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.physics.world.setBoundsCollision(true, true, false, false);
   }
 
   /** Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo. Solo dibujo. */
-  private drawTerrainAsLedges(tiles: number): void {
+  private drawTerrainAsLedges(tileset: Phaser.Tilemaps.Tileset, tiles: number): void {
     const ground = this.layers.Ground;
     if (!ground) return;
     const { width, height } = this.map;
@@ -1629,10 +1628,10 @@ export class LevelScene extends Phaser.Scene {
       else tile.setAlpha(alpha);
     });
     this.earth = earth
-      ? addEarthBackdrop(this, this.def.id, tilesetKey(this.def.biome), depth, width, height, this.map.tileWidth, tiles, (i) =>
+      ? addEarthBackdrop(this.map, tileset, ground, depth, tiles, (i) =>
           keepFloor ? isFloorTile(floor, i % width, Math.floor(i / width)) : false,
         )
-      : [];
+      : null;
   }
 
   /** Crea checkpoints, carteles, enemigos y objetos; devuelve el punto de inicio (pies). */

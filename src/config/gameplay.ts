@@ -1513,19 +1513,15 @@ export const GAMEPLAY = {
      */
     caveRockTint: 0x343a58,
     /**
-     * Fondo de tierra (S68, `earthBackdrop: true` en levels.ts): dentro de la tierra maciza, detrás de la repisa, se ve
-     * tierra y no el cielo. Color: el medio de la casilla `fillTile` del tileset del bioma (campo: tierra colorada),
-     * multiplicado por `shade` en la primera fila de tierra y por `deepShade` a `deepTiles` tiles más adentro.
-     * `fadeAlpha`: opacidad detrás de la fila tenue (`terrainFadeAlpha`): la tierra asoma de a poco, sin línea dura.
+     * Fondo de tierra (S68, S69; `earthBackdrop: true` en levels.ts): dentro de la tierra maciza, detrás de la repisa,
+     * va la misma baldosa del suelo, en sombra, y no el cielo. Tinte (multiplicado) `shade` detrás de la fila tenue y
+     * `deepShade` a `deepTiles` tiles más adentro. `jitter`: cuánto cambia el tinte de una baldosa a otra (±).
      */
     earth: {
-      fillTile: 15,
-      shade: 0.8,
-      deepShade: 0.66,
+      shade: 0.5,
+      deepShade: 0.4,
       deepTiles: 3,
-      /** Ancho de cada trozo (tiles): cada uno se recorta a la caja de su tierra y no dibuja lo transparente. */
-      chunkTiles: 16,
-      fadeAlpha: 0.6,
+      jitter: 0.05,
       /** Justo encima del fondo lejano (-20) y detrás de todo lo demás (props hundidos, jefes, tiles). */
       depth: -19,
     },
