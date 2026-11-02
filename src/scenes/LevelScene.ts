@@ -1617,8 +1617,7 @@ export class LevelScene extends Phaser.Scene {
     const { width, height } = this.map;
     const solid = (x: number, y: number) => (ground.getTileAt(x, y)?.index ?? -1) !== -1;
     const earth = this.def.earthBackdrop === true;
-    // Con fondo de tierra se mide más hondo: la tierra se oscurece hacia adentro (GAMEPLAY.backdrop.earth.deepTiles).
-    const depth = terrainDepths(solid, width, height, tiles + (earth ? GAMEPLAY.backdrop.earth.deepTiles : 0));
+    const depth = terrainDepths(solid, width, height, tiles);
     const floor = terrainFloor(solid, width, height);
     const keepFloor = this.def.solidFloor !== false;
     ground.forEachTile((tile) => {
@@ -1628,7 +1627,7 @@ export class LevelScene extends Phaser.Scene {
       else tile.setAlpha(alpha);
     });
     this.earth = earth
-      ? addEarthBackdrop(this.map, tileset, ground, depth, tiles, (i) =>
+      ? addEarthBackdrop(this.map, tileset, depth, tiles, (i) =>
           keepFloor ? isFloorTile(floor, i % width, Math.floor(i / width)) : false,
         )
       : null;

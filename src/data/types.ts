@@ -44,8 +44,8 @@ export interface LevelDef {
   /** false: también el piso largo es una franja y debajo se ve el fondo. Por defecto se dibuja hasta abajo. */
   solidFloor?: boolean;
   /**
-   * Fondo de tierra (S68, S69): con `terrainShell`, lo que asoma detrás de la repisa dentro de la tierra maciza es la
-   * misma baldosa del suelo en sombra (GAMEPLAY.backdrop.earth) y no el fondo lejano. Solo dibujo.
+   * Fondo de tierra (S68, S69, S71): con `terrainShell`, lo que asoma detrás de la repisa dentro de la tierra maciza
+   * es la baldosa del relleno del suelo, igual que el terreno (GAMEPLAY.backdrop.earth), y no el fondo lejano.
    */
   earthBackdrop?: boolean;
   musicKey: string;
