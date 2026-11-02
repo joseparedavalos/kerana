@@ -3,6 +3,7 @@ import {
   coverImage,
   createImage,
   cropToContent,
+  despillGreen,
   detectPixelSize,
   greenEdgePasses,
   opaqueBounds,
@@ -199,6 +200,37 @@ describe('sprite pipeline', () => {
     expect(meta.frames).toBe(2);
     expect((meta.anims as Record<string, { frames: number[] }>).x_idle.frames).toEqual([0]);
     expect((meta.anims as Record<string, { frames: number[] }>).x_run.frames).toEqual([0, 1]);
+  });
+
+  it('despill baja el verde al mayor de rojo y azul, sin tocar los demás colores (S70)', () => {
+    const img = createImage(4, 1) as Img;
+    img.data.set([40, 110, 35, 255, 200, 150, 100, 255, 60, 90, 180, 255, 30, 200, 30, 0]);
+    expect(despillGreen(img)).toBe(1);
+    expect([...img.data.slice(0, 3)]).toEqual([40, 40, 35]); // halo → gris oscuro
+    expect([...img.data.slice(4, 7)]).toEqual([200, 150, 100]); // piel
+    expect([...img.data.slice(8, 11)]).toEqual([60, 90, 180]); // pantalón azul
+    expect(img.data[13]).toBe(200); // transparente: no se toca
+    // En processCharacter, por hoja o para todo el personaje.
+    const sheetImg = syntheticSheet(1, 100);
+    fillRect(sheetImg, 45, 120, 5, 5, [20, 160, 20, 255]);
+    const { summary } = processCharacter('x', [{ anim: 'idle', cols: 1, rows: 1, img: sheetImg }], { frame: [32, 32], height: 20, despill: true });
+    expect(summary[0]).toMatch(/despill 25px/);
+  });
+
+  it('refHeight fija la escala de una hoja y anchorX ancla una x de la celda (S70)', () => {
+    // Dos hojas a la misma escala; la segunda, sin cuadro de pie del mismo alto.
+    const idle = { anim: 'idle', cols: 2, rows: 1, img: syntheticSheet(2, 100) };
+    const attack = { anim: 'attack', cols: 2, rows: 1, img: syntheticSheet(2, 140) };
+    const { summary, image } = processCharacter('x', [idle, attack], {
+      frame: [32, 32],
+      height: 20,
+      sheets: { attack: { refHeight: 100, anchorX: 30 } },
+    });
+    expect(summary.find((l: string) => l.includes('attack'))).toMatch(/ref 100px/);
+    // anchorX 30: el cuerpo (x 40-59 de la celda) queda 10 a 29 px de origen a la derecha del centro del frame.
+    // Cuatro cuadros en una grilla de 2 × 2: el primero del ataque es el de abajo a la izquierda.
+    const b = opaqueBounds(image as Img, { x: 0, y: 32, w: 32, h: 32 });
+    expect(b?.x0).toBe(18);
   });
 
   it('cropBottom borra las filas de abajo de cada celda antes de medir', () => {
