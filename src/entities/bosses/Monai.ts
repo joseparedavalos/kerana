@@ -315,9 +315,10 @@ export class Monai extends Boss {
     if (this.guardMs >= CFG.guardArmMs && this.touchesGuard(playerRect)) return true;
     if (!this.harmful || !Phaser.Geom.Rectangle.Overlaps(this.headBounds(), playerRect)) return false;
     if (!this.stealing) return true;
-    // Robo: un solo intento por embestida.
+    // Robo: un solo intento por embestida. Si el golpe la dejó sin corazones, la pelea ya se reinició (cerebro en
+    // 'waiting'): no se guarda nada en la cola para el intento siguiente (S65).
     this.stealing = false;
-    if (this.thief.steal(() => this.ctx.damagePlayer(this.head.x))) this.ctx.sfx('steal');
+    if (this.thief.steal(() => this.ctx.damagePlayer(this.head.x) && this.brain.state !== 'waiting')) this.ctx.sfx('steal');
     return false;
   }
 
