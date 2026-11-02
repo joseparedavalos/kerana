@@ -18,7 +18,8 @@ import {
   headOrigin,
   HORNS_TEXTURE,
 } from './monaiArt';
-import { HeartThief, pulseBlocked, type Trunk } from './monaiLogic';
+import { groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeZone, type Trunk } from './monaiLogic';
+import { DEBUG } from '../../config/debug';
 import { hasSprite, spriteDetail } from '../../systems/SpriteSkin';
 
 const CFG = GAMEPLAY.monai;
@@ -68,7 +69,9 @@ export class Monai extends Boss {
   private readonly trunks: Trunk[];
   private readonly thief = new HeartThief();
   private readonly headRect = new Phaser.Geom.Rectangle();
-  private readonly tailRect = new Phaser.Geom.Rectangle();
+  /** Zonas que reciben el tajo (S65): la cabeza y la cola crecidas hacia arriba hasta la altura del tajo. */
+  private readonly headStrike = new Phaser.Geom.Rectangle();
+  private readonly tailStrike = new Phaser.Geom.Rectangle();
   private readonly timers: Phaser.Time.TimerEvent[] = [];
   private readonly pulseState = { r: 0 };
   private readonly canopyY: number;
@@ -277,9 +280,9 @@ export class Monai extends Boss {
   protected applyHit(rect: Phaser.Geom.Rectangle, damage: number): number {
     if (!this.brain.vulnerable || this.exposed === 'none') return 0;
     if (this.exposed === 'tail') {
-      if (!Phaser.Geom.Rectangle.Overlaps(this.tailBounds(), rect)) return 0;
+      if (!Phaser.Geom.Rectangle.Overlaps(this.tailStrikeBounds(), rect)) return 0;
       if (this.thief.recover((n) => this.ctx.healPlayer(n))) this.ctx.sfx('heartBack');
-    } else if (!Phaser.Geom.Rectangle.Overlaps(this.headBounds(), rect) && !(CFG.bodyIsTarget && this.touchesBody(rect))) {
+    } else if (!Phaser.Geom.Rectangle.Overlaps(this.headStrikeBounds(), rect) && !(CFG.bodyIsTarget && this.touchesBody(rect))) {
       return 0;
     }
     this.flash();
@@ -312,9 +315,10 @@ export class Monai extends Boss {
     if (this.guardMs >= CFG.guardArmMs && this.touchesGuard(playerRect)) return true;
     if (!this.harmful || !Phaser.Geom.Rectangle.Overlaps(this.headBounds(), playerRect)) return false;
     if (!this.stealing) return true;
-    // Robo: un solo intento por embestida.
+    // Robo: un solo intento por embestida. Si el golpe la dejó sin corazones, la pelea ya se reinició (cerebro en
+    // 'waiting'): no se guarda nada en la cola para el intento siguiente (S65).
     this.stealing = false;
-    if (this.thief.steal(() => this.ctx.damagePlayer(this.head.x))) this.ctx.sfx('steal');
+    if (this.thief.steal(() => this.ctx.damagePlayer(this.head.x) && this.brain.state !== 'waiting')) this.ctx.sfx('steal');
     return false;
   }
 
@@ -411,7 +415,7 @@ export class Monai extends Boss {
   private updateSegments(deltaMs: number, perched: boolean, guarding: boolean): void {
     let prevX = this.neckX();
     let prevY = this.head.y + 2;
-    const floor = this.floorY - CFG.segmentRadius / 2;
+    const floor = restingSegmentY(this.floorY);
     const settle = Math.min(1, deltaMs / 120);
     const coil = Math.min(1, deltaMs / CFG.coilSettleMs);
     const trunk = this.trunks[this.perch];
@@ -513,6 +517,23 @@ export class Monai extends Boss {
       g.fillStyle(color, HORN_GLOW.alpha * this.head.alpha).fillCircle(this.head.x + side * HORN_GLOW.dx, this.head.y + HORN_GLOW.dy, HORN_GLOW.r);
     }
     if (this.exposed === 'body' && this.brain.vulnerable) drawDazeStars(g, this.head.x, this.head.y - STARS_RISE, this.scene.time.now, this.head.alpha);
+    if (DEBUG.debug && this.head.alpha > 0) this.drawDebugZones(g);
+  }
+
+  /**
+   * Con `?debug=1` (S65): la zona que lastima a Kerana (la cabeza mientras hace daño, rojo) y las que reciben el tajo
+   * (cabeza y cola; amarillo cuando es la parte expuesta en la ventana, gris si no).
+   */
+  private drawDebugZones(g: Phaser.GameObjects.Graphics): void {
+    const open = this.brain.vulnerable;
+    const head = this.headStrikeBounds();
+    const tail = this.tailStrikeBounds();
+    g.lineStyle(1, open && this.exposed === 'body' ? 0xffe27a : 0x9a9a9a, 1).strokeRect(head.x, head.y, head.width, head.height);
+    g.lineStyle(1, open && this.exposed === 'tail' ? 0xffe27a : 0x9a9a9a, 1).strokeRect(tail.x, tail.y, tail.width, tail.height);
+    if (this.harmful) {
+      const hurt = this.headBounds();
+      g.lineStyle(1, 0xe04848, 1).strokeRect(hurt.x, hurt.y, hurt.width, hurt.height);
+    }
   }
 
   protected resetVisuals(): void {
@@ -561,7 +582,7 @@ export class Monai extends Boss {
   }
 
   private groundHeadY(): number {
-    return this.floorY - CFG.headHeight / 2;
+    return groundHeadY(this.floorY);
   }
 
   /** Copa más cercana a Kerana (a veces la segunda, para variar). */
@@ -583,9 +604,15 @@ export class Monai extends Boss {
     return this.headRect.setTo(this.head.x - w / 2, this.head.y - h / 2, w, h);
   }
 
-  private tailBounds(): Phaser.Geom.Rectangle {
+  private headStrikeBounds(): Phaser.Geom.Rectangle {
+    strikeZone('head', this.head.x, this.head.y, this.headStrike);
+    return this.headStrike;
+  }
+
+  private tailStrikeBounds(): Phaser.Geom.Rectangle {
     const tail = this.segments[this.segments.length - 1];
-    return this.tailRect.setTo(tail.x - CFG.tailWidth / 2, tail.y - CFG.tailHeight / 2, CFG.tailWidth, CFG.tailHeight);
+    strikeZone('tail', tail.x, tail.y, this.tailStrike);
+    return this.tailStrike;
   }
 
   /** Kerana toca la joroba (S44): círculo de cada segmento de la joroba contra su caja. */

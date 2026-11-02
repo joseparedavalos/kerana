@@ -641,6 +641,10 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private restartFromCheckpoint(): void {
+    // S65: en plena pelea, volver al fuego es reintentarla: se reinicia como al caer. Antes la pelea seguía (`fighting`
+    // en true) con Kerana fuera de la arena y la cámara trabada en ella: Moñái caía sobre Kerana fuera de cuadro y
+    // solo se veía su cuerpo entrando por el borde.
+    this.resetBossFight();
     this.chase?.reset();
     this.player.respawnAt(this.checkpointPos.x, this.checkpointPos.y);
     this.cameraCtl.snap();
@@ -2311,6 +2315,7 @@ export class LevelScene extends Phaser.Scene {
   private returnForChipas(): void {
     const target = chipaReturnTarget(this.chipaReturns, SaveManager.getFeathers(this.def.id));
     if (!target) return;
+    this.resetBossFight();
     this.chase?.reset();
     for (const cp of this.checkpoints) {
       cp.active = Math.abs(cp.zone.centerX - target.x) < 1 && Math.abs(cp.zone.bottom - target.y) < 1;
