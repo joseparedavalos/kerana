@@ -1348,6 +1348,23 @@ async function main() {
     await l3Page.screenshot({ path: join(SHOTS, 'boss-l3.png') });
     const l3state = await l3Page.evaluate(() => window.__KERANA_DEBUG__.scene.boss.brain.state);
     check(l3state !== 'waiting', `Moñái ataca (estado ${l3state})`);
+    // S65: «Volver al último fuego» en plena pelea la reinicia (antes seguía con Kerana fuera de la arena y Moñái caía
+    // fuera de cuadro: se veía el cuerpo sin la cabeza), y en el intento siguiente la cabeza está en cuadro.
+    await l3Page.keyboard.press('Escape');
+    for (let t = 0; t < 3000 && !(await l3Page.evaluate(() => window.__KERANA_GAME__.scene.isActive('Pause'))); t += 100) await sleep(100);
+    await l3Page.evaluate(() => window.__KERANA_GAME__.scene.getScene('Pause').restart());
+    await sleep(300);
+    const l3reset = await l3Page.evaluate(() => { const d = window.__KERANA_DEBUG__; return { fighting: d.scene.fighting, state: d.scene.boss.brain.state }; });
+    check(!l3reset.fighting && l3reset.state === 'waiting', `nivel 3: volver al último fuego en plena pelea la reinicia (${JSON.stringify(l3reset)})`);
+    await walkIntoArena(l3Page);
+    await sleep(2200);
+    const l3head = await l3Page.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const h = d.scene.boss.head;
+      const v = d.scene.cameras.main.worldView;
+      return { alpha: h.alpha, visible: h.visible, tex: h.texture.key, head: v.contains(h.x, h.y), kerana: v.contains(d.player.x, d.player.y - 1) };
+    });
+    check(l3head.alpha === 1 && l3head.visible && l3head.tex === 'monai_head' && l3head.head && l3head.kerana, `segundo intento: la cabeza de Moñái está en cuadro (${JSON.stringify(l3head)})`);
     const l3phase = await l3Page.evaluate(async () => {
       const boss = window.__KERANA_DEBUG__.scene.boss;
       boss.brain.damage(8);
@@ -1355,7 +1372,35 @@ async function main() {
       return boss.brain.phase;
     });
     check(l3phase === 2, `Moñái fase 3 sin errores (fase ${l3phase})`);
-    await l3Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
+    // S65: con 1 de vida, el tajo normal (la tecla, con Kerana parada junto a la cola en la ventana del robo) la vence.
+    // Hasta S64 la cola quedaba debajo del tajo y la ventana del robo, la mitad de la fase 3, no se podía golpear.
+    let l3last = null;
+    for (let attempt = 0; attempt < 3 && l3last?.state !== 'defeated'; attempt++) {
+      const ready = await l3Page.evaluate(async () => {
+        const d = window.__KERANA_DEBUG__;
+        const b = d.scene.boss;
+        if (b.brain.hp > 1) b.brain.damage(b.brain.hp - 1);
+        const steal = b.brain.phaseDef.attacks.find((a) => a.id === 'steal');
+        b.brain.queue.length = 0;
+        b.brain.queue.push(steal, steal);
+        for (let i = 0; i < 600 && !(b.brain.vulnerable && b.exposed === 'tail'); i++) await new Promise((r) => setTimeout(r, 20));
+        if (!(b.brain.vulnerable && b.exposed === 'tail')) return false;
+        // Como en el juego: Kerana llega cuando la cola ya quedó tirada en el suelo (al abrirse la ventana todavía baja).
+        const tail = b.segments[b.segments.length - 1];
+        const rest = b.floorY - 3.5; // `restingSegmentY`: suelo − segmentRadius / 2 (gameplay.ts)
+        for (let i = 0; i < 40 && Math.abs(tail.y - rest) > 0.5; i++) await new Promise((r) => setTimeout(r, 10));
+        if (!b.brain.vulnerable) return false;
+        d.player.body.reset(tail.x + 22, b.floorY);
+        d.player.motor.facing = -1;
+        return true;
+      });
+      if (!ready) continue;
+      await l3Page.keyboard.press('x');
+      await sleep(300);
+      l3last = await l3Page.evaluate(() => { const b = window.__KERANA_DEBUG__.scene.boss; const t = b.segments[b.segments.length - 1]; return { state: b.brain.state, hp: b.brain.hp, tailY: Math.round(t.y * 10) / 10 }; });
+    }
+    check(l3last?.state === 'defeated', `Moñái con 1 de vida: el tajo a la cola la vence (${JSON.stringify(l3last)})`);
+    if (l3last?.state !== 'defeated') await l3Page.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     // El Space del bucle puede saltar "Nivel completado" al mapa justo cuando aparece: ambas cuentan.
     const l3Done = () => l3Page.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); });
     for (let i = 0; i < PRESS_MAX && !(await l3Done()); i++) {
