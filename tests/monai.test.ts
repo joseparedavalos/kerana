@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { HeartThief, pulseBlocked, type Trunk } from '../src/entities/bosses/monaiLogic';
+import { groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeZone, type Trunk } from '../src/entities/bosses/monaiLogic';
+import { BossBrain } from '../src/entities/bosses/BossBrain';
+import { boxesOverlap, slashRect, type Box } from '../src/entities/slashRect';
 import { Health } from '../src/systems/Health';
 import { StatusEffects } from '../src/systems/StatusEffects';
 import { GAMEPLAY } from '../src/config/gameplay';
@@ -142,5 +144,70 @@ describe('Confusión de Moñái (S44)', () => {
     expect(new Set(windows)).toEqual(new Set([cfg.dazeMs, cfg.dazeFastMs, cfg.afterPulseMs, cfg.tailMs]));
     // La vida no cambia (S44).
     expect(getBossDef('monai').hp).toBe(12);
+  });
+});
+
+describe('El último golpe a Moñái entra (S65)', () => {
+  // Suelo de la arena de l3 (y del mundo); cualquier valor sirve: todo se mide desde él.
+  const FLOOR = 528;
+  const box = (): Box => ({ x: 0, y: 0, width: 0, height: 0 });
+
+  /** Tajo de Kerana parada (o con los pies `lift` px sobre el suelo) a `dx` de la parte, mirándola. */
+  function slashAt(partX: number, dx: number, lift = 0, charged = false): Box {
+    const facing = dx > 0 ? -1 : 1;
+    return slashRect(partX + dx, FLOOR - lift, facing, charged, box());
+  }
+
+  /** Lleva el cerebro de Moñái a 1 de vida y junta las ventanas que ofrece con esa vida. */
+  function lastHpWindows(): { brain: BossBrain; windows: Set<string> } {
+    let seed = 7;
+    const rng = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const brain = new BossBrain(getBossDef('monai'), { rng });
+    brain.start();
+    brain.damage(brain.maxHp - 1);
+    const windows = new Set<string>();
+    for (let t = 0; t < 120000 && windows.size < 3; t += 50) {
+      brain.step(50);
+      if (brain.vulnerable && brain.attack) windows.add(brain.attack.id);
+    }
+    return { brain, windows };
+  }
+
+  it('con 1 de vida sigue en la fase 3 y abre las tres ventanas (descenso, pulso y cola)', () => {
+    const { brain, windows } = lastHpWindows();
+    expect(brain.hp).toBe(1);
+    expect(brain.phase).toBe(2);
+    expect(windows).toEqual(new Set(['descent', 'pulse', 'steal']));
+  });
+
+  it('en cada ventana, el tajo de Kerana parada junto a la parte expuesta entra y la vence', () => {
+    const { brain, windows } = lastHpWindows();
+    const x = 300;
+    for (const id of windows) {
+      // Descenso y pulso: la cabeza apoyada en el suelo. Robo: la cola, tirada en el suelo.
+      const zone = id === 'steal' ? strikeZone('tail', x, restingSegmentY(FLOOR), box()) : strikeZone('head', x, groundHeadY(FLOOR), box());
+      for (const dx of [-22, 22]) expect(boxesOverlap(slashAt(x, dx), zone), `${id}, Kerana a ${dx} px`).toBe(true);
+    }
+    expect(brain.damage(1).defeated).toBe(true);
+  });
+
+  it('la cola se alcanza con el tajo normal, no solo con el cargado (hasta S64, nunca)', () => {
+    const tail = strikeZone('tail', 300, restingSegmentY(FLOOR), box());
+    expect(boxesOverlap(slashAt(300, 22), tail)).toBe(true);
+    expect(boxesOverlap(slashAt(300, 22, 8), tail)).toBe(true);
+  });
+
+  it('la cabeza aturdida se alcanza también desde un saltito (al aterrizar de saltar la joroba)', () => {
+    const head = strikeZone('head', 300, groundHeadY(FLOOR), box());
+    for (const lift of [0, 8, 14]) expect(boxesOverlap(slashAt(300, 24, lift), head), `pies a ${lift} px`).toBe(true);
+  });
+
+  it('solo crece hacia arriba la zona que recibe el tajo: abajo y a los lados no cambia', () => {
+    const cfg = GAMEPLAY.monai;
+    const head = strikeZone('head', 300, groundHeadY(FLOOR), box());
+    expect(cfg.strikeRise).toBeGreaterThan(0);
+    expect(head.y + head.height).toBe(FLOOR);
+    expect(head.width).toBe(cfg.headWidth);
+    expect(head.height).toBe(cfg.headHeight + cfg.strikeRise);
   });
 });

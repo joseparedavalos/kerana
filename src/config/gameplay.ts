@@ -544,6 +544,15 @@ export const GAMEPLAY = {
     guardSettleMs: 120, // nuevo
     /** El tajo al cuerpo cuenta como golpe (antes true: se le pegaba a cualquier parte; ahora solo a la cabeza). */
     bodyIsTarget: false, // antes true
+    // ── S65: el último golpe entra. Al lado, el valor viejo. ──
+    /**
+     * Las zonas que **reciben** el tajo (la cabeza y la cola) crecen hacia arriba esta cantidad (px); la que lastima a
+     * Kerana no cambia. El tajo de Kerana de pie va de 12 a 30 px sobre sus pies, y lo que Moñái deja tirado en el suelo
+     * quedaba más abajo: la cabeza aturdida se tocaba por 6 px (un tajo desde 6 px de alto ya no entraba) y la cola de la
+     * ventana del robo, nunca (su zona empezaba medio píxel por debajo del tajo). Con 12, la cabeza se alcanza de pie y
+     * desde un saltito de hasta 18 px, y la cola de pie y hasta 11 px.
+     */
+    strikeRise: 12, // antes 0
   },
   /**
    * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de

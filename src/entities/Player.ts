@@ -6,6 +6,7 @@ import { Health } from '../systems/Health';
 import { StatusEffects, type SleepEvent } from '../systems/StatusEffects';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
 import { BounceMeter } from './hazards/BounceMeter';
+import { slashRect } from './slashRect';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
 const FX = GAMEPLAY.playerFx;
@@ -317,14 +318,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateAttackHitbox(): void {
     if (this.motor.attackHitboxActive) {
-      const charged = this.motor.chargedSwing;
-      const w = charged ? GAMEPLAY.chargedSlash.hitboxWidth : GAMEPLAY.attack.hitboxWidth;
-      const h = charged ? GAMEPLAY.chargedSlash.hitboxHeight : GAMEPLAY.attack.hitboxHeight;
-      const cx = this.x + this.motor.facing * (this.body.width / 2 + w / 2);
-      const cy = this.y - this.body.height / 2;
-      this.attackHitbox.setPosition(cx, cy);
-      this.attackRect.setTo(cx - w / 2, cy - h / 2, w, h);
-      this.attackHitboxBody.setSize(w, h);
+      const r = slashRect(this.x, this.y, this.motor.facing, this.motor.chargedSwing, this.attackRect);
+      this.attackHitbox.setPosition(r.x + r.width / 2, r.y + r.height / 2);
+      this.attackHitboxBody.setSize(r.width, r.height);
       this.attackHitboxBody.enable = true;
     } else {
       this.attackHitboxBody.enable = false;

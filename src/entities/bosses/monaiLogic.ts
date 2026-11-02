@@ -1,4 +1,34 @@
-// Lógica pura de Moñái (GDD §6.3), sin Phaser: el corazón robado y los troncos que bloquean la hipnosis.
+import { GAMEPLAY } from '../../config/gameplay';
+import type { Box } from '../slashRect';
+
+// Lógica pura de Moñái (GDD §6.3), sin Phaser: el corazón robado, los troncos que bloquean la hipnosis y dónde recibe
+// el tajo (S65).
+
+const CFG = GAMEPLAY.monai;
+
+/** Altura del centro de la cabeza apoyada en el suelo (aturdida, el pulso, el final del robo). */
+export function groundHeadY(floorY: number): number {
+  return floorY - CFG.headHeight / 2;
+}
+
+/** Altura de los segmentos que se apoyan en el suelo (la cola en la ventana del robo). */
+export function restingSegmentY(floorY: number): number {
+  return floorY - CFG.segmentRadius / 2;
+}
+
+/**
+ * Zona que recibe el tajo (S65): la caja de la cabeza (o de la cola) centrada en (x, y), crecida `strikeRise` hacia
+ * arriba hasta la altura del tajo de Kerana. Solo para recibir golpes: la que lastima a Kerana es la caja sin crecer.
+ */
+export function strikeZone(part: 'head' | 'tail', x: number, y: number, out: Box): Box {
+  const w = part === 'head' ? CFG.headWidth : CFG.tailWidth;
+  const h = part === 'head' ? CFG.headHeight : CFG.tailHeight;
+  out.x = x - w / 2;
+  out.y = y - h / 2 - CFG.strikeRise;
+  out.width = w;
+  out.height = h + CFG.strikeRise;
+  return out;
+}
 
 /** Tronco de un árbol de la arena: centro en x, medio ancho y altura de la copa (y de su borde superior). */
 export interface Trunk {
