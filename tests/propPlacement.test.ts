@@ -85,9 +85,8 @@ describe('props colocados en los niveles (S51)', () => {
     if (map.props.length === 0) continue;
     const g: string[] = map.grid;
     const enemyChars = new Set(Object.keys(map.enemies));
-    // S70: un enemigo que se esconde detrás de algo (Karaí Vosá) va tapado a propósito por un prop con `front`.
-    const hiderChars = new Set(Object.entries(map.enemies as Record<string, string>).filter(([, kind]) => ENEMIES[kind]?.hides).map(([c]) => c));
-    const blocks = (p: any, c: string) => enemyChars.has(c) && !(p.front && hiderChars.has(c));
+    // S71: los que no se mueven (Karaí Vosá, guardián) no tienen patrulla: una carreta al lado no les estorba.
+    const patrolChars = new Set(Object.entries(map.enemies as Record<string, string>).filter(([, kind]) => ENEMIES[kind]?.archetype !== 'guard').map(([c]) => c));
     const at = (x: number, y: number) => g[y]?.[x] ?? '#';
     // S52: el fondo de cueva se dibuja por columnas (LevelBackdrop): todo el ancho de un `rect Cave`, de arriba abajo,
     // sin mirar su `y`. Un prop de afuera bajo esas columnas queda en penumbra con su luz de sol pintada.
@@ -177,7 +176,7 @@ describe('props colocados en los niveles (S51)', () => {
         for (let y = Math.floor(b.top); y < Math.ceil(b.bottom); y++)
           for (let x = Math.floor(b.left); x < Math.ceil(b.right); x++) {
             const c = at(x, y);
-            if (OBJECT_CHARS.has(c) || blocks(p, c)) bad.push(`${p.art} (${p.x}, ${p.y}) tapa "${c}" en (${x}, ${y})`);
+            if (OBJECT_CHARS.has(c) || enemyChars.has(c)) bad.push(`${p.art} (${p.x}, ${p.y}) tapa "${c}" en (${x}, ${y})`);
           }
         for (const r of map.rects as any[])
           if (HIDDEN_RECTS.has(r.cls) && b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y)
@@ -190,7 +189,7 @@ describe('props colocados en los niveles (S51)', () => {
           // Hacia cada lado, hasta una pared (un enemigo del otro lado no llega).
           for (const [from, to, dir] of [[Math.floor(p.x), Math.floor(b.left - PATROL_CLEAR), -1], [Math.floor(p.x), Math.ceil(b.right + PATROL_CLEAR), 1]])
             for (let x = from; x !== to && at(x, p.y) !== '#'; x += dir)
-              if (blocks(p, at(x, p.y))) bad.push(`${p.art} (${p.x}, ${p.y}) es alto y está en la patrulla del enemigo de (${x}, ${p.y})`);
+              if (patrolChars.has(at(x, p.y))) bad.push(`${p.art} (${p.x}, ${p.y}) es alto y está en la patrulla del enemigo de (${x}, ${p.y})`);
         if (b.hang)
           for (const h of map.points as any[])
             if (h.cls === 'FallingHazard' && Math.abs(h.x - p.x) < HANG_CLEAR) bad.push(`${p.art} (${p.x}, ${p.y}) cuelga junto a la estalactita de (${h.x}, ${h.y})`);
