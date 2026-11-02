@@ -15,6 +15,7 @@
     "pieces": "node tools/build-pieces.mjs",
     "sprites": "node tools/sprites.mjs",
     "smoke": "node tools/smoke.mjs",
+    "monai": "node tools/monai-run.mjs",
     "backgrounds": "node tools/backgrounds.mjs"
   },
   "dependencies": {

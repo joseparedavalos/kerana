@@ -758,7 +758,9 @@ export class LevelScene extends Phaser.Scene {
     const boss = createBoss(this, this.arenaBossId, ctx);
     if (!boss) return;
     this.boss = boss;
-    this.arena = new BossArena(this, rect, floorY, this.player);
+    // S66: la pared llega al suelo firme. Con `floorY` se quedaba en la copa del medio de Moñái ("=" a 3 tiles del suelo)
+    // y por debajo se salía de la arena en plena pelea.
+    this.arena = new BossArena(this, rect, Math.max(floorY, groundY), this.player);
   }
 
   private updateBoss(deltaMs: number): void {

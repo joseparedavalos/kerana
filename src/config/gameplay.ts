@@ -553,6 +553,14 @@ export const GAMEPLAY = {
      * desde un saltito de hasta 18 px, y la cola de pie y hasta 11 px.
      */
     strikeRise: 12, // antes 0
+    // ── S66: la cabeza siempre es blanco. Al lado, el valor viejo. ──
+    /**
+     * En la ventana del robo (fase 3) la cabeza también recibe el tajo; la cola, además, devuelve el corazón robado.
+     * Antes solo valía la cola: la cabeza quedaba en el suelo delante de Kerana y el tajo no le hacía nada. El robo pesa
+     * 2 de 4 en la fase 3, así que la mitad de las ventanas no aceptaban un golpe a la cabeza (medido en S66: el tajo
+     * solapaba la cabeza con 4, 3 y 2 de vida y no restaba).
+     */
+    headInTailWindow: true, // antes false
   },
   /**
    * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de
