@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeTargets, strikeZone, type Trunk } from '../src/entities/bosses/monaiLogic';
+import { artTreeLayout, coilPlan, coilStep, groundHeadY, HeartThief, pulseBlocked, restingSegmentY, strikeTargets, strikeZone, type Trunk } from '../src/entities/bosses/monaiLogic';
 import { BossBrain } from '../src/entities/bosses/BossBrain';
 import { boxesOverlap, slashRect, type Box } from '../src/entities/slashRect';
 import { Health } from '../src/systems/Health';
@@ -250,5 +250,55 @@ describe('La cabeza de Moñái es blanco en toda ventana (S66)', () => {
     }
     expect(brain.state).toBe('defeated');
     expect(hitIn.has('steal')).toBe(true);
+  });
+});
+
+describe('Árboles de la arena con el arte del atlas (S67)', () => {
+  const CFG = GAMEPLAY.monai;
+  // shade_tree_green: 245 × 240 px a detail 2, hundido 3 unidades a escala 1.
+  const W = 122.5;
+  const H = 120;
+  const floorY = 528;
+  const barY = floorY - CFG.canopyTiles * 16;
+  const layouts = CFG.treeLooks.map((look) => artTreeLayout(100, floorY, W * look.scale, H * look.scale, 3 * look.scale, look.flip, CFG.treeArt));
+
+  it('escalas distintas entre 0,6 y 0,8, el del medio en espejo y el de la derecha teñido', () => {
+    const scales = CFG.treeLooks.map((l) => l.scale);
+    expect(scales).toEqual([0.8, 0.6, 0.7]);
+    expect(CFG.treeLooks[1].flip).toBe(true);
+    expect(CFG.treeLooks[2].tint).not.toBeNull();
+  });
+
+  it('la barra cruza la copa: 22 a 46 unidades de hojas encima', () => {
+    for (const l of layouts) {
+      expect(barY - l.crownTopY).toBeGreaterThanOrEqual(22);
+      expect(barY - l.crownTopY).toBeLessThanOrEqual(46);
+      // El tronco recto queda bajo la barra y sobre el suelo.
+      expect(l.trunkTopY).toBeGreaterThan(barY);
+      expect(l.trunkBottomY).toBeLessThan(floorY);
+    }
+  });
+
+  it('el tronco dibujado cae en trunkX, también espejado', () => {
+    for (const [i, l] of layouts.entries()) {
+      const look = CFG.treeLooks[i];
+      const w = W * look.scale;
+      const fx = look.flip ? 1 - CFG.treeArt.trunkCenterX : CFG.treeArt.trunkCenterX;
+      expect(l.imageX - w / 2 + fx * w).toBeCloseTo(100, 6);
+      expect(l.halfWidth).toBeCloseTo(CFG.treeArt.trunkHalfWidth * w, 6);
+    }
+  });
+
+  it('el enroscado no estira la cuerda y sus vueltas quedan sobre el tronco recto', () => {
+    for (const l of layouts) {
+      const perchY = l.crownTopY - CFG.perchAboveCrown;
+      const r = l.halfWidth + CFG.coilClearance;
+      const plan = coilPlan(perchY + 2, l.trunkTopY, l.trunkBottomY, r, CFG.headWidth / 2 - 4, CFG.segments, CFG.segmentGap, CFG.neckSegments);
+      const neckLen = Math.hypot(r, plan.top - (perchY + 2));
+      expect(neckLen / (plan.neck + 1)).toBeLessThanOrEqual(CFG.segmentGap);
+      const last = plan.top + (CFG.segments - plan.neck - 1) * plan.pitch;
+      expect(last).toBeLessThanOrEqual(l.trunkBottomY + 1e-6);
+      expect(plan.step).toBeCloseTo(coilStep(CFG.segmentGap, plan.pitch, r), 9);
+    }
   });
 });

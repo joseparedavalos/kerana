@@ -486,6 +486,34 @@ export const GAMEPLAY = {
     crownBelow: 18,
     treeVariation: 0.2,
     /**
+     * S67: los árboles de la arena son el prop `l3_arboles/shade_tree_green` (si falta el atlas, vuelven los de código).
+     * Uno por tronco de `treeTiles`, de izquierda a derecha: escala (RECETA-NIVEL §19: 0,6 a 0,8), espejo y tinte
+     * (multiplica rojo, verde y azul del dibujo; >1 aclara ese canal). Los tres se ven juntos: cada uno es distinto.
+     */
+    treeProp: 'l3_arboles/shade_tree_green',
+    treeLooks: [
+      { scale: 0.8, flip: false, tint: null },
+      { scale: 0.6, flip: true, tint: null },
+      { scale: 0.7, flip: false, tint: [1.06, 1, 0.86] },
+    ] as readonly { scale: number; flip: boolean; tint: readonly [number, number, number] | null }[],
+    /**
+     * Medidas del dibujo de `shade_tree_green` (245 × 240 px), en fracciones del frame sin espejar. El tronco recto va
+     * de la última hoja (y 168) a donde se abre hacia las raíces (y 200), centrado en x 120,7 y con 50 px de ancho.
+     */
+    treeArt: { trunkCenterX: 0.4927, trunkHalfWidth: 0.102, trunkTopY: 0.7, trunkBottomY: 0.833 },
+    /** S67: la cabeza posada queda con su centro a esto (unidades) sobre el borde de arriba de la copa dibujada. */
+    perchAboveCrown: 3,
+    /** S67: con el árbol del atlas, las vueltas van a esta distancia (unidades) del borde del tronco recto. */
+    coilClearance: 4,
+    /**
+     * S67: la barra "=" de cada árbol se ve como una rama que cruza la copa: tiles de ancho (tools/levels/l3.txt), cuánto
+     * sobresale de cada lado, grosor (unidades; tapa el tile de la plataforma) y colores de la corteza del dibujo.
+     */
+    branchTiles: 5,
+    branchOverhang: 2,
+    branchThickness: 8,
+    branchColors: { outline: 0x2a1c12, dark: 0x4a3626, base: 0x66503e, light: 0x806450, highlight: 0x9a7c62 },
+    /**
      * Colores de la serpiente (S42): naranja rojizo con vientre claro y cuernos grises, como el Moñái del Museo
      * Mitológico Ramón Elías (verde se leía como dragón oriental). El naranja es más claro y saturado que la tierra
      * de l3 (≈ #a8472c) y el borde oscuro lo separa de ella; sobre el cielo y las copas verdes, contrasta solo.
