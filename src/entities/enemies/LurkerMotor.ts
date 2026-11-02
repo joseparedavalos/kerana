@@ -96,3 +96,43 @@ export function rhythmFromMovers(x: number, y: number, movers: readonly RhythmMo
   }
   return best && { periodMs: best.periodMs, exposedAtMs: best.exposedAtMs };
 }
+
+/** Lurker escondido detrás de algo (Karaí Vosá, S70): medidas en GAMEPLAY.karaiVosa. */
+export interface HideSpec {
+  /** Alto del dibujo y de lo que lo tapa (unidades). */
+  artHeight: number;
+  coverHeight: number;
+  /** Cuánto se ve del sombrero en el aviso. */
+  peek: number;
+}
+
+/**
+ * Cuánto está agachado (px bajo los pies de pie) en cada estado: escondido, con todo el dibujo bajo el borde de lo
+ * que lo tapa; en el aviso, `peek` más arriba (asoma el sombrero); afuera, de pie. Lo que queda bajo el suelo no se
+ * dibuja (el recorte del lurker), así que agacharse es hundirse.
+ */
+export function hideCrouch(state: LurkerState, spec: HideSpec): number {
+  const hidden = Math.max(0, spec.artHeight - spec.coverHeight + 1);
+  if (state === 'exposed') return 0;
+  if (state === 'warn') return Math.max(0, hidden - spec.peek);
+  return hidden;
+}
+
+/** El golpe del cucharón: ventana desde que sale (ms) y zona delante del cuerpo (px). */
+export interface StrikeSpec {
+  fromMs: number;
+  toMs: number;
+  reach: number;
+  height: number;
+}
+
+/** ¿El cucharón lastima a los `outMs` de haber salido? */
+export function strikeActive(outMs: number, strike: StrikeSpec): boolean {
+  return outMs >= strike.fromMs && outMs < strike.toMs;
+}
+
+/** Zona del cucharón: desde el borde del cuerpo hacia donde mira, `reach` de largo y `height` desde los pies. */
+export function strikeZone(x: number, feetY: number, facing: 1 | -1, halfWidth: number, strike: StrikeSpec): { x: number; y: number; width: number; height: number } {
+  const near = x + facing * halfWidth;
+  return { x: facing > 0 ? near : near - strike.reach, y: feetY - strike.height, width: strike.reach, height: strike.height };
+}

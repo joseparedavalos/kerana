@@ -1,0 +1,15 @@
+{
+  "detail": 2,
+  "frame": [112, 114],
+  "height": 108,
+  "greenEdge": 3,
+  "despill": true,
+  "sheets": {
+    "idle": { "ref": 0, "anchorX": 283 },
+    "attack": { "refHeight": 880, "anchorX": 470 }
+  },
+  "anims": {
+    "idle": { "fps": 6, "loop": true },
+    "attack": { "fps": 10 }
+  }
+}

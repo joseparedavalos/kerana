@@ -1359,6 +1359,43 @@ export const GAMEPLAY = {
     },
   },
 
+  /**
+   * Karaí Vosá (S70): el viejo de la bolsa, un hombre maldito por Tau. Lurker que se agacha detrás de algo (la
+   * carreta de l4): asoma el sombrero (el aviso), se para, sale al costado y da un cucharonazo. No camina. La carreta
+   * va con `front` en el mapa, así que lo tapa sin recortes.
+   */
+  karaiVosa: {
+    /** Golpes que aguanta. */
+    hp: 2,
+    /** Distancia horizontal (px) a la que se despierta: 4 tiles, para no salir mientras Kerana rompe algo al lado. */
+    detectRadius: 64,
+    /** Aviso (ms): el sombrero asomado sobre lo que lo tapa. */
+    warnMs: 700,
+    /** Afuera, golpeando y después quieto, vulnerable (ms). Tiene que cubrir el golpe entero (≈ 1000 ms). */
+    exposedMs: 1700,
+    /** Escondido antes de poder volver a salir (ms): la ventana para pasar. */
+    cooldownMs: 1500,
+    /**
+     * Alto del dibujo (unidades; Kerana 46, el payesero 58) y de lo que lo tapa (la carreta mide 31,5): agachado, el
+     * sombrero queda abajo. El alto del dibujo sale de `height` en raw/karai_vosa/sprite.json (108 px = 54).
+     */
+    artHeight: 54,
+    coverHeight: 30,
+    /** Cuánto se ve del sombrero en el aviso (unidades). */
+    peek: 7,
+    /** Cuánto sale al costado (px), hacia Kerana: con 48 queda fuera de una carreta de 64 si se esconde en el medio. */
+    stepOut: 48,
+    /** Duración (ms) de asomarse, de salir y de volver a esconderse. */
+    peekMs: 220,
+    stepMs: 240,
+    hideMs: 260,
+    /**
+     * El cucharón (cuadros 5 a 7 de `attack`, a 10 fps): zona que lastima delante del cuerpo, desde `fromMs` hasta
+     * `toMs` después de salir. `reach` va desde el borde del cuerpo hacia adelante; `height`, desde los pies (px).
+     */
+    strike: { fromMs: 500, toMs: 800, reach: 26, height: 36 },
+  },
+
   pickups: {
     /** Corazones que cura un guavirá (GDD §4.3). */
     guaviraHeal: 1,

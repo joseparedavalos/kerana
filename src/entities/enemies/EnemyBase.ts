@@ -5,6 +5,7 @@ import type { EnemyDef } from '../../data/enemies';
 import { takesDamage } from '../../systems/lightLogic';
 import { skinIfAvailable, type SkinOptions, type SpriteSkin } from '../../systems/SpriteSkin';
 import { colorForKey } from '../../utils/placeholder';
+import { ensureSoftGlow } from '../../utils/softGlow';
 
 const FLASH_MS = 60;
 const TILE = 16;
@@ -164,6 +165,49 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
       onStart: () => this.setTint(0xf2c14e),
       onComplete: () => this.destroy(),
     });
+  }
+
+  /**
+   * Purificar a un humano (GDD §4.1; S62, compartido desde S70 con Karaí Vosá): humo violeta que sube, destello cálido
+   * y se desvanece. Sin chispas ni agrandarse: es una persona que queda libre. Valores en GAMEPLAY.payesero.purify.
+   */
+  protected humanPurifyEffect(): void {
+    const p = GAMEPLAY.payesero.purify;
+    const scene = this.scene;
+    const w = this.def.width;
+    const h = this.def.height;
+    const depth = (this.skin?.sprite.depth ?? this.depth) + 1;
+    // Humo: bocanadas de borde suave (un círculo lleno se lee como burbujas).
+    const smoke = ensureSoftGlow(scene, p.softSize, p.smokeColor);
+    for (let i = 0; i < p.smokeCount; i++) {
+      const puff = scene.add
+        .image(this.x + Phaser.Math.FloatBetween(-w / 2, w / 2), this.y - Phaser.Math.FloatBetween(h * 0.1, h * 0.9), smoke)
+        .setDisplaySize(p.smokeSize, p.smokeSize)
+        .setAlpha(p.smokeAlpha)
+        .setDepth(depth);
+      scene.tweens.add({
+        targets: puff,
+        y: puff.y - p.smokeRise * Phaser.Math.FloatBetween(0.7, 1.3),
+        scale: puff.scale * p.smokeGrow,
+        alpha: 0,
+        delay: i * p.smokeStaggerMs,
+        duration: p.smokeMs * Phaser.Math.FloatBetween(0.8, 1.2),
+        ease: 'Sine.easeOut',
+        onComplete: () => puff.destroy(),
+      });
+    }
+    const flash = scene.add
+      .image(this.x, this.y - h * 0.6, ensureSoftGlow(scene, p.softSize, p.flashColor))
+      .setDisplaySize(p.flashSize, p.flashSize)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(depth);
+    const full = flash.scale;
+    flash.setScale(full * 0.2);
+    scene.tweens.add({ targets: flash, scale: full, alpha: 0, duration: p.flashMs, ease: 'Cubic.easeOut', onComplete: () => flash.destroy() });
+    // Destello cálido en la silueta (pisa el blanco del golpe) y vuelve a sus colores: quedó libre.
+    this.setTint(p.flashColor).setTintMode(Phaser.TintModes.FILL);
+    scene.time.delayedCall(p.flashMs, () => this.active && this.clearTint().setTintMode(Phaser.TintModes.MULTIPLY));
+    scene.tweens.add({ targets: this, alpha: 0, delay: p.fadeDelayMs, duration: p.fadeMs, ease: 'Sine.easeIn', onComplete: () => this.destroy() });
   }
 
   /** Comportamiento propio del arquetipo; `dx` es la distancia horizontal a Kerana (con signo). */

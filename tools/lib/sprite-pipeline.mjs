@@ -113,6 +113,26 @@ export function removeGreenEdge(img, passes = 3, margin = GREEN_EDGE_MARGIN) {
   return removeColorEdge(img, passes, isEdge);
 }
 
+/**
+ * Despill del verde (S70, Karaí Vosá): baja el verde de cada píxel opaco al mayor de rojo y azul, en toda la figura.
+ * Es la limpieza estándar del Chroma key verde cuando el halo no está solo en el contorno sino salpicado adentro.
+ * Solo para personajes sin nada verde de verdad: un verde propio se volvería gris. Modifica `img` y devuelve cuántos
+ * píxeles tocó.
+ */
+export function despillGreen(img) {
+  const d = img.data;
+  let touched = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < ALPHA_SOLID) continue;
+    const cap = Math.max(d[i], d[i + 2]);
+    if (d[i + 1] > cap) {
+      d[i + 1] = cap;
+      touched++;
+    }
+  }
+  return touched;
+}
+
 /** Celdas de la hoja (rectángulos en píxeles de origen), de izquierda a derecha y de arriba abajo. */
 export function sliceCells(img, cols, rows) {
   const cells = [];
@@ -307,6 +327,8 @@ export function processCharacter(name, sheets, config = {}) {
     const passes = greenEdgePasses(opts.greenEdge ?? config.greenEdge);
     const margin = opts.greenEdgeMargin ?? config.greenEdgeMargin;
     if (passes > 0) bg += ` · borde verde −${removeGreenEdge(sheet.img, passes, margin)}px`;
+    // despill (S70): el verde que queda adentro pasa a gris; va después del borde, que se borra entero.
+    if (opts.despill ?? config.despill) bg += ` · despill ${despillGreen(sheet.img)}px`;
     const cells = sliceCells(sheet.img, sheet.cols, sheet.rows);
     if (opts.cropBottom > 0) for (const c of cells) clearBottomRows(sheet.img, c, opts.cropBottom);
     const bounds = cells.map((c) => opaqueBounds(sheet.img, c));
@@ -316,7 +338,9 @@ export function processCharacter(name, sheets, config = {}) {
     const refIndex = opts.ref ?? 0;
     const ref = bounds[refIndex] ?? bounds.find(Boolean);
     if (!ref) throw new Error(`${name}/${sheet.anim}: la hoja está vacía`);
-    const refHeight = ref.y1 - ref.y0 + 1;
+    // refHeight (S70): alto de referencia fijo, en px de origen, para dar a dos hojas la misma escala cuando ningún
+    // cuadro de una mide lo mismo que el de pie de la otra (el ataque de Karaí Vosá se agacha o levanta el cucharón).
+    const refHeight = opts.refHeight ?? ref.y1 - ref.y0 + 1;
     let scale = targetHeight / refHeight;
     const pixelSize = detectPixelSize(sheet.img, cells[refIndex] ?? cells[0]);
     if (config.snapPixel && pixelSize > 1) scale = 1 / pixelSize;
@@ -337,8 +361,11 @@ export function processCharacter(name, sheets, config = {}) {
           // Pies (borde inferior de lo opaco) en la última fila, o lo más alto en la primera (align 'top');
           // cintura centrada en X.
           const bottom = b.y1 + 1;
+          // anchorX (S70): x fija dentro de la celda, en px de origen (los pies de Karaí Vosá, clavados en cada hoja).
           const anchorX =
-            opts.anchor === 'cell' ? cell.x + cell.w / 2 : waistAnchorX(sheet.img, cell, bottom, refHeight);
+            opts.anchorX !== undefined ? cell.x + opts.anchorX
+            : opts.anchor === 'cell' ? cell.x + cell.w / 2
+            : waistAnchorX(sheet.img, cell, bottom, refHeight);
           sampleAt =
             opts.align === 'top'
               ? (dx, dy) => [anchorX + (dx + 0.5 - fw / 2) * blockSize, b.y0 + (dy + 0.5) * blockSize]

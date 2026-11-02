@@ -5,7 +5,6 @@ import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
 import { AudioManager } from '../../systems/AudioManager';
 import { spriteDetail } from '../../systems/SpriteSkin';
-import { ensureSoftGlow } from '../../utils/softGlow';
 import { EnemyBase } from './EnemyBase';
 import { createPaye, launchPaye, lineClear, payeTouches, stepPaye, type Paye, type PayeConfig } from './payeLogic';
 import { ThrowerMotor } from './ThrowerMotor';
@@ -188,41 +187,8 @@ export class Caster extends EnemyBase {
     const p = CFG.purify;
     for (const s of this.slots) if (s.paye.alive) this.dissolve(s);
     this.playAnim('idle');
-    const scene = this.scene;
-    const w = this.def.width;
-    const h = this.def.height;
-    const depth = (this.skin?.sprite.depth ?? this.depth) + 1;
-    // Humo: bocanadas de borde suave (un círculo lleno se lee como burbujas).
-    const smoke = ensureSoftGlow(scene, p.softSize, p.smokeColor);
-    for (let i = 0; i < p.smokeCount; i++) {
-      const puff = scene.add
-        .image(this.x + Phaser.Math.FloatBetween(-w / 2, w / 2), this.y - Phaser.Math.FloatBetween(h * 0.1, h * 0.9), smoke)
-        .setDisplaySize(p.smokeSize, p.smokeSize)
-        .setAlpha(p.smokeAlpha)
-        .setDepth(depth);
-      scene.tweens.add({
-        targets: puff,
-        y: puff.y - p.smokeRise * Phaser.Math.FloatBetween(0.7, 1.3),
-        scale: puff.scale * p.smokeGrow,
-        alpha: 0,
-        delay: i * p.smokeStaggerMs,
-        duration: p.smokeMs * Phaser.Math.FloatBetween(0.8, 1.2),
-        ease: 'Sine.easeOut',
-        onComplete: () => puff.destroy(),
-      });
-    }
-    const flash = scene.add
-      .image(this.x, this.y - h * 0.6, ensureSoftGlow(scene, p.softSize, p.flashColor))
-      .setDisplaySize(p.flashSize, p.flashSize)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(depth);
-    const full = flash.scale;
-    flash.setScale(full * 0.2);
-    scene.tweens.add({ targets: flash, scale: full, alpha: 0, duration: p.flashMs, ease: 'Cubic.easeOut', onComplete: () => flash.destroy() });
-    // Destello cálido en la silueta (pisa el blanco del golpe) y vuelve a sus colores: quedó libre.
-    this.setTint(p.flashColor).setTintMode(Phaser.TintModes.FILL);
-    scene.time.delayedCall(p.flashMs, () => this.active && this.clearTint().setTintMode(Phaser.TintModes.MULTIPLY));
-    scene.tweens.addCounter({
+    this.humanPurifyEffect();
+    this.scene.tweens.addCounter({
       from: this.auraStrength,
       to: 0,
       duration: p.auraOffMs,
@@ -231,7 +197,6 @@ export class Caster extends EnemyBase {
         if (this.aura) this.aura.outerStrength = this.auraStrength;
       },
     });
-    scene.tweens.add({ targets: this, alpha: 0, delay: p.fadeDelayMs, duration: p.fadeMs, ease: 'Sine.easeIn', onComplete: () => this.destroy() });
   }
 
   override destroy(fromScene?: boolean): void {

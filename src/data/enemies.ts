@@ -56,6 +56,11 @@ export interface EnemyDef {
    * al lado (LevelScene lo sincroniza con ella). `emergeHeight` es lo que sale del agua el cuerpo ya escalado.
    */
   rhythm?: boolean;
+  /**
+   * Lurker escondido detrás de algo (Karaí Vosá, S70): agachado tras lo que lo tapa, asoma el sombrero (aviso), se para
+   * y sale al costado hacia Kerana; golpea con el cucharón. Valores en GAMEPLAY.karaiVosa.
+   */
+  hides?: boolean;
 
   // Diver: velocidad de picada y de regreso a su poste (px/s); `restMs`, quieto en el suelo tras la picada.
   diveSpeed?: number;
@@ -275,6 +280,22 @@ export const ENEMIES: Record<string, EnemyDef> = {
     warnMs: 700,
     exposedMs: 1600,
     cooldownMs: 1400,
+  },
+
+  // Karaí Vosá (S70): el viejo de la bolsa, un humano. Lurker escondido detrás de algo; no camina. El cuerpo (14 × 48)
+  // es el torso y las piernas: el sombrero y el cucharón quedan afuera (el cucharón lastima aparte, en el golpe).
+  karai_vosa: {
+    id: 'karai_vosa',
+    archetype: 'lurker',
+    hides: true,
+    human: true,
+    hp: GAMEPLAY.karaiVosa.hp,
+    width: 14,
+    height: 48,
+    detectRadius: GAMEPLAY.karaiVosa.detectRadius,
+    warnMs: GAMEPLAY.karaiVosa.warnMs,
+    exposedMs: GAMEPLAY.karaiVosa.exposedMs,
+    cooldownMs: GAMEPLAY.karaiVosa.cooldownMs,
   },
 
   // Nivel 4, extra: la vaca embrujada embiste como un Charger; purificada queda como vaca tranquila.
