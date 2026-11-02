@@ -10,7 +10,10 @@ import {
   drawSnakeBody,
   type HighBack,
   ensureMonaiArt,
+  addArtTree,
+  ensureBranchArt,
   ensureTreeArt,
+  hasTreeArt,
   HEAD_DAZE_TEXTURE,
   HEAD_OPEN_TEXTURE,
   HEAD_SPRITE,
@@ -18,7 +21,19 @@ import {
   headOrigin,
   HORNS_TEXTURE,
 } from './monaiArt';
-import { groundHeadY, HeartThief, type MonaiExposed, pulseBlocked, restingSegmentY, strikeTargets, strikeZone, type Trunk } from './monaiLogic';
+import {
+  type CoilPlan,
+  coilPlan,
+  coilStep,
+  groundHeadY,
+  HeartThief,
+  type MonaiExposed,
+  pulseBlocked,
+  restingSegmentY,
+  strikeTargets,
+  strikeZone,
+  type Trunk,
+} from './monaiLogic';
 import { DEBUG } from '../../config/debug';
 import { hasSprite, spriteDetail } from '../../systems/SpriteSkin';
 
@@ -35,6 +50,14 @@ const HORN_GLOW = { dx: 5 + 8 * CFG.hornLength, dy: -6.5 - 6.5 * CFG.hornLength,
 /** Las estrellitas de mareo, sobre la cabeza (px). */
 const STARS_RISE = 16;
 
+/** Lo que depende del dibujo de cada árbol (S67): dónde se posa la cabeza y cómo se enrosca el cuerpo. */
+interface TreeSpot {
+  perchY: number;
+  coil: CoilPlan;
+  /** Las vueltas de atrás cuyo borde de arriba queda sobre esta van delante de la copa (`HighBack`). */
+  highBelowY: number;
+}
+
 interface Segment {
   x: number;
   y: number;
@@ -45,8 +68,9 @@ interface Segment {
 // Moñái (GDD §6.3): serpiente con cuernos que se esconde en las copas de la isla de monte.
 // Fase 1: descenso con sombra. Fase 2: + pulso de hipnosis (los troncos lo tapan).
 // Fase 3: + robo de un corazón que se recupera golpeando la cola; descensos más rápidos.
-// Arte por código (S26, monaiArt.ts): cuernos, cuerpo de serpiente enroscado en el tronco y árboles. La cabeza es el
-// sprite `monai_head` (S43); si falta, la dibujada por código.
+// Arte por código (S26, monaiArt.ts): cuernos y cuerpo de serpiente enroscado en el tronco. La cabeza es el sprite
+// `monai_head` (S43); si falta, la dibujada por código. Árboles: el prop `l3_arboles/shade_tree_green` (S67); si falta
+// el atlas, los de código de S26.
 export class Monai extends Boss {
   private readonly head: Phaser.GameObjects.Sprite;
   /** La cabeza es el sprite (no la textura por código) y su escala de reposo. */
@@ -67,6 +91,7 @@ export class Monai extends Boss {
   private readonly tailHeart: Phaser.GameObjects.Arc;
   private readonly segments: Segment[] = [];
   private readonly trunks: Trunk[];
+  private readonly spots: TreeSpot[];
   private readonly thief = new HeartThief();
   private readonly headRect = new Phaser.Geom.Rectangle();
   /** Zonas que reciben el tajo (S65): la cabeza y la cola crecidas hacia arriba hasta la altura del tajo. */
@@ -77,8 +102,6 @@ export class Monai extends Boss {
   private readonly canopyY: number;
   /** Suelo de la arena (no la copa del medio, ver `BossContext.groundY`). */
   private readonly floorY: number;
-  /** Ángulo entre vueltas del enroscado: la cuerda entre segmentos mide `segmentGap`. */
-  private readonly coilStep: number;
   private lastHeadX = 0;
   private lastHeadY = 0;
   private perch = 1;
@@ -104,21 +127,47 @@ export class Monai extends Boss {
     const arena = ctx.arena;
     this.floorY = ctx.groundY;
     this.canopyY = this.floorY - CFG.canopyTiles * TILE;
-    this.trunks = CFG.treeTiles.map((t) => ({ x: arena.left + t * TILE, halfWidth: CFG.trunkHalfWidth, topY: this.canopyY }));
-    const chord = Math.sqrt(Math.max(0, CFG.segmentGap ** 2 - CFG.coilPitch ** 2));
-    this.coilStep = 2 * Math.asin(Math.min(1, chord / (2 * CFG.coilRadius)));
-
-    // Árboles por código (monaiArt.ts), detrás de Kerana. Las copas sólidas son los "=" del mapa, a canopyTiles del suelo.
-    const trunkHeight = this.floorY - this.canopyY + CFG.crownBelow / 2;
-    this.trunks.forEach((trunk, i) => {
-      const keys = ensureTreeArt(scene, i, trunkHeight, trunk.halfWidth);
-      const crownOriginY = keys.crownAbove / (keys.crownAbove + keys.crownBelow);
-      scene.add.image(trunk.x, this.floorY, keys.trunk).setOrigin(0.5, 1).setScale(1 / ART_K).setDepth(-4);
-      scene.add.image(trunk.x, this.canopyY, keys.crown).setOrigin(0.5, crownOriginY).setScale(1 / ART_K).setDepth(-3);
-    });
+    const trunkXs = CFG.treeTiles.map((t) => arena.left + t * TILE);
+    if (hasTreeArt(scene)) {
+      // S67: el árbol del atlas (l3_arboles/shade_tree_green), cada uno a su escala. La barra "=" cruza la copa y se ve
+      // como una rama; el tronco que tapa el pulso, las vueltas y la cabeza posada siguen al dibujo de cada uno.
+      const branch = ensureBranchArt(scene);
+      const branches: Phaser.GameObjects.Image[] = [];
+      const neckReach = CFG.headWidth / 2 - 4;
+      this.trunks = [];
+      this.spots = trunkXs.map((x, i) => {
+        const tree = addArtTree(scene, i, x, this.floorY);
+        this.trunks.push({ x, halfWidth: tree.halfWidth, topY: this.canopyY });
+        branches.push(scene.add.image(x, this.canopyY - 1, branch.key).setOrigin(0.5, 0).setScale(1 / ART_K));
+        const perchY = tree.crownTopY - CFG.perchAboveCrown;
+        const radius = tree.halfWidth + CFG.coilClearance;
+        const coil = coilPlan(perchY + 2, tree.trunkTopY, tree.trunkBottomY, radius, neckReach, CFG.segments, CFG.segmentGap, CFG.neckSegments);
+        return { perchY, coil, highBelowY: tree.trunkTopY - CFG.segmentRadius - 1 };
+      });
+      // Delante de los árboles y de las plataformas, detrás de Moñái y de Kerana.
+      ctx.placeBelowPlayer(branches);
+    } else {
+      // Árboles por código (S26, monaiArt.ts), detrás de Kerana. Las copas sólidas son los "=" del mapa.
+      this.trunks = trunkXs.map((x) => ({ x, halfWidth: CFG.trunkHalfWidth, topY: this.canopyY }));
+      const trunkHeight = this.floorY - this.canopyY + CFG.crownBelow / 2;
+      this.trunks.forEach((trunk, i) => {
+        const keys = ensureTreeArt(scene, i, trunkHeight, trunk.halfWidth);
+        const crownOriginY = keys.crownAbove / (keys.crownAbove + keys.crownBelow);
+        scene.add.image(trunk.x, this.floorY, keys.trunk).setOrigin(0.5, 1).setScale(1 / ART_K).setDepth(-4);
+        scene.add.image(trunk.x, this.canopyY, keys.crown).setOrigin(0.5, crownOriginY).setScale(1 / ART_K).setDepth(-3);
+      });
+      const coil: CoilPlan = {
+        neck: CFG.neckSegments,
+        top: this.canopyY + CFG.coilPitch,
+        pitch: CFG.coilPitch,
+        step: coilStep(CFG.segmentGap, CFG.coilPitch, CFG.coilRadius),
+        radius: CFG.coilRadius,
+      };
+      this.spots = this.trunks.map(() => ({ perchY: this.canopyY - CFG.perchRise, coil, highBelowY: this.canopyY + CFG.crownBelow }));
+    }
     this.shadow = scene.add.ellipse(0, this.floorY - 1, CFG.shadowWidth, 8, SHADOW_COLOR, 0.6).setDepth(3).setVisible(false);
     this.backGfx = scene.add.graphics().setDepth(-5);
-    this.highBack = { gfx: scene.add.graphics(), belowY: this.canopyY + CFG.crownBelow };
+    this.highBack = { gfx: scene.add.graphics(), belowY: this.spots[1].highBelowY };
     this.bodyGfx = scene.add.graphics();
     const [ox, oy] = headOrigin();
     this.headSprite = hasSprite(scene, HEAD_SPRITE);
@@ -149,7 +198,7 @@ export class Monai extends Boss {
     const arena = this.ctx.arena;
     this.placeAll(arena.right + 40, arena.top + 40);
     this.head.setAlpha(1);
-    this.flyTo(this.perchX(1), this.perchY(), 900);
+    this.flyTo(this.perchX(1), this.perchY(1), 900);
     this.perch = 1;
     this.timers.push(
       this.scene.time.delayedCall(900, () => {
@@ -424,9 +473,10 @@ export class Monai extends Boss {
     const settle = Math.min(1, deltaMs / 120);
     const coil = Math.min(1, deltaMs / CFG.coilSettleMs);
     const trunk = this.trunks[this.perch];
+    const plan = this.spots[this.perch].coil;
     const neckX = prevX;
     const neckY = prevY;
-    const coilTop = this.canopyY + CFG.coilPitch;
+    const coilTop = plan.top;
     // Joroba (S44): detrás de la nuca, del lado contrario a donde mira la cabeza.
     const back = this.head.flipX ? -1 : 1;
     const guardStep = Math.min(1, deltaMs / CFG.guardSettleMs);
@@ -455,16 +505,17 @@ export class Monai extends Boss {
         let tx: number;
         let ty: number;
         let back = false;
-        const n = CFG.neckSegments;
+        const n = plan.neck;
         const startAngle = trunk.x >= neckX ? -Math.PI / 2 : Math.PI / 2;
         if (i < n) {
           const f = (i + 1) / (n + 1);
-          tx = neckX + (trunk.x + CFG.coilRadius * Math.sin(startAngle) - neckX) * f;
+          tx = neckX + (trunk.x + plan.radius * Math.sin(startAngle) - neckX) * f;
           ty = neckY + (coilTop - neckY) * f;
         } else {
-          const a = startAngle + (i - n) * this.coilStep;
-          tx = trunk.x + CFG.coilRadius * Math.sin(a);
-          ty = coilTop + (i - n) * CFG.coilPitch;
+          // S67: la primera vuelta cruza por delante del tronco (antes, del lado derecho se iba atrás y no se veía).
+          const a = startAngle - Math.sign(startAngle) * (i - n) * plan.step;
+          tx = trunk.x + plan.radius * Math.sin(a);
+          ty = coilTop + (i - n) * plan.pitch;
           back = Math.cos(a) < 0;
         }
         s.x += (tx - s.x) * coil;
@@ -482,6 +533,7 @@ export class Monai extends Boss {
     this.backGfx.clear();
     this.highBack.gfx.clear();
     if (this.head.alpha <= 0) return;
+    this.highBack.belowY = this.spots[this.perch].highBelowY;
     const segs = this.segments;
     const n = segs.length;
     const radius = (i: number) => CFG.segmentRadius * (1 - (i / n) * 0.6);
@@ -581,9 +633,9 @@ export class Monai extends Boss {
     return this.trunks[i].x;
   }
 
-  /** La cabeza asoma sobre la copa. */
-  private perchY(): number {
-    return this.canopyY - CFG.perchRise;
+  /** La cabeza asoma sobre la copa (S67: con el árbol del atlas, sobre el borde de arriba de su copa). */
+  private perchY(i = this.perch): number {
+    return this.spots[i].perchY;
   }
 
   private groundHeadY(): number {

@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
+import { propAtlasKey } from '../../assets/manifest';
+import { addProp, propLook } from '../../assets/propArt';
+import { parsePropId } from '../../assets/propLayout';
+import { artTreeLayout, type ArtTreeLayout } from './monaiLogic';
 
 // Dibujo por código de Moñái y de los árboles de su arena (S26), con el criterio de Teju Jagua (tejuJaguaArt.ts):
 // texturas generadas una vez al doble de detalle (ART_K) y dibujadas a escala 1/ART_K; el cuerpo, cada frame.
@@ -360,4 +364,89 @@ function makeCrown(scene: Phaser.Scene, keys: TreeKeys, seed: number): void {
   }
   g.generateTexture(keys.crown, Math.ceil(w * k), Math.ceil(h * k));
   g.destroy();
+}
+
+// ── Árboles del atlas (S67) ───────────────────────────────────────────────
+
+/** ¿Está el dibujo del árbol de la arena (`GAMEPLAY.monai.treeProp`)? Si no, van los árboles por código. */
+export function hasTreeArt(scene: Phaser.Scene): boolean {
+  const parsed = parsePropId(CFG.treeProp);
+  if (!parsed) return false;
+  const key = propAtlasKey(parsed.folder);
+  return scene.textures.exists(key) && scene.textures.get(key).has(parsed.name);
+}
+
+/**
+ * Árbol `i` de la arena con el prop del atlas, con el tronco en `trunkX`: la escala, el espejo y el tinte de
+ * `treeLooks[i]`, con su hundido y sus matas escaladas (el mismo `addProp` que los props del mapa). Queda detrás del
+ * terreno, de Kerana y de la barra. Devuelve dónde quedó el tronco recto y la copa.
+ */
+export function addArtTree(scene: Phaser.Scene, i: number, trunkX: number, floorY: number): ArtTreeLayout {
+  const look = CFG.treeLooks[i % CFG.treeLooks.length];
+  const art = propLook(scene, CFG.treeProp);
+  const frame = scene.textures.getFrame(art.key, art.frame);
+  const size = art.scale * look.scale;
+  const layout = artTreeLayout(trunkX, floorY, frame.width * size, frame.height * size, art.sink * look.scale, look.flip, CFG.treeArt);
+  const image = addProp(scene, layout.imageX, floorY, CFG.treeProp, 16, { scale: look.scale, flip: look.flip });
+  if (look.tint) image.setTexture(tintedFrame(scene, image.texture.key, image.frame.name, look.tint));
+  return layout;
+}
+
+/** Copia del frame con cada canal multiplicado (una vez por partida): el tinte del árbol de la derecha. */
+function tintedFrame(scene: Phaser.Scene, key: string, frameName: string, mul: readonly [number, number, number]): string {
+  const out = `${key}__${frameName}__tint_${mul.join('_')}`;
+  if (scene.textures.exists(out)) return out;
+  const frame = scene.textures.getFrame(key, frameName);
+  const w = frame.cutWidth;
+  const h = frame.cutHeight;
+  const canvas = scene.textures.createCanvas(out, w, h);
+  if (!canvas) return key;
+  const ctx = canvas.context;
+  ctx.drawImage(frame.source.image as CanvasImageSource, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let p = 0; p < d.length; p += 4) {
+    d[p] = Math.min(255, Math.round(d[p] * mul[0]));
+    d[p + 1] = Math.min(255, Math.round(d[p + 1] * mul[1]));
+    d[p + 2] = Math.min(255, Math.round(d[p + 2] * mul[2]));
+  }
+  ctx.putImageData(img, 0, 0);
+  canvas.refresh();
+  return out;
+}
+
+export const BRANCH_TEXTURE = 'monai_branch';
+
+/**
+ * Rama que tapa la barra "=" (S67): un tronco horizontal con los colores de la corteza del dibujo (`branchColors`),
+ * borde oscuro, luz arriba, sombra abajo, surcos y un nudo; las puntas, redondeadas. Ancho y grosor en unidades.
+ */
+export function ensureBranchArt(scene: Phaser.Scene): { key: string; width: number; height: number } {
+  const w = CFG.branchTiles * 16 + CFG.branchOverhang * 2;
+  const h = CFG.branchThickness;
+  if (!scene.textures.exists(BRANCH_TEXTURE)) {
+    const k = ART_K;
+    const c = CFG.branchColors;
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    const r = h / 2;
+    g.fillStyle(c.outline).fillRoundedRect(0, 0, w * k, h * k, r * k);
+    g.fillStyle(c.base).fillRoundedRect(1 * k, 1 * k, (w - 2) * k, (h - 2) * k, (r - 1) * k);
+    g.fillStyle(c.light).fillRect(r * k, 1 * k, (w - 2 * r) * k, 1.5 * k);
+    g.fillStyle(c.highlight).fillRect((r + 2) * k, 1 * k, (w - 2 * r - 4) * k, 0.5 * k);
+    g.fillStyle(c.dark).fillRect(r * k, (h - 2.5) * k, (w - 2 * r) * k, 1.5 * k);
+    // Surcos: rayitas oscuras a lo largo y algunas motas claras.
+    for (let j = 0; j < 22; j++) {
+      const x = 3 + hash(j, 41) * (w - 10);
+      const y = 3 + hash(j, 42) * (h - 6);
+      g.fillStyle(c.dark).fillRect(x * k, y * k, (2 + hash(j, 43) * 4) * k, 0.5 * k);
+      if (j % 3 === 0) g.fillStyle(c.light).fillRect((x + 1) * k, (y - 1) * k, 1 * k, 0.5 * k);
+    }
+    // Nudo.
+    const nx = w * (0.3 + hash(5, 44) * 0.4);
+    g.fillStyle(c.outline).fillEllipse(nx * k, (h / 2) * k, 4 * k, 3 * k);
+    g.fillStyle(c.light).fillEllipse((nx - 0.4) * k, (h / 2 - 0.4) * k, 2 * k, 1.4 * k);
+    g.generateTexture(BRANCH_TEXTURE, Math.ceil(w * k), Math.ceil(h * k));
+    g.destroy();
+  }
+  return { key: BRANCH_TEXTURE, width: w, height: h };
 }

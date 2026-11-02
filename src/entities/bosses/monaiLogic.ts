@@ -50,6 +50,81 @@ export interface Trunk {
   topY: number;
 }
 
+/** Medidas del dibujo de un árbol, en fracciones del frame sin espejar (`GAMEPLAY.monai.treeArt`). */
+export interface TreeArtSpec {
+  trunkCenterX: number;
+  trunkHalfWidth: number;
+  trunkTopY: number;
+  trunkBottomY: number;
+}
+
+/** Dónde queda un árbol del atlas y su tronco recto, en unidades del mundo. */
+export interface ArtTreeLayout {
+  /** Centro del dibujo (para que el tronco caiga en `trunkX`). */
+  imageX: number;
+  /** Pie del dibujo (el suelo más el hundido). */
+  baseY: number;
+  halfWidth: number;
+  crownTopY: number;
+  trunkTopY: number;
+  trunkBottomY: number;
+}
+
+/**
+ * S67: coloca un árbol de `width` × `height` unidades (ya escalado), hundido `sink`, con el tronco en `trunkX`. Si va
+ * espejado, el centro del tronco pasa al otro lado del centro del dibujo.
+ */
+export function artTreeLayout(trunkX: number, floorY: number, width: number, height: number, sink: number, flip: boolean, art: TreeArtSpec): ArtTreeLayout {
+  const off = (art.trunkCenterX - 0.5) * width;
+  const baseY = floorY + sink;
+  const yAt = (f: number) => baseY - height * (1 - f);
+  return {
+    imageX: trunkX - (flip ? -off : off),
+    baseY,
+    halfWidth: art.trunkHalfWidth * width,
+    crownTopY: yAt(0),
+    trunkTopY: yAt(art.trunkTopY),
+    trunkBottomY: yAt(art.trunkBottomY),
+  };
+}
+
+/** Enroscado en un tronco: segmentos del cuello, alto de la primera vuelta, bajada y ángulo por segmento, radio. */
+export interface CoilPlan {
+  neck: number;
+  top: number;
+  pitch: number;
+  step: number;
+  radius: number;
+}
+
+/** Ángulo entre segmentos de la hélice para que la cuerda entre ellos mida `gap`. */
+export function coilStep(gap: number, pitch: number, radius: number): number {
+  const chord = Math.sqrt(Math.max(0, gap ** 2 - pitch ** 2));
+  return 2 * Math.asin(Math.min(1, chord / (2 * radius)));
+}
+
+/**
+ * S67: enroscado sobre el tronco recto (de `top` a `bottom`) con la cabeza posada más arriba. El cuello lleva los
+ * segmentos que hacen falta para llegar de la nuca a la primera vuelta sin estirar la cuerda (nunca menos de `minNeck`);
+ * los que sobran se reparten en vueltas entre `top` y `bottom`.
+ */
+export function coilPlan(
+  neckY: number,
+  top: number,
+  bottom: number,
+  radius: number,
+  neckReach: number,
+  segments: number,
+  gap: number,
+  minNeck: number,
+): CoilPlan {
+  const len = Math.hypot(Math.max(neckReach, radius), top - neckY);
+  const neck = Math.min(segments - 2, Math.max(minNeck, Math.ceil(len / gap) - 1));
+  const coils = segments - neck;
+  const pitch = Math.min(gap * 0.9, Math.max(0, bottom - top) / (coils - 1));
+  return { neck, top, pitch, step: coilStep(gap, pitch, radius), radius };
+}
+
 /**
  * ¿Un tronco tapa el pulso de hipnosis? Moñái lo lanza desde el suelo: si hay un tronco entre él y Kerana
  * y Kerana está por debajo de la copa (detrás del tronco), el pulso no la alcanza.
