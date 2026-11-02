@@ -74,88 +74,59 @@ export function isFloorTile(floor: { runTop: Int32Array; line: number }, x: numb
   return y >= floor.runTop[x] && y >= floor.line;
 }
 
-/** Ajustes del fondo de tierra (S68, `GAMEPLAY.backdrop.earth`). */
+/** Ajustes del fondo de tierra (S68, S69: `GAMEPLAY.backdrop.earth`). */
 export interface EarthLook {
-  /** Opacidad detrás de la fila tenue de la repisa (0-1): la tierra asoma de a poco. */
-  fadeAlpha: number;
-  /** Cuánto del color del relleno del tileset queda en la primera fila de tierra (0-1) y en la más honda. */
+  /** Cuánto queda del color de la baldosa (0-1, tinte multiplicado) detrás de la fila tenue y en la más honda. */
   shade: number;
   deepShade: number;
   /** En cuántos tiles pasa de `shade` a `deepShade`, desde la fila tenue hacia adentro. */
   deepTiles: number;
+  /** Variación del tinte de una baldosa a otra (± fracción del tinte): que no se lea como papel tapiz. */
+  jitter: number;
+}
+
+/** Una baldosa del fondo de tierra: celda, tinte gris (0-255 por canal) y orientación (0-7: giro × 90° y espejo). */
+export interface EarthCell {
+  x: number;
+  y: number;
+  gray: number;
+  turn: number;
+  flip: boolean;
+}
+
+/** Hash entero de una celda (determinista: la tierra se ve igual en cada partida). */
+function cellHash(x: number, y: number): number {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
 }
 
 /**
- * Fondo de tierra (S68): un píxel RGBA por tile, para estirarlo con filtro lineal detrás de la capa Ground.
- * Solo hay tierra donde la repisa no se dibuja entera: la fila tenue (`depth === tiles`) a `fadeAlpha` y más adentro
- * opaca, cada vez más oscura. La fila de antes de la tenue (tapada por un tile entero) lleva `fadeAlpha` para que el
- * degradado del filtro quede escondido; el aire y las filas de al lado del aire, nada: la tierra nunca tapa el aire.
- * `depth` sale de `terrainDepths` con `max ≥ tiles + deepTiles` para que se vea el oscurecimiento. `covered(i)`: la
- * celda se dibuja entera igual (el piso de S29): no lleva tierra, así no se dibuja lo que nadie ve.
+ * Fondo de tierra (S69; S68 era una mancha de color): detrás de la repisa va la misma baldosa del suelo, en sombra.
+ * Una celda por tile de Ground que la repisa no dibuja entero: la fila tenue (`depth === tiles`, que se dibuja a
+ * `terrainFadeAlpha` encima y hace la transición) y todo lo de adentro. Nunca en el aire ni al lado del aire. El tinte
+ * baja de `shade` a `deepShade` en `deepTiles` tiles y varía un poco por celda; la orientación (cuatro giros y espejo)
+ * sale de un hash de la celda, así la baldosa no se repite en bloque. `covered(i)`: se dibuja entera igual (el piso de
+ * S29): no lleva. `depth` sale de `terrainDepths` con `max ≥ tiles + deepTiles`.
  */
-export function earthPixels(
+export function earthCells(
   depth: Uint8Array,
+  width: number,
   tiles: number,
-  color: number,
   look: EarthLook,
   covered?: (i: number) => boolean,
-): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(depth.length * 4);
-  const start = Math.max(2, tiles - 1);
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
+): EarthCell[] {
+  const out: EarthCell[] = [];
   for (let i = 0; i < depth.length; i++) {
     const d = depth[i];
-    const k = Math.min(
-      1,
-      Math.max(0, (d - tiles) / Math.max(1, look.deepTiles)),
-    );
-    const shade = look.shade + (look.deepShade - look.shade) * k;
-    out[i * 4] = r * shade;
-    out[i * 4 + 1] = g * shade;
-    out[i * 4 + 2] = b * shade;
-    out[i * 4 + 3] =
-      d < start || covered?.(i) ? 0 : d > tiles ? 255 : look.fadeAlpha * 255;
-  }
-  return out;
-}
-
-/**
- * Trozos del fondo de tierra (S68): el mapa en tramos de `chunk` columnas y, en cada uno, la caja de los píxeles con
- * tierra (alfa > 0) más una celda de margen (vacía: el filtro lineal no corta el degradado). Tramos sin tierra, fuera.
- */
-export function earthChunks(
-  pixels: Uint8ClampedArray,
-  width: number,
-  height: number,
-  chunk: number,
-): { x: number; y: number; width: number; height: number }[] {
-  const out: { x: number; y: number; width: number; height: number }[] = [];
-  for (let x0 = 0; x0 < width; x0 += chunk) {
-    const x1 = Math.min(width, x0 + chunk);
-    let left = Infinity;
-    let right = -Infinity;
-    let top = Infinity;
-    let bottom = -Infinity;
-    for (let y = 0; y < height; y++) {
-      for (let x = x0; x < x1; x++) {
-        if (pixels[(y * width + x) * 4 + 3] === 0) continue;
-        left = Math.min(left, x);
-        right = Math.max(right, x);
-        top = Math.min(top, y);
-        bottom = Math.max(bottom, y);
-      }
-    }
-    if (left > right) continue;
-    const x = Math.max(x0, left - 1);
-    const y = Math.max(0, top - 1);
-    out.push({
-      x,
-      y,
-      width: Math.min(x1, right + 2) - x,
-      height: Math.min(height, bottom + 2) - y,
-    });
+    if (d < tiles || covered?.(i)) continue;
+    const x = i % width;
+    const y = (i - x) / width;
+    const k = Math.min(1, (d - tiles) / Math.max(1, look.deepTiles));
+    const h = cellHash(x, y);
+    const wobble = 1 + look.jitter * (((h >>> 8) & 0xff) / 127.5 - 1);
+    const shade = (look.shade + (look.deepShade - look.shade) * k) * wobble;
+    out.push({ x, y, gray: Math.round(Math.min(1, Math.max(0, shade)) * 255), turn: h & 3, flip: (h & 4) !== 0 });
   }
   return out;
 }
