@@ -94,3 +94,18 @@ export function earthCells(
   }
   return out;
 }
+
+/**
+ * S75: columnas (en tiles) que tapa el fondo de cueva de l1 (`LevelBackdrop`, zonas `rect Cave`, que ocupan toda la
+ * altura): ahí la roca honda muestra la cueva, no el cielo, y no lleva fondo de tierra. 1 si la columna entera cae
+ * dentro de alguna zona. `areas` en unidades del mundo.
+ */
+export function caveColumns(areas: ReadonlyArray<{ x: number; width: number }>, width: number, tile: number): Uint8Array {
+  const out = new Uint8Array(width);
+  for (const a of areas) {
+    const from = Math.max(0, Math.ceil(a.x / tile));
+    const to = Math.min(width, Math.floor((a.x + a.width) / tile));
+    for (let x = from; x < to; x++) out[x] = 1;
+  }
+  return out;
+}

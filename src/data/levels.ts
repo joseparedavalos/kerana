@@ -46,6 +46,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     backgrounds: { far: 'bg_l1_far', cave: 'bg_l1_cave', shiftY: 110 },
     terrainShell: 3,
     solidFloor: false,
+    // S75: la roca de la ladera (fuera de las zonas Cave) se rellena con la baldosa; en las cuevas se ve la cueva.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'teju_jagua',
     gift: 'charged_slash',
@@ -61,8 +63,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'estero',
     backgrounds: { far: 'bg_l2_far' },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S75: dentro de la tierra maciza, la baldosa del relleno (no el cielo). tests/holes.test.ts lo exige.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'mboi_tui',
     gift: 'heart_up',
@@ -98,8 +100,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // vacas (desde la fila 760 de 1008) queda bajo el borde de abajo de la pantalla aun con la cámara al fondo del nivel.
     backgrounds: { far: 'bg_l4_far', shiftY: -96 },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S75: el cuerpo de casa Z, la plaza y la base del campanario se cortó (losas flotantes); el relleno queda para
+    // lo poco que sigue macizo (museo, casa del patio, galpón, muelles). tests/holes.test.ts lo exige.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',
@@ -117,8 +120,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // S60: el dosel (copas, niebla en bandas y rayos de luz) en el relleno de arriba.
     backgrounds: { far: 'bg_l5_far', fillTop: '#a9bf98', rain: true, canopy: true },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S75: dentro de la tierra maciza, la baldosa del relleno (no el cielo). tests/holes.test.ts lo exige.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'kurupi',
     gift: 'heart_up',
@@ -134,8 +137,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'montana',
     backgrounds: { far: 'bg_l6_far' },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S75: dentro de la tierra maciza, la baldosa del relleno (no el cielo). tests/holes.test.ts lo exige.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'ao_ao',
     gift: 'heart_up',

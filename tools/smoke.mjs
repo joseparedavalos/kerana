@@ -365,7 +365,14 @@ async function main() {
     await sleep(1200);
     const bgSlope = await backdropState(title);
     check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
-    check((await title.evaluate(() => window.__KERANA_DEBUG__.scene.earth)) === null, 'nivel 1: sin fondo de tierra (S68: tiene su fondo de cueva)');
+    // S75: la roca de la ladera lleva la baldosa del relleno; las columnas de las zonas Cave (x 0-44 y desde 186), no.
+    const l1Earth = await title.evaluate(() => {
+      const e = window.__KERANA_DEBUG__.scene.earth;
+      if (!e) return null;
+      const n = (x, w) => e.getTilesWithin(x, 0, w, e.layer.height, { isNotEmpty: true }).length;
+      return { ladera: n(45, 141), cueva: n(0, 45) + n(186, e.layer.width - 186), index: e.getTilesWithin(45, 0, 141, e.layer.height, { isNotEmpty: true })[0]?.index, fill: e.tileset[0].firstgid + 15 };
+    });
+    check(!!l1Earth && l1Earth.ladera > 0 && l1Earth.cueva === 0 && l1Earth.index === l1Earth.fill, `nivel 1: fondo de tierra en la ladera y no en las cuevas (S75; ${JSON.stringify(l1Earth)})`);
     await title.screenshot({ path: join(SHOTS, 'bg-l1-ladera.png') });
 
     // Plumas (S17): se guardan al tocarlas, no reaparecen al volver a entrar y el conteo no baja.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { LEVELS } from '../src/data/levels';
-import { earthCells, terrainAlpha, terrainDepths } from '../src/systems/terrainLogic';
+import { caveColumns, earthCells, terrainAlpha, terrainDepths } from '../src/systems/terrainLogic';
 
 // Bloque macizo de 12 × 12 con aire alrededor (un tile de margen).
 function block(size = 12): { solid: (x: number, y: number) => boolean; w: number; h: number } {
@@ -34,11 +34,15 @@ describe('fondo de tierra (S68, S69, S71)', () => {
     expect(earthCells(depth, w, 3, () => true)).toEqual([]);
   });
 
-  it('solo l3 lo tiene encendido; l1 sigue con su fondo de cueva y todo el que lo tenga usa la repisa', () => {
+  it('S75: todo nivel con repisa lo tiene encendido; l1 conserva su fondo de cueva en las zonas Cave', () => {
     const on = Object.values(LEVELS).filter((l) => l?.earthBackdrop);
-    expect(on.map((l) => l!.id)).toEqual(['l3']);
+    expect(on.map((l) => l!.id).sort()).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6']);
     for (const l of on) expect(l!.terrainShell).toBeGreaterThanOrEqual(2);
-    expect(LEVELS.l1?.earthBackdrop).toBeUndefined();
     expect(LEVELS.l1?.backgrounds.cave).toBe('bg_l1_cave');
+  });
+
+  it('S75: las columnas de una zona de cueva no llevan tierra', () => {
+    const cols = caveColumns([{ x: 0, width: 48 }, { x: 160, width: 32 }], 14, 16);
+    expect([...cols]).toEqual([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]);
   });
 });
