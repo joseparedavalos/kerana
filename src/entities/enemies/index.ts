@@ -8,6 +8,7 @@ import { Flyer } from './Flyer';
 import { Guard } from './Guard';
 import { Jumper } from './Jumper';
 import { Lurker } from './Lurker';
+import { Pouncer } from './Pouncer';
 import { Swarm } from './Swarm';
 import { Thrower } from './Thrower';
 import { Walker } from './Walker';
@@ -19,7 +20,8 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
     case 'swarm':
       return new Swarm(scene, x, y, def, facing, oneShot);
     case 'charger':
-      return new Charger(scene, x, y, def, facing);
+      // El yaguareté avá (S76) es un Charger que salta un hueco.
+      return def.pounces ? new Pouncer(scene, x, y, def, facing) : new Charger(scene, x, y, def, facing);
     case 'flyer':
       return new Flyer(scene, x, y, def, facing);
     case 'lurker':
@@ -42,3 +44,4 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
 export { Caster } from './Caster';
 export { EnemyBase } from './EnemyBase';
 export { Guard } from './Guard';
+export { Pouncer } from './Pouncer';

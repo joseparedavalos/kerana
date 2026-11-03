@@ -15,7 +15,7 @@ import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { onRefuge, refugeUnder, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
-import { Caster, createEnemy, Guard } from '../entities/enemies';
+import { Caster, createEnemy, Guard, Pouncer } from '../entities/enemies';
 import { Diver } from '../entities/enemies/Diver';
 import { Lurker } from '../entities/enemies/Lurker';
 import { rhythmFromMovers } from '../entities/enemies/LurkerMotor';
@@ -1731,6 +1731,11 @@ export class LevelScene extends Phaser.Scene {
           if (enemy instanceof Caster) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
           // Karaí Vosá (S72) no ve a Kerana a través de un fardo o un muro.
           if (enemy instanceof Guard) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
+          // El yaguareté avá (S76) corre y salta solo sobre el terreno, y no persigue a Kerana sobre algo que se mueve.
+          if (enemy instanceof Pouncer) {
+            enemy.groundAt = (px, py) => this.tileAt('Ground', px, py);
+            enemy.targetValid = () => !this.playerOnCarrier();
+          }
           this.glowEnemyParts(enemy);
           if (enemy.def.purifiesInto === 'vaca') enemy.onPurified = (e) => this.cowFromEnemy(e);
           this.enemies.push(enemy);
@@ -1959,6 +1964,14 @@ export class LevelScene extends Phaser.Scene {
   private tileAt(layer: TileLayerName, x: number, y: number): boolean {
     const tile = this.layers[layer]?.getTileAtWorldXY(x, y);
     return !!tile && tile.index !== -1;
+  }
+
+  /** Kerana está apoyada en algo que no es terreno (una plataforma que se mueve, una balsa, un hongo): S76. */
+  private playerOnCarrier(): boolean {
+    const b = this.player.body;
+    if (!(b.blocked.down || b.touching.down)) return false;
+    const y = b.bottom + 1;
+    return !this.isSolidAt(b.left + 1, y) && !this.isSolidAt(b.center.x, y) && !this.isSolidAt(b.right - 1, y);
   }
 
   private isSolidAt(x: number, y: number): boolean {

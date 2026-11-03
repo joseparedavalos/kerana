@@ -13,7 +13,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
 const TILE = 16;
 // Piezas de l5 (S30, cabecera de tools/levels/l5.txt).
-const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4 };
+const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4, yaguarete: 1 };
 // Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
 const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2 };
 // Piezas de l7 (S32, cabecera de tools/levels/l7.txt).
@@ -1987,13 +1987,35 @@ async function main() {
         l5Info.enemies.kuati === L5_COUNTS.kuati &&
         l5Info.enemies.kai === L5_COUNTS.kai &&
         l5Info.enemies.mboi_colgante === L5_COUNTS.mboi &&
+        l5Info.enemies.yaguarete_ava === L5_COUNTS.yaguarete &&
         // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
         l5Info.traps === 2,
-      `nivel 5: ${L5_COUNTS.movers} plataformas de un solo sentido (${L5_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos (${L5_COUNTS.normal} normales, ${L5_COUNTS.once} de un uso, ${L5_COUNTS.sleep} dormidos), ${L5_COUNTS.crumbles} ramas que se quiebran, ${L5_COUNTS.rocks} rocas y ${L5_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L5_COUNTS.kuati} kuati, ${L5_COUNTS.kai} ka'i, ${L5_COUNTS.mboi} mbói, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l5Info)})`,
+      `nivel 5: ${L5_COUNTS.movers} plataformas de un solo sentido (${L5_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos (${L5_COUNTS.normal} normales, ${L5_COUNTS.once} de un uso, ${L5_COUNTS.sleep} dormidos), ${L5_COUNTS.crumbles} ramas que se quiebran, ${L5_COUNTS.rocks} rocas y ${L5_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L5_COUNTS.kuati} kuati, ${L5_COUNTS.kai} ka'i, ${L5_COUNTS.mboi} mbói, ${L5_COUNTS.yaguarete} yaguareté avá, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l5Info)})`,
     );
+    // S76: el yaguareté avá de la copa 6 nunca pisa algo que no sea terreno (el ascensor del claro) ni deja su copa.
+    await l5Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const y = s.enemies.find((e) => e.def.id === 'yaguarete_ava');
+      const w = (window.__YAGUARETE__ = { states: [], offTerrain: 0, minBottom: Infinity, maxBottom: -Infinity });
+      s.events.on('postupdate', () => {
+        if (!y?.active || y.purified) return;
+        if (w.states.at(-1) !== y.pounceState) w.states.push(y.pounceState);
+        if (y.body.blocked.down || y.body.touching.down) {
+          const t = s.layers.Ground.getTileAtWorldXY(y.x, y.body.bottom + 1);
+          if (!t || t.index === -1) w.offTerrain++;
+        }
+        w.minBottom = Math.min(w.minBottom, y.body.bottom);
+        w.maxBottom = Math.max(w.maxBottom, y.body.bottom);
+      });
+    });
     await l5Run.evaluate(installPilot, L5_CHIPAS);
     for (let t = 0; t < 600000 && !(await pilot(l5Run)).done; t += 500) await sleep(500);
     const run5 = await pilot(l5Run);
+    const yag5 = await l5Run.evaluate(() => window.__YAGUARETE__);
+    check(
+      yag5.offTerrain === 0 && yag5.maxBottom <= 14 * TILE && yag5.minBottom >= 14 * TILE - 64,
+      `nivel 5: el yaguareté avá nunca pisa una plataforma que se mueve ni deja la copa 6 (${JSON.stringify({ ...yag5, states: yag5.states.slice(0, 12) })})`,
+    );
     const chipas5 = await chipasState(l5Run);
     check(run5.done && chipas5.hud === 3 && chipas5.door === 'open', `nivel 5: el piloto junta las tres chipas y la puerta de la ofrenda se abre (${JSON.stringify(chipas5)})`);
     if (chipas5.hud < 3) console.log((await l5Run.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|caída|dash)/.test(l)))).join('\n'));

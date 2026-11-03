@@ -1,0 +1,17 @@
+{
+  "detail": 2,
+  "frame": [184, 84],
+  "height": 68,
+  "greenEdge": 3,
+  "despill": true,
+  "sheets": {
+    "idle": { "refHeight": 428, "anchorX": 373 },
+    "run": { "refHeight": 366, "anchorX": 342 },
+    "attack": { "refHeight": 514, "anchorX": 581, "grassRows": 90 }
+  },
+  "anims": {
+    "idle": { "fps": 8, "loop": true },
+    "run": { "fps": 14, "loop": true },
+    "attack": { "fps": 10 }
+  }
+}

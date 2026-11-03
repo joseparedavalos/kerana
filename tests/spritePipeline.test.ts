@@ -3,6 +3,7 @@ import {
   coverImage,
   createImage,
   cropToContent,
+  clearGrass,
   despillGreen,
   detectPixelSize,
   greenEdgePasses,
@@ -215,6 +216,29 @@ describe('sprite pipeline', () => {
     fillRect(sheetImg, 45, 120, 5, 5, [20, 160, 20, 255]);
     const { summary } = processCharacter('x', [{ anim: 'idle', cols: 1, rows: 1, img: sheetImg }], { frame: [32, 32], height: 20, despill: true });
     expect(summary[0]).toMatch(/despill 25px/);
+  });
+
+  it('grassRows borra el pasto pintado al pie, sin tocar las patas ni lo de más arriba (S76)', () => {
+    const img = createImage(10, 10) as Img;
+    fillRect(img, 0, 0, 10, 10, [200, 150, 100, 255]); // pelaje
+    fillRect(img, 0, 8, 10, 2, [30, 120, 25, 255]); // pasto en las dos filas de abajo
+    fillRect(img, 4, 8, 2, 2, [25, 20, 15, 255]); // uñas oscuras sobre el pasto
+    fillRect(img, 0, 2, 2, 2, [30, 120, 25, 255]); // verde arriba: fuera de la franja, no se toca
+    expect(clearGrass(img, { x: 0, y: 0, w: 10, h: 10 }, 3)).toBe(16);
+    expect(img.data[(9 * 10 + 0) * 4 + 3]).toBe(0);
+    expect(img.data[(9 * 10 + 4) * 4 + 3]).toBe(255);
+    expect(img.data[(7 * 10 + 0) * 4 + 3]).toBe(255);
+    expect(img.data[(2 * 10 + 0) * 4 + 3]).toBe(255);
+    // En processCharacter, por hoja: el pasto no cuenta para medir los pies.
+    const sheetImg = syntheticSheet(1, 100);
+    fillRect(sheetImg, 10, 180, 80, 6, [40, 140, 30, 255]);
+    const { summary } = processCharacter('x', [{ anim: 'attack', cols: 1, rows: 1, img: sheetImg }], {
+      frame: [32, 32],
+      height: 20,
+      sheets: { attack: { grassRows: 30 } },
+    });
+    expect(summary[0]).toMatch(/pasto −480px/);
+    expect(summary[0]).toMatch(/ref 100px/);
   });
 
   it('refHeight fija la escala de una hoja y anchorX ancla una x de la celda (S70)', () => {
