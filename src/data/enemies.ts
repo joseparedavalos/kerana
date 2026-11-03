@@ -4,7 +4,7 @@ import type { SfxKey } from '../systems/sfxPresets';
 // Enemigos comunes (GDD §5.2). Los IDs con nombre real llegan con cada nivel (§5.3);
 // por ahora hay uno por arquetipo para el nivel de prueba, con color placeholder.
 
-export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm' | 'jumper' | 'thrower' | 'caster';
+export type Archetype = 'walker' | 'charger' | 'flyer' | 'lurker' | 'diver' | 'swarm' | 'jumper' | 'thrower' | 'caster' | 'guard';
 
 export interface EnemyDef {
   id: string;
@@ -56,11 +56,6 @@ export interface EnemyDef {
    * al lado (LevelScene lo sincroniza con ella). `emergeHeight` es lo que sale del agua el cuerpo ya escalado.
    */
   rhythm?: boolean;
-  /**
-   * Lurker escondido detrás de algo (Karaí Vosá, S70): agachado tras lo que lo tapa, asoma el sombrero (aviso), se para
-   * y sale al costado hacia Kerana; golpea con el cucharón. Valores en GAMEPLAY.karaiVosa.
-   */
-  hides?: boolean;
 
   // Diver: velocidad de picada y de regreso a su poste (px/s); `restMs`, quieto en el suelo tras la picada.
   diveSpeed?: number;
@@ -282,20 +277,18 @@ export const ENEMIES: Record<string, EnemyDef> = {
     cooldownMs: 1400,
   },
 
-  // Karaí Vosá (S70): el viejo de la bolsa, un humano. Lurker escondido detrás de algo; no camina. El cuerpo (14 × 48)
-  // es el torso y las piernas: el sombrero y el cucharón quedan afuera (el cucharón lastima aparte, en el golpe).
+  // Karaí Vosá (S70; guardián desde S71): el viejo de la bolsa, un humano. Quieto y a la vista: levanta la cuchara
+  // (aviso), pega un cucharazo corto y se recupera; valores en GAMEPLAY.karaiVosa. El cuerpo (14 × 48) es el torso y
+  // las piernas: el sombrero y la cuchara quedan afuera. Tocarlo no lastima, solo el cucharazo.
   karai_vosa: {
     id: 'karai_vosa',
-    archetype: 'lurker',
-    hides: true,
+    archetype: 'guard',
     human: true,
     hp: GAMEPLAY.karaiVosa.hp,
     width: 14,
     height: 48,
     detectRadius: GAMEPLAY.karaiVosa.detectRadius,
-    warnMs: GAMEPLAY.karaiVosa.warnMs,
-    exposedMs: GAMEPLAY.karaiVosa.exposedMs,
-    cooldownMs: GAMEPLAY.karaiVosa.cooldownMs,
+    telegraphMs: GAMEPLAY.karaiVosa.telegraphMs,
   },
 
   // Nivel 4, extra: la vaca embrujada embiste como un Charger; purificada queda como vaca tranquila.

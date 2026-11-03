@@ -1360,40 +1360,38 @@ export const GAMEPLAY = {
   },
 
   /**
-   * Karaí Vosá (S70): el viejo de la bolsa, un hombre maldito por Tau. Lurker que se agacha detrás de algo (la
-   * carreta de l4): asoma el sombrero (el aviso), se para, sale al costado y da un cucharonazo. No camina. La carreta
-   * va con `front` en el mapa, así que lo tapa sin recortes.
+   * Karaí Vosá (S70; guardián fijo desde S71): el viejo de la bolsa, un hombre maldito por Tau. Quieto y siempre a la
+   * vista, cuida un lugar de paso. Cuando Kerana entra en su radio levanta la cuchara (el aviso), pega un cucharazo
+   * corto delante y se recupera. No camina ni persigue. Tocarlo no lastima: solo el cucharazo.
    */
   karaiVosa: {
     /** Golpes que aguanta. */
     hp: 2,
-    /** Distancia horizontal (px) a la que se despierta: 4 tiles, para no salir mientras Kerana rompe algo al lado. */
+    /** Distancia horizontal (px) a la que empieza el aviso: 4 tiles. */
     detectRadius: 64,
-    /** Aviso (ms): el sombrero asomado sobre lo que lo tapa. */
-    warnMs: 700,
-    /** Afuera, golpeando y después quieto, vulnerable (ms). Tiene que cubrir el golpe entero (≈ 1000 ms). */
-    exposedMs: 1700,
-    /** Escondido antes de poder volver a salir (ms): la ventana para pasar. */
-    cooldownMs: 1500,
+    /** Diferencia de altura (px) hasta la que la ve: más de 2,5 tiles arriba o abajo, no golpea. */
+    detectHeight: 40,
+    /** Distancia (px) a la que gira para mirarla, quieto. */
+    watchRadius: 128,
     /**
-     * Alto del dibujo (unidades; Kerana 46, el payesero 58) y de lo que lo tapa (la carreta mide 31,5): agachado, el
-     * sombrero queda abajo. El alto del dibujo sale de `height` en raw/karai_vosa/sprite.json (108 px = 54).
+     * No la ve a través de lo sólido (un fardo, un muro): la línea va de su pecho al de ella, a `eyeHeight` px sobre los
+     * pies, y se mira cada `losStep` px. Así no golpea el fardo mientras Kerana lo rompe del otro lado.
      */
-    artHeight: 54,
-    coverHeight: 30,
-    /** Cuánto se ve del sombrero en el aviso (unidades). */
-    peek: 7,
-    /** Cuánto sale al costado (px), hacia Kerana: con 48 queda fuera de una carreta de 64 si se esconde en el medio. */
-    stepOut: 48,
-    /** Duración (ms) de asomarse, de salir y de volver a esconderse. */
-    peekMs: 220,
-    stepMs: 240,
-    hideMs: 260,
+    eyeHeight: 24,
+    losStep: 4,
+    /** Aviso (ms): levanta la cuchara al hombro (cuadros 0 a 4 de `attack`). */
+    telegraphMs: 600,
+    /** El cucharazo (ms): baja la cuchara al suelo (cuadros 5 a 7). Lastima una vez por golpe. */
+    activeMs: 300,
+    /** Se recupera (ms), con la cuchara abajo (cuadros 8 y 9): la ventana para pasar o pegarle. */
+    recoverMs: 900,
+    /** Cuadros de `attack` (primero y último) de cada tiempo; se reparten parejos en su duración. */
+    frames: { telegraph: [0, 4], active: [5, 7], recover: [8, 9] } as const,
     /**
-     * El cucharón (cuadros 5 a 7 de `attack`, a 10 fps): zona que lastima delante del cuerpo, desde `fromMs` hasta
-     * `toMs` después de salir. `reach` va desde el borde del cuerpo hacia adelante; `height`, desde los pies (px).
+     * Zona del cucharazo delante del cuerpo (px): `reach` desde el borde del cuerpo (la cuchara del dibujo llega a
+     * 15-17 del borde; algo más por el arco del golpe) y `height` desde los pies.
      */
-    strike: { fromMs: 500, toMs: 800, reach: 26, height: 36 },
+    strike: { reach: 20, height: 36 },
   },
 
   pickups: {

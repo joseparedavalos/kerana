@@ -5,6 +5,7 @@ import { Charger } from './Charger';
 import { Diver } from './Diver';
 import type { EnemyBase } from './EnemyBase';
 import { Flyer } from './Flyer';
+import { Guard } from './Guard';
 import { Jumper } from './Jumper';
 import { Lurker } from './Lurker';
 import { Swarm } from './Swarm';
@@ -29,6 +30,8 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
       return new Thrower(scene, x, y, def, facing);
     case 'caster':
       return new Caster(scene, x, y, def, facing);
+    case 'guard':
+      return new Guard(scene, x, y, def, facing);
     case 'diver':
       return new Diver(scene, x, y, def, facing);
     default:
@@ -38,3 +41,4 @@ export function createEnemy(scene: Phaser.Scene, kind: string, x: number, y: num
 
 export { Caster } from './Caster';
 export { EnemyBase } from './EnemyBase';
+export { Guard } from './Guard';

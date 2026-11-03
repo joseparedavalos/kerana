@@ -1,10 +1,7 @@
 import Phaser from 'phaser';
-import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
 import { EnemyBase } from './EnemyBase';
-import { hideCrouch, LurkerMotor, rhythmState, strikeActive, strikeZone, type LurkerState } from './LurkerMotor';
-
-const HIDE = GAMEPLAY.karaiVosa;
+import { LurkerMotor, rhythmState, type LurkerState } from './LurkerMotor';
 
 const BUBBLE_EVERY_MS = 140;
 const TILE = 16;
@@ -15,9 +12,6 @@ const TILE = 16;
 // caen como aviso y baja colgado.
 // Con ritmo (`rhythm`, jakare guasu, S24): no espera a Kerana; LevelScene le da el período y el momento de salir
 // de la balsa que tiene al lado (`setRhythm`) y su estado sale del reloj de juego, igual que el de la balsa.
-// Escondido (`hides`, Karaí Vosá, S70): el punto es el suelo detrás de algo que lo tapa (la carreta de l4, con `front`).
-// Agachado ahí (hundido bajo el suelo, que lo recorta), asoma el sombrero como aviso, se para, sale al costado hacia
-// Kerana y da un cucharonazo; después vuelve atrás y se agacha.
 export class Lurker extends EnemyBase {
   private readonly motor: LurkerMotor;
   private readonly bubbles: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -26,9 +20,6 @@ export class Lurker extends EnemyBase {
   private rhythm?: { periodMs: number; exposedAtMs: number };
   /** Tiempo de juego desde que se creó (las plataformas cuentan el mismo). */
   private clockMs = 0;
-  /** Escondido (S70): ms desde que salió y si el cucharón ya pegó en esta salida. */
-  private outMs = 0;
-  private struck = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1) {
     super(scene, x, y, def, facing);
@@ -77,8 +68,7 @@ export class Lurker extends EnemyBase {
       this.lurk = this.motor.step(deltaMs, near);
     }
     const state = this.lurk;
-    if (state === 'exposed') this.outMs += deltaMs;
-    if (state === 'warn' && !this.def.hides) {
+    if (state === 'warn') {
       this.bubbleMs -= deltaMs;
       if (this.bubbleMs <= 0) {
         this.bubbleMs = BUBBLE_EVERY_MS;
@@ -89,10 +79,6 @@ export class Lurker extends EnemyBase {
       }
     }
     if (state === before) return;
-    if (this.def.hides) {
-      this.hideStep(state, dx);
-      return;
-    }
     if (state === 'exposed') {
       // Mira hacia Kerana al salir.
       this.facing = dx >= 0 ? 1 : -1;
@@ -100,60 +86,6 @@ export class Lurker extends EnemyBase {
     } else if (state === 'cooldown') {
       this.submerge(false);
     }
-  }
-
-  /** Escondido (S70): asoma en el aviso, sale al costado y golpea, y vuelve a agacharse. */
-  private hideStep(state: LurkerState, dx: number): void {
-    const crouch = this.spawnY + hideCrouch(state, HIDE);
-    this.scene.tweens.killTweensOf(this);
-    if (state === 'warn') {
-      // Asoma del lado de Kerana: el sombrero sobre lo que lo tapa.
-      this.facing = dx >= 0 ? 1 : -1;
-      this.setVisible(true);
-      this.scene.tweens.add({ targets: this, y: crouch, duration: HIDE.peekMs, ease: 'Sine.easeOut' });
-    } else if (state === 'exposed') {
-      this.body.enable = true;
-      this.setVisible(true);
-      this.outMs = 0;
-      this.struck = false;
-      const x = this.spawnX + this.facing * HIDE.stepOut;
-      this.scene.tweens.add({ targets: this, x, y: crouch, duration: HIDE.stepMs, ease: 'Sine.easeOut' });
-      this.playAnim('attack', 'idle');
-    } else if (state === 'cooldown') {
-      this.body.enable = false;
-      this.scene.tweens.add({
-        targets: this,
-        x: this.spawnX,
-        y: crouch,
-        duration: HIDE.hideMs,
-        ease: 'Sine.easeIn',
-        onComplete: () => this.setVisible(false),
-      });
-    }
-  }
-
-  /** Animación `<sprite>_<name>` del dibujo, si existe; `then`, la que sigue al terminar. */
-  private playAnim(name: string, then?: string): void {
-    const sprite = this.skin?.sprite;
-    const look = this.def.look ?? this.def.id;
-    if (!sprite || !this.scene.anims.exists(`${look}_${name}`)) return;
-    sprite.play(`${look}_${name}`);
-    if (then) sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.purified || sprite.play(`${look}_${then}`));
-  }
-
-  /** El cucharón (S70): lastima una vez por salida, delante del cuerpo, en los cuadros del golpe. */
-  override projectileHits(rect: Phaser.Geom.Rectangle): boolean {
-    if (!this.def.hides || this.purified || this.lurk !== 'exposed' || this.struck || !strikeActive(this.outMs, HIDE.strike)) return false;
-    const z = strikeZone(this.x, this.y, this.facing, this.def.width / 2, HIDE.strike);
-    if (!Phaser.Geom.Intersects.RectangleToRectangle(rect, new Phaser.Geom.Rectangle(z.x, z.y, z.width, z.height))) return false;
-    this.struck = true;
-    return true;
-  }
-
-  /** Zona del cucharón ahora, o null fuera del golpe (para `debug=1`, el smoke y las capturas). */
-  get strikeRect(): { x: number; y: number; width: number; height: number } | null {
-    if (!this.def.hides || this.lurk !== 'exposed' || !strikeActive(this.outMs, HIDE.strike)) return null;
-    return strikeZone(this.x, this.y, this.facing, this.def.width / 2, HIDE.strike);
   }
 
   private emerge(): void {
@@ -178,10 +110,6 @@ export class Lurker extends EnemyBase {
   /** Bajo el agua (o en la rama) no toca ni se puede golpear. */
   private submerge(instant: boolean): void {
     this.body.enable = false;
-    if (this.def.hides) {
-      this.setPosition(this.spawnX, this.spawnY + hideCrouch('hidden', HIDE)).setVisible(false);
-      return;
-    }
     const hiddenY = this.def.hangs ? this.anchorTop + 2 : this.spawnY + this.bodyHeight + 2;
     this.scene.tweens.killTweensOf(this);
     if (instant) {
@@ -194,16 +122,6 @@ export class Lurker extends EnemyBase {
   override purify(): void {
     this.scene.tweens.killTweensOf(this);
     super.purify();
-  }
-
-  /** Un humano (Karaí Vosá) se purifica como el payesero: humo, destello cálido y se desvanece, sin chispas. */
-  protected override purifyEffect(): void {
-    if (this.def.human) {
-      this.playAnim('idle');
-      this.humanPurifyEffect();
-      return;
-    }
-    super.purifyEffect();
   }
 
   override destroy(fromScene?: boolean): void {

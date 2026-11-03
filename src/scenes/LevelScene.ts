@@ -15,7 +15,7 @@ import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { onRefuge, refugeUnder, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
-import { Caster, createEnemy } from '../entities/enemies';
+import { Caster, createEnemy, Guard } from '../entities/enemies';
 import { Diver } from '../entities/enemies/Diver';
 import { Lurker } from '../entities/enemies/Lurker';
 import { rhythmFromMovers } from '../entities/enemies/LurkerMotor';
@@ -1729,6 +1729,8 @@ export class LevelScene extends Phaser.Scene {
           }
           // El payé del payesero (S62) se deshace contra el suelo y las paredes; las plataformas de un sentido no lo frenan.
           if (enemy instanceof Caster) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
+          // Karaí Vosá (S71) no ve a Kerana a través de un fardo o un muro.
+          if (enemy instanceof Guard) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
           this.glowEnemyParts(enemy);
           if (enemy.def.purifiesInto === 'vaca') enemy.onPurified = (e) => this.cowFromEnemy(e);
           this.enemies.push(enemy);

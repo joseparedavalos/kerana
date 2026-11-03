@@ -1694,9 +1694,11 @@ async function main() {
         l4Info.enemies.jagua === 4 &&
         l4Info.enemies.abejas === 4 &&
         l4Info.enemies.vaca_embrujada === 1 &&
+        // S71: cuatro Karaí Vosá, guardianes fijos (el del zaguán y tres más).
+        l4Info.enemies.karai_vosa === 4 &&
         // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
         l4Info.traps === 5,
-      `nivel 4: 20 plataformas de un solo sentido (4 verticales), 7 piedras (1 temporizada) y 4 rejas, 3 vacas (1 guasu), 3 rocas agrietadas y 6 fardos, 13 tejas, 4 nieblas, 4 fuegos, 3 plumas, 4 jagua, 4 panales, 1 vaca embrujada, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l4Info)})`,
+      `nivel 4: 20 plataformas de un solo sentido (4 verticales), 7 piedras (1 temporizada) y 4 rejas, 3 vacas (1 guasu), 3 rocas agrietadas y 6 fardos, 13 tejas, 4 nieblas, 4 fuegos, 3 plumas, 4 jagua, 4 panales, 1 vaca embrujada, 4 Karaí Vosá, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l4Info)})`,
     );
     await l4Run.evaluate(installPilot, L4_CHIPAS);
     for (let t = 0; t < 480000 && !(await pilot(l4Run)).done; t += 500) await sleep(500);

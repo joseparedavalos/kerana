@@ -881,6 +881,16 @@ La pregunta para cada uno: **¿dónde estaría esto en un edificio de verdad?** 
 - **La luz.** El tejado arriba queda lejos de los faroles de la vereda. En la calle de l7 hay luna (fuera de las `DarkZone`): el muro y lo que tiene pegado se oscurecen igual, así que los props de fachada de la calle no necesitan un farol cerca (el test los exime; los demás props de l7, sí).
 - **Comprobarlo:** una captura de cada uno con Kerana en la vereda de al lado, no solo el test: el test dice que está sobre el muro, no a qué altura.
 
+### 19.13 Fachadas sobre bloques huecos (S71, l4)
+
+l4 no tiene fachadas propias: usa las de muro de `l7_calle` (contraventana, balcón, puerta; ASSETS §6.1). Lo nuevo es que en l4 los bloques son huecos.
+
+- **Desde S28 el terreno es una repisa** (`terrainShell` 3 en l4): de cada bloque se dibujan enteros los dos tiles del borde, el tercero tenue, y más adentro se ve el fondo. El museo (8 filas) es un marco con un hueco de dos filas; las casas altas de C (casa Z, la plaza, el campanario) son casi todo hueco. Una ventana en el medio de un pilar queda flotando sobre el lapacho del fondo (se probó: captura). **Las fachadas van sobre la parte que se dibuja entera:** centradas en las dos columnas del borde (a escala 0,8 cuando el anillo mide dos tiles) o en la franja de arriba o de abajo. Medirlo con la profundidad de `terrainDepths` (8 direcciones; ≤ 2 entero) antes de mirar la captura.
+- **Por eso mejoran poco los bloques grandes:** lo que se ve como pared lisa y enorme es en buena parte el hueco (el fondo detrás de un marco crema). Lo que lo cambiaría es el fondo de tierra (`earthBackdrop`, PENDIENTES), que en un pueblo sería pared en sombra.
+- **El tejado dentro del muro es una buhardilla pegada**, también centrado y rematando el museo (el error de S60 otra vez). Arriba del bloque no va: la prueba de fachadas pide el dibujo entero sobre el muro. l4 quedó sin tejado.
+- **Puerta al ras de la calle, pegada al borde** donde empieza la vereda (la del bloque de la llegada al galpón, junto a x 138). En l4 casi no hay muro junto a un piso libre: el zaguán no tiene muro de fondo, y la casa del patio tiene la piedra encerrada en la pared y el nicho de la pluma (una puerta ahí se leería como lo que hay que abrir).
+- **Limpios:** la galería de las tejas y su muelle (zona de ritmo), el galpón (el corral secreto, las piedras y los ascensores), la tapia que se salta, el borde de los techos donde se aterriza y las rejas.
+
 ## 20. Un tirador junto al agua (S64, el payesero en l2)
 
 En l1 el golpe del payé no tiraba a nadie (S62, S63). En l2 caer al agua cuesta un corazón y devuelve al último suelo firme, así que antes de poner un enemigo que dispara cerca del agua se mide qué saltos quedan a su alcance.
@@ -889,4 +899,15 @@ En l1 el golpe del payé no tiraba a nadie (S62, S63). En l2 caer al agua cuesta
 - **Barrido de S64** (golpe en cada cuadro del salto, el juego avanzado a mano con `game.headlessStep` y las teclas del piloto, a 60 y a 30 cuadros): saltos de 2 tiles de aire entre camalotes, 0 caídas salvo el segundo cuadro después de despegar (aún sobre la orilla) si se sigue apretando hacia adelante sin salto doble; soltando o con salto doble, 0. Saltos de 5 tiles (camalote 64-65 → orilla 71, plataforma 171-173 → orilla 179): 36-46 % de los instantes sin salto doble, 0-5 % con él. Parada en un camalote, el golpe no la hunde: salta en cuanto puede y llega.
 - **El payé vuela más que el alcance.** El alcance (150 px, ≈ 149 al ras del piso) es donde empieza a cargar; el payé vive 5 s y recorre 300 px. Con el payesero en la orilla de la ruta baja (x 157), ningún salto sobre agua empieza dentro de su alcance, pero esperando 3 s en la plataforma 171-173 el payé llegó a pegarle en el salto largo (3 de 276 vueltas). Hay que mirar la mano + 300 px, no el alcance.
 - **Dónde sí:** donde todo lo que el payé alcanza son saltos cortos, orilla firme o agua baja (`ShallowWater` no hace reaparecer). En l2 eso es la orilla x 32-38, frente a la cadena 1; está ocupada por el mbói. Con el payesero en x 33 y sin el mbói: 45 vueltas con el payé de verdad, 27 golpes (2 en el aire), 0 caídas, y el payé no llega a la cadena 2.
+
+## 21. Un guardián fijo (S71, Karaí Vosá en l4)
+
+Karaí Vosá no camina ni persigue: avisa (levanta la cuchara), pega un cucharazo corto delante y se recupera. Tocarlo no lastima. Como no se mueve, varios no lo vuelven injusto, pero cada uno tiene que cuidar **un lugar**, no una zona.
+
+- **Un punto por el que hay que pasar cerca:** un vano (el zaguán, junto a la carreta; la despensa, entre el fardo y la roca), la entrada de una casa (el techo del galpón, antes de bajar a la casa Z) o una puerta (adentro del campanario, pasando la reja). Se lo enfrenta (el tajo de Kerana llega más lejos que la cuchara) o se pasa mientras se recupera.
+- **No donde se aterriza ni al borde de un salto:** piso firme dos tiles a cada lado, y nada que haya que saltar a su alcance. El techo del ascenso 1 se descartó: se llega con un salto largo y el golpe la tira por el borde.
+- **No donde el golpe la empuja a un pozo.** Entre la despensa y la balsa de l4 (x 177) el empujón la tiraba a la zanja si la balsa no estaba.
+- **Lejos de un fuego** (reaparecer a su alcance es un golpe gratis), **de otros enemigos** (un jagua que embiste la empuja a la cuchara) y **de las zonas de ritmo o con reloj**: en el campanario está adentro, pasando la reja temporizada, y no en la franja donde se corre para llegar antes de que cierre.
+- **No ve a través de un fardo o un muro** (línea a la altura del pecho, `eyeHeight`): así no le pega al fardo mientras Kerana lo rompe del otro lado (el zaguán y la despensa).
+- **Comprobarlo:** `tests/karaiVosa.test.ts` (piso, lejos de fuegos, espinas y enemigos, separados más de 20 tiles, el fardo entre los dos) y el piloto con y sin `god`, alternando builds.
 
