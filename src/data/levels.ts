@@ -98,8 +98,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // vacas (desde la fila 760 de 1008) queda bajo el borde de abajo de la pantalla aun con la cámara al fondo del nivel.
     backgrounds: { far: 'bg_l4_far', shiftY: -96 },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S75: el cuerpo de casa Z, la plaza y la base del campanario se cortó (losas flotantes); el relleno queda para
+    // lo poco que sigue macizo (museo, casa del patio, galpón, muelles). tests/holes.test.ts lo exige.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',

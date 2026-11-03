@@ -6,7 +6,12 @@ El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 par
 
 ---
 
-**Regla permanente (S73): nada de agujeros feos.** Nunca se ve el fondo por dentro de una masa sólida. Un edificio, un muro o un cerro con un rectángulo de cielo, de nubes o de árboles adentro es un error, no un efecto. O la masa es sólida y se dibuja sólida (de borde a borde, con el fondo de tierra si la repisa de `terrainShell` la deja hueca), o es abierta (aire de verdad, que se puede recorrer o que se lee como un vano: una ventana, un portal, una cámara). Al decorar o al cambiar el fondo de un nivel, mirarlo en las capturas: si se ve el fondo dentro de un bloque, se arregla antes de cerrar.
+**Regla permanente (S73, hecha cumplir desde S75): nada de agujeros.** Nunca se ve el fondo por dentro de una masa sólida. Un edificio, un muro o un cerro con un rectángulo de cielo, de nubes o de árboles adentro, con bordes rectangulares duros, es un error, no un efecto. Hay **dos arreglos válidos y ninguno más**:
+
+1. **Rellenar la masa hasta adentro**: `earthBackdrop: true` en `src/data/levels.ts` pone la baldosa del relleno del bioma (la casilla 15 del autotile, sin tinte, en la misma grilla de 16 px) donde la repisa de `terrainShell` no dibuja. Hoy está encendido en l3 y l4.
+2. **Adelgazarla** en el ASCII hasta que quede una plataforma delgada (3 filas o menos) con aire alrededor. Una **plataforma flotante no es un agujero** y está bien: es un videojuego, no una construcción civil. El corte llega hasta el fondo del mapa, sin muñones a media altura (serían escalones accidentales); el techo transitable no cambia de altura ni de ancho. Así se hicieron casa Z, la plaza y la base del campanario de l4 en S75.
+
+Lo abierto de verdad (aire que se recorre, o un vano que se lee como ventana, portal o cámara) tampoco es un agujero. **Lo hace cumplir `tests/holes.test.ts`:** recorre los mapas y falla si una celda sólida de Ground no está dibujada entera (a menos de `terrainShell` del aire, o en el piso de S29) ni tapada por el fondo de tierra o el fondo de cueva; el mensaje dice el nivel y los tramos (x y filas). Si falla después de cambiar un mapa, se arregla con uno de los dos de arriba, no se toca el test. l1, l2, l5 y l6 todavía tienen agujeros: están en `KNOWN_HOLES` del test con su huella exacta (cuántas celdas y en qué tramos), como pendientes (PENDIENTES, punto 26). Si uno de ellos gana un agujero nuevo, el test falla igual. Si se arregla, también falla, para que se saque de la lista. A esa lista no se agregan niveles para que el test pase.
 
 ## 0. Qué tener a mano antes de dibujar
 
