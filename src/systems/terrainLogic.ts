@@ -74,59 +74,23 @@ export function isFloorTile(floor: { runTop: Int32Array; line: number }, x: numb
   return y >= floor.runTop[x] && y >= floor.line;
 }
 
-/** Ajustes del fondo de tierra (S68, S69: `GAMEPLAY.backdrop.earth`). */
-export interface EarthLook {
-  /** Cuánto queda del color de la baldosa (0-1, tinte multiplicado) detrás de la fila tenue y en la más honda. */
-  shade: number;
-  deepShade: number;
-  /** En cuántos tiles pasa de `shade` a `deepShade`, desde la fila tenue hacia adentro. */
-  deepTiles: number;
-  /** Variación del tinte de una baldosa a otra (± fracción del tinte): que no se lea como papel tapiz. */
-  jitter: number;
-}
-
-/** Una baldosa del fondo de tierra: celda, tinte gris (0-255 por canal) y orientación (0-7: giro × 90° y espejo). */
-export interface EarthCell {
-  x: number;
-  y: number;
-  gray: number;
-  turn: number;
-  flip: boolean;
-}
-
-/** Hash entero de una celda (determinista: la tierra se ve igual en cada partida). */
-function cellHash(x: number, y: number): number {
-  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return (h ^ (h >>> 16)) >>> 0;
-}
-
 /**
- * Fondo de tierra (S69; S68 era una mancha de color): detrás de la repisa va la misma baldosa del suelo, en sombra.
- * Una celda por tile de Ground que la repisa no dibuja entero: la fila tenue (`depth === tiles`, que se dibuja a
- * `terrainFadeAlpha` encima y hace la transición) y todo lo de adentro. Nunca en el aire ni al lado del aire. El tinte
- * baja de `shade` a `deepShade` en `deepTiles` tiles y varía un poco por celda; la orientación (cuatro giros y espejo)
- * sale de un hash de la celda, así la baldosa no se repite en bloque. `covered(i)`: se dibuja entera igual (el piso de
- * S29): no lleva. `depth` sale de `terrainDepths` con `max ≥ tiles + deepTiles`.
+ * Fondo de tierra (S68, S69, S71): las celdas donde va. Una por tile de Ground que la repisa no dibuja entero: la fila
+ * tenue (`depth === tiles`, que se dibuja a `terrainFadeAlpha` encima) y todo lo de adentro. Nunca en el aire ni al
+ * lado del aire. `covered(i)`: se dibuja entera igual (el piso de S29): no lleva. `depth` sale de `terrainDepths`
+ * con `max ≥ tiles`. Desde S71 no hay sombra ni orientación: la baldosa va igual que el terreno.
  */
 export function earthCells(
   depth: Uint8Array,
   width: number,
   tiles: number,
-  look: EarthLook,
   covered?: (i: number) => boolean,
-): EarthCell[] {
-  const out: EarthCell[] = [];
+): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
   for (let i = 0; i < depth.length; i++) {
-    const d = depth[i];
-    if (d < tiles || covered?.(i)) continue;
+    if (depth[i] < tiles || covered?.(i)) continue;
     const x = i % width;
-    const y = (i - x) / width;
-    const k = Math.min(1, (d - tiles) / Math.max(1, look.deepTiles));
-    const h = cellHash(x, y);
-    const wobble = 1 + look.jitter * (((h >>> 8) & 0xff) / 127.5 - 1);
-    const shade = (look.shade + (look.deepShade - look.shade) * k) * wobble;
-    out.push({ x, y, gray: Math.round(Math.min(1, Math.max(0, shade)) * 255), turn: h & 3, flip: (h & 4) !== 0 });
+    out.push({ x, y: (i - x) / width });
   }
   return out;
 }

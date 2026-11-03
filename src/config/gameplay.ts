@@ -1548,15 +1548,12 @@ export const GAMEPLAY = {
      */
     caveRockTint: 0x343a58,
     /**
-     * Fondo de tierra (S68, S69; `earthBackdrop: true` en levels.ts): dentro de la tierra maciza, detrás de la repisa,
-     * va la misma baldosa del suelo, en sombra, y no el cielo. Tinte (multiplicado) `shade` detrás de la fila tenue y
-     * `deepShade` a `deepTiles` tiles más adentro. `jitter`: cuánto cambia el tinte de una baldosa a otra (±).
+     * Fondo de tierra (S68, S69, S71; `earthBackdrop: true` en levels.ts): dentro de la tierra maciza, detrás de la
+     * repisa, va la baldosa del suelo rodeado por los cuatro lados (`fillTile`, la casilla 15 del autotile), sin tinte,
+     * sin giro y en la grilla del terreno: no se distingue de la tierra de alrededor y no se ve el cielo.
      */
     earth: {
-      shade: 0.5,
-      deepShade: 0.4,
-      deepTiles: 3,
-      jitter: 0.05,
+      fillTile: 15,
       /** Justo encima del fondo lejano (-20) y detrás de todo lo demás (props hundidos, jefes, tiles). */
       depth: -19,
     },
