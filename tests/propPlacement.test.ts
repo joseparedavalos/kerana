@@ -35,9 +35,8 @@ const LIGHT_RADIUS = GAMEPLAY.lantern.radius / TILE;
 // l7_calle) y el camposanto con la antesala y la arena (x ≥ 292, solo l7_camposanto). La torre de la ronda del
 // farolero (x 172-189) no lleva props: el jugador mira cuándo llega cada ascensor.
 const L7_CAMPOSANTO_X = 292;
-// S72: l4 (el pueblo) usa los props de fachada de la ciudad (ventanas, balcón, puerta, tejado): l4 no tiene fachadas
-// propias y los bloques de revoque quedaban lisos. Solo los de muro (`wall`), nunca los de suelo de l7.
-const BORROWED_FACADES: Record<string, string> = { l4: 'l7_calle/' };
+// S74: ningún nivel usa props de otro. Cada uno trae pintada la luz de su bioma: las fachadas de l7 (medianoche, la
+// ventana encendida) que S72 puso en l4 (la siesta) se sacaron (ASSETS §6.1).
 const L7_RONDA = [172, 190];
 
 interface Frame { w: number; h: number; hang: boolean; sink: number; waterOnly: boolean; tufts: PropTuft[]; wall: boolean; span?: string[] }
@@ -99,7 +98,7 @@ describe('props colocados en los niveles (S51)', () => {
       at(x, y) === '~' || map.rects.some((r: any) => r.cls === 'ShallowWater' && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
 
     it(`${id}: cada prop es de una carpeta de su nivel y existe`, () => {
-      const own = (p: any) => p.art.startsWith(`${id}_`) || (BORROWED_FACADES[id] !== undefined && p.art.startsWith(BORROWED_FACADES[id]) && frames.get(p.art)?.wall === true);
+      const own = (p: any) => p.art.startsWith(`${id}_`);
       const bad = map.props.filter((p: any) => !frames.has(p.art) || !own(p)).map((p: any) => `${p.art} (${p.x}, ${p.y})`);
       expect(bad).toEqual([]);
     });
