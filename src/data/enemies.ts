@@ -41,6 +41,11 @@ export interface EnemyDef {
   purifiesInto?: 'vaca';
   /** Ojos que brillan en la oscuridad y se encienden en el aviso (jagua hũ, N7). */
   glowEyes?: boolean;
+  /**
+   * Guardián con reloj (Jaguarú, S77): abre y cierra los ojos con su propio ritmo, sin mirar a Kerana. Valores en
+   * GAMEPLAY.jaguaru.
+   */
+  clock?: boolean;
   /** Humano (payesero, S62): al purificarse no hay chispas; humo, destello cálido y se desvanece. */
   human?: boolean;
   /** Solo recibe daño iluminado (póra, N7; GDD §5.3). */
@@ -312,6 +317,18 @@ export const ENEMIES: Record<string, EnemyDef> = {
     height: 48,
     detectRadius: GAMEPLAY.karaiVosa.detectRadius,
     telegraphMs: GAMEPLAY.karaiVosa.telegraphMs,
+  },
+
+  // Jaguarú (S77): el Señor de las cavernas, un guardián que late con su propio reloj (ojos cerrados → los abre →
+  // dentellada → los cierra); valores en GAMEPLAY.jaguaru. No se mueve ni mira a Kerana. El cuerpo (40 × 32) va de las
+  // patas de adelante a las de atrás: la cabeza y la cola quedan afuera. Solo la dentellada lastima.
+  jaguaru: {
+    id: 'jaguaru',
+    archetype: 'guard',
+    clock: true,
+    hp: GAMEPLAY.jaguaru.hp,
+    width: 40,
+    height: 32,
   },
 
   // Nivel 4, extra: la vaca embrujada embiste como un Charger; purificada queda como vaca tranquila.

@@ -1395,6 +1395,34 @@ export const GAMEPLAY = {
   },
 
   /**
+   * Jaguarú (S77): el Señor de las cavernas de l6, guardián del tiempo. Quieto siempre y con su propio reloj: no mira a
+   * Kerana ni reacciona a que se acerque. Con los ojos cerrados (`restMs`) es inofensivo; abre los ojos (el aviso),
+   * tira una dentellada (lo único que lastima, una vez por ciclo) y los cierra. Tocarle el cuerpo no lastima.
+   * Ojos cerrados 2 s y abiertos 2 s (aviso + dentellada + cerrarlos). El arquetipo es el Guardián con reloj.
+   */
+  jaguaru: {
+    /** Golpes que aguanta. */
+    hp: 3,
+    /** Ojos cerrados (ms): la hoja `idle`, el tiempo para pasar. */
+    restMs: 2000,
+    /** Abre los ojos (ms), el aviso: cuadros 0 a 3 de `attack`. */
+    telegraphMs: 800,
+    /** La dentellada (ms): cuadros 4 y 5, las fauces abiertas. Lastima una vez por ciclo. */
+    activeMs: 500,
+    /** Cierra los ojos (ms): los cuadros del aviso al revés (3 a 0). Ya no lastima. */
+    recoverMs: 700,
+    /** Dónde arranca el ciclo (ms ya pasados de ojos cerrados). */
+    startMs: 0,
+    /** Cuadros de `attack` (primero y último) de cada tiempo; el de cerrar los ojos va al revés. */
+    frames: { telegraph: [0, 3], active: [4, 5], recover: [3, 0] } as const,
+    /**
+     * Zona de la dentellada delante del cuerpo (px): `reach` desde el borde del cuerpo (las fauces del dibujo llegan
+     * a 29 delante de las patas de adelante en el cuadro 4) y `height` desde los pies (la cabeza, gacha).
+     */
+    strike: { reach: 28, height: 36 },
+  },
+
+  /**
    * Yaguareté avá (S76): el hombre jaguar de l5, maldito por Tau. Espera en una copa; cuando Kerana entra en su radio se
    * agazapa (el aviso), corre hacia ella y, si está del otro lado de un hueco, se planta en el borde y salta UNA vez.
    * Cae expuesto: quieto y sin lastimar al tocarlo, la ventana para pegarle o pasarlo. Nunca baja de su suelo: en un
