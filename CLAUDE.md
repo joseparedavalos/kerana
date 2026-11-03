@@ -101,7 +101,7 @@ tests/                    Vitest
 - La clase de un objeto puede venir en `type` o en `class`: lee ambos.
 - Nada que haya que saltar (postes, muros, escalones) puede medir más de 3 tiles, salvo que el nivel ofrezca otro camino: el salto llega a unos 4.
 - Si `levels.ts` dice `mapSource: 'tiled'`, el autor editó ese mapa en Tiled: **no lo regeneres desde el ASCII**.
-- **Nada de agujeros feos.** Nunca se ve el fondo por dentro de una masa sólida: un edificio o un cerro con un rectángulo de cielo o de árboles adentro es un error, no un efecto. O la masa es sólida y se dibuja sólida, o es abierta (RECETA-NIVEL, al principio).
+- **Nada de agujeros.** Nunca se ve el fondo por dentro de una masa sólida: un edificio o un cerro con un rectángulo de cielo o de árboles adentro es un error, no un efecto. Dos arreglos válidos y ninguno más: rellenar la masa (`earthBackdrop: true` en `levels.ts`) o adelgazarla en el ASCII hasta una plataforma delgada con aire alrededor (el corte hasta el fondo, sin muñones). Una plataforma flotante no es un agujero. Lo hace cumplir `tests/holes.test.ts` (S75): falla con el nivel y las coordenadas; no se toca el test, se arregla el mapa (RECETA-NIVEL, al principio).
 
 ## Assets
 
