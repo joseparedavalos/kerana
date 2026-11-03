@@ -15,7 +15,7 @@ const TILE = 16;
 // Piezas de l5 (S30, cabecera de tools/levels/l5.txt).
 const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4, yaguarete: 1 };
 // Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
-const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2 };
+const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2, jaguaru: 1 };
 // Piezas de l7 (S32, cabecera de tools/levels/l7.txt).
 const L7_COUNTS = { movers: 21, vertical: 12, lanterns: 21, triggers: 12, timed: 5, gates: 3, normal: 1, once: 1, sleep: 1, crumbles: 1, rocks: 4, brittle: 7, mbopi: 8, pora: 6, jagua: 6 };
 
@@ -2296,12 +2296,13 @@ async function main() {
         l6Info.enemies.taitetu === L6_COUNTS.taitetu &&
         l6Info.enemies.karakara === L6_COUNTS.karakara &&
         l6Info.enemies.ao_ao_cria === L6_COUNTS.cria &&
+        l6Info.enemies.jaguaru === L6_COUNTS.jaguaru &&
         l6Info.chase &&
         l6Info.chasePindos === L6_COUNTS.chasePindos &&
         l6Info.waterfalls === 1 &&
         // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
         l6Info.traps === 8,
-      `nivel 6: ${L6_COUNTS.movers} plataformas de un solo sentido (${L6_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos de las tres variantes, ${L6_COUNTS.crumbles} lajas que se quiebran, ${L6_COUNTS.rocks} rocas y ${L6_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L6_COUNTS.taitetu} taitetu, ${L6_COUNTS.karakara} karakara, ${L6_COUNTS.cria} crías, la persecución con ${L6_COUNTS.chasePindos} pindó, la cascada, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l6Info)})`,
+      `nivel 6: ${L6_COUNTS.movers} plataformas de un solo sentido (${L6_COUNTS.vertical} verticales), 1 piedra y 1 reja, hongos de las tres variantes, ${L6_COUNTS.crumbles} lajas que se quiebran, ${L6_COUNTS.rocks} rocas y ${L6_COUNTS.brittle} fardos, 4 fuegos, 3 plumas, ${L6_COUNTS.taitetu} taitetu, ${L6_COUNTS.karakara} karakara, ${L6_COUNTS.cria} crías, ${L6_COUNTS.jaguaru} jaguarú, la persecución con ${L6_COUNTS.chasePindos} pindó, la cascada, encierros solo en bolsillos cerrados por rompibles (${JSON.stringify(l6Info)})`,
     );
     // Durante la persecución la cámara va fija al borde que avanza (y vuelve a seguir a Kerana al terminar).
     await l6Run.evaluate(() => {
@@ -2321,6 +2322,20 @@ async function main() {
         if (c.motor.phase === 'done' && !w.ended) {
           w.ended = true;
           w.boundsW = s.cameras.main.getBounds().width;
+        }
+      });
+    });
+    // S77: el Jaguarú del paso bajo la peña no se mueve nunca y late con su propio reloj (abre los ojos y muerde).
+    await l6Run.evaluate(() => {
+      const s = window.__KERANA_DEBUG__.scene;
+      const j = s.enemies.find((e) => e.def.id === 'jaguaru');
+      const w = (window.__JAGUARU__ = { found: !!j, x0: j?.x ?? 0, maxShift: 0, states: [], cycles: 0 });
+      s.events.on('postupdate', () => {
+        if (!j?.active || j.purified) return;
+        w.maxShift = Math.max(w.maxShift, Math.abs(j.x - w.x0));
+        if (w.states.at(-1) !== j.guardState) {
+          if (j.guardState === 'active') w.cycles++;
+          w.states.push(j.guardState);
         }
       });
     });
@@ -2346,6 +2361,11 @@ async function main() {
     check(
       l6Chase.started && l6Chase.ended && l6Chase.maxLag < 0.01 && l6Chase.boundsW === l6Chase.mapW,
       `nivel 6: la persecución larga, la cámara va al borde que avanza y al terminar vuelve a seguir a Kerana (${JSON.stringify(l6Chase)})`,
+    );
+    const jag6 = await l6Run.evaluate(() => window.__JAGUARU__);
+    check(
+      jag6.found && jag6.maxShift < 0.5 && jag6.cycles >= 2 && jag6.states.slice(0, 4).join() === 'idle,telegraph,active,recover',
+      `nivel 6: el Jaguarú no se mueve y abre los ojos, muerde y los cierra con su propio ritmo (${JSON.stringify({ ...jag6, states: jag6.states.slice(0, 8) })})`,
     );
     console.log(`  l6 (ruta principal): ${(run6.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run6.splits)}`);
     await l6Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
