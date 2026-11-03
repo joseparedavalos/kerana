@@ -104,7 +104,12 @@ function processPropAtlases() {
         continue;
       }
       // S50: `sheets.<nombre>.edge` y `edgePasses` reemplazan los de la carpeta para un solo prop (el fleco blanco del charco)
-      const edge = { edge: sheet.edge ?? config.edge, edgePasses: sheet.edgePasses ?? config.edgePasses };
+      // S78: `sheets.<nombre>.tolerance` también (el karanda'y de l6 trae un rosa fuerte, (251, 1, 161), no magenta puro)
+      const edge = {
+        edge: sheet.edge ?? config.edge,
+        edgePasses: sheet.edgePasses ?? config.edgePasses,
+        tolerance: sheet.tolerance ?? config.tolerance,
+      };
       const result = processIcon(readPng(join(sub, file)), { ...config, ...edge, size: config.size?.[name] ?? config.size?.default });
       if (!result) {
         console.log(`props/${folder}/${file}: vacío, se omite`);

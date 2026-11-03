@@ -34,6 +34,10 @@
     "windbent_tree": {
       "height": 96,
       "note": "árbol torcido por el viento sobre la roca"
+    },
+    "karanday_palm": {
+      "height": 62,
+      "note": "S78: karanda'y, el pindó de la persecución y de la arena (una plataforma: Kerana se para en la copa). El tamaño de verdad lo pone la escena con el alto del pindó"
     }
   },
   "sheets": {
@@ -119,6 +123,14 @@
     "scree_pile": {
       "note": "S50: base curva, los extremos quedaban en el aire: hundido (es pedregal: perder la base no se lleva nada). Como piedras sueltas al pie de otros props de esta carpeta (`tufts`), el hundido lo pone cada uno",
       "sink": 3
+    },
+    "karanday_palm": {
+      "note": "S78: el fondo no es magenta puro sino rosa fuerte (251, 1, 161): a 94 del magenta, más que la tolerancia de 90. Con 120 se va entero (la palmera más cercana queda a más de 200). Borde también `magenta`: el rosa mezclado con el contorno oscuro (rojo bajo) no lo toma `chroma`",
+      "tolerance": 120,
+      "edge": [
+        "chroma",
+        "magenta"
+      ]
     }
   }
 }
