@@ -35,7 +35,7 @@ const LIGHT_RADIUS = GAMEPLAY.lantern.radius / TILE;
 // l7_calle) y el camposanto con la antesala y la arena (x ≥ 292, solo l7_camposanto). La torre de la ronda del
 // farolero (x 172-189) no lleva props: el jugador mira cuándo llega cada ascensor.
 const L7_CAMPOSANTO_X = 292;
-// S71: l4 (el pueblo) usa los props de fachada de la ciudad (ventanas, balcón, puerta, tejado): l4 no tiene fachadas
+// S72: l4 (el pueblo) usa los props de fachada de la ciudad (ventanas, balcón, puerta, tejado): l4 no tiene fachadas
 // propias y los bloques de revoque quedaban lisos. Solo los de muro (`wall`), nunca los de suelo de l7.
 const BORROWED_FACADES: Record<string, string> = { l4: 'l7_calle/' };
 const L7_RONDA = [172, 190];
@@ -88,7 +88,7 @@ describe('props colocados en los niveles (S51)', () => {
     if (map.props.length === 0) continue;
     const g: string[] = map.grid;
     const enemyChars = new Set(Object.keys(map.enemies));
-    // S71: los que no se mueven (Karaí Vosá, guardián) no tienen patrulla: una carreta al lado no les estorba.
+    // S72: los que no se mueven (Karaí Vosá, guardián) no tienen patrulla: una carreta al lado no les estorba.
     const patrolChars = new Set(Object.entries(map.enemies as Record<string, string>).filter(([, kind]) => ENEMIES[kind]?.archetype !== 'guard').map(([c]) => c));
     const at = (x: number, y: number) => g[y]?.[x] ?? '#';
     // S52: el fondo de cueva se dibuja por columnas (LevelBackdrop): todo el ancho de un `rect Cave`, de arriba abajo,

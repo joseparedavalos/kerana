@@ -6,7 +6,7 @@ import { guardFrame, GuardMotor, guardTurns, strikeZone } from '../src/entities/
 import l4Text from '../tools/levels/l4.txt?raw';
 import sheet from '../raw/karai_vosa/sprite.json';
 
-// Karaí Vosá (S70; guardián fijo desde S71): quieto y a la vista, avisa, pega un cucharazo y se recupera.
+// Karaí Vosá (S70; guardián fijo desde S72): quieto y a la vista, avisa, pega un cucharazo y se recupera.
 const K = GAMEPLAY.karaiVosa;
 const TILE = 16;
 const motor = () => new GuardMotor({ detectRadius: K.detectRadius, detectHeight: K.detectHeight, telegraphMs: K.telegraphMs, activeMs: K.activeMs, recoverMs: K.recoverMs });

@@ -7,7 +7,7 @@ import { lineClear } from './payeLogic';
 
 const CFG = GAMEPLAY.karaiVosa;
 
-// Guardián (S71): Karaí Vosá. Quieto y siempre a la vista, cuida un lugar de paso. Cuando Kerana entra en su radio
+// Guardián (S72): Karaí Vosá. Quieto y siempre a la vista, cuida un lugar de paso. Cuando Kerana entra en su radio
 // levanta la cuchara (aviso), pega un cucharazo corto delante (lo único que lastima) y se recupera. Mira hacia ella en
 // reposo y en el aviso; en el golpe y al recuperarse no gira, así que se lo puede pasar por detrás o pegarle.
 // El dibujo sigue al estado: la hoja `attack` se reparte entre los tres tiempos (GuardMotor.guardFrame).
@@ -36,7 +36,7 @@ export class Guard extends EnemyBase {
     return this.motor.state;
   }
 
-  /** Tocarlo no lastima: solo el cucharazo (S71). Así nunca es un obstáculo que pega sin que se vea el golpe. */
+  /** Tocarlo no lastima: solo el cucharazo (S72). Así nunca es un obstáculo que pega sin que se vea el golpe. */
   override get touchHurts(): boolean {
     return false;
   }

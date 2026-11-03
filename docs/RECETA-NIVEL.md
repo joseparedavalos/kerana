@@ -6,6 +6,8 @@ El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 par
 
 ---
 
+**Regla permanente (S73): nada de agujeros feos.** Nunca se ve el fondo por dentro de una masa sólida. Un edificio, un muro o un cerro con un rectángulo de cielo, de nubes o de árboles adentro es un error, no un efecto. O la masa es sólida y se dibuja sólida (de borde a borde, con el fondo de tierra si la repisa de `terrainShell` la deja hueca), o es abierta (aire de verdad, que se puede recorrer o que se lee como un vano: una ventana, un portal, una cámara). Al decorar o al cambiar el fondo de un nivel, mirarlo en las capturas: si se ve el fondo dentro de un bloque, se arregla antes de cerrar.
+
 ## 0. Qué tener a mano antes de dibujar
 
 **Leer:** la ficha del nivel en `docs/REVIEW.md` (Parte 1), su sección del GDD (§6.x), GDD §11.7.1 (sintaxis ASCII) y la vitrina de S18 (`tools/levels/vitrina.txt`, `?debug=1&level=vitrina&gifts=all`).
@@ -881,7 +883,7 @@ La pregunta para cada uno: **¿dónde estaría esto en un edificio de verdad?** 
 - **La luz.** El tejado arriba queda lejos de los faroles de la vereda. En la calle de l7 hay luna (fuera de las `DarkZone`): el muro y lo que tiene pegado se oscurecen igual, así que los props de fachada de la calle no necesitan un farol cerca (el test los exime; los demás props de l7, sí).
 - **Comprobarlo:** una captura de cada uno con Kerana en la vereda de al lado, no solo el test: el test dice que está sobre el muro, no a qué altura.
 
-### 19.13 Fachadas sobre bloques huecos (S71, l4)
+### 19.13 Fachadas sobre bloques huecos (S72, l4)
 
 l4 no tiene fachadas propias: usa las de muro de `l7_calle` (contraventana, balcón, puerta; ASSETS §6.1). Lo nuevo es que en l4 los bloques son huecos.
 
@@ -900,7 +902,7 @@ En l1 el golpe del payé no tiraba a nadie (S62, S63). En l2 caer al agua cuesta
 - **El payé vuela más que el alcance.** El alcance (150 px, ≈ 149 al ras del piso) es donde empieza a cargar; el payé vive 5 s y recorre 300 px. Con el payesero en la orilla de la ruta baja (x 157), ningún salto sobre agua empieza dentro de su alcance, pero esperando 3 s en la plataforma 171-173 el payé llegó a pegarle en el salto largo (3 de 276 vueltas). Hay que mirar la mano + 300 px, no el alcance.
 - **Dónde sí:** donde todo lo que el payé alcanza son saltos cortos, orilla firme o agua baja (`ShallowWater` no hace reaparecer). En l2 eso es la orilla x 32-38, frente a la cadena 1; está ocupada por el mbói. Con el payesero en x 33 y sin el mbói: 45 vueltas con el payé de verdad, 27 golpes (2 en el aire), 0 caídas, y el payé no llega a la cadena 2.
 
-## 21. Un guardián fijo (S71, Karaí Vosá en l4)
+## 21. Un guardián fijo (S72, Karaí Vosá en l4)
 
 Karaí Vosá no camina ni persigue: avisa (levanta la cuchara), pega un cucharazo corto delante y se recupera. Tocarlo no lastima. Como no se mueve, varios no lo vuelven injusto, pero cada uno tiene que cuidar **un lugar**, no una zona.
 

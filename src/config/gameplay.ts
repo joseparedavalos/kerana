@@ -1360,7 +1360,7 @@ export const GAMEPLAY = {
   },
 
   /**
-   * Karaí Vosá (S70; guardián fijo desde S71): el viejo de la bolsa, un hombre maldito por Tau. Quieto y siempre a la
+   * Karaí Vosá (S70; guardián fijo desde S72): el viejo de la bolsa, un hombre maldito por Tau. Quieto y siempre a la
    * vista, cuida un lugar de paso. Cuando Kerana entra en su radio levanta la cuchara (el aviso), pega un cucharazo
    * corto delante y se recupera. No camina ni persigue. Tocarlo no lastima: solo el cucharazo.
    */

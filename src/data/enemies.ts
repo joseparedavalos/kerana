@@ -277,7 +277,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     cooldownMs: 1400,
   },
 
-  // Karaí Vosá (S70; guardián desde S71): el viejo de la bolsa, un humano. Quieto y a la vista: levanta la cuchara
+  // Karaí Vosá (S70; guardián desde S72): el viejo de la bolsa, un humano. Quieto y a la vista: levanta la cuchara
   // (aviso), pega un cucharazo corto y se recupera; valores en GAMEPLAY.karaiVosa. El cuerpo (14 × 48) es el torso y
   // las piernas: el sombrero y la cuchara quedan afuera. Tocarlo no lastima, solo el cucharazo.
   karai_vosa: {
