@@ -21,6 +21,8 @@ function skinOptions(enemy: EnemyBase, sheet: (typeof SHEETS)[number]): SkinOpti
   if (def.hangs) return { ...opts, origin: [0.5, 0], offset: [0, -def.height], clipAboveY: () => enemy.spawnY - TILE };
   // Jakare: lo que queda bajo la superficie del agua no se ve.
   if (def.archetype === 'lurker') return { ...opts, clipBelowY: () => enemy.spawnY };
+  // Yaguareté avá (S76): el dibujo lo elige el estado (idle, run o un cuadro de attack); quieto no se congela.
+  if (def.pounces) return { ...opts, anim: `${def.look ?? def.id}_idle`, stillFrame: false };
   // Póra: la cabeza en la parte de arriba de la hitbox.
   if (def.needsLight) return { ...opts, origin: [0.5, 0], offset: [0, -def.height] };
   // Mbopi: aleteo por código (la hoja casi no mueve las alas), aplastando desde el centro.

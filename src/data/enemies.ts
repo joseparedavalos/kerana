@@ -30,6 +30,11 @@ export interface EnemyDef {
   chargeSpeed?: number;
   chargeMaxMs?: number;
   cooldownMs?: number;
+  /**
+   * Charger que salta un hueco (yaguareté avá, S76): se planta en el borde, salta una vez si Kerana está del otro lado y
+   * cae expuesto. Nunca baja de su suelo. Valores en GAMEPLAY.yaguareteAva.
+   */
+  pounces?: boolean;
   /** Sonido al empezar el aviso (el ladrido del jagua). */
   warnSfx?: SfxKey;
   /** Al purificarse queda en el nivel como otra cosa (la vaca embrujada queda como vaca tranquila). */
@@ -275,6 +280,24 @@ export const ENEMIES: Record<string, EnemyDef> = {
     warnMs: 700,
     exposedMs: 1600,
     cooldownMs: 1400,
+  },
+
+  // Yaguareté avá (S76): el hombre jaguar, uno en l5 como prototipo. Espera en una copa, se agazapa, corre y salta el
+  // hueco una vez; cae expuesto. El cuerpo (38 × 22) va de las manos a las patas de atrás: la cabeza y la cola quedan
+  // afuera. Gruñe al agazaparse (sonido prestado del jagua hũ).
+  yaguarete_ava: {
+    id: 'yaguarete_ava',
+    archetype: 'charger',
+    pounces: true,
+    hp: GAMEPLAY.yaguareteAva.hp,
+    width: 38,
+    height: 22,
+    detectRadius: GAMEPLAY.yaguareteAva.detectRadius,
+    telegraphMs: GAMEPLAY.yaguareteAva.telegraphMs,
+    chargeSpeed: GAMEPLAY.yaguareteAva.runSpeed,
+    chargeMaxMs: GAMEPLAY.yaguareteAva.runMaxMs,
+    cooldownMs: GAMEPLAY.yaguareteAva.cooldownMs,
+    warnSfx: 'growl',
   },
 
   // Karaí Vosá (S70; guardián desde S72): el viejo de la bolsa, un humano. Quieto y a la vista: levanta la cuchara

@@ -1394,6 +1394,51 @@ export const GAMEPLAY = {
     strike: { reach: 20, height: 36 },
   },
 
+  /**
+   * Yaguareté avá (S76): el hombre jaguar de l5, maldito por Tau. Espera en una copa; cuando Kerana entra en su radio se
+   * agazapa (el aviso), corre hacia ella y, si está del otro lado de un hueco, se planta en el borde y salta UNA vez.
+   * Cae expuesto: quieto y sin lastimar al tocarlo, la ventana para pegarle o pasarlo. Nunca baja de su suelo: en un
+   * borde sin dónde caer, o con Kerana sobre una plataforma que se mueve, frena. Es un Charger con salto (PounceMotor).
+   */
+  yaguareteAva: {
+    /** Golpes que aguanta. */
+    hp: 3,
+    /** Distancia horizontal (px) a la que empieza el aviso: 12 tiles (la ve desde el otro lado del hueco). */
+    detectRadius: 192,
+    /** Diferencia de altura (px) hasta la que la ve: en otra copa más arriba o más abajo, no. */
+    detectHeight: 24,
+    /** Agazapado antes de correr (ms): el aviso (cuadros 0 y 1 de `run`, la cabeza baja). */
+    telegraphMs: 600,
+    /** Carrera (px/s): algo más rápido que Kerana (150). Tope de seguridad de la carrera (ms). */
+    runSpeed: 170,
+    runMaxMs: 1600,
+    /** Plantado en el borde antes de saltar (ms): cuadro 1 de `attack`. */
+    gatherMs: 180,
+    /** Salto: velocidad vertical (px/s; sube ≈ 37 px) y tope de la horizontal (px/s). En el aire, cuadros 2 y 3. */
+    leapVelocity: -300,
+    leapMaxSpeed: 260,
+    /** Hueco más ancho que salta (px): 4 tiles. El salto largo del dosel (12) no. */
+    maxGapPx: 64,
+    /** Cuánto pasa del borde de enfrente al caer (px), además de su ancho. */
+    landMarginPx: 8,
+    /**
+     * No la ataca si detrás de ella, a menos de `ledgeGuardPx`, su suelo termina en un borde sin dónde caer (una caída o
+     * una pared; un hueco que se salta no cuenta): el golpe la empuja ≈ 60 px y la tiraría. 4,5 tiles.
+     */
+    ledgeGuardPx: 72,
+    /** Cuánto mira hacia delante buscando el borde (px) y cada cuánto (px). */
+    lookPx: 24,
+    scanStep: 4,
+    /** Expuesto al caer (ms): cuadros 4 y 5 de `attack`, repartidos. */
+    recoverMs: 1100,
+    /** Enfriamiento antes de volver a ver a Kerana (ms). */
+    cooldownMs: 900,
+    /** Cuadros de cada tiempo: el aviso (de `run`), el borde, la subida y la bajada, y la caída (de `attack`). */
+    frames: { telegraph: [0, 1], gather: 1, rise: 2, fall: 3, recover: [4, 5] } as const,
+    /** Distancia (px) a la que gira para mirarla, quieto. */
+    watchRadius: 224,
+  },
+
   pickups: {
     /** Corazones que cura un guavirá (GDD §4.3). */
     guaviraHeal: 1,
