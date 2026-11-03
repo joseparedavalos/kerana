@@ -94,7 +94,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapSource: 'ascii',
     biome: 'pueblo',
     // Fondo lejano (cerros, campanario, lapacho). La calle es el tileset, como en l3.
-    backgrounds: { far: 'bg_l4_far', shiftY: 0 },
+    // S73: es el original entero, sin deformar. Bajado 96: la imagen crece pareja (×1,33 sobre la vista) y el patio con
+    // vacas (desde la fila 760 de 1008) queda bajo el borde de abajo de la pantalla aun con la cámara al fondo del nivel.
+    backgrounds: { far: 'bg_l4_far', shiftY: -96 },
     terrainShell: 3,
     // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
     earthBackdrop: false,

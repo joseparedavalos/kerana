@@ -1,4 +1,4 @@
-// Máquina de estados del Guardián (Karaí Vosá, S71): lógica pura, sin Phaser.
+// Máquina de estados del Guardián (Karaí Vosá, S72): lógica pura, sin Phaser.
 // Quieto y a la vista. Cuando Kerana entra en su radio: aviso (levanta la cuchara) → golpe → se recupera → quieto.
 
 export type GuardState = 'idle' | 'telegraph' | 'active' | 'recover';

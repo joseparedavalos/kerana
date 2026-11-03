@@ -101,6 +101,7 @@ tests/                    Vitest
 - La clase de un objeto puede venir en `type` o en `class`: lee ambos.
 - Nada que haya que saltar (postes, muros, escalones) puede medir más de 3 tiles, salvo que el nivel ofrezca otro camino: el salto llega a unos 4.
 - Si `levels.ts` dice `mapSource: 'tiled'`, el autor editó ese mapa en Tiled: **no lo regeneres desde el ASCII**.
+- **Nada de agujeros feos.** Nunca se ve el fondo por dentro de una masa sólida: un edificio o un cerro con un rectángulo de cielo o de árboles adentro es un error, no un efecto. O la masa es sólida y se dibuja sólida, o es abierta (RECETA-NIVEL, al principio).
 
 ## Assets
 

@@ -1694,7 +1694,7 @@ async function main() {
         l4Info.enemies.jagua === 4 &&
         l4Info.enemies.abejas === 4 &&
         l4Info.enemies.vaca_embrujada === 1 &&
-        // S71: cuatro Karaí Vosá, guardianes fijos (el del zaguán y tres más).
+        // S72: cuatro Karaí Vosá, guardianes fijos (el del zaguán y tres más).
         l4Info.enemies.karai_vosa === 4 &&
         // S39: con los rompibles sanos se marcan los bolsillos cerrados (tests/trap.test.ts).
         l4Info.traps === 5,

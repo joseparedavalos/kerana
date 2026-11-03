@@ -115,7 +115,7 @@ prop 108,22 l4_calle/terracotta_tile_stacks
 prop 140,36 l4_calle/hand_water_pump
 prop 144,36 l4_calle/wooden_bench_wall
 prop 246,22 l4_calle/terracotta_tile_stacks flip scale=0.8
-# S71: fachadas (de `l7_calle`, RECETA-NIVEL §19.12) sobre los bloques de revoque, para que se lean como casas. Van
+# S72: fachadas (de `l7_calle`, RECETA-NIVEL §19.12) sobre los bloques de revoque, para que se lean como casas. Van
 #   sobre la parte del muro que se dibuja entera (los dos tiles del borde: más adentro, desde S28, se ve el fondo) y
 #   nunca donde se pisa ni junto a una pieza: la galería de las tejas, el galpón (el corral y las piedras), la tapia que
 #   se salta y el borde de los techos donde se aterriza quedan lisos. Ventanas a la altura de un piso, balcones un tile
