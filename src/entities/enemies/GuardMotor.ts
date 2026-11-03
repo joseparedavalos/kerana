@@ -1,5 +1,6 @@
 // Máquina de estados del Guardián (Karaí Vosá, S72): lógica pura, sin Phaser.
 // Quieto y a la vista. Cuando Kerana entra en su radio: aviso (levanta la cuchara) → golpe → se recupera → quieto.
+// Con reloj (`restMs`, el Jaguarú, S77): no la mira; pasa `restMs` quieto (los ojos cerrados) y vuelve a empezar solo.
 
 export type GuardState = 'idle' | 'telegraph' | 'active' | 'recover';
 
@@ -14,6 +15,13 @@ export interface GuardConfig {
   activeMs: number;
   /** Se recupera con la cuchara abajo (ms): la ventana para pasar o pegarle. */
   recoverMs: number;
+  /**
+   * Con reloj (S77): reposo fijo (ms) tras el que avisa solo, esté o no Kerana cerca. Sin esto, avisa cuando ella entra
+   * en el radio (Karaí Vosá).
+   */
+  restMs?: number;
+  /** Con reloj: dónde arranca el ciclo, en ms ya pasados del reposo (para desfasar a dos o más). */
+  startMs?: number;
 }
 
 export class GuardMotor {
@@ -21,7 +29,14 @@ export class GuardMotor {
   /** Tiempo en el estado actual (ms). */
   elapsedMs = 0;
 
-  constructor(private readonly cfg: GuardConfig) {}
+  constructor(private readonly cfg: GuardConfig) {
+    this.elapsedMs = cfg.restMs !== undefined ? (cfg.startMs ?? 0) : 0;
+  }
+
+  /** Late con su propio reloj (no mira a Kerana). */
+  get clocked(): boolean {
+    return this.cfg.restMs !== undefined;
+  }
 
   /** ¿Kerana está a su alcance? `dx` y `dy`: de él a ella (px, con signo). */
   inRange(dx: number, dy: number): boolean {
@@ -32,7 +47,10 @@ export class GuardMotor {
     this.elapsedMs += dtMs;
     switch (this.state) {
       case 'idle':
-        if (inRange) this.enter('telegraph');
+        // Con reloj, el tiempo que sobra pasa al aviso: el ritmo no se corre con los fps.
+        if (this.cfg.restMs !== undefined) {
+          if (this.elapsedMs >= this.cfg.restMs) this.enter('telegraph', this.elapsedMs - this.cfg.restMs);
+        } else if (inRange) this.enter('telegraph');
         break;
       case 'telegraph':
         if (this.elapsedMs >= this.cfg.telegraphMs) this.enter('active', this.elapsedMs - this.cfg.telegraphMs);
@@ -41,7 +59,7 @@ export class GuardMotor {
         if (this.elapsedMs >= this.cfg.activeMs) this.enter('recover', this.elapsedMs - this.cfg.activeMs);
         break;
       case 'recover':
-        if (this.elapsedMs >= this.cfg.recoverMs) this.enter('idle');
+        if (this.elapsedMs >= this.cfg.recoverMs) this.enter('idle', this.clocked ? this.elapsedMs - this.cfg.recoverMs : 0);
         break;
     }
     return this.state;
@@ -59,7 +77,7 @@ export class GuardMotor {
   }
 }
 
-/** Cuadros de la hoja `attack` que corresponden a cada tiempo (primero y último, inclusive). */
+/** Cuadros de la hoja `attack` que corresponden a cada tiempo (primero y último, inclusive; al revés si last < first). */
 export interface GuardFrames {
   telegraph: readonly [number, number];
   active: readonly [number, number];
@@ -73,8 +91,10 @@ export interface GuardFrames {
 export function guardFrame(state: GuardState, progress: number, frames: GuardFrames): number | null {
   if (state === 'idle') return null;
   const [first, last] = frames[state];
-  const n = last - first + 1;
-  return first + Math.min(n - 1, Math.floor(Math.max(0, progress) * n));
+  const n = Math.abs(last - first) + 1;
+  const i = Math.min(n - 1, Math.floor(Math.max(0, progress) * n));
+  // Un tramo al revés (el Jaguarú cierra los ojos con los cuadros de abrirlos, S77).
+  return last >= first ? first + i : first - i;
 }
 
 /** El cucharazo: zona delante del cuerpo (px). */

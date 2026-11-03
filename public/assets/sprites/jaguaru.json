@@ -1,0 +1,35 @@
+{
+  "key": "jaguaru",
+  "frameWidth": 200,
+  "frameHeight": 88,
+  "frames": 14,
+  "detail": 2,
+  "anims": {
+    "jaguaru_attack": {
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "frameRate": 10,
+      "repeat": 0
+    },
+    "jaguaru_idle": {
+      "frames": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "frameRate": 6,
+      "repeat": -1
+    }
+  }
+}

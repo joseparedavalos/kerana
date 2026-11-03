@@ -5,6 +5,7 @@ import {
   cropToContent,
   clearGrass,
   despillGreen,
+  feetAnchorX,
   detectPixelSize,
   greenEdgePasses,
   opaqueBounds,
@@ -255,6 +256,31 @@ describe('sprite pipeline', () => {
     // Cuatro cuadros en una grilla de 2 × 2: el primero del ataque es el de abajo a la izquierda.
     const b = opaqueBounds(image as Img, { x: 0, y: 32, w: 32, h: 32 });
     expect(b?.x0).toBe(18);
+  });
+
+  it("anchor 'feet' clava las patas aunque el bicho se corra en la celda (S77)", () => {
+    // Dos patas de 10 px separadas 40, y una uña de 3 px más adelante que no cuenta.
+    const img = createImage(100, 50) as Img;
+    fillRect(img, 30, 10, 60, 30, [20, 20, 30, 255]);
+    fillRect(img, 30, 40, 10, 10, [20, 20, 30, 255]);
+    fillRect(img, 70, 40, 10, 10, [20, 20, 30, 255]);
+    fillRect(img, 22, 46, 3, 4, [200, 200, 190, 255]);
+    expect(feetAnchorX(img, { x: 0, y: 0, w: 100, h: 50 }, 50, 8, 5)).toBe(55);
+    // En processCharacter: dos cuadros con el bicho corrido 20 px salen con las patas en el mismo lugar.
+    const sheetImg = createImage(200, 50) as Img;
+    for (const [cx, shift] of [[0, 0], [100, 20]]) {
+      fillRect(sheetImg, cx + 10 + shift, 10, 50, 30, [20, 20, 30, 255]);
+      fillRect(sheetImg, cx + 10 + shift, 40, 8, 10, [20, 20, 30, 255]);
+      fillRect(sheetImg, cx + 52 + shift, 40, 8, 10, [20, 20, 30, 255]);
+    }
+    const { image } = processCharacter('x', [{ anim: 'attack', cols: 2, rows: 1, img: sheetImg }], {
+      frame: [64, 50],
+      height: 40,
+      sheets: { attack: { anchor: 'feet', feetRows: 6, feetMinRun: 5 } },
+    });
+    const a = opaqueBounds(image as Img, { x: 0, y: 0, w: 64, h: 50 });
+    const b = opaqueBounds(image as Img, { x: 64, y: 0, w: 64, h: 50 });
+    expect(a?.x0).toBe((b?.x0 ?? 0) - 64);
   });
 
   it('cropBottom borra las filas de abajo de cada celda antes de medir', () => {
