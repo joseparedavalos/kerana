@@ -135,8 +135,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'montana',
     backgrounds: { far: 'bg_l6_far' },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S78: dentro del cerro en zigzag, la baldosa de montana rodeada por los cuatro lados, al mismo tono que el
+    // terreno (sin tinte ni degradado), en la grilla de 16 px: no se ve el cielo de tormenta adentro.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'ao_ao',
     gift: 'heart_up',

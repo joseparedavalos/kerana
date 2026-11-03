@@ -75,11 +75,6 @@ const KNOWN_HOLES: Record<string, { cells: number; where: string }> = {
   l2: { cells: 218, where: 'x 144-150, filas 28-32; x 157-158, filas 20-26; x 241-250, filas 14-32' },
   // Pendiente (S75, no se tocó): ídem; l5 ya carga la lluvia y el dosel, medir el relleno en un celular.
   l5: { cells: 585, where: 'x 18-23, filas 76-86; x 98-128, filas 36-91; x 261-263, filas 26-91' },
-  // Pendiente (S75, no se tocó): ídem; es el que más tiene.
-  l6: {
-    cells: 3463,
-    where: 'x 46-57, filas 25-25; x 72-73, filas 47-55; x 87-89, filas 47-48; x 98-101, filas 37-38; x 115-125, filas 19-45; x 144-163, filas 17-45; x 189-204, filas 11-45; x 232-238, filas 16-45; x 260-284, filas 18-45; x 293-305, filas 24-45; x 332-361, filas 21-45; x 371-398, filas 24-45; x 429-429, filas 42-45; x 448-449, filas 44-45',
-  },
 };
 
 describe('nada de agujeros: ninguna masa sólida deja ver el fondo por dentro (S75)', () => {
