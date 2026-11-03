@@ -15,7 +15,7 @@ const TILE = 16;
 // Piezas de l5 (S30, cabecera de tools/levels/l5.txt).
 const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crumbles: 7, rocks: 2, brittle: 8, kuati: 5, kai: 2, mboi: 4, yaguarete: 1 };
 // Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
-const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2, jaguaru: 1 };
+const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2, jaguaru: 3 };
 // Piezas de l7 (S32, cabecera de tools/levels/l7.txt).
 const L7_COUNTS = { movers: 21, vertical: 12, lanterns: 21, triggers: 12, timed: 5, gates: 3, normal: 1, once: 1, sleep: 1, crumbles: 1, rocks: 4, brittle: 7, mbopi: 8, pora: 6, jagua: 6 };
 
@@ -2326,11 +2326,21 @@ async function main() {
       });
     });
     // S77: el Jaguarú del paso bajo la peña no se mueve nunca y late con su propio reloj (abre los ojos y muerde).
+    // S78: hay tres (la quebrada, la peña y la gruta). Los otros dos no caminan: lo único que los corre es el empujón
+    // de un tajo del piloto (un cuadro, ≈ 2 px; Guard frena en seco), que en la gruta les pega al romper el fardo.
     await l6Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;
-      const j = s.enemies.find((e) => e.def.id === 'jaguaru');
-      const w = (window.__JAGUARU__ = { found: !!j, x0: j?.x ?? 0, maxShift: 0, states: [], cycles: 0 });
+      const all = s.enemies.filter((e) => e.def.id === 'jaguaru');
+      const j = all.find((e) => Math.floor(e.x / 16) === 88);
+      const w = (window.__JAGUARU__ = { found: !!j, count: all.length, x0: j?.x ?? 0, maxShift: 0, othersShift: 0, states: [], cycles: 0 });
+      const others = all.filter((e) => e !== j);
+      const starts = others.map((e) => [e.x, e.y]);
       s.events.on('postupdate', () => {
+        others.forEach((e, i) => {
+          if (e.active && !e.purified) {
+            w.othersShift = Math.max(w.othersShift, Math.abs(e.x - starts[i][0]), Math.abs(e.y - starts[i][1]));
+          }
+        });
         if (!j?.active || j.purified) return;
         w.maxShift = Math.max(w.maxShift, Math.abs(j.x - w.x0));
         if (w.states.at(-1) !== j.guardState) {
@@ -2364,8 +2374,8 @@ async function main() {
     );
     const jag6 = await l6Run.evaluate(() => window.__JAGUARU__);
     check(
-      jag6.found && jag6.maxShift < 0.5 && jag6.cycles >= 2 && jag6.states.slice(0, 4).join() === 'idle,telegraph,active,recover',
-      `nivel 6: el Jaguarú no se mueve y abre los ojos, muerde y los cierra con su propio ritmo (${JSON.stringify({ ...jag6, states: jag6.states.slice(0, 8) })})`,
+      jag6.found && jag6.count === L6_COUNTS.jaguaru && jag6.maxShift < 0.5 && jag6.othersShift < 8 && jag6.cycles >= 2 && jag6.states.slice(0, 4).join() === 'idle,telegraph,active,recover',
+      `nivel 6: los Jaguarú no se mueven y el de la peña abre los ojos, muerde y los cierra con su propio ritmo (${JSON.stringify({ ...jag6, states: jag6.states.slice(0, 8) })})`,
     );
     console.log(`  l6 (ruta principal): ${(run6.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run6.splits)}`);
     await l6Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());

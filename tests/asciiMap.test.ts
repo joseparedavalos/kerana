@@ -174,6 +174,17 @@ describe('buildTiledMap', () => {
     expect(layer('Ground').data[1]).toBe(0);
   });
 
+  it('S78: "g=jaguaru:right" pone el mismo enemigo mirando a la derecha; sin sufijo, a la izquierda', () => {
+    const parsed = parseAscii('size 3x2\nenemy g=jaguaru:right j=jaguaru\n---\nPgj\n###\n');
+    expect(parsed.enemies).toEqual({ g: 'jaguaru', j: 'jaguaru' });
+    const built = buildTiledMap(parsed) as unknown as { layers: Layer[] };
+    const objs = built.layers.find((l) => l.name === 'Objects')!.objects;
+    const facing = (o: Obj) => o.properties?.find((p) => p.name === 'facing')?.value;
+    const enemies = objs.filter((o) => o.type === 'Enemy');
+    expect(enemies.map(facing)).toEqual(['right', 'left']);
+    expect(() => parseAscii('size 1x1\nenemy g=jaguaru:up\n---\nP\n')).toThrow(/orientación/);
+  });
+
   it('valida el mapa', () => {
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\n##\n'))).toThrow(/P/);
     expect(() => buildTiledMap(parseAscii('size 2x1\n---\nPx\n'))).toThrow(/enemy/);
