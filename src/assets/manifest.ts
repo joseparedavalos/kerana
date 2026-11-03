@@ -69,6 +69,7 @@ export const ENEMY_SPRITES: Record<string, [number, number]> = {
   jagua_hu: [52, 40],
   payesero: [108, 142],
   karai_vosa: [112, 114],
+  yaguarete_ava: [184, 84],
 };
 
 /** Píxeles de arte por unidad del mundo de los props e íconos (raw/props y raw/hud → `sprite.json`). */

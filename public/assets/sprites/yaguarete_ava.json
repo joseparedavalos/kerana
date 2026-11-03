@@ -1,0 +1,49 @@
+{
+  "key": "yaguarete_ava",
+  "frameWidth": 184,
+  "frameHeight": 84,
+  "frames": 22,
+  "detail": 2,
+  "anims": {
+    "yaguarete_ava_attack": {
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "frameRate": 10,
+      "repeat": 0
+    },
+    "yaguarete_ava_idle": {
+      "frames": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "frameRate": 8,
+      "repeat": -1
+    },
+    "yaguarete_ava_run": {
+      "frames": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "frameRate": 14,
+      "repeat": -1
+    }
+  }
+}

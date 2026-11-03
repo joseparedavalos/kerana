@@ -286,6 +286,26 @@ export function clearBottomRows(img, rect, n) {
   }
 }
 
+/**
+ * Pasto dibujado al pie (S76, el ataque del yaguareté avá): en las `n` filas de abajo de la celda `rect`, borra (alfa 0)
+ * los píxeles en que el verde supera al rojo y al azul. Las patas (pelaje, uñas y contorno oscuro) no son verdes y
+ * quedan. Modifica `img` y devuelve cuántos píxeles borró.
+ */
+export function clearGrass(img, rect, n) {
+  const d = img.data;
+  let cleared = 0;
+  const y0 = Math.max(rect.y, rect.y + rect.h - n);
+  for (let y = y0; y < rect.y + rect.h; y++) {
+    for (let x = rect.x; x < rect.x + rect.w; x++) {
+      const i = (y * img.width + x) * 4;
+      if (d[i + 3] === 0 || d[i + 1] <= d[i] || d[i + 1] <= d[i + 2]) continue;
+      d[i + 3] = 0;
+      cleared++;
+    }
+  }
+  return cleared;
+}
+
 /** Unión de las cajas opacas en coordenadas de celda → centro en X y borde de abajo (exclusivo). */
 function cellUnion(cells, bounds) {
   let x0 = Infinity;
@@ -324,6 +344,11 @@ export function processCharacter(name, sheets, config = {}) {
     // ignore: la hoja no se procesa (p. ej. vino sin transparencia y hay que regenerarla); sus animaciones, con `source`.
     if (opts.ignore) continue;
     let bg = removeBackground(sheet.img);
+    // grassRows (S76): el pasto pintado en la base de cada celda, antes del borde verde y del despill (que lo dejaría gris).
+    if (opts.grassRows > 0) {
+      const removed = sliceCells(sheet.img, sheet.cols, sheet.rows).reduce((n, c) => n + clearGrass(sheet.img, c, opts.grassRows), 0);
+      bg += ` · pasto −${removed}px`;
+    }
     const passes = greenEdgePasses(opts.greenEdge ?? config.greenEdge);
     const margin = opts.greenEdgeMargin ?? config.greenEdgeMargin;
     if (passes > 0) bg += ` · borde verde −${removeGreenEdge(sheet.img, passes, margin)}px`;
