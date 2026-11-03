@@ -885,6 +885,8 @@ La pregunta para cada uno: **¿dónde estaría esto en un edificio de verdad?** 
 
 ### 19.13 Fachadas sobre bloques huecos (S72, l4)
 
+**S74: se sacaron todas.** Las de `l7_calle` traen pintada la medianoche (la ventana iluminada por dentro) y l4 es la siesta: un prop no se reusa en un nivel con otra hora del día (ASSETS §6.1). Lo de abajo queda como registro, y sirve si llegan fachadas propias de l4.
+
 l4 no tiene fachadas propias: usa las de muro de `l7_calle` (contraventana, balcón, puerta; ASSETS §6.1). Lo nuevo es que en l4 los bloques son huecos.
 
 - **Desde S28 el terreno es una repisa** (`terrainShell` 3 en l4): de cada bloque se dibujan enteros los dos tiles del borde, el tercero tenue, y más adentro se ve el fondo. El museo (8 filas) es un marco con un hueco de dos filas; las casas altas de C (casa Z, la plaza, el campanario) son casi todo hueco. Una ventana en el medio de un pilar queda flotando sobre el lapacho del fondo (se probó: captura). **Las fachadas van sobre la parte que se dibuja entera:** centradas en las dos columnas del borde (a escala 0,8 cuando el anillo mide dos tiles) o en la franja de arriba o de abajo. Medirlo con la profundidad de `terrainDepths` (8 direcciones; ≤ 2 entero) antes de mirar la captura.
