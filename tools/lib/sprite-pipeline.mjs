@@ -186,6 +186,33 @@ export function waistAnchorX(img, rect, bottom, refHeight) {
 }
 
 /**
+ * Ancla en las patas (S77, el Jaguarú): el centro entre la primera y la última racha opaca de al menos `minRun` px en
+ * las `rows` filas de abajo del dibujo. Para una hoja en que el bicho se corre dentro de la celda pero sus patas no
+ * cambian de separación: las patas quedan clavadas en el mismo x del frame. Las rachas cortas (uñas o colmillos que
+ * bajan hasta la franja) no cuentan. Sin rachas, el centro de la celda.
+ */
+export function feetAnchorX(img, rect, bottom, rows = 12, minRun = 8) {
+  let first = -1;
+  let last = -1;
+  const yTop = Math.max(rect.y, bottom - rows);
+  const solidCol = new Uint8Array(rect.w);
+  for (let y = yTop; y < bottom; y++) for (let x = 0; x < rect.w; x++) if (isSolid(img, rect.x + x, y)) solidCol[x] = 1;
+  let start = -1;
+  for (let x = 0; x <= rect.w; x++) {
+    if (x < rect.w && solidCol[x]) {
+      if (start < 0) start = x;
+    } else if (start >= 0) {
+      if (x - start >= minRun) {
+        if (first < 0) first = start;
+        last = x;
+      }
+      start = -1;
+    }
+  }
+  return first < 0 ? rect.x + rect.w / 2 : rect.x + (first + last) / 2;
+}
+
+/**
  * Tamaño aparente del "píxel" del arte (arte pixel escalado): el divisor entero que mejor explica
  * los largos de las rachas de color en las filas. Devuelve 1 si no hay un patrón claro.
  */
@@ -390,6 +417,7 @@ export function processCharacter(name, sheets, config = {}) {
           const anchorX =
             opts.anchorX !== undefined ? cell.x + opts.anchorX
             : opts.anchor === 'cell' ? cell.x + cell.w / 2
+            : opts.anchor === 'feet' ? feetAnchorX(sheet.img, cell, bottom, opts.feetRows, opts.feetMinRun)
             : waistAnchorX(sheet.img, cell, bottom, refHeight);
           sampleAt =
             opts.align === 'top'
