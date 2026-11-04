@@ -16,7 +16,7 @@ export class CreditsScene extends Phaser.Scene {
 
   create(): void {
     setupView(this);
-    AudioManager.music('title');
+    AudioManager.music('credits');
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.add.rectangle(0, 0, width, height, 0x1b1a2e).setOrigin(0);
