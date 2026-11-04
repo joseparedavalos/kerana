@@ -11,7 +11,7 @@ import type { BossLayer, InstrumentDef, TrackDef } from '../systems/musicLogic';
 /** Los niveles con jefe que pelea sobre una variante tensa de su pista (Tau tiene pieza propia). */
 export const BOSS_LEVEL_TRACKS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'] as const;
 export type BossLevelTrack = (typeof BOSS_LEVEL_TRACKS)[number];
-export type TrackId = 'title' | 'map' | BossLevelTrack | 'yvaga' | 'tau' | 'liberation' | 'seal';
+export type TrackId = 'title' | 'map' | BossLevelTrack | 'yvaga' | 'tau' | 'liberation' | 'seal' | 'credits';
 /** Una pista o la variante de jefe de un nivel (`l1_boss`). */
 export type MusicKey = TrackId | `${BossLevelTrack}_boss`;
 
@@ -393,6 +393,33 @@ export const TRACKS: Record<TrackId, TrackDef> = {
         gain: 0.4,
         pattern: '. . . . 7 - 5 - | 3 - - - . . . . | . . . . 3 - 2 - | 1 - - - . . . . | . . . . 7 - 8 - | 10 - - - 8 - 7 - | 5 - 3 - 2 - 1 - | 2 - - - - - . .',
       },
+    ],
+  },
+  // Créditos: el descanso después del viaje. Misma tónica que el título (re mayor), pero más lento y sin el vals.
+  // Arpa que se queda, mimby con una frase corta que resuelve, campana suave de las estrellas y un coro bajo. Sin percusión.
+  credits: {
+    id: 'credits',
+    bpm: 58,
+    stepsPerBeat: 2,
+    beatsPerBar: 4,
+    root: D3,
+    echo: { ms: 480, feedback: 0.3 },
+    voices: [
+      {
+        inst: 'arpa',
+        gain: 0.55,
+        pattern: '0 7 12 16 19 16 12 7 | -3 4 9 12 16 12 9 4 | -7 0 5 9 12 9 5 0 | -5 2 7 11 14 11 7 2',
+      },
+      {
+        inst: 'mimby',
+        lead: true,
+        octave: 12,
+        gain: 0.5,
+        pattern: '7 - - - 9 - 12 - | 11 - - - 9 - - - | 7 - - - 4 - 2 - | 0 - - - - - . . | 4 - - - 7 - 9 - | 12 - - - 14 - 12 - | 9 - 7 - 5 - 4 - | 2 - - - - - . .',
+      },
+      { inst: 'bajo', octave: -12, gain: 0.5, pattern: '0 . . . . . . . | -3 . . . . . . . | -7 . . . . . . . | -5 . . . . . . .' },
+      { inst: 'voz', gain: 0.28, pattern: '0+7 - - - - - - - - - - - - - - -' },
+      { inst: 'campana', octave: 24, gain: 0.18, pattern: '12 . . . . . . . | . . . . . . . . | 7 . . . . . . . | . . . . . . . .' },
     ],
   },
 };
