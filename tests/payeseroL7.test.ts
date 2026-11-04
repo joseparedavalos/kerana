@@ -19,7 +19,7 @@ describe('el payesero de l7 (S79)', () => {
 
   it('hay uno solo, en el patio (x 47, fila 59), mirando al andamio', () => {
     expect(casters).toEqual([{ x: 47, y: 59, c: ch }]);
-    expect(map.enemyFacing[ch]).toBe('right');
+    expect((map.enemyFacing as Record<string, string>)[ch]).toBe('right');
   });
 
   it('está en tierra firme, con dos tiles de piso a cada lado', () => {
