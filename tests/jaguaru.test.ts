@@ -77,45 +77,75 @@ describe('Jaguarú: el guardián del tiempo', () => {
   });
 });
 
-describe('Jaguarú en l6: uno, en el paso bajo la peña', () => {
+describe('Jaguarú en l6: tres, cada uno en un paso que hay que cruzar', () => {
   const map = parseAscii(l6Text);
   const g: string[] = map.grid;
   const at = (x: number, y: number) => g[y]?.[x] ?? '#';
   const legend = map.enemies as Record<string, string>;
+  const facingOf = (map.enemyFacing ?? {}) as Record<string, string>;
   const chars = Object.entries(legend).filter(([, kind]) => kind === 'jaguaru').map(([c]) => c);
-  const spots: [number, number][] = [];
-  g.forEach((row, y) => [...row].forEach((c, x) => chars.includes(c) && spots.push([x, y])));
+  const spots: { x: number; y: number; dir: 1 | -1 }[] = [];
+  g.forEach((row, y) =>
+    [...row].forEach((c, x) => chars.includes(c) && spots.push({ x, y, dir: facingOf[c] === 'right' ? 1 : -1 })),
+  );
+  const spot = (x: number) => spots.find((s) => s.x === x)!;
 
-  it('hay uno solo, como prototipo, entre la columna de roca y el pozo de la piedra', () => {
-    expect(spots).toHaveLength(1);
-    const [x, y] = spots[0];
-    expect(y).toBe(44);
-    // La columna (rompible) queda al oeste y el pozo al este: es paso obligado.
+  it('tres (S77 el paso bajo la peña; S78 el fondo de la quebrada y la gruta tras la cascada)', () => {
+    expect(spots.map((s) => [s.x, s.y, s.dir])).toEqual([
+      [157, 25, 1],
+      [88, 44, -1],
+      [63, 61, -1],
+    ]);
+  });
+
+  it('el paso bajo la peña: entre la columna de roca y el pozo de la piedra (paso obligado)', () => {
+    const { x } = spot(88);
     expect(g.slice(41, 45).every((row) => row.slice(80, 83) === 'BBB')).toBe(true);
     expect(x).toBeGreaterThan(82);
     expect(at(92, 45)).toBe('.');
   });
 
-  it('piso firme desde el alcance del empujón hasta dos tiles detrás, y techo bajo: no se lo salta', () => {
-    const [x, y] = spots[0];
-    // Mira al oeste: la dentellada y el empujón (≈ 4 tiles) van hacia la columna, sobre piso firme; nunca al pozo.
-    for (let dx = -8; dx <= 2; dx++) expect(at(x + dx, y + 1), `piso en (${x + dx}, ${y + 1})`).toBe('#');
-    // Lugar para su alto y techo a 5 filas: con 40 de alto, Kerana (2,6 tiles) no pasa por encima de un salto.
-    const free = [0, 1, 2, 3, 4].every((r) => at(x, y - r) !== '#');
-    expect(free).toBe(true);
+  it('el fondo de la quebrada: la columna de la chipa A queda detrás de él', () => {
+    const { x } = spot(63);
+    expect([58, 59, 60, 61].every((r) => at(69, r) === 'B')).toBe(true);
+    expect(at(71, 61)).toBe('F');
+    expect(x).toBeLessThan(69 - 4);
+  });
+
+  it('la gruta tras la cascada: el fardo de la chipa B queda detrás de él; la cornisa, delante', () => {
+    const { x, y } = spot(157);
+    expect(at(154, 21)).toBe('F');
+    expect([22, 23, 24, 25].every((r) => at(154, r) === '%' && at(155, r) === '%')).toBe(true);
+    expect(x).toBeGreaterThan(155 + 1);
+    // Techo a 5 filas, como el de la peña.
     expect(at(x, y - 5)).toBe('#');
   });
 
-  it('lejos de los fuegos, de las espinas y de los otros enemigos', () => {
-    const [x, y] = spots[0];
-    const others = new Set(Object.keys(legend).filter((c) => !chars.includes(c)));
-    for (let yy = y - 4; yy <= y + 4; yy++) {
-      for (let xx = x - 10; xx <= x + 10; xx++) {
-        const c = at(xx, yy);
-        expect(c, `fuego en (${xx}, ${yy})`).not.toBe('C');
-        expect(c, `espina en (${xx}, ${yy})`).not.toBe('^');
-        expect(others.has(c), `enemigo "${c}" en (${xx}, ${yy})`).toBe(false);
+  for (const s of [157, 88, 63]) {
+    it(`x ${s}: piso firme desde el alcance del empujón hasta dos tiles detrás`, () => {
+      const { x, y, dir } = spot(s);
+      // La dentellada y el empujón (≈ 4 tiles) van hacia donde mira, sobre piso firme; nunca a un pozo.
+      for (let k = -2; k <= 8; k++) expect(at(x + dir * k, y + 1), `piso en (${x + dir * k}, ${y + 1})`).toBe('#');
+      expect([0, 1, 2].every((r) => at(x, y - r) !== '#')).toBe(true);
+    });
+
+    it(`x ${s}: lejos de los fuegos, de las espinas y de los otros enemigos`, () => {
+      const { x, y } = spot(s);
+      const others = new Set(Object.keys(legend).filter((c) => !chars.includes(c)));
+      for (let yy = y - 4; yy <= y + 4; yy++) {
+        for (let xx = x - 10; xx <= x + 10; xx++) {
+          const c = at(xx, yy);
+          expect(c, `fuego en (${xx}, ${yy})`).not.toBe('C');
+          expect(c, `espina en (${xx}, ${yy})`).not.toBe('^');
+          expect(others.has(c), `enemigo "${c}" en (${xx}, ${yy})`).toBe(false);
+        }
       }
-    }
+    });
+  }
+
+  it('el paso bajo la peña: techo a 5 filas, no se lo salta', () => {
+    const { x, y } = spot(88);
+    expect([0, 1, 2, 3, 4].every((r) => at(x, y - r) !== '#')).toBe(true);
+    expect(at(x, y - 5)).toBe('#');
   });
 });

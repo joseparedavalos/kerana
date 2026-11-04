@@ -83,7 +83,7 @@ export function parseAscii(text) {
   const sep = lines.findIndex((l) => l.trim() === '---');
   if (sep < 0) throw new Error('Falta la línea "---" que separa la cabecera de la grilla.');
 
-  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, reeds: false, town: false, enemies: {}, signs: {}, rects: [], points: [], ats: [], props: [], grid: [], warnings: [] };
+  const result = { name: '', width: 0, height: 0, biome: 'cerro', moss: false, reeds: false, town: false, enemies: {}, enemyFacing: {}, signs: {}, rects: [], points: [], ats: [], props: [], grid: [], warnings: [] };
 
   for (const rawLine of lines.slice(0, sep)) {
     const line = rawLine.trim();
@@ -115,9 +115,15 @@ export function parseAscii(text) {
         result.town = true;
         break;
       case 'enemy':
-        for (const [ch, kind] of Object.entries(parsePairs(rest))) {
+        for (const [ch, value] of Object.entries(parsePairs(rest))) {
           if (!/^[a-z]$/.test(ch)) throw new Error(`Enemigo con carácter inválido: "${ch}"`);
+          // S78: "g=jaguaru:right" → el mismo enemigo mirando a la derecha (por defecto miran a la izquierda).
+          const [kind, facing] = value.split(':');
+          if (facing !== undefined && facing !== 'left' && facing !== 'right') {
+            throw new Error(`Enemigo "${ch}": orientación desconocida "${facing}" (left o right)`);
+          }
           result.enemies[ch] = kind;
+          if (facing) result.enemyFacing[ch] = facing;
         }
         break;
       case 'sign':
@@ -413,7 +419,8 @@ export function buildTiledMap(parsed, options = {}) {
           } else if (/[a-z]/.test(c)) {
             const kind = parsed.enemies[c];
             if (!kind) throw new Error(`Enemigo "${c}" en (${x}, ${y}) sin línea "enemy".`);
-            addObject('Enemy', px(x), py(y), 0, 0, { kind, ...enemyDefaults }, true);
+            const facing = parsed.enemyFacing?.[c];
+            addObject('Enemy', px(x), py(y), 0, 0, { kind, ...enemyDefaults, ...(facing ? { facing } : {}) }, true);
           } else {
             throw new Error(`Carácter desconocido "${c}" en (${x}, ${y}).`);
           }

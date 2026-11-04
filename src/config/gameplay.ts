@@ -753,7 +753,26 @@ export const GAMEPLAY = {
   pindo: {
     /** Tolerancia vertical entre los pies y la copa (px). */
     feetTolerancePx: 3,
+    /** Tronco del pindó por código (S31), solo si falta el atlas `l6_roca`. */
     trunkWidth: 5,
+    /**
+     * S78: el karanda'y (`l6_roca/karanday_palm`). La escala sale del alto del pindó: el pie del tronco, `sink` bajo el
+     * piso, y la franja más ancha de la copa (`crownY`, fracción del alto del dibujo desde arriba) en el centro de la
+     * barra. La barra tapa la plataforma `=`: `barRaise` sobre su borde de arriba, `barOverhang` de más a cada lado.
+     */
+    art: {
+      prop: 'l6_roca/karanday_palm',
+      crownY: 0.24,
+      sink: 1,
+      barRaise: 1,
+      barThickness: 7,
+      barOverhang: 2,
+      /** Píxeles de la textura de la barra por unidad (como el arte de los jefes). */
+      barDetail: 2,
+      barGrain: 18,
+      /** Colores del faldón de hojas secas del dibujo. */
+      barColors: { outline: 0x2a1a0c, dark: 0x5a3c18, base: 0x8a6230, light: 0xa87a3c, highlight: 0xc4964e },
+    },
   },
 
   /**

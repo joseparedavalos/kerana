@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { artOrPlaceholder, hasArt } from '../assets/art';
 import { addProp, propLook, propNames } from '../assets/propArt';
 import { layoutShowcase } from '../assets/propLayout';
+import { addPindoArt } from '../assets/pindoArt';
 import { ART_DETAIL, PROP_ATLASES, tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
@@ -967,9 +968,13 @@ export class LevelScene extends Phaser.Scene {
 
   // ── Pindó, vacas y onda de luz ────────────────────────────────────────────
 
-  /** Pindó (GDD §6.6): tronco y hojas por código; la copa (plataforma `=` del mapa) es refugio. */
+  /**
+   * Pindó (GDD §6.6): la copa (plataforma `=` del mapa) es refugio. S78: el karanda'y del atlas con una barra que
+   * cruza la copa; sin el atlas, tronco y hojas por código (S31).
+   */
   private addPindo(zone: Phaser.Geom.Rectangle): void {
     this.refuges.push({ left: zone.left, right: zone.right, top: zone.top });
+    if (addPindoArt(this, zone)) return;
     const trunk = GAMEPLAY.pindo.trunkWidth;
     this.add.rectangle(zone.centerX - trunk / 2, zone.top, trunk, zone.height, PINDO_TRUNK_COLOR).setOrigin(0, 0).setDepth(1);
     for (const dx of [-1, 1]) {

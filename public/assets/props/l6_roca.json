@@ -22,7 +22,7 @@
     },
     "crevice_grasses": {
       "frame": {
-        "x": 329,
+        "x": 422,
         "y": 2,
         "w": 160,
         "h": 99
@@ -56,9 +56,29 @@
         }
       ]
     },
+    "karanday_palm": {
+      "frame": {
+        "x": 329,
+        "y": 2,
+        "w": 91,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 91,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 91,
+        "h": 124
+      }
+    },
     "lichen_moss": {
       "frame": {
-        "x": 491,
+        "x": 584,
         "y": 2,
         "w": 160,
         "h": 94
@@ -94,7 +114,7 @@
     },
     "rock_ledge": {
       "frame": {
-        "x": 2,
+        "x": 148,
         "y": 196,
         "w": 144,
         "h": 60
@@ -114,7 +134,7 @@
     },
     "sandstone_outcrop": {
       "frame": {
-        "x": 653,
+        "x": 746,
         "y": 2,
         "w": 160,
         "h": 94
@@ -150,8 +170,8 @@
     },
     "scree_pile": {
       "frame": {
-        "x": 815,
-        "y": 2,
+        "x": 2,
+        "y": 196,
         "w": 144,
         "h": 68
       },
@@ -210,8 +230,8 @@
     "image": "l6_roca.png",
     "format": "RGBA8888",
     "size": {
-      "w": 961,
-      "h": 258
+      "w": 908,
+      "h": 266
     },
     "scale": "1",
     "detail": 2
