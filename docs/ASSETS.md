@@ -255,9 +255,37 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 ---
 
-## 6. Tilesets [Núcleo; campo ya tiene el suyo (S56), los otros siete siguen con el placeholder pintado]
+## 6. Tilesets [Núcleo; campo desde S56; montana (l6) y ciudad (l7) desde el 5 de noviembre de 2026; el resto sigue con el placeholder pintado]
 
 - **Campo (l3) se monta con un script desde S56:** `npm run tileset -- campo` arma `public/assets/tiles/campo.png` con los materiales de `raw/tiles/campo/` (tierra, franja de pasto, agua, mata, flores, piedras y karaguatá, en JPG del generador) y sus ajustes en `raw/tiles/campo/tileset.json`. Las casillas 0 a 15 se construyen con la regla de los vecinos. La receta, qué pedirle al generador y qué revisar: [docs/RECETA-TILESET.md](RECETA-TILESET.md). El PNG anterior (el piso del 16 de octubre) está en `raw/tiles/anteriores/campo-2026-10-16.png`.
+- **Piso de l6 y l7 (5 de noviembre de 2026, PR #136 y #137).** l6 usa el bioma `montana` (`src/data/levels.ts`). l7 usa `ciudad`. El tileset `cerro` es el de l1 y no se tocó.
+
+  Materiales (JPG, RGB, 1168 × 784). El texto del prompt no quedó en el archivo: el Exif solo guarda una firma.
+
+  | Archivo | Bytes | Fondo | Contenido | Color medio |
+  |---|---|---|---|---|
+  | `raw/tiles/cerro/tierra.jpg` | 421 796 | ninguno: la textura llega al borde | tierra de cerro, grano, sin objeto suelto | RGB 126, 69, 37 |
+  | `raw/tiles/cerro/pasto.jpg` | 220 456 | blanco (media de la hoja RGB 219, 205, 193) | franja de pasto seco sobre laja | tinta RGB 131, 84, 46 |
+  | `raw/tiles/ciudad/tierra.jpg` | 356 982 | ninguno | adoquín oscuro | RGB 56, 54, 51 |
+  | `raw/tiles/ciudad/pasto.jpg` | 81 461 | blanco (media RGB 231, 230, 229) | un adoquín con una vela, un solo dibujo al centro | tinta RGB 95, 87, 79 |
+
+  `raw/tiles/cerro/tileset.json` y `raw/tiles/ciudad/tileset.json` copian el de campo (`scale` 12, `scaleX` 10, `scaleY` 22, `rows` 7, `fringe` 560, `edge` 0,5 / 0,75). Piden `especiales.jpg` y `espinas.jpg`. Esos dos archivos no están en el repo.
+
+  Lo que quedó en el juego (PNG, 64 × 112, RGBA) no salió de `npm run tileset`. Las casillas 0 a 18 se armaron con las funciones de `tools/lib/tileset-build.mjs`. Las 19 a 27 se copiaron del PNG anterior (el del 16 de octubre). El anterior no se guardó en `raw/tiles/anteriores/`.
+
+  - `public/assets/tiles/montana.png` (12 489 bytes). Tierra: `raw/tiles/cerro/tierra.jpg`, `scale` 8. Borde: `raw/tiles/cerro/pasto.jpg`, `scaleX` 6, `scaleY` 8, `rows` 5, `fringe` 540, pasto si verde ≥ 0,72 × rojo y verde > azul. La ventana de 16 px es la de más pasto opaco (31 de 80), no la de menos costura. `edge.outer` 0,5, `edge.inner` 0,75. Plataforma: 6 filas, 3 de pasto. Casilla 15: RGB 127, 69, 37.
+  - `public/assets/tiles/ciudad.png` (11 910 bytes). Tierra: `raw/tiles/ciudad/tierra.jpg`, `scale` 16. El borde no usa `pasto.jpg`: las 2 filas de arriba del mismo adoquín × 1,45 y la de abajo × 0,45. `edge.outer` 0,42, `edge.inner` 0,68. Plataforma: 6 filas, 2 de canto. Casilla 15: RGB 54, 53, 50.
+
+  Intentos que no sirven:
+
+  - `npm run tileset -- montana` y `npm run tileset -- ciudad` no corren: faltan `especiales.jpg` y `espinas.jpg`. El script corta si no hay 5 dibujos.
+  - Con la receta de campo (`scaleX` 10, `scaleY` 22, `rows` 7, `fringe` 560, hue 0,68) el borde sale blanco. El JPG deja un fleco claro y `seamlessWindow` elige una ventana de 16 × 7 con 5 píxeles de pasto sobre 112.
+  - Otras escalas del borde (`8/14/6`, `6/10/5`, `4/8/5`, `12/16/6`) dejan 0 a 15 píxeles de pasto en la ventana que elige la costura.
+  - `raw/tiles/ciudad/pasto.jpg` no sirve de borde: es una vela, no una franja que repita. A 16 px saldría una vela por baldosa, o blanco.
+  - El adoquín a `scale` 6, 10, 16, 22 y 30 se ve como una diagonal de juntas. Se dejó 16.
+  - `raw/tiles/NOTA-TILESETS.md` quedó desactualizado: dice que el script escribe `cerro.png` y `ciudad.png`. l6 lee `montana.png`.
+
+  Pendiente: `especiales.jpg` y `espinas.jpg` de montana y de ciudad (sin eso el script no reproduce estos PNG). Casillas 19 a 27 siguen el placeholder del 16 de octubre: la 19 de montana es gris (RGB 217, 217, 217) y la 19 de ciudad es menta (RGB 111, 217, 165). `public/assets/tiles/cerro.png` (l1) no usa estos JPG. No hay captura del nivel 6 ni del 7 con el PNG nuevo. No hay copia en `raw/tiles/anteriores/montana-2026-11-05.png` ni `ciudad-2026-11-05.png`.
 - Tiles de 16 × 16. Un PNG por bioma en `public/assets/tiles/<bioma>.png`: `cerro`, `estero`, `campo`, `pueblo`, `selva`, `montana`, `ciudad`, `cielo` (Yvága: nubes y estrellas).
 - **Contenido mínimo:** suelo (relleno y bordes) · plataforma de un solo sentido (izquierda, centro, derecha) · peligro (espinas o karaguatá) · agua (superficie y fondo, donde haga falta) · variante agrietada · decoración (pasto, flores, piedras).
 - **Terreno como repisa (S28):** en los niveles con `terrainShell` en `levels.ts` (hoy l1 a l6, con 3) la capa `Ground` se dibuja solo hasta 3 tiles del aire más cercano (en las 8 direcciones); la tercera fila va tenue (`GAMEPLAY.backdrop.terrainFadeAlpha`) y más adentro no se dibuja: se ve el fondo. Las colisiones no cambian. **Desde S29** el piso que llega al borde de abajo del mapa se dibuja entero, salvo en l1 (`solidFloor: false`): ahí también es una franja. l7 y Yvága no usan repisa. **Desde S68**, con `earthBackdrop: true` lo que asoma detrás de la repisa es tierra y no el fondo lejano; desde S71 es la casilla 15 (relleno) del tileset de cada bioma, sin tinte ni degradado, en la misma grilla de 16 px: no se distingue del terreno. Nunca tapa el aire. Está encendido en l3 y, desde S75, en l4. `tests/holes.test.ts` falla si una masa sólida deja ver el fondo por dentro (la regla, al principio de RECETA-NIVEL); l1, l2, l5 y l6 todavía tienen agujeros y están en su lista de excepciones como pendientes. Un tileset nuevo necesita que su casilla 15 sea un relleno liso que se repita sin costura. Un tileset nuevo no necesita relleno profundo, pero sí bordes que se lean con el fondo detrás. En la cueva de l1 no hay plantas: la piedra es gris y el musgo queda en la ladera.
