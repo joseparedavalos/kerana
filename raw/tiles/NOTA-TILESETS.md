@@ -1,14 +1,5 @@
-# Tilesets de cerro y ciudad
+# Tilesets de l6 y l7
 
-Materiales listos en `raw/tiles/cerro/` y `raw/tiles/ciudad/`.
+La nota de cómo se armaron está en docs/ASSETS.md, sección 6, «Piso de l6 y l7».
 
-Para generar los PNG finales:
-
-```bash
-npm run tileset -- cerro
-npm run tileset -- ciudad
-```
-
-Esto escribe `public/assets/tiles/cerro.png` y `public/assets/tiles/ciudad.png`.
-
-Si algo no convence, revertir el commit.
+No correr `npm run tileset -- cerro` ni `npm run tileset -- ciudad`: faltan `especiales.jpg` y `espinas.jpg`, y el nivel 6 no lee `cerro.png`. Lee `public/assets/tiles/montana.png`. El nivel 7 lee `public/assets/tiles/ciudad.png`.
