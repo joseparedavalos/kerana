@@ -2325,6 +2325,7 @@ Jose pidió completar `SaveData.bestTimes`, que existía y se saneaba pero nadie
 - **Capturas** en `tmp/s81/` (fuera del repo, `tmp/s81/shots.mjs`): `record.png`, `sin-record.png` y `mapa.png`. Son pantallas de menú: no hizo falta congelar el juego.
 - **De paso:** `tests/music.test.ts` pasa a catorce pistas con `credits` (fallaba en `main` desde `56d1d99`; pendiente 36 de S80), en un commit aparte.
 - **Para probar:** `?debug=1&level=1&boss=1`, vencer a Teju Jagua: la primera vez sale «¡Récord!»; repetirlo más lento muestra la mejor; en el mapa, la marca bajo el nombre de l1.
+- **Verificación:** build, maps y test pasan (633 pruebas). El smoke pasó la comprobación nueva en l1 (`Time  0:00.41`, `bestTimes.l1` = 413 ms: vence al jefe con el atajo apenas entra) y 110 comprobaciones sin ningún fallo hasta el nivel 3, donde lo cortó el límite de 15 min que le puse en el contenedor. No se corrió entero.
 - **Falta:** logros (Steam). Si se quiere el tiempo en el HUD mientras se juega, es otra sesión.
 
 ### S13: Integración de arte y música
