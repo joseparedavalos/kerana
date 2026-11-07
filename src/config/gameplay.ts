@@ -54,6 +54,11 @@ export const GAMEPLAY = {
     totalMs: 280,
     damage: 1,
     knockback: 120,
+    /**
+     * El borde de abajo del tajo queda a esta distancia de los pies (px).
+     * Sin esto el tajo normal terminaba 12 px sobre el suelo y no tocaba al teju (10) ni al mbói (8).
+     */
+    groundGap: 2,
   },
 
   chargedSlash: {

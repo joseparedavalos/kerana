@@ -202,6 +202,15 @@ describe('El último golpe a Moñái entra (S65)', () => {
     for (const lift of [0, 8, 14]) expect(boxesOverlap(slashAt(300, 24, lift), head), `pies a ${lift} px`).toBe(true);
   });
 
+  it('el tajo normal alcanza a un teju y a un mbói parados en el mismo suelo, y no baja de los pies', () => {
+    const slash = slashAt(300, -20);
+    const onFloor = (height: number): Box => ({ x: 300 - 8, y: FLOOR - height, width: 18, height });
+    expect(boxesOverlap(slash, onFloor(10)), 'teju').toBe(true);
+    expect(boxesOverlap(slash, onFloor(8)), 'mbói').toBe(true);
+    expect(slash.y + slash.height).toBeLessThanOrEqual(FLOOR);
+    expect(slash.y + slash.height).toBe(FLOOR - GAMEPLAY.attack.groundGap);
+  });
+
   it('solo crece hacia arriba la zona que recibe el tajo: abajo y a los lados no cambia', () => {
     const cfg = GAMEPLAY.monai;
     const head = strikeZone('head', 300, groundHeadY(FLOOR), box());

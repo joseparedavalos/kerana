@@ -9,19 +9,21 @@ export interface Box {
 }
 
 /**
- * Rectángulo del tajo de Kerana con los pies en (feetX, feetY): delante del cuerpo y centrado a media altura
- * (S65: sale de `Player` para que las pruebas midan el mismo tajo que el juego).
+ * Rectángulo del tajo de Kerana con los pies en (feetX, feetY): delante del cuerpo, desde media altura
+ * hasta cerca de los pies (S65: sale de `Player` para que las pruebas midan el mismo tajo que el juego).
+ * El borde de arriba no se mueve; el de abajo baja hasta `attack.groundGap` para alcanzar a los bichos bajos.
  */
 export function slashRect(feetX: number, feetY: number, facing: number, charged: boolean, out: Box): Box {
   const w = charged ? GAMEPLAY.chargedSlash.hitboxWidth : GAMEPLAY.attack.hitboxWidth;
   const h = charged ? GAMEPLAY.chargedSlash.hitboxHeight : GAMEPLAY.attack.hitboxHeight;
   const body = GAMEPLAY.player;
   const cx = feetX + facing * (body.bodyWidth / 2 + w / 2);
-  const cy = feetY - body.bodyHeight / 2;
+  const top = feetY - body.bodyHeight / 2 - h / 2;
+  const floor = feetY - GAMEPLAY.attack.groundGap;
   out.x = cx - w / 2;
-  out.y = cy - h / 2;
+  out.y = top;
   out.width = w;
-  out.height = h;
+  out.height = Math.max(h, floor - top);
   return out;
 }
 
