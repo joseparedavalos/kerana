@@ -1691,6 +1691,11 @@ export const GAMEPLAY = {
       /** Mbopi: aleteo por código, aplastando el dibujo en y hasta `mbopiSquashY` a `mbopiFlapFps`. */
       mbopiFlapFps: 14,
       mbopiSquashY: 0.7,
+      /**
+       * Mbói colgante: la plataforma `=` de la selva solo pinta los 6 px de arriba del tile.
+       * El punto del mapa está en el tile de abajo; sin esto la cola queda 10 px bajo el dibujo.
+       */
+      mboiHangLipPx: 10,
       /** Ojos del jagua hũ con sprite: unidades hacia adelante y sobre los pies, y tamaño. */
       jaguaHuEyes: { forward: 9, rise: 13, width: 3, height: 2 },
       /** Fruta que lanza el ka'i (rojo de la fruta del sprite). */
