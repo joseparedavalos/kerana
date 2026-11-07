@@ -124,7 +124,7 @@ Más adelante, con el feedback de itch.io y de Google Play:
 | 10 | Control, Steam Deck, cápsula y trailer | pendiente |
 | 11 | Portugués | pendiente |
 
-El guardado ya tiene `bestTimes` por nivel. No se muestra. Queda para la sesión 9.
+Los mejores tiempos por nivel se guardan y se muestran desde S81 (en «Nivel completado» y en el mapa). A la sesión 9 le quedan los logros.
 
 ## Qué no entra
 

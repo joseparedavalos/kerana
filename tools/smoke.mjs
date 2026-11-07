@@ -435,6 +435,13 @@ async function main() {
       await sleep(300);
     }
     check(await isActive('LevelComplete'), 'Jefe vencido → liberación → Nivel completado');
+    // S81: la línea del tiempo se ve y la marca de l1 queda guardada.
+    const timeShown = await title.evaluate(() => {
+      const line = window.__KERANA_GAME__.scene.getScene('LevelComplete').children.getByName('level_complete_time');
+      const best = JSON.parse(localStorage.getItem('kerana.save.v1') ?? '{}').bestTimes?.l1;
+      return { text: line?.visible ? line.text : null, best };
+    });
+    check(/\d+:\d{2}\.\d{2}/.test(timeShown.text ?? '') && typeof timeShown.best === 'number' && timeShown.best > 0, `nivel 1: "Nivel completado" muestra el tiempo y guarda bestTimes.l1 (${JSON.stringify(timeShown)})`);
     check(duckedInDialogue && liberationMusic === 'liberation/liberation', `música: en la liberación suena el reencuentro, bajo el diálogo (${liberationMusic})`);
     const completeMusic = await waitMusic(title, 'map');
     check(completeMusic?.playing === 'map' && !completeMusic.ducked, 'música: "Nivel completado" vuelve a la del mapa, sin el volumen bajo del diálogo');

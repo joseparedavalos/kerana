@@ -7,7 +7,7 @@ import type { LevelDef } from '../data/types';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
-import { SaveManager } from '../systems/SaveManager';
+import { formatLevelTime, SaveManager } from '../systems/SaveManager';
 import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
@@ -16,13 +16,17 @@ export class LevelCompleteScene extends Phaser.Scene {
   private inputs!: InputManager;
   private def!: LevelDef;
   private left = false;
+  private timeMs?: number;
+  private record = false;
 
   constructor() {
     super('LevelComplete');
   }
 
-  init(data: { level: LevelDef }): void {
+  init(data: { level: LevelDef; timeMs?: number; record?: boolean }): void {
     this.def = data.level;
+    this.timeMs = data.timeMs;
+    this.record = data.record === true;
     // Phaser reusa la instancia de la escena: sin esto, la segunda vez los botones no hacían nada (S38).
     this.left = false;
   }
@@ -59,6 +63,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       y += 28;
     }
     this.addChipas(width / 2, y);
+    this.addTime(width / 2, y + 52);
 
     this.bigButton(width / 2, height - 88, t('level_complete.next'), () => this.goNext());
     const map = this.add
@@ -85,6 +90,30 @@ export class LevelCompleteScene extends Phaser.Scene {
         fontSize: '11px',
         color: '#F2C14E',
       })
+      .setOrigin(0.5);
+  }
+
+  /** Tiempo de la corrida; a la derecha "¡Récord!" o, debajo, la mejor marca. */
+  private addTime(x: number, y: number): void {
+    if (this.timeMs === undefined) return;
+    const style = { fontFamily: FONT_FAMILY, fontSize: '12px' };
+    const line = this.add
+      .text(x, y, t('level_complete.time', { time: formatLevelTime(this.timeMs) }), { ...style, color: '#F2EEE3' })
+      .setOrigin(0.5)
+      .setName('level_complete_time');
+    if (this.record) {
+      // Corre la línea a la izquierda para que el par quede centrado.
+      const badge = this.add.text(0, y, t('level_complete.record'), { ...style, color: '#F2C14E' }).setOrigin(0, 0.5);
+      const gap = 12;
+      const total = line.width + gap + badge.width;
+      line.setX(x - total / 2 + line.width / 2);
+      badge.setX(x - total / 2 + line.width + gap);
+      return;
+    }
+    const best = SaveManager.getBestTime(this.def.id);
+    if (best === undefined) return;
+    this.add
+      .text(x, y + 20, t('level_complete.best', { time: formatLevelTime(best) }), { ...style, color: '#CFE3F2' })
       .setOrigin(0.5);
   }
 
