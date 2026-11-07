@@ -17,8 +17,8 @@ const SHEETS = ['walk', 'run', 'idle', 'hang'] as const;
 function skinOptions(enemy: EnemyBase, sheet: (typeof SHEETS)[number]): SkinOptions {
   const def = enemy.def;
   const opts: SkinOptions = { anim: `${def.look ?? def.id}_${sheet}`, sourceFacesRight: true, stillFrame: sheet === 'walk' || sheet === 'run' };
-  // Colgante (mbói en N5): el lazo de la cola en la rama y la cabeza abajo; lo de arriba de la rama no se ve.
-  if (def.hangs) return { ...opts, origin: [0.5, 0], offset: [0, -def.height], clipAboveY: () => enemy.spawnY - TILE };
+  // Colgante (mbói en N5): el lazo de la cola en el dibujo de la rama (no en el borde del tile) y la cabeza abajo.
+  if (def.hangs) return { ...opts, origin: [0.5, 0], offset: [0, -def.height], clipAboveY: () => enemy.spawnY - TILE - LOOK.mboiHangLipPx };
   // Jakare: lo que queda bajo la superficie del agua no se ve.
   if (def.archetype === 'lurker') return { ...opts, clipBelowY: () => enemy.spawnY };
   // Yaguareté avá (S76): el dibujo lo elige el estado (idle, run o un cuadro de attack); quieto no se congela.

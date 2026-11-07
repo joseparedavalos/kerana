@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
 import { EnemyBase } from './EnemyBase';
 import { LurkerMotor, rhythmState, type LurkerState } from './LurkerMotor';
@@ -102,9 +103,9 @@ export class Lurker extends EnemyBase {
     return this.def.height * (this.def.scale ?? 1);
   }
 
-  /** Borde inferior de la rama de la que cuelga (colgante). */
+  /** Borde inferior del dibujo de la rama (la plataforma `=` no llena el tile). */
   private get anchorTop(): number {
-    return this.spawnY - TILE;
+    return this.spawnY - TILE - GAMEPLAY.sprites.enemies.mboiHangLipPx;
   }
 
   /** Bajo el agua (o en la rama) no toca ni se puede golpear. */
