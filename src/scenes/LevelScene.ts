@@ -177,6 +177,10 @@ export class LevelScene extends Phaser.Scene {
   /** Posición de Mainumby sin el vaivén del vuelo. */
   private readonly mainumbyPos = new Phaser.Math.Vector2();
   private completing = false;
+  /** Tiempo de esta corrida del nivel (ms): corre con el mismo delta que el tiempo jugado, así la pausa no cuenta. */
+  private runMs = 0;
+  /** El reloj se para al vencer al jefe o al tocar la salida: la liberación no cuenta. */
+  private runStopped = false;
   private breakables: Breakable[] = [];
   private fallingHazards: FallingHazard[] = [];
   private dust!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -276,6 +280,8 @@ export class LevelScene extends Phaser.Scene {
     this.lastAirJumped = false;
     this.levelExitZone = undefined;
     this.completing = false;
+    this.runMs = 0;
+    this.runStopped = false;
     this.breakables = [];
     this.fallingHazards = [];
     this.sinkers = [];
@@ -554,6 +560,7 @@ export class LevelScene extends Phaser.Scene {
     this.inputs.update();
     this.backdrop.update(this.darkness?.ambientColor);
     SaveManager.addPlayTime(delta);
+    if (!this.runStopped) this.runMs += delta;
 
     if (this.dialogueBox.active) {
       this.dialogueBox.update(delta, this.inputs.justPressed('jump') || this.inputs.justPressed('attack'));
@@ -871,6 +878,7 @@ export class LevelScene extends Phaser.Scene {
 
   private startLiberation(): void {
     const boss = this.boss!;
+    this.runStopped = true;
     this.cutscene = true;
     this.fighting = false;
     // La pelea se va con su fundido; al estallar la marca entra la liberación (o el sellado) y "Nivel completado"
@@ -1582,6 +1590,7 @@ export class LevelScene extends Phaser.Scene {
   private completeLevel(): void {
     if (this.completing) return;
     this.completing = true;
+    this.runStopped = true;
     this.physics.world.pause();
     const lines = liberationDialogue(this.def.id);
     if (lines.length > 0) this.dialogueBox.show(lines, () => this.finishLevel());
@@ -1591,6 +1600,8 @@ export class LevelScene extends Phaser.Scene {
   /** Guarda (plumas, jefe liberado, don) y pasa a la pantalla de nivel completado. */
   private finishLevel(): void {
     this.completing = true;
+    const timeMs = this.runMs;
+    const record = SaveManager.recordLevelTime(this.def.id, timeMs);
     if (this.def.finale) {
       // Tau sellado (GDD §7): el mapa recupera sus colores y sigue el final verdadero.
       SaveManager.completeLevel(this.def);
@@ -1600,7 +1611,7 @@ export class LevelScene extends Phaser.Scene {
       return;
     }
     if (this.def.order > 0) SaveManager.completeLevel(this.def);
-    this.scene.start('LevelComplete', { level: this.def });
+    this.scene.start('LevelComplete', { level: this.def, timeMs, record });
   }
 
   private updateLuzArasyHud(): void {

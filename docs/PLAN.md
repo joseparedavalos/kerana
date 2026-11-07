@@ -229,6 +229,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S78 | 2026-11-03 | — | — | — | plan Pro | 100 | — |
 | S79 | 2026-11-04 | — | — | — | plan Pro | 100 | — |
 | S80 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
+| S81 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -365,6 +366,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S78 | Hecha | rama `claude/trusting-volta-3csmms` | El l6 (fuera del plan, plan Pro): sin agujeros (`earthBackdrop: true`, la baldosa 15 de montana al mismo tono que el terreno; l6 sale de `KNOWN_HOLES`), el pindó es el karanda'y del atlas `l6_roca` con una barra de hojas secas que cruza la copa (la plataforma no cambia), y dos Jaguarú más, con los mismos tiempos: en el fondo de la quebrada (x 63, delante de la chipa A) y en la gruta tras la cascada (x 157, delante de la chipa B, mirando al este). Opciones nuevas: `sheets.<nombre>.tolerance` en el pipeline de props y `g=jaguaru:right` en la leyenda del ASCII. Solo toca l6. |
 | S79 | Hecha | rama `claude/sweet-goodall-2h25h5` | El l7 (fuera del plan, plan Pro): fuera el tejado con chimenea de lo alto de la torre del andamio 1 (sin casa debajo, era un techo flotando contra el muro) y un payesero en el patio del andamio 1 (x 47, fila 59, mirando a la subida): el único sitio de l7 donde todo lo que alcanza el payé tiene piso. Prueba nueva `tests/payeseroL7.test.ts`. Solo toca l7. |
 | S80 | Hecha | rama `claude/sharp-cori-ifhqg9` | El efecto del tajo cargado (fuera del plan, plan Pro), solo dibujo. La carga junta luz en el sable, como pide el GDD §9.7: hebras finas que entran al filo y se acortan al acercarse, cada vez más seguido, en vez del halo Glow sobre todo el cuerpo. Al completarse, un destello seco en la punta (estrella de cuatro puntas, respeta «Destellos: no»), las hebras paran y el filo queda encendido y quieto. El sable se recorta del dibujo de Kerana en cada cuadro (`ChargeFx`, `chargeFxLogic`). La descarga es una media luna (la onda de luz, dibujada) que sale chica y se estira, con 4 chispas grandes; fuera las 14 chispas y el anillo. Sin cambios de jugabilidad. Valores en `GAMEPLAY.chargeFx`. Pruebas nuevas (9). |
+| S81 | Hecha | rama `claude/magical-sagan-t3ohs0` | Tiempo por nivel y mejor marca (fuera del plan, plan Pro; el pedido la llamaba S80, que ya era el tajo cargado). `LevelScene` mide la corrida con el mismo delta del tiempo jugado (la pausa no cuenta; morir y volver al fuego, sí) y para el reloj al vencer al jefe o tocar la salida. `SaveManager.recordLevelTime` guarda solo si mejora y persiste en el momento; Yvága también guarda. «¡Nivel completado!» muestra el tiempo y «¡Récord!» o la mejor marca; el panel del mapa, la mejor debajo del nombre. `formatLevelTime` (m:ss.cc). Pruebas nuevas (3) y el smoke lo comprueba en l1. |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -2308,6 +2310,22 @@ Jose pidió rehacer el efecto del tajo cargado, que se veía genérico, sin toca
 - **Para probar:** `?debug=1&level=1&gifts=all` y mantener X (o J). Con «Destellos: no» en Opciones, la carga completa no destella.
 - **Verificación:** `npm run build` pasa. `npm test`: 59 archivos, 627 pruebas, 626 pasan; la que falla es `tests/music.test.ts` («las trece pistas»), que **ya falla en `main`**: el commit `56d1d99` («tema propio para los créditos») sumó la pista `credits` sin actualizar la prueba. Esta sesión no toca la música (pendiente 36). Pruebas nuevas en `tests/chargeFx.test.ts` (9). Peso de `dist`: +9,4 KB (solo código; las texturas se dibujan al cargar). Sin smoke, como pedía la tarea.
 - **Falta:** que Jose lo mire jugando (pendiente 35).
+
+### S81: Tiempo por nivel y mejor marca (fuera del plan original; plan Pro)
+Jose pidió completar `SaveData.bestTimes`, que existía y se saneaba pero nadie escribía ni mostraba. El pedido la llamaba S80; S80 ya era el tajo cargado, así que queda como S81.
+
+**Lee:** `src/systems/SaveManager.ts` · `src/scenes/LevelScene.ts` (`update`, `finishLevel`) · `src/scenes/LevelCompleteScene.ts` · `src/scenes/WorldMapScene.ts` (`updatePanel`).
+
+**Criterios:** build, test y maps pasan · prueba de `recordLevelTime` (primera marca, una peor no pisa, una mejor sí) y de un guardado viejo sin `bestTimes` · el smoke ve la línea del tiempo en «Nivel completado» de l1 y `bestTimes.l1 > 0` · capturas con y sin récord · PR · S81 en §6.3, §7 y §8 y `PENDIENTES.md`.
+
+**Notas para la próxima sesión (S81 → la que siga):**
+- **El reloj** (`LevelScene.runMs`) suma el `delta` del `update`, en el mismo lugar que `addPlayTime`: la pausa detiene la escena y no cuenta; morir y volver al fuego no reinicia la escena, así que sigue corriendo. Se para (`runStopped`) en `startLiberation` (al estallar la marca del jefe) y en `completeLevel` (la salida): la liberación y su diálogo no cuentan. Se reinicia en `init`. Salir al mapa desde la pausa no guarda nada.
+- **La marca.** `finishLevel` llama a `SaveManager.recordLevelTime(id, ms)`, que guarda solo si no había marca o la nueva es menor y persiste enseguida; devuelve si fue récord. Yvága (`finale`) guarda igual antes de ir a Story. `sanitize` ahora filtra `bestTimes`: solo números finitos > 0 (un guardado viejo sin el campo queda en `{}`). `startNewGame` las borra, como todo el guardado salvo las opciones.
+- **Pantallas.** «¡Nivel completado!»: «Tiempo  m:ss.cc» (12 px, #F2EEE3) 52 unidades debajo de las chipas; si es récord, «¡Récord!» (#F2C14E) a la derecha en la misma línea, el par centrado; si no, «Mejor  m:ss.cc» (#CFE3F2) 20 debajo. Los botones no se movieron. Mapa: la mejor marca (9 px, #CFE3F2) debajo del nombre; cuando hay marca, el nombre sube 12 unidades para hacerle lugar (`PANEL_NAME_Y_WITH_BEST`); sin marca no se ve nada y el nombre queda donde estaba. Claves nuevas: `level_complete.time`, `level_complete.record`, `level_complete.best`, `map.best`.
+- **Capturas** en `tmp/s81/` (fuera del repo, `tmp/s81/shots.mjs`): `record.png`, `sin-record.png` y `mapa.png`. Son pantallas de menú: no hizo falta congelar el juego.
+- **De paso:** `tests/music.test.ts` pasa a catorce pistas con `credits` (fallaba en `main` desde `56d1d99`; pendiente 36 de S80), en un commit aparte.
+- **Para probar:** `?debug=1&level=1&boss=1`, vencer a Teju Jagua: la primera vez sale «¡Récord!»; repetirlo más lento muestra la mejor; en el mapa, la marca bajo el nombre de l1.
+- **Falta:** logros (Steam). Si se quiere el tiempo en el HUD mientras se juega, es otra sesión.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.

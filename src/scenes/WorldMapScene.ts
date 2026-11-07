@@ -6,7 +6,7 @@ import { t } from '../i18n';
 import { GAMEPLAY } from '../config/gameplay';
 import { AudioManager } from '../systems/AudioManager';
 import { InputManager } from '../systems/InputManager';
-import { SaveManager } from '../systems/SaveManager';
+import { formatLevelTime, SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
 
 // Mapa del mundo (GDD §8.4): silueta del Paraguay en pixeles, sin departamentos.
@@ -38,6 +38,9 @@ const LON1 = -54.293;
 const LAT_N = -19.343;
 const LAT_S = -27.548;
 const CELL = 4;
+/** Altura del nombre en el panel (desde abajo); sube un renglón cuando hay mejor marca debajo. */
+const PANEL_NAME_Y = 46;
+const PANEL_NAME_Y_WITH_BEST = 58;
 
 export class WorldMapScene extends Phaser.Scene {
   private inputs!: InputManager;
@@ -47,6 +50,7 @@ export class WorldMapScene extends Phaser.Scene {
   private panelName!: Phaser.GameObjects.Text;
   private panelSubtitle!: Phaser.GameObjects.Text;
   private panelFeathers!: Phaser.GameObjects.Text;
+  private panelBest!: Phaser.GameObjects.Text;
   private skyStars: Phaser.GameObjects.Arc[] = [];
   private healed = false;
 
@@ -73,8 +77,9 @@ export class WorldMapScene extends Phaser.Scene {
     this.selected = this.firstSelectableIndex();
     this.refreshNodeStyles();
 
-    this.panelName = this.add.text(width / 2, height - 46, '', { fontFamily: FONT_FAMILY, fontSize: '13px', color: '#F2EEE3' }).setOrigin(0.5).setDepth(5);
+    this.panelName = this.add.text(width / 2, height - PANEL_NAME_Y, '', { fontFamily: FONT_FAMILY, fontSize: '13px', color: '#F2EEE3' }).setOrigin(0.5).setDepth(5);
     this.panelSubtitle = this.add.text(width / 2, height - 30, '', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#CFE3F2' }).setOrigin(0.5).setDepth(5);
+    this.panelBest = this.add.text(width / 2, height - 44, '', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#CFE3F2' }).setOrigin(0.5).setDepth(5);
     this.panelFeathers = this.add.text(width / 2, height - 16, '', { fontFamily: FONT_FAMILY, fontSize: '9px', color: '#F2C14E' }).setOrigin(0.5).setDepth(5);
     this.updatePanel();
   }
@@ -288,12 +293,18 @@ export class WorldMapScene extends Phaser.Scene {
       this.panelName.setText(t('map.locked'));
       this.panelSubtitle.setText('');
       this.panelFeathers.setText('');
+      this.panelBest.setText('');
+      this.panelName.setY(VIEW.height - PANEL_NAME_Y);
       return;
     }
     const feathers = SaveManager.getFeathers(node.level.id).filter(Boolean).length;
     this.panelName.setText(t(node.level.nameKey));
     this.panelSubtitle.setText(t(node.level.subtitleKey));
     this.panelFeathers.setText(t('map.feathers', { current: feathers, max: GAMEPLAY.hud.featherMax }));
+    // La mejor marca va debajo del nombre; sin marca no se muestra nada y el nombre vuelve a su sitio.
+    const best = SaveManager.getBestTime(node.level.id);
+    this.panelBest.setText(best === undefined ? '' : t('map.best', { time: formatLevelTime(best) }));
+    this.panelName.setY(VIEW.height - (best === undefined ? PANEL_NAME_Y : PANEL_NAME_Y_WITH_BEST));
   }
 
   private enterSelected(): void {
