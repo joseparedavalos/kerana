@@ -86,6 +86,7 @@ export const GAMEPLAY = {
     bossDamage: 1,
     /** Al chocar con el terreno (Ground) se apaga en este tiempo (ms). */
     wallFadeMs: 120,
+    /** Color de la media luna con que se dibuja (S80; su forma, en `chargeFx.crescent`). */
     color: 0xf2c14e,
   },
 
@@ -161,15 +162,107 @@ export const GAMEPLAY = {
     slashShake: 0.004,
     chargedShakeMs: 90,
     chargedShake: 0.006,
-    /** Chispas doradas del tajo cargado, distintas de las blancas del normal. */
-    chargedCount: 14,
-    chargedSpeed: 120,
-    chargedLifespanMs: 280,
-    chargedScale: 1.3,
     /** Polvo al tocar el suelo después de caer. */
     landDust: 6,
     /** Estela del dash: una partícula cada tantos ms, detrás de Kerana. */
     dashEveryMs: 28,
+  },
+
+  /**
+   * Cómo se ve el tajo cargado (S80, GDD §9.7). Solo dibujo: cuánto hay que mantener, el daño y la onda
+   * (velocidad, alcance, daño) siguen en `chargedSlash` y `lightWave`. Principio: pocos elementos y grandes.
+   */
+  chargeFx: {
+    /** Carga: hebras finas de luz que entran desde afuera hacia el filo y se acortan al acercarse. */
+    strands: {
+      /** Cuántas puede haber a la vez. */
+      max: 8,
+      /** Nace una cada tantos ms: al empezar a verse la carga y al completarla (se interpola: cada vez más seguido). */
+      everyStartMs: 110,
+      everyEndMs: 40,
+      /** Distancia desde la que entra la cabeza (unidades) y lo que tarda en llegar al filo (ms), a paso parejo. */
+      fromDistance: 22,
+      travelMs: 220,
+      /** Largo al nacer (unidades): se acorta en proporción a lo que le falta, hasta 0 en el filo. */
+      length: 14,
+      /** Grosor (unidades) y color (se suma al fondo: mezcla aditiva). */
+      width: 1.5,
+      color: 0xffd877,
+      /** Opacidad de la cabeza al nacer y al llegar (nace tenue lejos y se aclara en el filo), y de la cola respecto de la cabeza. */
+      alphaFrom: 0.45,
+      alphaTo: 1,
+      tailAlpha: 0.5,
+      /** De dónde entran (grados, mirando a la derecha; 0 = adelante, −90 = arriba): nunca de atrás, a través del cuerpo. */
+      arcFromDeg: -125,
+      arcToDeg: 50,
+      /** Tramo del sable donde caen: de esta fracción del largo (0 = mango) a la punta. */
+      bladeFrom: 0.35,
+    },
+    /** El filo se calienta mientras carga: opacidad máxima de la luz sobre el sable antes de estar listo. */
+    bladeChargingAlpha: 0.3,
+    /** Listo: el filo queda encendido y quieto (luz sobre el sable y Glow solo alrededor del sable, no del cuerpo). */
+    bladeReadyAlpha: 0.8,
+    bladeColor: 0xfff2c0,
+    bladeGlowColor: 0xf2c14e,
+    bladeGlowStrength: 2,
+    /**
+     * Destello de «listo» en la punta: estrella de cuatro puntas (unidades) que se apaga en seco (ms), y el filo en
+     * blanco un instante (ms). Con «Destellos: no» en Opciones (GDD §4) no sale ninguno de los dos: el filo se enciende igual.
+     */
+    readyStarSize: 22,
+    readyStarMs: 120,
+    readyStarColor: 0xffffff,
+    readyWhiteMs: 70,
+    /**
+     * Cómo se encuentra el sable en el dibujo de Kerana (la luz se dibuja sobre esos píxeles, cuadro a cuadro):
+     * dorado (rojo alto, azul casi nulo) o su brillo (verde alto, rojo muy sobre azul). La piel y el vestido no pasan.
+     */
+    bladeMask: {
+      minAlpha: 128,
+      minRed: 220,
+      goldMaxBlue: 50,
+      goldMinGreen: 130,
+      shineMinGreen: 200,
+      shineMinRedOverBlue: 85,
+      minPixels: 20,
+    },
+    /** El pecho (unidades sobre los pies): la punta del sable es lo más lejos de acá. */
+    pivotHeight: 24,
+    /** Sin sable en el cuadro (o sin sprite): punto del filo respecto de los pies, mirando a la derecha (unidades). */
+    fallbackTip: { x: 14, y: -40 },
+    fallbackBase: { x: 4, y: -22 },
+    /**
+     * Descarga: la onda de luz (`lightWave`) se dibuja como una media luna con la panza hacia adelante y los cuernos
+     * hacia atrás. Alto, panza (cuánto se curva) y grosor en el centro (unidades); `edge` es la línea clara del borde
+     * de adelante. El color del cuerpo y del halo es `lightWave.color`.
+     */
+    crescent: {
+      height: 30,
+      bulge: 8,
+      thickness: 6,
+      edge: 1.5,
+      edgeColor: 0xfff6d8,
+      /** Opacidad del cuerpo, y del halo que lo rodea (`halo` unidades más ancho por cada lado). */
+      bodyAlpha: 0.85,
+      halo: 1.5,
+      haloAlpha: 0.35,
+      /** Opacidad de toda la media luna (la onda además se desvanece al final de su alcance). */
+      alpha: 0.95,
+      /** Sale del filo chica y se estira: escala inicial (alto y ancho) y en cuánto llega a su tamaño (ms). */
+      startScaleY: 0.3,
+      startScaleX: 0.5,
+      stretchMs: 110,
+    },
+    /** Chispas de la descarga: pocas y grandes (estrellitas como la de «listo»), hacia adelante en un abanico. */
+    sparks: {
+      count: 4,
+      size: 7,
+      speedMin: 50,
+      speedMax: 120,
+      spreadDeg: 40,
+      lifespanMs: 320,
+      color: 0xfff2c0,
+    },
   },
 
   /** Base común de jefes (GDD §11.5). */
@@ -1185,9 +1278,6 @@ export const GAMEPLAY = {
     hurtFlashPeriodMs: 60,
     hurtFlashRed: 0xff3030,
     hurtFlashWhite: 0xffffff,
-    /** Brillo de carga del tajo cargado (S6): color oro y fuerza máxima del Glow. */
-    chargeGlowColor: 0xf2c14e,
-    chargeGlowStrength: 4,
   },
 
   hitStop: {

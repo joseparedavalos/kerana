@@ -30,6 +30,7 @@ import { Sinking } from '../entities/hazards/Sinking';
 import { WindZone } from '../entities/hazards/WindZone';
 import { Lantern, type LanternMount } from '../entities/Lantern';
 import { LightWaveMotor } from '../entities/LightWaveMotor';
+import { CHARGE_STAR_UNITS, ensureChargeStar, ensureCrescent, FX_TEX_DETAIL } from '../entities/ChargeFx';
 import { Gate } from '../entities/Gate';
 import { OfferingDoor } from '../entities/OfferingDoor';
 import { Mover } from '../entities/Mover';
@@ -241,7 +242,10 @@ export class LevelScene extends Phaser.Scene {
   /** La onda choca solo con la capa Ground (las plataformas de un sentido no la frenan). */
   // Los rompibles son tiles de Ground pero no frenan la onda: ella los rompe (S22).
   private readonly waveProbe = (x: number, y: number): boolean => this.tileAt('Ground', x, y) && !this.breakableAt(x, y);
-  private lightWaveSprite?: Phaser.GameObjects.Rectangle;
+  /** La onda de luz se dibuja como una media luna (S80). */
+  private lightWaveSprite?: Phaser.GameObjects.Image;
+  /** Desde que salió la onda (ms): la media luna se estira en `chargeFx.crescent.stretchMs`. */
+  private lightWaveAgeMs = 0;
   private readonly waveRect = new Phaser.Geom.Rectangle();
   private readonly enemyRect = new Phaser.Geom.Rectangle();
   private arenaRect?: Phaser.Geom.Rectangle;
@@ -361,14 +365,16 @@ export class LevelScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(12);
-    const juice = GAMEPLAY.juice;
+    // Descarga del tajo cargado (S80): pocas chispas grandes, estrellitas como la del destello de «listo».
+    const sparks = GAMEPLAY.chargeFx.sparks;
+    const sparkScale = sparks.size / (CHARGE_STAR_UNITS * FX_TEX_DETAIL);
     this.chargedSparks = this.add
-      .particles(0, 0, FX_PARTICLE, {
-        speed: { min: juice.chargedSpeed * 0.4, max: juice.chargedSpeed },
-        lifespan: juice.chargedLifespanMs,
-        scale: { start: juice.chargedScale, end: 0 },
-        alpha: { start: 1, end: 0 },
-        tint: [0xf2c14e, 0xfff2c0],
+      .particles(0, 0, ensureChargeStar(this), {
+        speed: { min: sparks.speedMin, max: sparks.speedMax },
+        lifespan: sparks.lifespanMs,
+        scale: { start: sparkScale, end: 0 },
+        alpha: { start: 1, end: 0.4 },
+        tint: sparks.color,
         emitting: false,
       })
       .setDepth(13);
@@ -393,7 +399,9 @@ export class LevelScene extends Phaser.Scene {
       doubleJump: DEBUG.giftsAll || save.gifts.includes('double_jump'),
       dash: DEBUG.giftsAll || save.gifts.includes('dash'),
       god: DEBUG.god,
+      flashes: () => SaveManager.current.settings.flashes,
     });
+    for (const obj of this.player.chargeFx?.objects ?? []) this.darkness?.glow(obj);
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
     this.findTraps();
@@ -470,7 +478,7 @@ export class LevelScene extends Phaser.Scene {
     for (const id of this.switchBoard.missingTargets()) console.warn(`[SWITCH] no hay reja ni Mover con id "${id}".`);
     this.switchBoard.update();
     const lw = GAMEPLAY.lightWave;
-    this.lightWaveSprite = this.add.rectangle(0, 0, lw.width, lw.height, lw.color, 0.85).setDepth(12).setVisible(false);
+    this.lightWaveSprite = this.add.image(0, 0, ensureCrescent(this, lw.color)).setScale(1 / FX_TEX_DETAIL).setDepth(12).setVisible(false);
     this.darkness?.glow(this.lightWaveSprite);
     for (const b of this.breakables) {
       if (!b.block) continue;
@@ -1118,6 +1126,12 @@ export class LevelScene extends Phaser.Scene {
     const y = this.player.y - this.player.body.height / 2;
     if (!this.lightWave.fire(x, y, facing)) return;
     AudioManager.play('lightWave');
+    this.lightWaveAgeMs = 0;
+    // Tres o cuatro chispas grandes que salen del filo con la media luna, en abanico hacia adelante.
+    const sparks = GAMEPLAY.chargeFx.sparks;
+    const ahead = facing > 0 ? 0 : 180;
+    this.chargedSparks.setEmitterAngle({ min: ahead - sparks.spreadDeg, max: ahead + sparks.spreadDeg });
+    this.chargedSparks.emitParticleAt(x, y, sparks.count);
   }
 
   /** La onda purifica enemigos comunes, rompe rocas agrietadas y daña al jefe solo en su ventana. */
@@ -1130,7 +1144,17 @@ export class LevelScene extends Phaser.Scene {
     sprite.setVisible(wave.active);
     if (!wave.active) return;
     const lw = GAMEPLAY.lightWave;
-    sprite.setPosition(wave.x, wave.y).setAlpha(wave.alpha * 0.85);
+    // Sale del filo chica y se estira hasta su tamaño (la zona que golpea no cambia: es `lw.width` × `lw.height`).
+    const cr = GAMEPLAY.chargeFx.crescent;
+    this.lightWaveAgeMs += deltaMs;
+    const grow = 1 - (1 - Math.min(1, this.lightWaveAgeMs / cr.stretchMs)) ** 3;
+    const scaleX = cr.startScaleX + (1 - cr.startScaleX) * grow;
+    const scaleY = cr.startScaleY + (1 - cr.startScaleY) * grow;
+    sprite
+      .setPosition(wave.x, wave.y)
+      .setFlipX(wave.dir < 0)
+      .setScale(scaleX / FX_TEX_DETAIL, scaleY / FX_TEX_DETAIL)
+      .setAlpha(wave.alpha * cr.alpha);
     // Chocó con una pared: solo se apaga, no toca nada del otro lado.
     if (!wave.canHit) return;
     const rect = this.waveRect.setTo(wave.x - lw.width / 2, wave.y - lw.height / 2, lw.width, lw.height);
@@ -2387,7 +2411,7 @@ export class LevelScene extends Phaser.Scene {
     this.lastPlayerState = state;
   }
 
-  /** Chispas del sable: blancas y pocas en el tajo normal, doradas y más en el cargado. */
+  /** Chispas del sable en el tajo normal; el cargado se dibuja con la media luna de la onda (S80). */
   private updateSlashFx(): void {
     const motor = this.player.motor;
     if (!motor.attackHitboxActive) {
@@ -2399,9 +2423,7 @@ export class LevelScene extends Phaser.Scene {
     const c = this.player.body.center;
     const juice = GAMEPLAY.juice;
     if (motor.chargedSwing) {
-      this.chargedSparks.explode(juice.chargedCount, c.x + motor.facing * 16, c.y);
-      const ring = this.add.circle(c.x + motor.facing * 16, c.y, 6, 0xf2c14e, 0.7).setDepth(12);
-      this.tweens.add({ targets: ring, scale: 2.4, alpha: 0, duration: 180, onComplete: () => ring.destroy() });
+      // La forma del cargado es la media luna de la onda y sus chispas (fireLightWave); acá, solo el peso.
       this.shake(juice.chargedShakeMs, juice.chargedShake);
       return;
     }
@@ -2415,7 +2437,7 @@ export class LevelScene extends Phaser.Scene {
     this.shake(juice.slashShakeMs, juice.slashShake);
   }
 
-  /** Arco blanco del tajo normal. El cargado usa el anillo dorado, no esto. */
+  /** Arco blanco del tajo normal. El cargado usa la media luna de la onda, no esto. */
   private slashStreak(x: number, y: number, facing: number, cfg: typeof GAMEPLAY.slashFx): void {
     const g = this.add.graphics().setDepth(12);
     g.lineStyle(4, 0xfff6d8, 1);

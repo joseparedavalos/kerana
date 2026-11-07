@@ -6,6 +6,7 @@ import { Health } from '../systems/Health';
 import { StatusEffects, type SleepEvent } from '../systems/StatusEffects';
 import { PlayerMotor, type MotorBody, type MoveInput, type PlayerStateName } from './PlayerMotor';
 import { BounceMeter } from './hazards/BounceMeter';
+import { ChargeFx } from './ChargeFx';
 import { slashRect } from './slashRect';
 
 const LUZ_ARASY_COLOR = 0xdcdce6;
@@ -40,6 +41,8 @@ export interface PlayerOptions {
   dash?: boolean;
   /** `?god=1`: no recibe daño. */
   god?: boolean;
+  /** Opción «Destellos» (GDD §4), leída en el momento: sin ella, la carga completa no destella. */
+  flashes?: () => boolean;
 }
 
 // Kerana: sprite con física; el movimiento lo decide PlayerMotor (lógica pura).
@@ -85,7 +88,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private animState?: PlayerStateName;
   private nextEyeBlinkMs = 0;
   private hurtFlashMsLeft = 0;
-  private chargeGlow?: Phaser.Filters.Glow;
+  /** Dibujo de la carga del tajo cargado (S80): hebras al filo, destello de «listo» y filo encendido. */
+  readonly chargeFx?: ChargeFx;
   /** Brillo de la confusión de Moñái (S44): cambia de color mientras dura. */
   private confusionGlow?: Phaser.Filters.Glow;
   /** Píxeles de textura por unidad del mundo (`detail` del sprite.json; 1 en el placeholder). */
@@ -128,6 +132,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.attackHitboxBody = this.attackHitbox.body as Phaser.Physics.Arcade.Body;
     this.attackHitboxBody.setAllowGravity(false);
     this.attackHitboxBody.enable = false;
+
+    if (this.motor.chargeEnabled) {
+      const flashes = opts.flashes ?? (() => true);
+      this.chargeFx = new ChargeFx(scene, this, () => this.motor.chargeFraction, flashes, animated ? PLAYER_KEY : '', this.detail);
+    }
   }
 
   /** Zona de colisión del tajo; solo está activa (`body.enable`) en su ventana. */
@@ -195,7 +204,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateBlink(deltaMs);
     this.updateAnimation(deltaMs);
     this.updateHurtFlash(deltaMs);
-    this.setChargeGlow(this.motor.chargeFraction);
     this.updateConfusionGlow();
   }
 
@@ -208,20 +216,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Daño del tajo en curso (el cargado pega más, GDD §3.7). */
   get attackDamage(): number {
     return this.motor.chargedSwing ? GAMEPLAY.chargedSlash.damage : GAMEPLAY.attack.damage;
-  }
-
-  /** Brillo de carga del tajo cargado (0 = apagado, 1 = carga completa). */
-  setChargeGlow(fraction: number): void {
-    if (fraction <= 0) {
-      if (this.chargeGlow?.active) this.chargeGlow.setActive(false);
-      return;
-    }
-    if (!this.chargeGlow) {
-      this.enableFilters();
-      this.chargeGlow = this.filters!.internal.addGlow(FX.chargeGlowColor, 0, 0, this.detail);
-    }
-    this.chargeGlow.setActive(true);
-    this.chargeGlow.outerStrength = FX.chargeGlowStrength * Math.min(1, fraction);
   }
 
   /** Confundida (S44): brillo iridiscente que no deja duda (la carga no puede coincidir: sin tajo no hay carga). */

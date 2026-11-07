@@ -1003,6 +1003,8 @@ Colores de referencia para la interfaz y para guiar la generación de arte:
 - **Luz de Arasy:** filtro Glow plateado, partículas pequeñas y parpadeo al final.
 - **Tajo:** estela curva amarilla de 2 a 3 frames (sprite o gráfico).
 - **Carga:** partículas que convergen hacia el sable.
+  - **Hecho (S80):** unas pocas hebras finas de luz entran desde afuera hacia el filo, se acortan al acercarse y llegan cada vez más seguido a medida que carga; el filo se calienta un poco. Al completarse la carga, un destello seco en la punta (una estrella de cuatro puntas; con «Destellos: no» no sale), las hebras paran y el filo queda encendido y quieto: así se sabe cuándo soltar. Se enciende solo el sable (recortado del dibujo de Kerana, cuadro a cuadro), no el cuerpo. Reemplaza al halo Glow sobre el cuerpo.
+- **Descarga del tajo cargado (S80):** una forma, no una nube. La onda de luz se dibuja como una media luna que sale del filo chica y se estira, más cuatro chispas grandes (estrellitas como la del destello). El tajo normal sigue con su arco blanco y sus chispas. Pocos elementos y grandes: muchas partículas chicas se leen como un emisor por defecto. Valores en `GAMEPLAY.chargeFx`; la jugabilidad (tiempos, daño, zonas, la onda) no cambió.
 - **Dash:** estela de 3 imágenes semitransparentes de Kerana.
 - **Polvo** al aterrizar y al frenar; **salpicaduras** en el agua.
 - **Destello blanco** al recibir un golpe (tinte).
