@@ -2344,7 +2344,7 @@ Jose pidió el mapa del GDD §8.4: siete nodos sin nada colgando, el cielo que s
 - **Camino.** Puntos de 2 cada 6 unidades, en el verde del borde (`0x6aa890`; con Tau sellado, `0x9ed48a`), opacidad 0,85 y 0,35 en el tramo hacia un nivel bloqueado, con 9 unidades libres alrededor de cada nodo; profundidad 2 (nodos 3, números 4). Sobre el punteado del terreno se lee, pero no mucho: si Jose lo quiere más marcado, `PATH_ALPHA` y `PATH_DOT`.
 - **Capturas** en `tmp/s82/` (fuera del repo; `tmp/s82/shots.mjs` pone el guardado y abre el mapa): `before-*.png` y `after-*.png` con 0, 3 y 7 liberados.
 - **Para probar:** jugar y volver al mapa, o `localStorage['kerana.save.v1']` con `freed` y `unlockedLevel`.
-- **Verificación:** SMOKE_RESULT
+- **Verificación:** build, maps y test pasan (630 pruebas). El smoke hizo 175 comprobaciones sin ningún fallo, entre ellas las dos pasadas por el mapa y los clics en los nodos 1 y 2, y llegó al nivel 7. Ahí lo cortó el límite de 30 minutos del contenedor: no terminó entero.
 - **Falta:** el mapa con Tau sellado (los colores sanos) no se miró con captura.
 
 ### S13: Integración de arte y música
