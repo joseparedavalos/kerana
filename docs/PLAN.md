@@ -2364,7 +2364,8 @@ Jose pidió que el dash se lea como velocidad: una estela de siluetas y un polvo
 - **Fuera** `juice.dashEveryMs` y `updateDashTrail` (el polvito gris de cada 28 ms detrás de Kerana).
 - **Capturas** en `tmp/s83/` (fuera del repo; `tmp/s83/shots.mjs <dist> <etiqueta>` abre l1 con `gifts=all`, apaga hitboxes, texto y enemigos cercanos, aprieta → y C y congela con `game.loop.sleep()` a los 130 ms y a los 45 ms del dash): `antes-*` (build de `main`) y `despues-*`, con recortes `*-zoom.png`.
 - **Para probar:** `?debug=1&level=1&gifts=all`, dash con C, L o Shift (RB en el mando).
-- **Verificación:** build y test pasan (636 pruebas). El smoke, en curso al registrar esto: ver el PR.
+- **Verificación:** build y test pasan (636 pruebas). El smoke, entero (hasta Luisón en l7), dio 216 comprobaciones bien y 6 fallas, las mismas 6 que `main` corrido en el mismo contenedor: el conteo de pistas (el smoke espera 20 y desde el tema de créditos, `56d1d99`, son 21) y los pilotos de l2 (trabado en el paso 1) y l3 (paso 42, x 279), el pendiente 4. El piloto de l2 solo, fuera del smoke, pasa el paso 1 en la rama y en `main` (47 a 49 FPS).
+- **De paso, sin tocar:** el chequeo de la música en `tools/smoke.mjs` sigue esperando 20 pistas (pendiente 37).
 - **Falta:** mirarlo en el celular en l5 (FPS).
 
 ### S13: Integración de arte y música
