@@ -231,6 +231,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S80 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S81 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S82 | 2026-11-08 | — | — | — | plan Pro | 100 | — |
+| S83 | 2026-11-08 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -369,6 +370,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S80 | Hecha | rama `claude/sharp-cori-ifhqg9` | El efecto del tajo cargado (fuera del plan, plan Pro), solo dibujo. La carga junta luz en el sable, como pide el GDD §9.7: hebras finas que entran al filo y se acortan al acercarse, cada vez más seguido, en vez del halo Glow sobre todo el cuerpo. Al completarse, un destello seco en la punta (estrella de cuatro puntas, respeta «Destellos: no»), las hebras paran y el filo queda encendido y quieto. El sable se recorta del dibujo de Kerana en cada cuadro (`ChargeFx`, `chargeFxLogic`). La descarga es una media luna (la onda de luz, dibujada) que sale chica y se estira, con 4 chispas grandes; fuera las 14 chispas y el anillo. Sin cambios de jugabilidad. Valores en `GAMEPLAY.chargeFx`. Pruebas nuevas (9). |
 | S81 | Hecha | rama `claude/magical-sagan-t3ohs0` | Tiempo por nivel y mejor marca (fuera del plan, plan Pro; el pedido la llamaba S80, que ya era el tajo cargado). `LevelScene` mide la corrida con el mismo delta del tiempo jugado (la pausa no cuenta; morir y volver al fuego, sí) y para el reloj al vencer al jefe o tocar la salida. `SaveManager.recordLevelTime` guarda solo si mejora y persiste en el momento; Yvága también guarda. «¡Nivel completado!» muestra el tiempo y «¡Récord!» o la mejor marca; el panel del mapa, la mejor debajo del nombre. `formatLevelTime` (m:ss.cc). Pruebas nuevas (3) y el smoke lo comprueba en l1. |
 | S82 | Hecha | rama `claude/cool-hamilton-6d2h0i` | El mapa como lo pide el GDD §8.4 (fuera del plan, plan Pro). Fuera las chipas de debajo de los nodos (quedan en el panel). Las estrellas del cielo son Eichu con su forma real (`EICHU_STARS`, `addEichu` con estrellas apagadas): la del hijo `i` de `WORLD_LEVELS` se enciende al liberarlo. Camino punteado en el verde del contorno, por debajo de los nodos, más apagado hacia un nivel bloqueado. El país baja 20 unidades para hacerle lugar a Eichu. |
+| S83 | Hecha | rama `claude/focused-shannon-xyjrjx` | La estela del dash (fuera del plan, plan Pro), solo dibujo. Mientras dura el dash, cada 40 ms queda una copia del cuadro de Kerana (misma textura, cuadro, flipX y escala) justo debajo de ella, silueta #CFE3F2 de opacidad 0,5 que baja a 0 en 200 ms; cuatro como máximo, de una pila fija de sprites (`DashTrail`, `dashTrailLogic`). Al arrancar, seis partículas a los pies hacia atrás. Sale el polvito viejo (`juice.dashEveryMs`). Sin Glow. Valores en `GAMEPLAY.dashFx`. Pruebas nuevas (6). |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -2346,6 +2348,24 @@ Jose pidió el mapa del GDD §8.4: siete nodos sin nada colgando, el cielo que s
 - **Para probar:** jugar y volver al mapa, o `localStorage['kerana.save.v1']` con `freed` y `unlockedLevel`.
 - **Verificación:** build, maps y test pasan (630 pruebas). El smoke hizo 175 comprobaciones sin ningún fallo, entre ellas las dos pasadas por el mapa y los clics en los nodos 1 y 2, y llegó al nivel 7. Ahí lo cortó el límite de 30 minutos del contenedor: no terminó entero.
 - **Falta:** el mapa con Tau sellado (los colores sanos) no se miró con captura.
+
+### S83: La estela del dash (fuera del plan original; plan Pro)
+Jose pidió que el dash se lea como velocidad: una estela de siluetas y un polvo al arrancar. Nada de Glow (brilla solo el tajo cargado); no toca niveles, mapas, balance, enemigos ni arte.
+
+**Lee:** `src/scenes/LevelScene.ts` (`updateDashTrail`, el polvo) · `src/config/gameplay.ts` (`slashFx`, `dash`) · `src/entities/Player.ts`.
+
+**Criterios:** build y test pasan · captura a mitad de un dash con las cuatro copias (detrás de Kerana, la más vieja la más tenue) y captura del polvo de salida, con el método de S20 · el smoke pasa · PR · S83 en §6.3, §7 y §8 y `PENDIENTES.md`.
+
+**Notas para la próxima sesión (S83 → la que siga):**
+- **La estela** (`src/entities/DashTrail.ts`): cuatro `Image` creadas una vez al lado de Kerana, misma profundidad que ella y antes en la lista (`children.moveBelow`), así quedan encima del terreno y nunca la tapan. Al nacer copian textura, cuadro, origen, posición, escala y flipX de Kerana (detail 2, igual de nítidas). El desvanecido se hace a mano en `update` (sin tweens: nada se asigna por cuadro). Si no hay lugar libre se reusa la más vieja. `clear()` al reaparecer.
+- **El ritmo** (`dashTrailLogic.ts`, `DashTrailClock`): la primera copia sale al arrancar y después una cada `everyMs`; con el dash de 160 ms salen cuatro (0, 40, 80, 120) y a los ~130 ms están las cuatro vivas, de 0,5 a ~0,18.
+- **Silueta plana.** `dashFx.tintFill: true` usa `TintModes.FILL`: la copia es una silueta lisa celeste. Con `false` el tinte multiplica y se ve el dibujo de Kerana azulado. Kerana sigue a 0,45 de opacidad en el dash (`dash.alpha`), así que la copia más nueva se trasluce un poco a través de ella.
+- **El polvo** es un emisor propio (no el `dust` del aterrizaje), radial, con el abanico precalculado para cada lado (`dustAngles`), justo debajo de Kerana. Escala 0,8 sobre 3 px: se ve chico; si Jose lo quiere más notorio, `dashFx.dust.scale` o `count`.
+- **Fuera** `juice.dashEveryMs` y `updateDashTrail` (el polvito gris de cada 28 ms detrás de Kerana).
+- **Capturas** en `tmp/s83/` (fuera del repo; `tmp/s83/shots.mjs <dist> <etiqueta>` abre l1 con `gifts=all`, apaga hitboxes, texto y enemigos cercanos, aprieta → y C y congela con `game.loop.sleep()` a los 130 ms y a los 45 ms del dash): `antes-*` (build de `main`) y `despues-*`, con recortes `*-zoom.png`.
+- **Para probar:** `?debug=1&level=1&gifts=all`, dash con C, L o Shift (RB en el mando).
+- **Verificación:** build y test pasan (636 pruebas). El smoke, en curso al registrar esto: ver el PR.
+- **Falta:** mirarlo en el celular en l5 (FPS).
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
