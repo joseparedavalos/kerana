@@ -155,6 +155,36 @@ export const GAMEPLAY = {
     tint: 0xfff4d6,
   },
 
+  /**
+   * Estela del dash (S83): siluetas de Kerana que quedan atrás y se apagan, y un polvo al arrancar.
+   * Sin brillo (Glow): lo único que brilla es el dorado del tajo cargado.
+   */
+  dashFx: {
+    /** Deja una copia cada tantos ms mientras dura el dash (la primera, al arrancar). */
+    everyMs: 40,
+    /** Copias vivas a la vez como máximo: si hace falta otra, se reusa la más vieja. */
+    maxGhosts: 4,
+    /** Opacidad con la que nace cada copia; baja a 0 en `fadeMs` y la copia se apaga. */
+    alpha: 0.5,
+    fadeMs: 200,
+    /** Tinte de las copias y del polvo. `tintFill`: la copia es una silueta plana de ese color (si no, multiplica). */
+    tint: 0xcfe3f2,
+    tintFill: true,
+    /** Polvo de salida: partículas a los pies, hacia el lado contrario al del dash. */
+    dust: {
+      count: 6,
+      lifespanMs: 180,
+      /** Velocidad (px/s), escala sobre 3 px (empieza y baja a 0) y opacidad inicial. */
+      speedMin: 40,
+      speedMax: 90,
+      scale: 0.8,
+      alpha: 0.8,
+      /** Abanico (± grados) alrededor de la dirección de atrás, y cuánto se levanta del suelo (grados). */
+      spreadDeg: 25,
+      liftDeg: 15,
+    },
+  },
+
   /** Peso del golpe (sesión 2). La usabilidad del tajo cargado no cambia. La sacudida respeta Opciones. */
   juice: {
     /** Sacudida del tajo normal y del cargado (ms, intensidad de Phaser). */
@@ -164,8 +194,6 @@ export const GAMEPLAY = {
     chargedShake: 0.006,
     /** Polvo al tocar el suelo después de caer. */
     landDust: 6,
-    /** Estela del dash: una partícula cada tantos ms, detrás de Kerana. */
-    dashEveryMs: 28,
   },
 
   /**
