@@ -19,6 +19,8 @@ const eichuRadius = (mag: number): number => 1 + (5.5 - mag) * 0.5;
 const EICHU_GLOW = 3;
 const EICHU_GLOW_ALPHA = 0.3;
 const EICHU_TWINKLE_MS = 1400;
+/** Estrella de Eichu todavía apagada (mapa, GDD §8.4): un punto muy tenue, sin halo ni titilar. */
+const EICHU_DIM_ALPHA = 0.22;
 
 function gradient(scene: Phaser.Scene, x: number, y: number, w: number, h: number, top: number, bottom: number): Phaser.GameObjects.Graphics {
   return scene.add.graphics().fillGradientStyle(top, top, bottom, bottom, 1).fillRect(x, y, w, h);
@@ -45,13 +47,26 @@ export function addNightSky(scene: Phaser.Scene, width: number, height: number):
   return parts;
 }
 
-/** Eichu (las Pléyades) con su forma real, titilando. Hay que parar sus tweens al destruirla (`killTweensOf`). */
-export function addEichu(scene: Phaser.Scene, place: EichuPlacement, width: number, height: number): Phaser.GameObjects.GameObject[] {
+/**
+ * Eichu (las Pléyades) con su forma real, titilando. Hay que parar sus tweens al destruirla (`killTweensOf`).
+ * `lit[i]` dice si la estrella `i` de `EICHU_STARS` está encendida (sin `lit`, todas); las apagadas quedan tenues.
+ */
+export function addEichu(
+  scene: Phaser.Scene,
+  place: EichuPlacement,
+  width: number,
+  height: number,
+  lit?: ReadonlyArray<boolean>,
+): Phaser.GameObjects.GameObject[] {
   const parts: Phaser.GameObjects.GameObject[] = [];
   EICHU_STARS.forEach((star, i) => {
     const x = place.x * width + star.x * place.size;
     const y = place.y * height + star.y * place.size;
     const r = eichuRadius(star.mag);
+    if (lit && !lit[i]) {
+      parts.push(scene.add.circle(x, y, r, GLOW_COLOR, EICHU_DIM_ALPHA));
+      return;
+    }
     const glow = scene.add.circle(x, y, r * EICHU_GLOW, GLOW_COLOR, EICHU_GLOW_ALPHA);
     parts.push(glow, scene.add.circle(x, y, r, 0xffffff));
     scene.tweens.add({ targets: glow, alpha: 0.05, duration: EICHU_TWINKLE_MS + i * 170, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });

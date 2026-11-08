@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { WORLD_LEVELS } from '../data/levels';
+import { EICHU_MAP } from '../data/story';
 import type { LevelDef } from '../data/types';
 import { t } from '../i18n';
 import { GAMEPLAY } from '../config/gameplay';
 import { AudioManager } from '../systems/AudioManager';
+import { addEichu } from '../systems/Backdrops';
 import { InputManager } from '../systems/InputManager';
 import { formatLevelTime, SaveManager } from '../systems/SaveManager';
 import { setupView, VIEW } from '../systems/View';
@@ -41,6 +43,16 @@ const CELL = 4;
 /** Altura del nombre en el panel (desde abajo); sube un renglón cuando hay mejor marca debajo. */
 const PANEL_NAME_Y = 46;
 const PANEL_NAME_Y_WITH_BEST = 58;
+/** Borde de arriba del país: deja lugar a Eichu entre el título y el Chaco. */
+const LAND_TOP = 60;
+/** Camino punteado (GDD §8.4): un punto cada tanto, su opacidad y el hueco que deja alrededor de cada nodo. */
+const PATH_STEP = 6;
+const PATH_DOT = 2;
+const PATH_ALPHA = 0.85;
+const PATH_ALPHA_BLOCKED = 0.35;
+const PATH_NODE_GAP = 9;
+/** Dos lugares más cerca que esto (fracción del alto del país) se abren en abanico. */
+const FAN_NEAR = 0.103;
 
 export class WorldMapScene extends Phaser.Scene {
   private inputs!: InputManager;
@@ -51,7 +63,6 @@ export class WorldMapScene extends Phaser.Scene {
   private panelSubtitle!: Phaser.GameObjects.Text;
   private panelFeathers!: Phaser.GameObjects.Text;
   private panelBest!: Phaser.GameObjects.Text;
-  private skyStars: Phaser.GameObjects.Arc[] = [];
   private healed = false;
 
   constructor() {
@@ -103,7 +114,7 @@ export class WorldMapScene extends Phaser.Scene {
     const xs = Math.cos((((LAT_N + LAT_S) / 2) * Math.PI) / 180);
     const spanx = (LON1 - LON0) * xs;
     const spanlat = LAT_N - LAT_S;
-    const oy = 40;
+    const oy = LAND_TOP;
     const drawH = height - oy - 68;
     const drawW = drawH * (spanx / spanlat);
     return { ox: (width - drawW) / 2, oy, drawW, drawH, spanx, spanlat, xs };
@@ -161,6 +172,7 @@ export class WorldMapScene extends Phaser.Scene {
   /** Proyección real y, si dos lugares caen encima, un abanico corto alrededor de ese punto. */
   private layoutSpots(): { x: number; y: number }[] {
     const raw = WORLD_LEVELS.map((level) => this.project(level.mapNode.x, level.mapNode.y));
+    const near = FAN_NEAR * this.frame().drawH;
     const seen = raw.map(() => false);
     for (let i = 0; i < raw.length; i++) {
       if (seen[i]) continue;
@@ -169,7 +181,7 @@ export class WorldMapScene extends Phaser.Scene {
       for (let k = 0; k < group.length; k++) {
         for (let j = 0; j < raw.length; j++) {
           if (seen[j]) continue;
-          if (Phaser.Math.Distance.Between(raw[group[k]].x, raw[group[k]].y, raw[j].x, raw[j].y) < 26) {
+          if (Phaser.Math.Distance.Between(raw[group[k]].x, raw[group[k]].y, raw[j].x, raw[j].y) < near) {
             seen[j] = true;
             group.push(j);
           }
@@ -190,30 +202,27 @@ export class WorldMapScene extends Phaser.Scene {
     return raw;
   }
 
+  /** Eichu sobre el mapa (GDD §8.4): la estrella `i` se enciende cuando se libera al hijo del nivel `i` de WORLD_LEVELS. */
   private buildSky(): void {
-    const { width } = VIEW;
-    const freedCount = SaveManager.current.freed.length;
-    for (let i = 0; i < 7; i++) {
-      const lit = i < freedCount;
-      const star = this.add.circle(30 + i * ((width - 60) / 6), 34, lit ? 2.5 : 1.5, lit ? 0xf2eee3 : 0x4a4870, lit ? 1 : 0.6);
-      star.setDepth(5);
-      this.skyStars.push(star);
-    }
+    const freed = SaveManager.current.freed;
+    const lit = WORLD_LEVELS.map((level) => level.boss != null && freed.includes(level.boss));
+    addEichu(this, EICHU_MAP, VIEW.width, VIEW.height, lit).forEach((part) => (part as Phaser.GameObjects.Arc).setDepth(1));
   }
 
+  /** Camino de puntos entre los nodos, en el verde del contorno; el tramo hacia un nivel bloqueado, más apagado. */
   private buildPath(): void {
-    const color = this.healed ? 0xf2c14e : 0x8aa4c8;
-    const g = this.add.graphics();
+    const color = this.healed ? 0x9ed48a : 0x6aa890;
+    const g = this.add.graphics().setDepth(2);
     const points = this.spots;
     for (let i = 0; i < points.length - 1; i++) {
       const a = points[i];
       const b = points[i + 1];
+      const blocked = this.nodeState(WORLD_LEVELS[i + 1]) === 'blocked';
+      g.fillStyle(color, blocked ? PATH_ALPHA_BLOCKED : PATH_ALPHA);
       const dist = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
-      const steps = Math.max(1, Math.floor(dist / 6));
-      for (let s = 0; s < steps; s += 2) {
-        const t = s / steps;
-        g.fillStyle(color, 0.75);
-        g.fillRect(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 2, 2);
+      for (let d = PATH_NODE_GAP; d <= dist - PATH_NODE_GAP; d += PATH_STEP) {
+        const t = d / dist;
+        g.fillRect(Math.round(a.x + (b.x - a.x) * t) - PATH_DOT / 2, Math.round(a.y + (b.y - a.y) * t) - PATH_DOT / 2, PATH_DOT, PATH_DOT);
       }
     }
   }
@@ -224,20 +233,7 @@ export class WorldMapScene extends Phaser.Scene {
     dot.setInteractive(new Phaser.Geom.Circle(5, 5, 16), Phaser.Geom.Circle.Contains);
     dot.on('pointerdown', () => this.tapNode(index));
     this.add.text(x, y + 9, String(level.order), { fontFamily: FONT_FAMILY, fontSize: '8px', color: '#F2EEE3' }).setOrigin(0.5, 0).setDepth(4);
-    this.addChipas(level, x, y);
     return { level, x, y, dot };
-  }
-
-  /** Las chipas de ese nivel, bajo el número. El guardado sigue en `feathers`. */
-  private addChipas(level: LevelDef, x: number, y: number): void {
-    const got = SaveManager.getFeathers(level.id);
-    const n = GAMEPLAY.hud.featherMax;
-    const step = 8;
-    for (let i = 0; i < n; i++) {
-      const key = got[i] ? 'ui_chipa' : 'ui_chipa_empty';
-      if (!this.textures.exists(key)) continue;
-      this.add.image(x + (i - (n - 1) / 2) * step, y + 22, key).setScale(0.28).setDepth(4);
-    }
   }
 
   private tapNode(index: number): void {

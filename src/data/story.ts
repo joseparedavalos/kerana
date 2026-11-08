@@ -42,6 +42,9 @@ export const EICHU_STARS: ReadonlyArray<{ x: number; y: number; mag: number }> =
 const EICHU_NIGHT: EichuPlacement = { x: 0.5, y: 0.2, size: 90 };
 const EICHU_FINAL: EichuPlacement = { x: 0.6, y: 0.1, size: 80 };
 
+/** Eichu en el cielo del mapa (GDD §8.4): entre el título y el norte del Chaco. */
+export const EICHU_MAP: EichuPlacement = { x: 0.5, y: 0.118, size: 46 };
+
 const PROLOGUE_EICHU: EichuPlacement = { x: 0.72, y: 0.2, size: 70 };
 
 export const PROLOGUE_SLIDES: StorySlide[] = [
