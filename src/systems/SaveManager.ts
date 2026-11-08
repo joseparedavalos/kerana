@@ -52,6 +52,15 @@ export function formatPlayTime(ms: number): string {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/** Tiempo de un nivel como "2:14.80" (minutos, segundos y centésimas; sin horas). */
+export function formatLevelTime(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 10));
+  const m = Math.floor(total / 6000);
+  const s = Math.floor((total % 6000) / 100);
+  const cs = total % 100;
+  return `${m}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+}
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
@@ -70,6 +79,16 @@ export function normalizeFeathers(raw: unknown): boolean[] {
   }
   const arr = Array.isArray(raw) ? raw : [];
   return Array.from({ length: FEATHERS_PER_LEVEL }, (_, i) => arr[i] === true);
+}
+
+/** Solo marcas numéricas positivas y finitas; lo demás se descarta. */
+function sanitizeBestTimes(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!isRecord(raw)) return out;
+  for (const [id, ms] of Object.entries(raw)) {
+    if (typeof ms === 'number' && Number.isFinite(ms) && ms > 0) out[id] = ms;
+  }
+  return out;
 }
 
 function sanitizeFeathers(raw: unknown): Record<string, boolean[]> {
@@ -109,7 +128,7 @@ function sanitize(raw: unknown): SaveData {
     gifts: withAbilityGifts(Array.isArray(raw.gifts) ? (raw.gifts as GiftId[]) : []),
     maxHearts: typeof raw.maxHearts === 'number' ? raw.maxHearts : def.maxHearts,
     feathers: sanitizeFeathers(raw.feathers),
-    bestTimes: isRecord(raw.bestTimes) ? (raw.bestTimes as Record<string, number>) : def.bestTimes,
+    bestTimes: sanitizeBestTimes(raw.bestTimes),
     playTimeMs: typeof raw.playTimeMs === 'number' && raw.playTimeMs >= 0 ? raw.playTimeMs : def.playTimeMs,
     settings: settings as SaveSettings,
   };
@@ -205,6 +224,23 @@ export class SaveManager {
     current[index] = true;
     this._current = { ...this._current, feathers: { ...this._current.feathers, [levelId]: current } };
     this.persist();
+  }
+
+  static getBestTime(levelId: string): number | undefined {
+    return this._current.bestTimes[levelId];
+  }
+
+  /**
+   * Guarda la marca del nivel si es la primera o mejora la anterior, y persiste en el momento.
+   * Devuelve si fue récord.
+   */
+  static recordLevelTime(levelId: string, ms: number): boolean {
+    if (!(ms > 0) || !Number.isFinite(ms)) return false;
+    const prev = this.getBestTime(levelId);
+    if (prev !== undefined && prev <= ms) return false;
+    this._current = { ...this._current, bestTimes: { ...this._current.bestTimes, [levelId]: ms } };
+    this.persist();
+    return true;
   }
 
   /**

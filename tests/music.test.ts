@@ -43,9 +43,9 @@ describe('parsePattern', () => {
   });
 });
 
-describe('las trece pistas', () => {
-  it('son título, mapa, l1 a l7, Yvága y (S61) la pelea con Tau, la liberación y el sellado', () => {
-    expect([...IDS].sort()).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'liberation', 'map', 'seal', 'tau', 'title', 'yvaga']);
+describe('las catorce pistas', () => {
+  it('son título, mapa, l1 a l7, Yvága, (S61) la pelea con Tau, la liberación y el sellado, y los créditos', () => {
+    expect([...IDS].sort()).toEqual(['credits', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'liberation', 'map', 'seal', 'tau', 'title', 'yvaga']);
   });
 
   it.each(IDS)('%s: cada voz entra justa en el bucle, con instrumentos que existen', (id) => {

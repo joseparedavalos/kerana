@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { defaultSave, formatPlayTime, normalizeFeathers, SaveManager } from '../src/systems/SaveManager';
+import { defaultSave, formatLevelTime, formatPlayTime, normalizeFeathers, SaveManager } from '../src/systems/SaveManager';
 import type { LevelDef } from '../src/data/types';
 
 // vitest corre en entorno 'node': no hay localStorage real, se simula uno en memoria.
@@ -175,5 +175,36 @@ describe('SaveManager', () => {
     expect(formatPlayTime(0)).toBe('0:00:00');
     expect(formatPlayTime(3753_000)).toBe('1:02:33');
     expect(formatPlayTime(59_999)).toBe('0:00:59');
+  });
+
+  it('recordLevelTime: la primera marca se guarda, una peor no la pisa y una mejor sí', () => {
+    SaveManager.startNewGame();
+    const stored = () => JSON.parse(globalThis.localStorage.getItem('kerana.save.v1') ?? '{}').bestTimes;
+    expect(SaveManager.recordLevelTime('l1', 134_800)).toBe(true);
+    expect(stored().l1).toBe(134_800);
+    expect(SaveManager.recordLevelTime('l1', 150_000)).toBe(false);
+    expect(SaveManager.recordLevelTime('l1', 134_800)).toBe(false);
+    expect(SaveManager.getBestTime('l1')).toBe(134_800);
+    expect(SaveManager.recordLevelTime('l1', 120_000)).toBe(true);
+    expect(SaveManager.load().bestTimes.l1).toBe(120_000);
+    expect(SaveManager.recordLevelTime('l2', 0)).toBe(false);
+    expect(SaveManager.getBestTime('l2')).toBeUndefined();
+  });
+
+  it('acepta un guardado viejo sin bestTimes y descarta marcas inválidas', () => {
+    const old = { ...defaultSave() } as Partial<ReturnType<typeof defaultSave>>;
+    delete old.bestTimes;
+    globalThis.localStorage.setItem('kerana.save.v1', JSON.stringify(old));
+    expect(SaveManager.load().bestTimes).toEqual({});
+    expect(SaveManager.recordLevelTime('l1', 5000)).toBe(true);
+    globalThis.localStorage.setItem('kerana.save.v1', JSON.stringify({ ...defaultSave(), bestTimes: { l1: 9000, l2: 'x', l3: -1 } }));
+    expect(SaveManager.load().bestTimes).toEqual({ l1: 9000 });
+  });
+
+  it('muestra el tiempo de nivel como m:ss.cc', () => {
+    expect(formatLevelTime(0)).toBe('0:00.00');
+    expect(formatLevelTime(134_800)).toBe('2:14.80');
+    expect(formatLevelTime(59_999)).toBe('0:59.99');
+    expect(formatLevelTime(3_725_050)).toBe('62:05.05');
   });
 });

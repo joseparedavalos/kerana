@@ -178,6 +178,7 @@ export const es = {
   // Mapa del mundo (GDD §8.4).
   'map.title': 'El mapa',
   'map.feathers': 'Chipas: {current}/{max}',
+  'map.best': 'Mejor  {time}',
   'map.locked': 'Todavía no',
   'map.enter_hint': 'Pulsá {key} para entrar',
   'map.move_hint': '{left}/{right} para moverte',
@@ -219,6 +220,9 @@ export const es = {
   'level_complete.freed': '{name} liberado',
   'level_complete.gift': 'Don obtenido: {gift}',
   'level_complete.feathers': 'Chipas: {current}/{max}',
+  'level_complete.time': 'Tiempo  {time}',
+  'level_complete.record': '¡Récord!',
+  'level_complete.best': 'Mejor  {time}',
   'level_complete.next': 'Siguiente',
   'level_complete.map': 'Volver al mapa',
   'level_complete.continue_hint': 'Pulsá {key} para volver al mapa',

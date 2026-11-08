@@ -14,6 +14,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - El sable tiene arco, chispas y sacudida. El tajo cargado se siente distinto. La sacudida se apaga en Opciones.
 - La chipa reemplaza a la pluma. El guardado no se borra.
 - Al terminar un nivel se ven el hijo, el don y las chipas, con un botón grande de Siguiente.
+- «Nivel completado» muestra el tiempo del nivel y si fue récord; el mapa, la mejor marca de cada nivel (S81).
 - El tajo cargado, el salto doble y el dash están desde el primer nivel. El corazón nuevo sigue creciendo.
 - El corazón cura. El tereré, la guampa de cuero, da la inmunidad. Lo que cae en la pelea de Mbói Tu'ĩ también es un corazón.
 - Los hongos tienen sombrero, manchas y tallo.
@@ -107,7 +108,6 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 33. El pedido de S78 llegó cortado: el título decía «el l6 — sin agujeros, la palmera de verdad, más Jaguarú y la lluvia», y la tarea 3 terminaba en «Comprobá que ninguno». La lluvia de l6 no se hizo (no había tarea escrita; GDD §9.7 y el pendiente 18). Lo de «ninguno» se comprobó como en S77 (que ninguno bloquee, encierre ni tire a un vacío: notas de S78). Si faltaba otra cosa, va en la sesión que siga.
 34. Jugar al payesero de l7 (Jose, S79, `?debug=1&level=7&gifts=all`, sin `god=1`): en el patio del andamio 1 (x 47), mirando a la subida. Si no se lo purifica, tira mientras Kerana sube en el andamio; un golpe en la subida la puede devolver al patio (nunca a un pozo), y quien espere el andamio justo en el borde puede caer al hueco de 3 filas donde descansa, que se sale saltando. Es el único payesero de l7: el camposanto es `DarkZone` y ahí el payé no se ve (recibe la luz como todo). Un segundo, si hace falta, pide que el payé brille en los niveles oscuros (código) y después la calle de la cripta (x 377-397), que pasa la prueba de pozos (notas de S79).
 35. Mirar el tajo cargado jugando (Jose, S80, `?debug=1&level=1&gifts=all`, mantener X) y ajustar `GAMEPLAY.chargeFx`: las hebras (`strands`: cuántas, cada cuánto nacen al empezar y al completar, de qué distancia, cuánto tardan, largo, grosor, color, opacidad y de qué ángulos entran), el filo (`bladeChargingAlpha` mientras carga y `bladeReadyAlpha` y el Glow cuando está listo), el destello de «listo» (`readyStarSize`, `readyStarMs`, `readyWhiteMs`), la media luna (`crescent`: alto, panza, grosor, halo, y cuánto tarda en estirarse) y las chispas de la descarga (`sparks`). Mirar sobre todo: (a) si las hebras se leen como luz que llega al sable (en las capturas quietas cuesta juzgarlo: es movimiento); (b) si el «listo» se nota a tiempo para soltar, también con «Destellos: no» (entonces solo se enciende el filo); (c) si la media luna, más chica que antes de salir, se lee como la zona que golpea (la zona no cambió: 14 × 26). El recorte del sable tarda 42 ms una vez por partida en el contenedor (191 ms con la CPU 4 veces más lenta): si en un celular se nota al entrar al primer nivel, que `npm run sprites` lo saque como PNG (notas de S80). Si se regenera la hoja de Kerana con otro dorado, los umbrales están en `GAMEPLAY.chargeFx.bladeMask` (la consola avisa `[SABLE]` si un cuadro queda sin sable).
-36. `tests/music.test.ts` falla en `main` desde el commit `56d1d99` («tema propio para los créditos»): la prueba «las trece pistas» no cuenta la pista nueva `credits`. Si el tema de los créditos queda, la prueba pasa a catorce pistas con `credits` en la lista (una línea); S80 no lo tocó porque no era su alcance.
 
 ## itch.io
 
@@ -132,7 +132,7 @@ Sin resolver todavía:
 ## Para cuando vayamos a Steam
 
 - Demo de unos 30–40 minutos (nivel 1 y un pedazo del 2) que termine con «Wishlist el juego completo».
-- Logros y mejores tiempos en el mapa. El guardado ya los tiene. No se muestran.
+- Logros. Los mejores tiempos ya se guardan y se ven en «Nivel completado» y en el mapa (S81).
 - Cápsula, trailer que abra con gameplay, control y Steam Deck.
 - Portugués.
 
