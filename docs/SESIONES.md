@@ -49,7 +49,7 @@ El tajo normal suelta chispas blancas, un arco visible y una sacudida corta. El 
 
 ### Sesión 3. Chipa en lugar de pluma — hecho
 
-La chipa de José reemplaza a la pluma en el nivel, en el contador y bajo cada nodo del mapa. El final de las 21 se mantiene.
+La chipa de José reemplaza a la pluma en el nivel, en el contador y bajo cada nodo del mapa (desde S82, solo en el panel del mapa, GDD §8.4). El final de las 21 se mantiene.
 
 ### Sesión 4. Pantalla de nivel completado — hecho
 

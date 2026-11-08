@@ -15,6 +15,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - La chipa reemplaza a la pluma. El guardado no se borra.
 - Al terminar un nivel se ven el hijo, el don y las chipas, con un botón grande de Siguiente.
 - «Nivel completado» muestra el tiempo del nivel y si fue récord; el mapa, la mejor marca de cada nivel (S81).
+- El mapa es el del GDD §8.4 (S82): siete nodos unidos por un camino punteado, las chipas solo en el panel, y en el cielo Eichu, que se enciende estrella por estrella con cada hijo liberado.
 - El tajo cargado, el salto doble y el dash están desde el primer nivel. El corazón nuevo sigue creciendo.
 - El corazón cura. El tereré, la guampa de cuero, da la inmunidad. Lo que cae en la pelea de Mbói Tu'ĩ también es un corazón.
 - Los hongos tienen sombrero, manchas y tallo.

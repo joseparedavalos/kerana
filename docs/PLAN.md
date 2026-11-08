@@ -230,6 +230,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S79 | 2026-11-04 | — | — | — | plan Pro | 100 | — |
 | S80 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S81 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
+| S82 | 2026-11-08 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -367,6 +368,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S79 | Hecha | rama `claude/sweet-goodall-2h25h5` | El l7 (fuera del plan, plan Pro): fuera el tejado con chimenea de lo alto de la torre del andamio 1 (sin casa debajo, era un techo flotando contra el muro) y un payesero en el patio del andamio 1 (x 47, fila 59, mirando a la subida): el único sitio de l7 donde todo lo que alcanza el payé tiene piso. Prueba nueva `tests/payeseroL7.test.ts`. Solo toca l7. |
 | S80 | Hecha | rama `claude/sharp-cori-ifhqg9` | El efecto del tajo cargado (fuera del plan, plan Pro), solo dibujo. La carga junta luz en el sable, como pide el GDD §9.7: hebras finas que entran al filo y se acortan al acercarse, cada vez más seguido, en vez del halo Glow sobre todo el cuerpo. Al completarse, un destello seco en la punta (estrella de cuatro puntas, respeta «Destellos: no»), las hebras paran y el filo queda encendido y quieto. El sable se recorta del dibujo de Kerana en cada cuadro (`ChargeFx`, `chargeFxLogic`). La descarga es una media luna (la onda de luz, dibujada) que sale chica y se estira, con 4 chispas grandes; fuera las 14 chispas y el anillo. Sin cambios de jugabilidad. Valores en `GAMEPLAY.chargeFx`. Pruebas nuevas (9). |
 | S81 | Hecha | rama `claude/magical-sagan-t3ohs0` | Tiempo por nivel y mejor marca (fuera del plan, plan Pro; el pedido la llamaba S80, que ya era el tajo cargado). `LevelScene` mide la corrida con el mismo delta del tiempo jugado (la pausa no cuenta; morir y volver al fuego, sí) y para el reloj al vencer al jefe o tocar la salida. `SaveManager.recordLevelTime` guarda solo si mejora y persiste en el momento; Yvága también guarda. «¡Nivel completado!» muestra el tiempo y «¡Récord!» o la mejor marca; el panel del mapa, la mejor debajo del nombre. `formatLevelTime` (m:ss.cc). Pruebas nuevas (3) y el smoke lo comprueba en l1. |
+| S82 | Hecha | rama `claude/cool-hamilton-6d2h0i` | El mapa como lo pide el GDD §8.4 (fuera del plan, plan Pro). Fuera las chipas de debajo de los nodos (quedan en el panel). Las estrellas del cielo son Eichu con su forma real (`EICHU_STARS`, `addEichu` con estrellas apagadas): la del hijo `i` de `WORLD_LEVELS` se enciende al liberarlo. Camino punteado en el verde del contorno, por debajo de los nodos, más apagado hacia un nivel bloqueado. El país baja 20 unidades para hacerle lugar a Eichu. |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -2327,6 +2329,23 @@ Jose pidió completar `SaveData.bestTimes`, que existía y se saneaba pero nadie
 - **Para probar:** `?debug=1&level=1&boss=1`, vencer a Teju Jagua: la primera vez sale «¡Récord!»; repetirlo más lento muestra la mejor; en el mapa, la marca bajo el nombre de l1.
 - **Verificación:** build, maps y test pasan (633 pruebas). El smoke pasó la comprobación nueva en l1 (`Time  0:00.41`, `bestTimes.l1` = 413 ms: vence al jefe con el atajo apenas entra) y 110 comprobaciones sin ningún fallo hasta el nivel 3, donde lo cortó el límite de 15 min que le puse en el contenedor. No se corrió entero.
 - **Falta:** logros (Steam). Si se quiere el tiempo en el HUD mientras se juega, es otra sesión.
+
+### S82: El mapa como lo pide el GDD §8.4 (fuera del plan original; plan Pro)
+Jose pidió el mapa del GDD §8.4: siete nodos sin nada colgando, el cielo que se llena hasta formar Eichu y el camino punteado.
+
+**Lee:** `src/scenes/WorldMapScene.ts` · `src/systems/Backdrops.ts` (`addEichu`) · `src/data/story.ts` (`EICHU_STARS`).
+
+**Criterios:** build, test y maps pasan · capturas del mapa con 0, 3 y 7 liberados (Eichu con su forma, el camino sin tapar nada) · el smoke pasa · PR · S82 en §6.3, §7 y §8 y `PENDIENTES.md`.
+
+**Notas para la próxima sesión (S82 → la que siga):**
+- **Chipas.** Fuera `addChipas`: los nodos solo llevan el punto, el número y la estrellita de completado. Las chipas quedan en el panel («Chipas: n/3»).
+- **Eichu.** `buildSky` llama a `addEichu(scene, EICHU_MAP, …, lit)`; `lit[i]` es si el jefe de `WORLD_LEVELS[i]` está en `freed` (Teju Jagua → Atlas, Mbói Tu'ĩ → Alcyone, Moñái → Merope, Jasy Jatere → Maia, Kurupi → Taygeta, Ao Ao → Electra, Luisõ → Celaeno). Sin `lit`, `addEichu` sigue encendiendo las siete (prólogo y final no cambian). La apagada es solo el punto, tenue (`EICHU_DIM_ALPHA` 0,22), sin halo ni titilar. `EICHU_MAP` = centro (0,5; 0,118), ancho 46, elegido con capturas: entre el título y la punta norte del Chaco.
+- **El país baja.** Para que Eichu entre sin tapar el contorno, el borde de arriba del país pasó de 40 a 60 unidades (`LAND_TOP`); el de abajo no se movió, así que el país es un 8 % más chico. El umbral del abanico de Asunción, Capiatá y Paraguarí pasó de 26 unidades fijas a una fracción del alto del país (`FAN_NEAR` 0,103): con 26 fijas, Guairá entraba al grupo y el abanico no se abría (4 y 7 quedaban encimados).
+- **Camino.** Puntos de 2 cada 6 unidades, en el verde del borde (`0x6aa890`; con Tau sellado, `0x9ed48a`), opacidad 0,85 y 0,35 en el tramo hacia un nivel bloqueado, con 9 unidades libres alrededor de cada nodo; profundidad 2 (nodos 3, números 4). Sobre el punteado del terreno se lee, pero no mucho: si Jose lo quiere más marcado, `PATH_ALPHA` y `PATH_DOT`.
+- **Capturas** en `tmp/s82/` (fuera del repo; `tmp/s82/shots.mjs` pone el guardado y abre el mapa): `before-*.png` y `after-*.png` con 0, 3 y 7 liberados.
+- **Para probar:** jugar y volver al mapa, o `localStorage['kerana.save.v1']` con `freed` y `unlockedLevel`.
+- **Verificación:** SMOKE_RESULT
+- **Falta:** el mapa con Tau sellado (los colores sanos) no se miró con captura.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
