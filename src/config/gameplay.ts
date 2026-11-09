@@ -1758,10 +1758,11 @@ export const GAMEPLAY = {
     /** Profundidad: detrás de todo el nivel. */
     depth: -20,
     /**
-     * Roca (capa Ground) dentro de las zonas `Cave`: tinte que multiplica la textura (casi negro azulado, la textura
-     * apenas se ve) para que la roca enmarque el fondo de cueva. 0xffffff = sin cambio.
+     * Roca (capa Ground) dentro de las zonas `Cave`: tinte que multiplica la textura. 0x343a58 la dejaba casi negra
+     * y el grano del piso no se leía. 0x626a96 deja ver las grietas y el labio, y la cueva sigue oscura.
+     * 0xffffff = sin cambio.
      */
-    caveRockTint: 0x343a58,
+    caveRockTint: 0x626a96,
     /**
      * Fondo de tierra (S68, S69, S71; `earthBackdrop: true` en levels.ts): dentro de la tierra maciza, detrás de la
      * repisa, va la baldosa del suelo rodeado por los cuatro lados (`fillTile`, la casilla 15 del autotile), sin tinte,
