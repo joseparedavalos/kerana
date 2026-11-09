@@ -231,6 +231,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S80 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S81 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S82 | 2026-11-08 | — | — | — | plan Pro | 100 | — |
+| S84 | 2026-11-09 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -369,6 +370,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S80 | Hecha | rama `claude/sharp-cori-ifhqg9` | El efecto del tajo cargado (fuera del plan, plan Pro), solo dibujo. La carga junta luz en el sable, como pide el GDD §9.7: hebras finas que entran al filo y se acortan al acercarse, cada vez más seguido, en vez del halo Glow sobre todo el cuerpo. Al completarse, un destello seco en la punta (estrella de cuatro puntas, respeta «Destellos: no»), las hebras paran y el filo queda encendido y quieto. El sable se recorta del dibujo de Kerana en cada cuadro (`ChargeFx`, `chargeFxLogic`). La descarga es una media luna (la onda de luz, dibujada) que sale chica y se estira, con 4 chispas grandes; fuera las 14 chispas y el anillo. Sin cambios de jugabilidad. Valores en `GAMEPLAY.chargeFx`. Pruebas nuevas (9). |
 | S81 | Hecha | rama `claude/magical-sagan-t3ohs0` | Tiempo por nivel y mejor marca (fuera del plan, plan Pro; el pedido la llamaba S80, que ya era el tajo cargado). `LevelScene` mide la corrida con el mismo delta del tiempo jugado (la pausa no cuenta; morir y volver al fuego, sí) y para el reloj al vencer al jefe o tocar la salida. `SaveManager.recordLevelTime` guarda solo si mejora y persiste en el momento; Yvága también guarda. «¡Nivel completado!» muestra el tiempo y «¡Récord!» o la mejor marca; el panel del mapa, la mejor debajo del nombre. `formatLevelTime` (m:ss.cc). Pruebas nuevas (3) y el smoke lo comprueba en l1. |
 | S82 | Hecha | rama `claude/cool-hamilton-6d2h0i` | El mapa como lo pide el GDD §8.4 (fuera del plan, plan Pro). Fuera las chipas de debajo de los nodos (quedan en el panel). Las estrellas del cielo son Eichu con su forma real (`EICHU_STARS`, `addEichu` con estrellas apagadas): la del hijo `i` de `WORLD_LEVELS` se enciende al liberarlo. Camino punteado en el verde del contorno, por debajo de los nodos, más apagado hacia un nivel bloqueado. El país baja 20 unidades para hacerle lugar a Eichu. |
+| S84 | Hecha | rama `claude/festive-fermat-4icxaf` | Portada de itch.io con arte del repo (fuera del plan, plan Pro). `tools/make-cover.mjs` (`npm run cover`) compone tres variantes de 630 × 500 en `marketing/itch/` (`cover_a/b/c.png`): fondo de l2 a sangre, Kerana en la barranca, Ao Ao arriba a la derecha y Eichu con `EICHU_STARS` y el dibujo de `addEichu`. Todo con vecino más cercano; los sprites, a escala entera. No toca el juego. |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -2346,6 +2348,20 @@ Jose pidió el mapa del GDD §8.4: siete nodos sin nada colgando, el cielo que s
 - **Para probar:** jugar y volver al mapa, o `localStorage['kerana.save.v1']` con `freed` y `unlockedLevel`.
 - **Verificación:** build, maps y test pasan (630 pruebas). El smoke hizo 175 comprobaciones sin ningún fallo, entre ellas las dos pasadas por el mapa y los clics en los nodos 1 y 2, y llegó al nivel 7. Ahí lo cortó el límite de 30 minutos del contenedor: no terminó entero.
 - **Falta:** el mapa con Tau sellado (los colores sanos) no se miró con captura.
+
+### S84: Portada para itch.io armada con el arte del repo (fuera del plan original; plan Pro)
+Jose pidió la portada de itch.io (630 × 500) compuesta solo con assets del repo, regenerable con un script, en tres variantes para elegir.
+
+**Lee:** `src/systems/Backdrops.ts` (`addEichu`) · `src/data/story.ts` (`EICHU_STARS`) · `public/assets/sprites/*.json`.
+
+**Criterios:** build y test pasan · las tres miden 630 × 500, sin bordes borrosos · Kerana y el jefe se reconocen reducidas a 300 px de ancho · el juego no cambia · PR con las tres · S84 en §6.3, §7 y §8 y `PENDIENTES.md`.
+
+**Notas para la próxima sesión (S84 → la que siga):**
+- **Jefe: Ao Ao, no Teju Jagua.** El arte de Teju Jagua es solo la cabeza con cuello (`teju_jagua_head`): el lomo, los otros cuellos y el fuego se dibujan por código en la pelea, así que como figura suelta está incompleto. De los jefes con el cuerpo entero en la hoja (Jasy Jatere, Kurupi, Ao Ao, Luisón, Tau), Ao Ao es el que mejor se lee chico: una masa compacta, los ojos rojos y los colmillos blancos; mira a la izquierda, hacia Kerana, sin espejar. Luisón es flaco y de patas finas (a 300 px se pierde) y Tau, morado, se funde con las nubes moradas (y su forma verdadera es un spoiler). Mbói Tu'ĩ es cabeza y cuello. El cuadro 0 de Ao Ao tiene una mancha blanca en la pata delantera: no se usa.
+- **Variantes.** A: el estero entero, Ao Ao ×3 (35 % del alto) saltando sobre el horizonte, Kerana con el tajo en arco (cuadro 5 de `kerana`). B: más cerca del agua (zoom 1,2), Ao Ao ×2 (24 %) parado en el horizonte, el sol libre, Kerana en reposo con el sable en alto (cuadro 11). C: Ao Ao ×4 (50 %) que se sale por la derecha, Kerana con el sable estirado hacia él (cuadro 7). Kerana va ×1 en las tres (91-92 px, 18 % del alto): ×2 sería el 37 %. Los números están en `VARIANTS`, al principio del script.
+- **Escalado.** El fondo (`public/assets/backgrounds/l2_far.jpg`, 1280 × 720) baja con vecino más cercano a la escala que cubre los 500 de alto (×0,69 en A) y se recorta de los costados; los sprites (`public/assets/sprites`) suben por enteros, así que cada píxel de arte es un bloque parejo. Las estrellas son discos de borde duro, sin antialias, con el halo en su brillo máximo (sin titilar). `EICHU_STARS` está copiado en el script (Node puro); `tests/cover.test.ts` falla si se desincroniza del de `story.ts`.
+- **Prueba de 300 px:** en las tres se reconocen Kerana (el vestido blanco y el sable dorado contra la barranca oscura) y Ao Ao. En B, Kerana en reposo se lee menos que con el arco del tajo de A.
+- **Falta:** que Jose elija una y la suba a itch.io.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.

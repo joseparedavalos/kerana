@@ -16,7 +16,8 @@
     "sprites": "node tools/sprites.mjs",
     "smoke": "node tools/smoke.mjs",
     "monai": "node tools/monai-run.mjs",
-    "backgrounds": "node tools/backgrounds.mjs"
+    "backgrounds": "node tools/backgrounds.mjs",
+    "cover": "node tools/make-cover.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1",

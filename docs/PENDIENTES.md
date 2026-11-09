@@ -71,6 +71,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - En l3, l4 y l6 ninguna masa sólida deja ver el fondo por dentro (S68, S71, S75, S78). Dentro de la tierra va la baldosa 15 del bioma, sin tinte. En l4, además, el cuerpo de casa Z, la plaza y la base del campanario se cortó y los techos quedan como losas flotantes. `tests/holes.test.ts` falla si un mapa gana un agujero. l1, l2, l5 y l6 todavía tienen agujeros (punto 26).
 - El fondo de l4 ya no está estirado (S73): es la imagen original entera, sin deformar (el sol es redondo y las nubes sin bandas), agrandada pareja y bajada para que el patio con vacas no se vea nunca, sin arte nueva.
 - El tajo cargado tiene su propio gesto (S80). Mientras se carga, unas hebras de luz entran al sable, cada vez más seguido; al completarse, un destello seco en la punta (no sale con «Destellos: no»), las hebras paran y el filo queda encendido: ahí se suelta. Al soltar sale una media luna de luz con cuatro chispas, en vez de una nube de chispas. Se enciende solo el sable, no el cuerpo. La jugabilidad no cambió.
+- Hay portada para itch.io (S84): `npm run cover` arma tres variantes de 630 × 500 en `marketing/itch/` (`cover_a/b/c.png`) con el fondo de l2, Kerana, Ao Ao y Eichu, todo con vecino más cercano.
 
 ## Ahora
 
@@ -115,7 +116,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 Sin resolver todavía:
 
 - Subir el build de navegador (el mismo `dist/` de GitHub Pages).
-- Página del juego.
+- Página del juego. Elegir la portada entre `marketing/itch/cover_a.png`, `cover_b.png` y `cover_c.png` (S84); si ninguna sirve, se ajusta `VARIANTS` en `tools/make-cover.mjs` y `npm run cover`.
 - Capturas.
 - Descripción.
 
