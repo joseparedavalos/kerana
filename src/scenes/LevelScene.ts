@@ -38,6 +38,7 @@ import type { MoverMode } from '../entities/MoverMotor';
 import { Switch } from '../entities/Switch';
 import { SwitchBoard, swordStrikes, waveStrikes } from '../entities/SwitchMotor';
 import { Player } from '../entities/Player';
+import { DashTrail } from '../entities/DashTrail';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
 import type { PlayerStateName } from '../entities/PlayerMotor';
 import { t } from '../i18n';
@@ -189,7 +190,8 @@ export class LevelScene extends Phaser.Scene {
   private slashSparks!: Phaser.GameObjects.Particles.ParticleEmitter;
   private chargedSparks!: Phaser.GameObjects.Particles.ParticleEmitter;
   private slashSparked = false;
-  private dashTrailMs = 0;
+  /** Siluetas detrás de Kerana y polvo de salida del dash (S83). */
+  private dashTrail!: DashTrail;
   private splashMs = 0;
   private sinkers: Sinking[] = [];
   /** Zonas de agua baja (GDD §4.8): frenan la carrera. */
@@ -408,6 +410,17 @@ export class LevelScene extends Phaser.Scene {
       flashes: () => SaveManager.current.settings.flashes,
     });
     for (const obj of this.player.chargeFx?.objects ?? []) this.darkness?.glow(obj);
+    const player = this.player;
+    this.dashTrail = new DashTrail(
+      this,
+      {
+        sprite: player,
+        dashing: () => player.motor.dashing,
+        facing: () => player.motor.facing,
+        feet: () => ({ x: player.body.center.x, y: player.body.bottom }),
+      },
+      FX_PARTICLE,
+    );
     this.safeGround.copy(spawn);
     this.checkpointPos.copy(spawn);
     this.findTraps();
@@ -575,7 +588,7 @@ export class LevelScene extends Phaser.Scene {
     this.player.tick(delta, this.inputs);
     this.reportPlayerStateSfx();
     this.updateSlashFx();
-    this.updateDashTrail(delta);
+    this.dashTrail.update(delta);
     this.cameraCtl.update(this.player.motor.facing);
     if (this.updateChase(delta)) return;
     this.updateEnemies(delta);
@@ -2159,6 +2172,7 @@ export class LevelScene extends Phaser.Scene {
       const spot = this.respawnSpot();
       this.player.respawnAt(spot.x, spot.y);
     }
+    this.dashTrail.clear();
     this.cameraCtl.snap();
     EventBus.emit(GameEvents.heartsChanged, this.player.health.current, this.player.health.max);
     EventBus.emit(GameEvents.playerRespawned, reason);
@@ -2464,19 +2478,6 @@ export class LevelScene extends Phaser.Scene {
     }
     g.strokePath();
     this.tweens.add({ targets: g, alpha: 0, duration: 140, onComplete: () => g.destroy() });
-  }
-
-  /** Polvo detrás de Kerana mientras hace dash. */
-  private updateDashTrail(deltaMs: number): void {
-    if (!this.player.motor.dashing) {
-      this.dashTrailMs = 0;
-      return;
-    }
-    this.dashTrailMs += deltaMs;
-    if (this.dashTrailMs < GAMEPLAY.juice.dashEveryMs) return;
-    this.dashTrailMs = 0;
-    const body = this.player.body;
-    this.dust.emitParticleAt(body.center.x - this.player.motor.facing * 10, body.center.y, 1);
   }
 
   /** Chispas en el punto del golpe, para que no sea solo perder vida. */
