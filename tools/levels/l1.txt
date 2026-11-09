@@ -59,7 +59,6 @@ point FallingHazard x=224 y=25 delayMs=800
 prop 2,11 l1_cueva/stalagmites flip
 prop 8,11 l1_cueva/crystal_cluster_small
 prop 18,1 l1_cueva/stalactites
-prop 19,11 l1_cueva/water_puddle_drips flip
 prop 32,11 l1_cueva/crystal_cluster_medium flip
 prop 37,11 l1_cueva/crystal_cluster_large
 # B. Ladera
