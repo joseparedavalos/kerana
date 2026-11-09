@@ -232,6 +232,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S81 | 2026-11-07 | — | — | — | plan Pro | 100 | — |
 | S82 | 2026-11-08 | — | — | — | plan Pro | 100 | — |
 | S83 | 2026-11-08 | — | — | — | plan Pro | 100 | — |
+| S84 | 2026-11-09 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -371,6 +372,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S81 | Hecha | rama `claude/magical-sagan-t3ohs0` | Tiempo por nivel y mejor marca (fuera del plan, plan Pro; el pedido la llamaba S80, que ya era el tajo cargado). `LevelScene` mide la corrida con el mismo delta del tiempo jugado (la pausa no cuenta; morir y volver al fuego, sí) y para el reloj al vencer al jefe o tocar la salida. `SaveManager.recordLevelTime` guarda solo si mejora y persiste en el momento; Yvága también guarda. «¡Nivel completado!» muestra el tiempo y «¡Récord!» o la mejor marca; el panel del mapa, la mejor debajo del nombre. `formatLevelTime` (m:ss.cc). Pruebas nuevas (3) y el smoke lo comprueba en l1. |
 | S82 | Hecha | rama `claude/cool-hamilton-6d2h0i` | El mapa como lo pide el GDD §8.4 (fuera del plan, plan Pro). Fuera las chipas de debajo de los nodos (quedan en el panel). Las estrellas del cielo son Eichu con su forma real (`EICHU_STARS`, `addEichu` con estrellas apagadas): la del hijo `i` de `WORLD_LEVELS` se enciende al liberarlo. Camino punteado en el verde del contorno, por debajo de los nodos, más apagado hacia un nivel bloqueado. El país baja 20 unidades para hacerle lugar a Eichu. |
 | S83 | Hecha | rama `claude/focused-shannon-xyjrjx` | La estela del dash (fuera del plan, plan Pro), solo dibujo. Mientras dura el dash, cada 40 ms queda una copia del cuadro de Kerana (misma textura, cuadro, flipX y escala) justo debajo de ella, silueta #CFE3F2 de opacidad 0,5 que baja a 0 en 200 ms; cuatro como máximo, de una pila fija de sprites (`DashTrail`, `dashTrailLogic`). Al arrancar, seis partículas a los pies hacia atrás. Sale el polvito viejo (`juice.dashEveryMs`). Sin Glow. Valores en `GAMEPLAY.dashFx`. Pruebas nuevas (6). |
+| S84 | Hecha | rama `claude/loving-euler-y6zfib` | La pared flotante del sotobosque de l5, adelgazada (fuera del plan, plan Pro). Del bloque macizo de x 16-25, filas 74-88, quedan las filas 86-88: una repisa de raíces de 3 filas, maciza con `terrainShell: 3`. El túnel de abajo (filas 89-91, espina en x 21) y la liana de x 18 no cambian. En `tests/holes.test.ts` la huella de l5 baja de 585 a 519 celdas (sale x 18-23). |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -2367,6 +2369,23 @@ Jose pidió que el dash se lea como velocidad: una estela de siluetas y un polvo
 - **Verificación:** build y test pasan (636 pruebas). El smoke, entero (hasta Luisón en l7), dio 216 comprobaciones bien y 6 fallas, las mismas 6 que `main` corrido en el mismo contenedor: el conteo de pistas (el smoke espera 20 y desde el tema de créditos, `56d1d99`, son 21) y los pilotos de l2 (trabado en el paso 1) y l3 (paso 42, x 279), el pendiente 4. El piloto de l2 solo, fuera del smoke, pasa el paso 1 en la rama y en `main` (47 a 49 FPS).
 - **De paso, sin tocar:** el chequeo de la música en `tools/smoke.mjs` sigue esperando 20 pistas (pendiente 37).
 - **Falta:** mirarlo en el celular en l5 (FPS).
+
+### S84: La pared flotante del sotobosque de l5 (fuera del plan original; plan Pro)
+Jose vio jugando el bloque macizo de x 16-25, filas 74-88, que flota sobre el túnel de raíces del sotobosque: con `terrainShell: 3` el interior no se dibuja y se ve la selva adentro (el agujero x 18-23, filas 76-86 de `KNOWN_HOLES`). Se adelgaza en el ASCII; no toca otros niveles ni las otras dos regiones de l5.
+
+**Lee:** `docs/RECETA-NIVEL.md` (al principio) · `tools/levels/l5.txt` (filas 74-91, x 16-25) · `tests/holes.test.ts` (`KNOWN_HOLES`).
+
+**Criterios:** build, test y maps pasan · capturas antes y después del tramo con el método de S20 · confirmado jugando que el túnel sigue pidiendo el dash y que la espina de x 21 no se salta · el smoke pasa · PR · S84 en §6.3, §7 y §8 y `PENDIENTES.md`.
+
+**Notas para la próxima sesión (S84 → la que siga):**
+- **El recorte:** en `tools/levels/l5.txt` las filas 74-85 de x 16-25 pasaron a aire. Quedan las 86-88, a la misma altura: una repisa de 3 filas que `terrainShell: 3` dibuja entera. Ninguna otra columna ni fila cambió; `npm run maps` solo cambió `l5.json`.
+- **El túnel:** las filas 89-91 de x 16-25 siguen libres (3 filas) y la espina sigue en x 21, fila 91. La liana (`point Prop x=18 y=88 kind=liana`) cuelga de la fila 88, que no se tocó.
+- **El test:** l5 sigue en `KNOWN_HOLES`, ahora con 519 celdas (`x 98-128, filas 36-91; x 261-263, filas 26-91`). Solo cambió el dato; la lógica no.
+- **Jugado** (`tmp/s84/shots.mjs <dist> <etiqueta>`, fuera del repo, en el build de `main` y en el de la rama, con `?debug=1&level=5&gifts=all`): corriendo desde x 15 y saltando hacia la espina, Kerana sube ≈ 0,4 tiles, choca el techo y cae en la espina (pierde un corazón), igual antes y después. Con el dash desde x 19 (→ y C) pasa sin daño hasta x ≈ 25,6 en los dos. Ojo: el dash recorre ≈ 3,2 tiles (320 px/s × 160 ms): arrancado desde x 18 termina encima de la espina y lastima; hay que arrancarlo a un tile de ella, como antes del recorte.
+- **Capturas** en `tmp/s84/` (Kerana en x 20, fila 91, hitboxes y texto de depuración apagados, `game.loop.sleep()`): `antes-x20`, `antes-bloque`, `despues-x20`, `despues-bloque`. Antes: un marco oscuro con el bosque adentro sobre el túnel. Después: una losa oscura maciza con el borde de pasto arriba y la liana colgando debajo; no se ve fondo adentro de ninguna masa en el tramo.
+- **Para probar:** `?debug=1&level=5&gifts=all`, al principio del nivel (x ≈ 20).
+- **Verificación:** build y test pasan (636 pruebas); `npm run maps` solo cambió `l5.json`. Smoke: en curso.
+- **Falta:** las otras dos regiones de l5 (x 98-128 y x 261-263), y l1 y l2 (pendiente 26).
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
