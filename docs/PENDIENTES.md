@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 9 de noviembre de 2026 en S84, contra lo que ya está en `main` hasta S83.
+Revisado el 10 de noviembre de 2026 en S86, contra lo que ya está en `main` hasta S85.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -73,6 +73,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - El fondo de l4 ya no está estirado (S73): es la imagen original entera, sin deformar (el sol es redondo y las nubes sin bandas), agrandada pareja y bajada para que el patio con vacas no se vea nunca, sin arte nueva.
 - El tajo cargado tiene su propio gesto (S80). Mientras se carga, unas hebras de luz entran al sable, cada vez más seguido; al completarse, un destello seco en la punta (no sale con «Destellos: no»), las hebras paran y el filo queda encendido: ahí se suelta. Al soltar sale una media luna de luz con cuatro chispas, en vez de una nube de chispas. Se enciende solo el sable, no el cuerpo. La jugabilidad no cambió.
 - l1 tiene la quebrada (S85): después del fuego de la cima, 40 tiles de vacío que se cruzan por plataformas finas (cinco de 3, una repisa de 6 para descansar, una móvil cerca del final) con un mbopi después de la repisa. Sale con salto simple. Caerse cuesta un corazón y devuelve al fuego de la cima. El nivel mide 354 tiles; la cueva, la antesala y la arena están 40 más a la derecha.
+- l7 tiene más luz y los props que faltaban (S86): las zonas oscuras dejan ver las siluetas del piso y de los muros, y el halo de Kerana llega a 6 tiles (antes 4,5). El camposanto tiene cuatro faroles más, que solo alumbran (x 335, 422, 433 y 459). Están puestos los ocho props de l7 que faltaban: el cordón con adoquines, el portal con cajones y el toldo enrollado en la calle; el portón, el mausoleo chico, la losa, la cruz torcida y la urna (dos) en el camposanto y la antesala. l7 tiene 22 props.
 
 ## Ahora
 
@@ -114,6 +115,8 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 36. Mirar la estela del dash jugando (Jose, S83, `?debug=1&level=1&gifts=all`, C/L/Shift) y ajustar `GAMEPLAY.dashFx`: cada cuánto queda una copia (`everyMs`), cuántas (`maxGhosts`), opacidad y desvanecido (`alpha`, `fadeMs`), color y si es silueta plana (`tint`, `tintFill`) y el polvo de salida (`dust`). Y en el celular, en l5, que no baje el FPS.
 37. El smoke falla en `main` el chequeo de la música (S83): `tools/smoke.mjs` espera 20 pistas generadas (13 + 7 variantes de jefe) y desde el tema de créditos (`56d1d99`) son 21. Hay que pasarlo a 21 (y el texto, a 14 pistas).
 38. Jugar la quebrada de l1 (Jose, S85, `?debug=1&level=1`, sin `god=1`, desde el fuego de la cima). Mirar: (a) si volver al fuego al caer se siente bien o conviene volver a la última plataforma (se borra `rect PitReturn` en `tools/levels/l1.txt`); (b) la plataforma móvil del final: velocidad por defecto y 0,8 s de espera en las puntas (`at 216,8`); (c) el mbopi sobre P4 (x 214, fila 2); (d) si alcanzan cinco plataformas chicas y la repisa (en 40 columnas no entraban seis más la móvil); (e) el vacío empieza a 3 tiles del fuego, contra la regla de los 10 tiles de la receta.
+39. Jugar l7 con la luz nueva (Jose, S86, `?debug=1&level=7&gifts=all`, sin `god=1`). Mirar: (a) si la oscuridad quedó bien o todavía apagada (`GAMEPLAY.darkness.ambientDark` y `haloRadius`); con el halo de 6 tiles el póra se alumbra, y se le puede pegar, desde más lejos; (b) los cuatro faroles nuevos del camposanto (x 335, 422, 433 y 459): si alguno le saca tensión a un tramo, se borra su línea `point Lantern` en `tools/levels/l7.txt`; (c) los props que S54 había dejado afuera por parecerse a una pieza (RECETA-NIVEL §19.14): el cordón de x 19 (¿murete?), el toldo de la plaza (x 143-146, donde se aterriza del salto sobre el muro del cabildo), el portón (x 302,5, ¿reja?) y el mausoleo chico (x 308, ¿pisable?). Se mueven o se sacan en las líneas `prop`.
+40. Regenerar la urna, la losa y el banco de `raw/props/l7_camposanto/` (Jose, S86): los PNG originales traen agujeros transparentes dentro del mármol blanco y en el juego se ven picados (ASSETS §6.1). Al llegar los nuevos, `npm run sprites` y nada más.
 
 ## itch.io
 
