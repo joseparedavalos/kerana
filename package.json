@@ -16,6 +16,7 @@
     "sprites": "node tools/sprites.mjs",
     "smoke": "node tools/smoke.mjs",
     "monai": "node tools/monai-run.mjs",
+    "luison": "node tools/luison-run.mjs",
     "backgrounds": "node tools/backgrounds.mjs"
   },
   "dependencies": {
