@@ -819,12 +819,12 @@ async function main() {
     }
     check(fading?.purified && fading.aura < 2, `payesero: al purificarlo el aura se apaga (${JSON.stringify(fading)})`);
     await sleep(3000);
-    check((await payXs()) === '156,230,242', `payesero: purificado, se desvanece y se va (${await payXs()})`);
+    check((await payXs()) === '156,270,282', `payesero: purificado, se desvanece y se va (${await payXs()})`);
     // S63: los dos nuevos llegan a donde pasa Kerana y su payé no la tira a un pozo. Ladera: en la primera repisa de la ruta
-    // alta (x 151, donde se cae del rebote del hongo). Cueva: en la galería 1, antes del hueco a la galería 2 (x 234).
+    // alta (x 151, donde se cae del rebote del hongo). Cueva: en la galería 1, antes del hueco a la galería 2 (x 274).
     for (const [where, kx, feet, px] of [
       ['ruta alta de la ladera', 151, 8, 156],
-      ['galería 1 de la cueva', 234, 14, 242],
+      ['galería 1 de la cueva', 274, 14, 282],
     ]) {
       await clearPayes();
       await payPage.evaluate(
