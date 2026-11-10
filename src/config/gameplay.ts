@@ -1935,6 +1935,17 @@ export const GAMEPLAY = {
     /** Pistas generadas que se guardan en memoria (unos 2 MB cada una). */
     cacheTracks: 4,
   },
+
+  /** Botones del celular (S90). Unidades del mundo, sobre el tamaño de fábrica (se multiplican por la escala del botón). */
+  touch: {
+    /** Media zona muerta de la zona de moverse: a menos de esto del medio entre las dos flechas, Kerana no camina. */
+    moveDeadZone: 6,
+    /** Separación entre las dos flechas, borde a borde. */
+    moveGap: 10,
+    /** Margen de toque alrededor de cada botón (el de pausa tiene menos para no comerse el nivel). */
+    slop: 18,
+    pauseSlop: 4,
+  },
 } as const;
 
 export type GameplayConfig = typeof GAMEPLAY;
