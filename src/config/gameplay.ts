@@ -1087,13 +1087,13 @@ export const GAMEPLAY = {
     /** Noche con luna entre nubes (el nivel entero). */
     ambientNight: 0x4a4e6e,
     /** Dentro de una DarkZone o durante el apagón de Luisón. */
-    ambientDark: 0x0c0c18,
+    ambientDark: 0x1c1c30,
     /** Después de liberar a Luisón (las velas encendidas). */
     ambientCandles: 0x7a6a5a,
     /** Cuánto tarda el ambiente en pasar de un valor a otro (ms). */
     fadeMs: 600,
     /** Halo de Kerana: radio (px), color e intensidad. */
-    haloRadius: 72,
+    haloRadius: 96,
     haloColor: 0xf2e2b8,
     haloIntensity: 1.6,
     /** Altura (z) de las luces sobre el plano. */

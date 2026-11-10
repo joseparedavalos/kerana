@@ -80,6 +80,14 @@ at 266,41 speed=50 waitMs=1500
 point Lantern x=311 y=59 target=losa1
 at 327,60 id=losa1 mode=run speed=60 waitMs=2000
 point Lantern x=355 y=59
+# S86: cuatro faroles más en el camposanto, sin target y apagados, donde había más de 30 tiles sin farol ni fuego
+#   (x 311 → 355 y x 410 → 476). Solo alumbran: lejos del pozo de 5, de la cripta y de la columna del ángel, que
+#   dependen de su oscuridad. Tras la fosa (x 335), al pie del mausoleo 4 (x 422), en su techo (x 433) y en la llegada
+#   de las losas de la fosa común (x 459).
+point Lantern x=335 y=59
+point Lantern x=422 y=59
+point Lantern x=433 y=51
+point Lantern x=459 y=51
 at 374,66 id=ascensor_cripta mode=run speed=50 waitMs=1500
 point Lantern x=378 y=65 target=ascensor_cripta
 point Lantern x=394 y=65 target=reja_panteon
@@ -121,15 +129,34 @@ prop 30,52 l7_calle/wrought_iron_grille_balcony
 prop 55.5,59 l7_calle/wooden_door_studs
 prop 55.5,52 l7_calle/shuttered_windows
 prop 87-91,55 l7_calle/clothesline_balconies
+# S86: los tres de la calle que faltaban (pedido de Jose; S54 los había dejado afuera, RECETA-NIVEL §19.10 y §19.14).
+#    El cordón con adoquines en la primera calle, a la luz del farol del portón; el portal con cajones en el muro del
+#    cabildo, del lado del mercado, al ras de la calle (fachada a la luna); el toldo enrollado del otro lado del mismo
+#    muro, con el poste en la plaza, junto al fuego 1.
+prop 19,59 l7_calle/stone_kerb_cobblestone
+prop 141,59 l7_calle/stacked_crates_doorway
+prop 143-146,59 l7_calle/market_awning_rolled flip
 # B. La plaza de la catedral: la carreta entre el fuego 1 y el farol
 prop 151,59 l7_calle/wooden_handcart
 # C. El camposanto: un ciprés al bajar y flores entre el fuego 2 y su farol; otro ciprés donde se cae del pozo de 5 (el
 #    farol del otro lado); una cruz junto a la reja del panteón (el farol de la cripta, abajo)
-prop 301,59 l7_camposanto/cypress_tree
-prop 307.5,59 l7_camposanto/dried_flowers
+# S86: los cinco del camposanto que faltaban, y dos se mudan para hacerles lugar. La entrada: el portón donde se baja
+#    al camposanto (ahí estaba el ciprés), pegado al fuego 2, y entre el fuego y su farol, el mausoleo chico (ahí
+#    estaban las flores). Una losa al pie del mausoleo 1 (farol nuevo de x 335; baja: el jagua hũ pasa por delante).
+#    Las flores, donde se cae del pozo de 5, con el ciprés. El primer ciprés, al pie del mausoleo 4 (farol nuevo de
+#    x 422). Una urna en el techo del mausoleo 4 (farol nuevo de x 433), y otra urna y la cruz torcida en la antesala,
+#    a los lados de su farol. La luz de un farol cae rápido: a 3 tiles ya alumbra poco; cada uno a 1 o 2 tiles de su luz.
+prop 302.5,59 l7_camposanto/cemetery_gate
+prop 308,59 l7_camposanto/mausoleum
+prop 338,59 l7_camposanto/grave_slab
+prop 357.2,59 l7_camposanto/dried_flowers
 prop 360,59 l7_camposanto/cypress_tree flip
+prop 425,59 l7_camposanto/cypress_tree
+prop 434.5,51 l7_camposanto/stone_urn
 prop 393.5,59 l7_camposanto/iron_cross
 # Antesala: yuyos y un banco junto al fuego
+prop 481,65 l7_camposanto/stone_urn flip
+prop 484.6,65 l7_camposanto/iron_cross_leaning
 prop 488,65 l7_camposanto/overgrown_weeds
 prop 492,65 l7_camposanto/stone_bench
 ---
