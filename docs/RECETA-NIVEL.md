@@ -11,7 +11,7 @@ El procedimiento que se siguió en S19 para rehacer l1 (Paraguarí) y en S22 par
 1. **Rellenar la masa hasta adentro**: `earthBackdrop: true` en `src/data/levels.ts` pone la baldosa del relleno del bioma (la casilla 15 del autotile, sin tinte, en la misma grilla de 16 px) donde la repisa de `terrainShell` no dibuja. Hoy está encendido en l3 y l4.
 2. **Adelgazarla** en el ASCII hasta que quede una plataforma delgada (3 filas o menos) con aire alrededor. Una **plataforma flotante no es un agujero** y está bien: es un videojuego, no una construcción civil. El corte llega hasta el fondo del mapa, sin muñones a media altura (serían escalones accidentales); el techo transitable no cambia de altura ni de ancho. Así se hicieron casa Z, la plaza y la base del campanario de l4 en S75.
 
-Lo abierto de verdad (aire que se recorre, o un vano que se lee como ventana, portal o cámara) tampoco es un agujero. **Lo hace cumplir `tests/holes.test.ts`:** recorre los mapas y falla si una celda sólida de Ground no está dibujada entera (a menos de `terrainShell` del aire, o en el piso de S29) ni tapada por el fondo de tierra o el fondo de cueva; el mensaje dice el nivel y los tramos (x y filas). Si falla después de cambiar un mapa, se arregla con uno de los dos de arriba, no se toca el test. l1, l2, l5 y l6 todavía tienen agujeros: están en `KNOWN_HOLES` del test con su huella exacta (cuántas celdas y en qué tramos), como pendientes (PENDIENTES, punto 26). Si uno de ellos gana un agujero nuevo, el test falla igual. Si se arregla, también falla, para que se saque de la lista. A esa lista no se agregan niveles para que el test pase.
+Lo abierto de verdad (aire que se recorre, o un vano que se lee como ventana, portal o cámara) tampoco es un agujero. **Lo hace cumplir `tests/holes.test.ts`:** recorre los mapas y falla si una celda sólida de Ground no está dibujada entera (a menos de `terrainShell` del aire, o en el piso de S29) ni tapada por el fondo de tierra o el fondo de cueva; el mensaje dice el nivel y los tramos (x y filas). Si falla después de cambiar un mapa, se arregla con uno de los dos de arriba, no se toca el test. l2 y l5 todavía tienen agujeros (l6 se rellenó en S78 y l1 en S87; en l1 el relleno no va bajo las columnas de las zonas `Cave`, donde sigue el fondo de cueva): están en `KNOWN_HOLES` del test con su huella exacta (cuántas celdas y en qué tramos), como pendientes (PENDIENTES, punto 26). Si uno de ellos gana un agujero nuevo, el test falla igual. Si se arregla, también falla, para que se saque de la lista. A esa lista no se agregan niveles para que el test pase.
 
 ## 0. Qué tener a mano antes de dibujar
 
@@ -774,13 +774,13 @@ Desde el 13 de octubre, la segunda pantalla de «Nivel completado» de una visit
 
 ---
 
-## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3, en S53 con l4, l5 y l6, en S54 con l7 y en S60 con la altura de las fachadas)
+## 19. Decorar un nivel con props (S51, hecha sobre l1; ampliada en S52 con l2 y l3, en S53 con l4, l5 y l6, en S54 con l7, en S60 con la altura de las fachadas y en S87 con lo que faltaba de l1)
 
 Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se colocan con una línea de cabecera, sin carácter en la grilla: `prop X,Y carpeta/nombre [scale=N] [flip] [front]` (GDD §11.7.1). **(X, Y) es el tile vacío donde se apoya**: el prop queda centrado en el tile y con la base en el borde de abajo; el piso está en la fila Y + 1. Los que cuelgan (`hang`: estalactitas, raíces) van en el tile vacío de debajo del techo, con el techo en la fila Y − 1. Los de fachada (`wall`, S54) van sobre los tiles de un muro, y los que van entre dos puntos, con `prop X1-X2,Y` (§19.10). No chocan: son solo dibujo.
 
 ### 19.1 Cuántos y dónde
 
-- **Uno cada 8 a 10 tiles de recorrido, como mucho.** l1 tiene 35 en 314 tiles: 5 en la cueva inicial (45 tiles), 15 en la ladera (145), 10 en la cueva (60 tiles, pero de tres galerías y una cámara) y 5 entre la antesala y la arena. Más que eso empieza a ser alfombra.
+- **Uno cada 8 a 10 tiles de recorrido, como mucho.** l1 tiene 35 en 314 tiles: 5 en la cueva inicial (45 tiles), 15 en la ladera (145), 10 en la cueva (60 tiles, pero de tres galerías y una cámara) y 5 entre la antesala y la arena (desde S87, 40 en 354 tiles: §19.15). Más que eso empieza a ser alfombra.
 - **Por tramo, una pieza grande y una o dos chicas.** La grande (tacurú, cristales grandes, roca musgosa, estalagmitas, raíces al aire) marca el lugar; las chicas (pasto corto, piedras sueltas, cascotes, cristales chicos) lo acompañan. Un tramo con dos grandes juntas se ve amontonado.
 - **Zonas limpias a propósito:** los bordes de un pozo (de donde se salta y donde se cae), los pasillos con enemigos, el pie de una pared que hay que saltar, alrededor de los fuegos, las piedras, las rejas, los carteles y la puerta de la ofrenda, y la arena. En l1 quedaron limpios la zanja y el pozo 1, el borde del pozo 2, la repisa de la piedra de la balsa, el hoyo del hongo y su hongo de salida, el lugar secreto (las luciérnagas son la pista) y el medio de la arena.
 - **Dónde sí:** los llanos donde no pasa nada (entre el arco y el fuego de x 101, la cima, el piso del foso), las esquinas contra una pared que no hay que saltar, las bocas de cueva (marcan el cambio de bioma) y los cuartos de descanso (la antesala, la cámara de la chipa C).
@@ -790,7 +790,7 @@ Los props (`raw/props/<carpeta>/`, inventario y tamaños en ASSETS §6.1) se col
 
 ### 19.2 Lo que no se pone
 
-- **Lo que se confunde con un peligro o una pieza.** En l1: el karaguatá (`l1_ladera/spiky_bromeliad`) se parece a las espinas de karaguatá, que lastiman; las raíces colgantes (`l1_cueva/ceiling_roots`) se parecen a la liana que se corta y a la cortina de raíces de la ofrenda. Ninguno de los dos se colocó. En l2 a l6, lo mismo con lo que se parezca a un camalote, a un hongo, a una rama que se quiebra o a una plataforma.
+- **Lo que se confunde con un peligro o una pieza.** En l1: el karaguatá (`l1_ladera/spiky_bromeliad`) se parece a las espinas de karaguatá, que lastiman; las raíces colgantes (`l1_cueva/ceiling_roots`) se parecen a la liana que se corta y a la cortina de raíces de la ofrenda. Ninguno de los dos se colocó en S51; S87 los puso por pedido de Jose, donde menos se confunden (§19.15). En l2 a l6, lo mismo con lo que se parezca a un camalote, a un hongo, a una rama que se quiebra o a una plataforma.
 - **Estalactitas decorativas donde caen estalactitas de verdad.** No se distinguirían de las que caen. En l1 hay una sola, en el techo alto de la cueva inicial (10 tiles sobre el piso, sin `FallingHazard` en esa cueva). Ninguna en las galerías, ni en la antesala, ni en la arena (Teju Jagua hace caer estalactitas en la fase 2).
 - **Plantas bajo tierra** (GDD, decisiones del 13 de octubre): dentro de un `rect Cave`, solo la carpeta de la cueva; afuera, ninguna de la cueva. El test lo comprueba. **Ojo (S52): el fondo de cueva se dibuja por columnas**, todo el ancho del `rect Cave` de arriba abajo, sin mirar su `y` (`LevelBackdrop`). En l1, el `rect Cave x=186 y=18` de la cámara de la chipa C oscurecía desde x 186 la cima de la ladera, y el tacurú de x 187 quedaba en penumbra con su luz de sol pintada. El test ahora mira las columnas, con la caja entera del prop y sus matas.
 - **Props de otro bioma:** cada nivel usa sus carpetas (`l1_` en l1). El test lo comprueba.
@@ -914,6 +914,15 @@ Jose sentía l7 demasiado apagado y pidió colocar los ocho props de `raw/props/
 - **En la patrulla de un enemigo, solo lo que mide un tile o menos:** la losa (14,5) al pie del mausoleo 1, donde pasa el jagua hũ. La cruz (28) y las flores (20,5) no pasan el test ahí.
 - **Mudanzas:** el ciprés de x 301 pasó a x 425 (su lugar es del portón) y las flores de x 307,5 a x 357 (su lugar es del mausoleo chico). La cruz torcida, a la antesala (x 484,6): en la entrada, entre el portón y el fuego, alejaba el portón de la luz.
 - **Arte con huecos:** la urna, la losa y el banco traen agujeros transparentes en el PNG original (el mármol blanco se fue con el fondo blanco al exportar). No es el recorte de `npm run sprites`. Se ven picados de cerca; hay que regenerarlos (PENDIENTES).
+
+### 19.15 Los dos props de l1 que faltaban y dos tramos pelados (S87)
+
+Jose pidió usar los dos props de l1 que S51 había dejado afuera (§19.2) y completar la ladera entre x 107 y x 130 y la llegada a la cueva tras la quebrada (x 228-240). l1 quedó con **40 props**. Los reparos de S51 siguen valiendo: hay que mirarlos jugando.
+
+- **Las raíces colgantes (`l1_cueva/ceiling_roots`), en techos altos y lejos de lo que imitan:** x 9, fila 1 (el techo de la cueva inicial, 10 tiles sobre el piso, a 32 tiles de la liana de x 41) y x 233, fila 4 (el bolsón del techo sobre la llegada a la cueva, a 10 tiles de la estalactita que cae en x 243 y a 52 de la liana y la cortina de la ofrenda). Las puntas quedan por encima de la cabeza de Kerana en el piso de abajo.
+- **El karaguatá (`l1_ladera/spiky_bromeliad`), una sola vez y fuera del camino:** x 110, fila 11, en el piso del foso (suelo firme), bajo la plataforma móvil. En la ladera no hay espinas de verdad (solo en la cueva), así que no hay con qué compararlo; en medio del camino se leería como algo que hay que saltar.
+- **En un tramo que es casi todo pozo, lo poco que hay de suelo:** entre x 107 y x 130 solo son firmes el piso del foso (x 104-113) y la repisa de la piedra de la balsa (x 114-117); el resto es el pozo 2. En la repisa, pasto corto (x 115): bajo, no tapa la piedra de x 117.
+- **La llegada a la cueva:** cascotes en x 235, fila 13, entre la bajada y el cartel de x 237. La repisa donde se aterriza de la quebrada (x 227-229) queda limpia: es el borde de un vacío, y x 227 está fuera de las columnas de cueva (ahí no puede ir un prop de la cueva ni de la ladera entero).
 
 ## 20. Un tirador junto al agua (S64, el payesero en l2)
 
