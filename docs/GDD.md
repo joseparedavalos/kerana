@@ -820,9 +820,9 @@ La verticalidad es la identidad del nivel: se empieza en el piso de la selva (fi
 
 | Fase | Ataque | Aviso | Ventana |
 |---|---|---|---|
-| 1 (entre las tumbas) | Salta entre los techos de los mausoleos y lanza **terrones** de tierra en arco. **Aúlla sobre una lápida** y llama a 2 póra | Gira el brazo (0,6 s); trepa a la lápida (1 s) | Mientras aúlla, 1,5 s |
+| 1 (entre las tumbas) | Salta entre los techos de los mausoleos y lanza **huesos** en arco (S89; antes terrones). **Aúlla sobre una lápida** y llama a 2 póra | Gira el brazo (0,6 s); trepa a la lápida (1 s) | Mientras aúlla, 1,5 s |
 | 2 (luna llena) | La luna sale entre las nubes: Luisón crece y gana velocidad. Su aullido **apaga las luces**: solo quedan el halo de Kerana y los faroles que ella vuelva a encender. **Embiste desde la oscuridad** | Dos ojos brillantes y un gruñido (1 s) | Tras la embestida, 1,2 s |
-| 3 (la marca de Tau) | La sombra de Tau aparece detrás de Luisón y lo mueve como a un títere. Ataques encadenados: embestida, terrones y póra | 0,6 s | 1 s |
+| 3 (la marca de Tau) | La sombra de Tau aparece detrás de Luisón y lo mueve como a un títere. Ataques encadenados: embestida, huesos y póra | 0,6 s | 1,6 s (S89; antes 1 s) |
 
 **Liberación**
 

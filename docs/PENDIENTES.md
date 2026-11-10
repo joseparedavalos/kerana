@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 10 de noviembre de 2026 en S88, contra lo que ya está en `main` hasta S87.
+Revisado el 10 de noviembre de 2026 en S89, contra lo que ya está en `main` hasta S88.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -76,6 +76,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - l7 tiene más luz y los props que faltaban (S86): las zonas oscuras dejan ver las siluetas del piso y de los muros, y el halo de Kerana llega a 6 tiles (antes 4,5). El camposanto tiene cuatro faroles más, que solo alumbran (x 335, 422, 433 y 459). Están puestos los ocho props de l7 que faltaban: el cordón con adoquines, el portal con cajones y el toldo enrollado en la calle; el portón, el mausoleo chico, la losa, la cruz torcida y la urna (dos) en el camposanto y la antesala. l7 tiene 22 props.
 - El cerro de l1 ya no deja ver el bosque por dentro (S87): entre las dos cuevas es piedra maciza, del mismo tono que el suelo. Dentro de las cuevas y en la quebrada el fondo es el de siempre. l1 tiene 40 props: se sumaron las raíces colgantes (en el techo de la cueva inicial y sobre la llegada a la cueva), el karaguatá (en el piso del foso), pasto en la repisa de la piedra de la balsa y cascotes al entrar a la cueva.
 - En l7 todo apoya en el empedrado (S88): Kerana, los carteles, los faroles y los props flotaban 7 px porque el tileset `ciudad` tenía el borde de arriba vacío. Volvió el piso del 5 de noviembre (`030971f`), con la reja oxidada nueva. Un test (`tests/tilesetTopEdge.test.ts`) falla si un tileset deja más de 3 filas vacías sobre el piso.
+- Luisón ya no tiene la barra amarilla en la cara (S89): alumbrado se ven los ojos del sprite; en el apagón, dos puntos con brillo sobre el ojo, que alcanzan para seguirlo. Tira huesos (crema, girando) en vez de terrones. En la fase 3 la ventana para pegarle pasó de 1 s a 1,6 s: no había bug, pero llegando desde donde lo deja la embestida entraba un solo tajo. `npm run luison` lo mata a tajos con teclas simuladas.
 
 ## Ahora
 
@@ -121,6 +122,8 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 40. Regenerar la urna, la losa y el banco de `raw/props/l7_camposanto/` (Jose, S86): los PNG originales traen agujeros transparentes dentro del mármol blanco y en el juego se ven picados (ASSETS §6.1). Al llegar los nuevos, `npm run sprites` y nada más.
 41. Mirar l1 con el cerro relleno y los props nuevos (Jose, S87, `?debug=1&level=1&god=1`). Mirar: (a) la costura de las dos bocas de cueva (x 44 | 45 y x 227 | 228): bajo el piso, de un lado el fondo de cueva y del otro la piedra lisa; (b) si el cerro, que ahora es una pared lisa muy grande, se ve chato cuando la cámara baja (el pozo 1, el pozo 2, el foso): si hace falta, variantes de la casilla 15 en el tileset, no oscurecer; (c) el karaguatá del foso (x 110): si se lee como espinas, se saca o se mueve; (d) las raíces colgantes (x 9 y x 233): si se confunden con la liana que se corta o con la cortina de la ofrenda; (e) el pasto de la repisa de la piedra de la balsa (x 115) y los cascotes de x 235. Se mueven en `tools/levels/l1.txt` (líneas `prop`) y `npm run maps`.
 42. Mirar l7 con el piso recuperado (Jose, S88, `?debug=1&level=7&gifts=all`): que nada flote y que las espinas (la reja oxidada, x 163) se vean bien apoyadas. No correr `npm run tileset -- ciudad`: con el `raw/tiles/ciudad/tileset.json` de hoy deja 7 filas vacías sobre el piso (`raw/tiles/NOTA-TILESETS.md`). Si se quiere poder regenerar `ciudad.png` con el script, hace falta otra receta para el borde (la del 5 de noviembre, ASSETS §6, se hizo a mano) y `especiales.jpg`. Aparte: `075e526` cambió también las casillas 20 a 25 (agua, roca agrietada, decoración de borde) y quedaron así; la 22 está vacía.
+43. Jugar a Luisón sin `god=1` (Jose, S89, `?debug=1&level=7&boss=1`). Mirar: (a) si con 1,6 s la fase 3 ya se puede (`recoverMs` de `chain` y `charge` en `src/data/bosses.ts`); (b) la fase 2, que no se tocó y tiene el mismo problema: la única ventana es de 1,2 s tras la embestida, que cruza la arena; el bot, arrancando a 250 px, no llega a pegar ni una vez, y hay rachas de más de 20 s sin ventana porque el aullido y los huesos de esa fase no la abren. Si se siente igual, subir ese `recoverMs` o darle ventana al aullido; (c) si los dos puntos alcanzan para seguirlo en el apagón (`GAMEPLAY.luison`: `eyeDotPx`, `eyeGlowRadius`, `eyeGlowAlpha`) y el tamaño y el giro del hueso (`boneLengthPx`, `boneSpinDegPerSec`).
+44. El brazo de Luisón (S89): `arm` es otro rectángulo por código (12 × 3) que gira mientras avisa los huesos; con el sprite real se ve como una barrita al lado de la cabeza. Sacarlo o reemplazarlo por un hueso en la mano. Y cuando lleguen las animaciones Run y Attack de Luisón, agregar su fila de ojos a `GAMEPLAY.sprites.luison.eyes`.
 
 ## itch.io
 
