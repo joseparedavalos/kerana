@@ -69,9 +69,6 @@ function describe_(cells: { x: number; y: number }[]): string {
 // una guarda la huella exacta (cuántas celdas y en qué tramos): si el nivel gana un agujero nuevo, el test falla igual;
 // si se arregla, también falla, para que se saque de la lista. No se agregan niveles acá para que el test pase.
 const KNOWN_HOLES: Record<string, { cells: number; where: string }> = {
-  // Pendiente (S75, no se tocó): la ladera entre las dos cuevas; el cerro de piedra muestra el bosque del fondo adentro.
-  // S85: la quebrada (x 187-226) le dio aire al borde derecho del cerro: bajó de 2416 a 2392 celdas.
-  l1: { cells: 2392, where: 'x 45-73, filas 11-33; x 81-115, filas 0-33; x 132-184, filas 10-33' },
   // Pendiente (S75, no se tocó): falta el relleno (earthBackdrop) o adelgazar.
   l2: { cells: 218, where: 'x 144-150, filas 28-32; x 157-158, filas 20-26; x 241-250, filas 14-32' },
   // Pendiente (S75): ídem; l5 ya carga la lluvia y el dosel, medir el relleno en un celular.

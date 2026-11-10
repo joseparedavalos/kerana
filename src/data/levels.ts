@@ -46,6 +46,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     backgrounds: { far: 'bg_l1_far', cave: 'bg_l1_cave', shiftY: 110 },
     terrainShell: 3,
     solidFloor: false,
+    // S87: el cerro macizo entre las dos cuevas va relleno; bajo las zonas `Cave` sigue el fondo de cueva.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'teju_jagua',
     gift: 'charged_slash',

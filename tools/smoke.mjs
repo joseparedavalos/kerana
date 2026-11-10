@@ -365,7 +365,12 @@ async function main() {
     await sleep(1200);
     const bgSlope = await backdropState(title);
     check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
-    check((await title.evaluate(() => window.__KERANA_DEBUG__.scene.earth)) === null, 'nivel 1: sin fondo de tierra (S68: tiene su fondo de cueva)');
+    // S87: el cerro va relleno, salvo bajo las zonas Cave (ahí sigue el fondo de cueva).
+    const l1Earth = await title.evaluate(() => {
+      const e = window.__KERANA_DEBUG__.scene.earth;
+      return e ? { slope: e.getTileAt(60, 20) !== null, cave: e.getTileAt(20, 20) !== null || e.getTileAt(260, 20) !== null } : null;
+    });
+    check(l1Earth?.slope === true && l1Earth?.cave === false, `nivel 1: fondo de tierra en el cerro y no bajo las cuevas (${JSON.stringify(l1Earth)})`);
     await title.screenshot({ path: join(SHOTS, 'bg-l1-ladera.png') });
 
     // Plumas (S17): se guardan al tocarlas, no reaparecen al volver a entrar y el conteo no baja.
