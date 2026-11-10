@@ -14,6 +14,7 @@ import { TitleScene } from './scenes/TitleScene';
 import { UIScene } from './scenes/UIScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
 import { AudioManager } from './systems/AudioManager';
+import { installRotatePrompt } from './systems/mobileShell';
 import { RENDER_ZOOM, VIEW } from './systems/View';
 
 // Configuración de Phaser (GDD §11.3).
@@ -52,5 +53,7 @@ const config: Phaser.Types.Core.GameConfig = {
 const game = new Phaser.Game(config);
 // Audio (S37): espera el primer toque o tecla y sigue el foco de la ventana.
 AudioManager.install();
+// Celular (S90): en vertical, el aviso de girar el teléfono con el juego detenido detrás.
+installRotatePrompt(game);
 // Para depuración y la prueba de humo (tools/smoke.mjs): qué escena está activa ahora mismo.
 if (typeof window !== 'undefined') window.__KERANA_GAME__ = game;

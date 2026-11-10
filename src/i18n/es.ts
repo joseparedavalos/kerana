@@ -190,6 +190,8 @@ export const es = {
   'pause.restart': 'Volver al último fuego',
   'pause.chipa_return': 'Volver a buscar chipas',
   'pause.options': 'Opciones',
+  'pause.buttons': 'Botones',
+  'rotate.title': 'Girá el teléfono',
   'pause.exit_to_map': 'Salir al mapa',
   'options.title': 'Opciones',
   'options.music': 'Música',
