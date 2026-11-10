@@ -63,7 +63,7 @@ import { ensureSoftGlow } from '../utils/softGlow';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
-import { isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
+import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
@@ -1682,11 +1682,22 @@ export class LevelScene extends Phaser.Scene {
       if (alpha <= 0) tile.setVisible(false);
       else tile.setAlpha(alpha);
     });
-    this.earth = earth
-      ? addEarthBackdrop(this.map, tileset, depth, tiles, (i) =>
-          keepFloor ? isFloorTile(floor, i % width, Math.floor(i / width)) : false,
-        )
-      : null;
+    if (!earth) return;
+    // S87: bajo las zonas `Cave` (l1) la roca honda muestra el fondo de cueva, no la tierra: esas columnas no llevan.
+    const caves = caveColumns(
+      (this.map.getObjectLayer('Objects')?.objects ?? [])
+        .filter((o) => objectClass(o) === 'Cave')
+        .map((o) => ({ x: o.x ?? 0, width: Number(o.width ?? this.map.tileWidth) })),
+      width,
+      this.map.tileWidth,
+    );
+    this.earth = addEarthBackdrop(
+      this.map,
+      tileset,
+      depth,
+      tiles,
+      (i) => caves[i % width] === 1 || (keepFloor && isFloorTile(floor, i % width, Math.floor(i / width))),
+    );
   }
 
   /** Crea checkpoints, carteles, enemigos y objetos; devuelve el punto de inicio (pies). */
