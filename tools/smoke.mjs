@@ -17,7 +17,7 @@ const L5_COUNTS = { movers: 20, vertical: 11, normal: 8, once: 3, sleep: 3, crum
 // Piezas de l6 (S31, cabecera de tools/levels/l6.txt).
 const L6_COUNTS = { movers: 24, vertical: 4, normal: 1, once: 1, sleep: 1, crumbles: 3, rocks: 2, brittle: 5, taitetu: 9, karakara: 6, cria: 2, chasePindos: 2, jaguaru: 3 };
 // Piezas de l7 (S32, cabecera de tools/levels/l7.txt).
-const L7_COUNTS = { movers: 21, vertical: 12, lanterns: 21, triggers: 12, timed: 5, gates: 3, normal: 1, once: 1, sleep: 1, crumbles: 1, rocks: 4, brittle: 7, mbopi: 8, pora: 6, jagua: 6 };
+const L7_COUNTS = { movers: 21, vertical: 12, lanterns: 25, triggers: 12, timed: 5, gates: 3, normal: 1, once: 1, sleep: 1, crumbles: 1, rocks: 4, brittle: 7, mbopi: 8, pora: 6, jagua: 6 };
 
 function findBrowser() {
   const candidates = [process.env.CHROME_PATH];
