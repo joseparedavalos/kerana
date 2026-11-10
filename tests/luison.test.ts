@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { getBossDef } from '../src/data/bosses';
 import { getEnemyDef } from '../src/data/enemies';
-import { chainStepAt, chargeDir, farthestIndex, howlBlacksOut } from '../src/entities/bosses/luisonLogic';
+import { chainStepAt, chargeDir, eyeGlowAlpha, eyeOffset, farthestIndex, howlBlacksOut } from '../src/entities/bosses/luisonLogic';
 import { ambientTarget, inAnyArea, isLit, lerpColor, takesDamage, type LightSource } from '../src/systems/lightLogic';
 
 describe('Luz y vulnerabilidad (GDD §4.8, §5.3)', () => {
@@ -68,7 +68,7 @@ describe('Luisón (GDD §6.7)', () => {
     expect(charge.recoverMs).toBe(1200);
     for (const a of p3.attacks) {
       expect(a.telegraphMs).toBe(600);
-      expect(a.recoverMs).toBe(1000);
+      expect(a.recoverMs).toBe(1600); // S89: era 1000
     }
   });
 
@@ -77,7 +77,7 @@ describe('Luisón (GDD §6.7)', () => {
     expect(farthestIndex(90, [0, 100])).toBe(0);
   });
 
-  it('la cadena de la fase 3 es embestida, terrones y póra', () => {
+  it('la cadena de la fase 3 es embestida, huesos y póra', () => {
     expect(chainStepAt(0, 2400)).toBe('charge');
     expect(chainStepAt(900, 2400)).toBe('clods');
     expect(chainStepAt(1700, 2400)).toBe('pora');
@@ -96,5 +96,34 @@ describe('Luisón (GDD §6.7)', () => {
     expect(c.floorTiles[0]).toBeLessThan(c.tombTile);
     expect(c.tombTile).toBeLessThan(c.floorTiles[1]);
     expect(c.roofTiles[1]).toBeLessThan(40);
+  });
+
+  it('los ojos brillantes solo se ven en el apagón y fuera del halo de Kerana (S89)', () => {
+    expect(eyeGlowAlpha(false, 500, 96, 24)).toBe(0); // alumbrado: nada, el sprite ya tiene ojos
+    expect(eyeGlowAlpha(true, 500, 96, 24)).toBe(1);
+    expect(eyeGlowAlpha(true, 96, 96, 24)).toBe(1);
+    expect(eyeGlowAlpha(true, 84, 96, 24)).toBeCloseTo(0.5);
+    expect(eyeGlowAlpha(true, 40, 96, 24)).toBe(0); // dentro del halo se ve el sprite
+  });
+
+  it('cada cuadro de la hoja tiene su ojo, sobre la cabeza y hacia adelante (S89)', () => {
+    const eyes = GAMEPLAY.sprites.luison.eyes.luison_idle;
+    expect(eyes).toHaveLength(8);
+    const out = { forward: 0, rise: 0 };
+    for (const eye of eyes) {
+      eyeOffset(eye, 104, 72, 2, out);
+      expect(out.forward).toBeGreaterThan(10);
+      expect(out.forward).toBeLessThan(26);
+      expect(out.rise).toBeGreaterThan(20);
+      expect(out.rise).toBeLessThan(36);
+    }
+    expect(eyeOffset([20, 17], 104, 72, 2, out)).toEqual({ forward: 15.75, rise: 27.25 });
+  });
+
+  it('el hueso mide unos 10 px, es crema y pega igual que el terrón (S89)', () => {
+    const c = GAMEPLAY.luison;
+    expect(c.boneLengthPx).toBe(10);
+    expect(c.boneColor).toBe(0xf2eee3);
+    expect(c.clodRadius).toBe(4);
   });
 });

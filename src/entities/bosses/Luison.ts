@@ -2,16 +2,23 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
 import { arcVelocity } from '../enemies/ThrowerMotor';
-import { skinIfAvailable } from '../../systems/SpriteSkin';
+import { skinIfAvailable, spriteDetail, type SpriteSkin } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
-import { chainStepAt, chargeDir, farthestIndex, howlBlacksOut, type ChainStep } from './luisonLogic';
+import { chainStepAt, chargeDir, eyeGlowAlpha, eyeOffset, farthestIndex, howlBlacksOut, type ChainStep } from './luisonLogic';
 
 const CFG = GAMEPLAY.luison;
+const SPRITE_CFG = GAMEPLAY.sprites.luison;
 const TILE = 16;
 const TEXTURE = 'luison_placeholder';
 const DUST_COLOR = 0x8a7a66;
-const CLOD_COLOR = 0x6b5238;
+const BONE_TEXTURE = 'luison_bone';
+/** El hueso se dibuja al doble y se achica a la mitad: con el zoom 2 de la vista queda nítido. */
+const BONE_DETAIL = 2;
+const SPRITE = 'luison';
+/** Ojos del placeholder (sin sprite): hacia adelante y bajo la coronilla (px). */
+const PLACEHOLDER_EYE_FORWARD = 8;
+const PLACEHOLDER_EYE_DROP = 5;
 const TOMB_COLOR = 0x8e8e96;
 const TAU_COLOR = 0x2a1438;
 const LEAP_PEAK = 28;
@@ -20,7 +27,7 @@ const CLOD_POOL = 6;
 type Spot = 'floor' | 'roof' | 'tomb';
 
 interface Clod {
-  arc: Phaser.GameObjects.Arc;
+  img: Phaser.GameObjects.Image;
   vx: number;
   vy: number;
   active: boolean;
@@ -43,14 +50,47 @@ function ensureTexture(scene: Phaser.Scene): void {
   g.destroy();
 }
 
-// Luisón (GDD §6.7): señor de la noche y los camposantos. Fase 1: terrones desde los techos y aullido
+/** El hueso que tira (S89, por código): caña con dos nudos en cada punta, crema con un borde oscuro fino. Horizontal. */
+function ensureBoneTexture(scene: Phaser.Scene): void {
+  if (scene.textures.exists(BONE_TEXTURE)) return;
+  const k = BONE_DETAIL;
+  const len = CFG.boneLengthPx * k;
+  const knob = CFG.boneKnobRadius * k;
+  const shaft = CFG.boneShaftPx * k;
+  const edge = 1; // borde: 1 px de textura (medio px del mundo)
+  const h = Math.ceil(knob * 3.6) + edge * 2;
+  const w = len + edge * 2;
+  const cy = h / 2;
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  const draw = (grow: number): void => {
+    g.fillRect(edge + knob - grow, cy - shaft / 2 - grow, len - knob * 2 + grow * 2, shaft + grow * 2);
+    for (const x of [edge + knob, edge + len - knob]) {
+      g.fillCircle(x, cy - knob * 0.8, knob + grow);
+      g.fillCircle(x, cy + knob * 0.8, knob + grow);
+    }
+  };
+  g.fillStyle(CFG.boneOutlineColor);
+  draw(edge);
+  g.fillStyle(CFG.boneColor);
+  draw(0);
+  g.generateTexture(BONE_TEXTURE, w, h);
+  g.destroy();
+}
+
+// Luisón (GDD §6.7): señor de la noche y los camposantos. Fase 1: huesos desde los techos y aullido
 // sobre la lápida (llama póra). Fase 2 (luna llena): crece, apaga las luces y embiste desde la oscuridad.
-// Fase 3: la sombra de Tau lo mueve como a un títere y encadena embestida, terrones y póra.
+// Fase 3: la sombra de Tau lo mueve como a un títere y encadena embestida, huesos y póra.
 export class Luison extends Boss {
   private readonly body: Phaser.GameObjects.Image;
-  private readonly eyes: Phaser.GameObjects.Rectangle;
-  /** Distancia de los ojos al centro, hacia adelante (el sprite tiene la cabeza más adelante que el placeholder). */
-  private readonly eyeForward: number;
+  private readonly skin?: SpriteSkin;
+  /** Ojos en la oscuridad (S89): por cada ojo, el brillo y el punto. Solo se ven en el apagón (ver `updateEyes`). */
+  private readonly eyeGlows: Phaser.GameObjects.Arc[] = [];
+  private readonly eyeDots: Phaser.GameObjects.Rectangle[] = [];
+  /** Lo que mueven los tweens: `fade` (presentación y liberación) y `pulse` (aviso de la embestida). */
+  private readonly eyeFx = { fade: 1, pulse: 1 };
+  private readonly eyePos = { forward: 0, rise: 0 };
+  /** El apagón está puesto (lo pone y lo saca Luisón: fase 2 en adelante). */
+  private blackout = false;
   private readonly arm: Phaser.GameObjects.Rectangle;
   private readonly tauShadow: Phaser.GameObjects.Ellipse;
   private readonly dust: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -78,12 +118,16 @@ export class Luison extends Boss {
     scene.add.rectangle(this.tombX(), ctx.floorY - CFG.tombHeight + 5, 8, 2, 0x6e6e76).setDepth(1);
     this.tauShadow = ctx.glow(scene.add.ellipse(0, 0, CFG.width + CFG.tauShadowPadPx * 2, CFG.height * 2, TAU_COLOR, 1).setDepth(4).setVisible(false));
     this.body = scene.add.image(0, ctx.floorY, TEXTURE).setOrigin(0.5, 1).setDepth(5);
-    this.eyeForward = skinIfAvailable(scene, this.body, 'luison', { sourceFacesRight: true }) ? GAMEPLAY.sprites.luison.eyeForward : 8;
+    this.skin = skinIfAvailable(scene, this.body, SPRITE, { sourceFacesRight: true });
     this.arm = scene.add.rectangle(0, 0, 12, 3, 0x4a4252).setOrigin(0, 0.5).setDepth(6).setVisible(false);
-    this.eyes = ctx.glow(scene.add.rectangle(0, 0, 6, 2, CFG.eyeColor).setDepth(7));
+    for (let i = 0; i < 2; i++) {
+      this.eyeGlows.push(ctx.glow(scene.add.circle(0, 0, CFG.eyeGlowRadius, CFG.eyeColor, CFG.eyeGlowAlpha).setDepth(7).setVisible(false)));
+      this.eyeDots.push(ctx.glow(scene.add.rectangle(0, 0, CFG.eyeDotPx, CFG.eyeDotPx, CFG.eyeColor).setDepth(7).setVisible(false)));
+    }
+    ensureBoneTexture(scene);
     for (let i = 0; i < CLOD_POOL; i++) {
-      const arc = ctx.glow(scene.add.circle(0, 0, CFG.clodRadius, CLOD_COLOR).setDepth(8).setVisible(false));
-      this.clods.push({ arc, vx: 0, vy: 0, active: false });
+      const img = ctx.glow(scene.add.image(0, 0, BONE_TEXTURE).setScale(1 / BONE_DETAIL).setDepth(8).setVisible(false));
+      this.clods.push({ img, vx: 0, vy: 0, active: false });
     }
     this.dust = scene.add.particles(0, 0, 'fx_particle', {
       speedX: { min: -40, max: 40 },
@@ -101,7 +145,7 @@ export class Luison extends Boss {
 
   protected playIntro(onDone: () => void): void {
     // Aparece sobre la lápida y aúlla a la luna.
-    this.scene.tweens.add({ targets: [this.body, this.eyes], alpha: 1, duration: 600 });
+    this.scene.tweens.add({ targets: this.body, alpha: 1, duration: 600 });
     this.timers.push(
       this.scene.time.delayedCall(700, () => {
         this.faceKerana();
@@ -128,7 +172,6 @@ export class Luison extends Boss {
         this.chainStep = undefined;
         this.arm.setVisible(false);
         this.body.setAlpha(1);
-        this.eyes.setAlpha(this.dimEyes());
         break;
       case 'idle':
         this.onIdle();
@@ -143,7 +186,6 @@ export class Luison extends Boss {
     this.chainStep = undefined;
     this.arm.setVisible(false);
     this.body.setAlpha(1);
-    this.eyes.setAlpha(this.dimEyes());
     // En la fase 1 anda entre las tumbas; desde la 2 baja al suelo y acecha.
     const idleMs = this.brain.phaseDef.idleMs;
     if (this.spot !== 'floor') this.leapTo(this.clampFloor(this.body.x), this.ctx.floorY, 'floor', Math.min(CFG.leapMs, idleMs));
@@ -171,9 +213,9 @@ export class Luison extends Boss {
         else this.stopMove();
         this.faceKerana();
         this.ctx.sfxAt('growl', this.body.x);
-        this.eyes.setAlpha(1);
         if (this.brain.phase >= 1) this.body.setAlpha(0.35);
-        this.scene.tweens.add({ targets: this.eyes, scaleX: 1.6, duration: 150, yoyo: true, repeat: 1 });
+        this.eyeFx.pulse = 1;
+        this.scene.tweens.add({ targets: this.eyeFx, pulse: CFG.eyePulseScale, duration: 150, yoyo: true, repeat: 1 });
         break;
     }
   }
@@ -198,7 +240,7 @@ export class Luison extends Boss {
     }
   }
 
-  /** Cadena de la fase 3: embestida, terrones y póra, en tercios del ataque. */
+  /** Cadena de la fase 3: embestida, huesos y póra, en tercios del ataque. */
   private stepChain(deltaMs: number): void {
     this.chainMs += deltaMs;
     const step = chainStepAt(this.chainMs, this.chainTotalMs);
@@ -218,7 +260,7 @@ export class Luison extends Boss {
     this.ctx.sfxAt('howl', this.body.x);
     this.ctx.shake(200, 0.006);
     // Desde la luna llena, el aullido apaga las luces de la arena.
-    if (howlBlacksOut(this.brain.phase)) this.ctx.setBlackout(true);
+    if (howlBlacksOut(this.brain.phase)) this.setBlackout(true);
     this.callPora();
   }
 
@@ -248,7 +290,8 @@ export class Luison extends Boss {
     clod.vx = this.aim.vx;
     clod.vy = this.aim.vy;
     clod.active = true;
-    clod.arc.setPosition(x, y).setVisible(true);
+    // Sale girando hacia donde vuela.
+    clod.img.setPosition(x, y).setAngle(0).setVisible(true);
     this.ctx.sfx('throw');
   }
 
@@ -257,10 +300,11 @@ export class Luison extends Boss {
     for (const clod of this.clods) {
       if (!clod.active) continue;
       clod.vy += CFG.clodGravity * dt;
-      clod.arc.x += clod.vx * dt;
-      clod.arc.y += clod.vy * dt;
-      if (clod.arc.y >= this.ctx.floorY || clod.arc.y > this.ctx.arena.bottom) {
-        this.dust.emitParticleAt(clod.arc.x, this.ctx.floorY - 2, 4);
+      clod.img.x += clod.vx * dt;
+      clod.img.y += clod.vy * dt;
+      clod.img.angle += Math.sign(clod.vx || 1) * CFG.boneSpinDegPerSec * dt;
+      if (clod.img.y >= this.ctx.floorY || clod.img.y > this.ctx.arena.bottom) {
+        this.dust.emitParticleAt(clod.img.x, this.ctx.floorY - 2, 4);
         this.hideClod(clod);
       }
     }
@@ -268,7 +312,7 @@ export class Luison extends Boss {
 
   private hideClod(clod: Clod): void {
     clod.active = false;
-    clod.arc.setVisible(false);
+    clod.img.setVisible(false);
   }
 
   /** Embiste en el suelo hacia Kerana, de mausoleo a mausoleo. */
@@ -349,7 +393,7 @@ export class Luison extends Boss {
       this.scene.tweens.add({ targets: this.body, scale: CFG.grownScale, duration: 500, ease: 'Back.easeOut' });
       this.ctx.sfxAt('howl', this.body.x);
       this.ctx.shake(300, 0.008);
-      this.ctx.setBlackout(true);
+      this.setBlackout(true);
     }
     if (phase >= 2 && this.appliedPhase < 2) {
       // Aparece la sombra de Tau detrás.
@@ -362,6 +406,8 @@ export class Luison extends Boss {
   }
 
   protected override onDefeated(): void {
+    // La liberación enciende las velas: los ojos brillantes ya no hacen falta.
+    this.blackout = false;
     this.harmful = false;
     this.chainStep = undefined;
     this.stopMove();
@@ -377,7 +423,7 @@ export class Luison extends Boss {
     for (const clod of this.clods) {
       if (!clod.active) continue;
       const r = CFG.clodRadius;
-      if (Phaser.Geom.Rectangle.Overlaps(this.clodRect.setTo(clod.arc.x - r, clod.arc.y - r, r * 2, r * 2), playerRect)) {
+      if (Phaser.Geom.Rectangle.Overlaps(this.clodRect.setTo(clod.img.x - r, clod.img.y - r, r * 2, r * 2), playerRect)) {
         this.hideClod(clod);
         return true;
       }
@@ -390,7 +436,8 @@ export class Luison extends Boss {
   }
 
   fadeOut(ms: number): void {
-    this.scene.tweens.add({ targets: [this.body, this.eyes, this.tauShadow], alpha: 0, duration: ms });
+    this.scene.tweens.add({ targets: [this.body, this.tauShadow], alpha: 0, duration: ms });
+    this.scene.tweens.add({ targets: this.eyeFx, fade: 0, duration: ms });
   }
 
   // ── Visual ────────────────────────────────────────────────────────────────
@@ -401,7 +448,7 @@ export class Luison extends Boss {
     this.updateClods(deltaMs);
     this.body.setFlipX(this.facing < 0);
     const s = this.body.scaleX;
-    this.eyes.setPosition(this.body.x + this.facing * this.eyeForward * s, this.body.y - (CFG.height - 5) * s);
+    this.updateEyes(s);
     this.arm.setPosition(this.body.x + this.facing * 4 * s, this.body.y - (CFG.height - 12) * s);
     if (this.tauShadow.visible) {
       // La sombra se mece detrás, como quien mueve un títere.
@@ -410,11 +457,48 @@ export class Luison extends Boss {
     }
   }
 
+  /**
+   * Ojos (S89). Alumbrado no se dibuja nada: el sprite ya tiene ojos. En el apagón, dos puntos con su brillo sobre el
+   * ojo del sprite en el cuadro que se está mostrando (la hoja es de perfil: el segundo es el ojo de atrás, un poco
+   * más adelante), del lado al que mira. Cerca de Kerana su halo lo alumbra y los puntos se apagan.
+   */
+  private updateEyes(scale: number): void {
+    const pos = this.eyePos;
+    let gap = 0;
+    const sprite = this.skin?.sprite;
+    const eyes = sprite ? SPRITE_CFG.eyes[sprite.anims.getName()] : undefined;
+    if (sprite && eyes) {
+      const i = Math.max(0, (sprite.anims.currentFrame?.index ?? 1) - 1) % eyes.length;
+      const detail = spriteDetail(this.scene, SPRITE);
+      eyeOffset(eyes[i], sprite.frame.width, sprite.frame.height, detail, pos);
+      gap = SPRITE_CFG.eyeGapPx / detail;
+    } else {
+      pos.forward = PLACEHOLDER_EYE_FORWARD;
+      pos.rise = CFG.height - PLACEHOLDER_EYE_DROP;
+      gap = CFG.eyeGlowRadius;
+    }
+    const x = this.body.x + this.facing * pos.forward * scale;
+    const y = this.body.y - pos.rise * scale;
+    const dist = Math.hypot(x - this.ctx.playerX(), y - (this.ctx.playerY() - GAMEPLAY.player.bodyHeight / 2));
+    const alpha = eyeGlowAlpha(this.blackout, dist, GAMEPLAY.darkness.haloRadius, CFG.eyeLitFadePx) * this.eyeFx.fade;
+    const visible = alpha > 0.01;
+    for (let i = 0; i < this.eyeDots.length; i++) {
+      const ex = x + this.facing * gap * scale * i;
+      this.eyeDots[i].setVisible(visible).setPosition(ex, y).setAlpha(alpha).setScale(this.eyeFx.pulse);
+      this.eyeGlows[i].setVisible(visible).setPosition(ex, y).setAlpha(alpha).setScale(this.eyeFx.pulse);
+    }
+  }
+
+  private setBlackout(on: boolean): void {
+    this.blackout = on;
+    this.ctx.setBlackout(on);
+  }
+
   protected resetVisuals(): void {
     for (const timer of this.timers) timer.remove();
     this.timers.length = 0;
     this.stopMove();
-    this.scene.tweens.killTweensOf([this.body, this.eyes, this.arm, this.tauShadow]);
+    this.scene.tweens.killTweensOf([this.body, this.eyeFx, this.arm, this.tauShadow]);
     this.harmful = false;
     this.chainStep = undefined;
     this.speedScale = 1;
@@ -424,18 +508,16 @@ export class Luison extends Boss {
     this.arm.setVisible(false);
     this.tauShadow.setVisible(false);
     for (const clod of this.clods) this.hideClod(clod);
-    this.ctx.setBlackout(false);
+    this.setBlackout(false);
+    this.eyeFx.fade = 1;
+    this.eyeFx.pulse = 1;
+    for (const part of [...this.eyeDots, ...this.eyeGlows]) part.setVisible(false);
     this.body
       .setPosition(this.tombX(), this.ctx.floorY - CFG.tombHeight)
       .setAlpha(0)
       .setScale(1)
       .clearTint()
       .setTintMode(Phaser.TintModes.MULTIPLY);
-    this.eyes.setAlpha(0).setScale(1);
-  }
-
-  private dimEyes(): number {
-    return this.brain.phase >= 1 ? 0.9 : 0.6;
   }
 
   private faceKerana(): void {

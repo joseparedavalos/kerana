@@ -1166,12 +1166,22 @@ export const GAMEPLAY = {
     tombTile: 20,
     tombHeight: 18,
     startTile: 28,
-    /** Terrones: cuántos por ataque, espera entre uno y otro (ms), gravedad (px/s²), vuelo (ms) y radio (px). */
+    /**
+     * Huesos (S89; antes terrones, de ahí los nombres `clod*`): cuántos por ataque, espera entre uno y otro (ms),
+     * gravedad (px/s²), vuelo (ms) y radio del golpe (px).
+     */
     clodsPerThrow: 3,
     clodGapMs: 260,
     clodGravity: 520,
     clodFlightMs: 850,
     clodRadius: 4,
+    /** El dibujo del hueso (S89): largo y grosor de la caña (px), radio de los nudos, colores y giro en el aire (°/s). */
+    boneLengthPx: 10,
+    boneShaftPx: 2,
+    boneKnobRadius: 1.5,
+    boneColor: 0xf2eee3,
+    boneOutlineColor: 0x2a2228,
+    boneSpinDegPerSec: 540,
     /** Póra que llama el aullido y máximo a la vez. */
     poraPerHowl: 2,
     maxPora: 3,
@@ -1180,8 +1190,18 @@ export const GAMEPLAY = {
     walkSpeed: 45,
     /** Salto a los techos (ms). */
     leapMs: 450,
-    /** Ojos brillantes en la oscuridad (aviso de la embestida). */
+    /**
+     * Ojos en la oscuridad (S89): dos puntos de `eyeColor` con un brillo alrededor, solo durante el apagón y solo
+     * mientras el halo de Kerana no lo alumbra (alumbrado, el sprite ya tiene sus ojos). `eyeDotPx` (lado del punto) y
+     * `eyeGlowRadius` en px; `eyeGlowAlpha` es el alfa del brillo; `eyePulseScale`, cuánto crecen en el aviso.
+     * Se apagan de `eyeLitFadePx` px antes del borde del halo hasta el borde (`darkness.haloRadius`).
+     */
     eyeColor: 0xf2e24e,
+    eyeDotPx: 2,
+    eyeGlowRadius: 2.5,
+    eyeGlowAlpha: 0.35,
+    eyePulseScale: 1.6,
+    eyeLitFadePx: 24,
     /** Sombra de Tau detrás (fase 3): alfa y cuánto sobresale (px). */
     tauShadowAlpha: 0.55,
     tauShadowPadPx: 14,
@@ -1783,7 +1803,26 @@ export const GAMEPLAY = {
     mboiTui: { origin: [0.31, 0.33] },
     jasyJatere: { staffColumns: [0, 0.3], surpriseOffsetY: 10 },
     aoAo: { idleTimeScale: 0.35 },
-    luison: { eyeForward: 15 },
+    /**
+     * Luisón (S89): dónde está el ojo en cada cuadro de cada animación, en píxeles de la hoja (mirando a la izquierda,
+     * desde la esquina de arriba a la izquierda del cuadro de 104 × 72). El segundo punto (el ojo de atrás) va
+     * `eyeGapPx` píxeles de hoja más adelante. Si se agrega una animación, se agrega su fila acá.
+     */
+    luison: {
+      eyes: {
+        luison_idle: [
+          [20, 17],
+          [21, 11],
+          [22, 7],
+          [21, 8],
+          [20, 14],
+          [20, 19],
+          [20, 21],
+          [20, 18],
+        ],
+      } as Record<string, readonly (readonly [number, number])[]>,
+      eyeGapPx: 5,
+    },
     tauTrue: { origin: [0.49, 0.54] },
     /**
      * Mainumby: la animación de la hoja (`mainumby_fly`), vaivén vertical y leve inclinación hacia donde se mueve.
