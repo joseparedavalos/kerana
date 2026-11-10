@@ -18,6 +18,8 @@ function chain(...parts) {
 
 // l1 · Paraguarí (S19). Ruta baja = la principal: salta el hoyo del hongo (x 146-147), Luz de Arasy, cuatro
 // teju'i y el hongo de x 177. Ruta alta: se deja caer al hoyo, rebota y va por las repisas de la fila 8.
+// S85: después del fuego de la cima, la quebrada (x 187-226): un salto simple por plataforma y la móvil del final.
+// La cueva, la antesala y la arena se corrieron 40 tiles.
 const L1_COMMON = {
   // Piedra de la reja (x 91) y la de la balsa (x 117). La temporizada de la cueva (x 27) es opcional.
   hitSwitches: [
@@ -29,13 +31,14 @@ const L1_COMMON = {
   noGapJump: [
     [23, 26],
     [134, 139],
-    [186, 197],
-    [233, 241],
+    [226, 237],
+    [273, 281],
   ],
   splits: [
     ['fuego x 101', 101],
     ['fuego x 184', 184],
-    ['antesala x 250', 250],
+    ['quebrada cruzada x 227', 227],
+    ['antesala x 290', 290],
   ],
   steps: [
     // S23: el hueco antes del bloque de la piedra (x 112-113) con un salto que apunta al bloque: corriendo, con el juego
@@ -44,9 +47,20 @@ const L1_COMMON = {
     { jumpTo: [115.5, 9] },
     // Cae 1,5 tiles adentro de la orilla (con 0,5, al frenar en el aire se volvía al hueco).
     { mover: [118, 9], dir: 1, power: true, exit: 'jump', landX: 131.5 },
+    // S85: la quebrada. De la cima a cada plataforma con un salto simple (sin salto doble ni dash); la móvil se espera
+    // en la punta de P4 y se baja caminando a P5; el último hueco (2 tiles) lo salta la carrera. Una caída vuelve al
+    // fuego de la cima (rect PitReturn): se retoma desde el primer paso de la quebrada.
+    { run: 1, untilX: 185 },
+    { jumpTo: [190, 8], retryFrom: 3 },
+    { jumpTo: [195, 7], retryFrom: 3 },
+    { jumpTo: [201, 9], retryFrom: 3 },
+    { jumpTo: [207, 8], retryFrom: 3 },
+    { jumpTo: [214, 7], retryFrom: 3 },
+    { mover: [216, 8], dir: 1, exit: 'walk', retryFrom: 3 },
+    { run: 1, untilX: 228, retryFrom: 3 },
     { run: 1, untilTop: 16 },
-    { run: -1, untilX: 205.4 },
-    { mover: [200, 22], dir: -1, exit: 'walk', exitDir: 1 },
+    { run: -1, untilX: 245.4 },
+    { mover: [240, 22], dir: -1, exit: 'walk', exitDir: 1 },
     { run: 1, untilFight: true },
   ],
 };
@@ -68,11 +82,12 @@ export const L1_CHIPAS = {
     { jumpTo: [30, 6], double: true },
     { run: 1, untilX: 40.3 },
     { run: -1, untilX: 24.5 },
-    ...L1_COMMON.steps.slice(0, 5),
+    // S85: los pasos comunes hasta la galería 2 (con la quebrada), con sus `retryFrom` corridos a este plan.
+    ...chain([L1_COMMON.steps, 0, 13]).map((st) => (st.retryFrom === undefined ? st : { ...st, retryFrom: st.retryFrom + 5 })),
     { charge: -1 },
-    { mover: [200, 22], dir: -1, exit: 'walk' },
-    { run: -1, untilX: 194 },
-    { jumpTo: [190, 26], double: true },
+    { mover: [240, 22], dir: -1, exit: 'walk' },
+    { run: -1, untilX: 234 },
+    { jumpTo: [230, 26], double: true },
     { run: 1, untilFight: true },
   ],
 };

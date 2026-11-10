@@ -228,6 +228,8 @@ export class LevelScene extends Phaser.Scene {
   /** S36: el paso de la ofrenda (cortina de raíces antes de la antesala) y adónde se vuelve a buscar cada chipa. */
   private offering?: { door: OfferingDoor; motor: OfferingMotor };
   private chipaReturns: ChipaReturnPoint[] = [];
+  /** S85: tramos (rect PitReturn) donde caer al vacío devuelve al último fuego, no a la última plataforma pisada. */
+  private pitReturns: Phaser.Geom.Rectangle[] = [];
   private switches: Switch[] = [];
   private switchBoard = new SwitchBoard();
   /** Cuerpos que pueden viajar sobre una plataforma móvil o una vaca (se arma en cada frame, sin asignar). */
@@ -306,6 +308,7 @@ export class LevelScene extends Phaser.Scene {
     this.gates = [];
     this.offering = undefined;
     this.chipaReturns = [];
+    this.pitReturns = [];
     this.switches = [];
     this.switchBoard = new SwitchBoard();
     this.darkness = undefined;
@@ -1922,6 +1925,9 @@ export class LevelScene extends Phaser.Scene {
         case 'ChipaReturn':
           this.chipaReturns.push({ chipa: Number(objectProp(obj, 'chipa') ?? 0), x, y });
           break;
+        case 'PitReturn':
+          this.pitReturns.push(new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)));
+          break;
         case 'Switch': {
           const target = String(objectProp(obj, 'target') ?? '');
           const sw = new Switch(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)), target, Number(objectProp(obj, 'ms') ?? 0));
@@ -2169,7 +2175,10 @@ export class LevelScene extends Phaser.Scene {
     if (reason === 'trap') AudioManager.play('rescue');
     if (this.player.health.isDead) this.koRespawn();
     else {
-      const spot = this.respawnSpot();
+      // S85: en un tramo PitReturn (la quebrada de l1) la caída vuelve al fuego; cuentan las columnas, no la altura.
+      const x = this.player.body.center.x;
+      const toFire = reason === 'pit' && this.pitReturns.some((z) => x >= z.left && x < z.right);
+      const spot = toFire ? this.checkpointPos : this.respawnSpot();
       this.player.respawnAt(spot.x, spot.y);
     }
     this.dashTrail.clear();

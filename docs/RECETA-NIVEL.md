@@ -80,6 +80,8 @@ Lo abierto de verdad (aire que se recorre, o un vano que se lee como ventana, po
 | C4 | x 200–210 | plataforma vertical sobre el pozo (x 200–203) | galería 3, x 204–210 |
 | C5 | x 211–249 | teju'i, estalactita, espinas | **antesala x 250** |
 
+*(S85)* Entre B6 y C1 ahora va **la quebrada** (x 187–226): 40 columnas de vacío con cinco plataformas de 3, una repisa de 6 y una móvil; cadencia, la boca de la cueva (x 227). **Todo lo de C, la antesala y la arena está 40 tiles más a la derecha** que en esta tabla (C1 empieza en x 230; la antesala, en x 290). Qué enseñó: antes de insertar columnas, mirar qué pared queda de cada lado del corte (el pedido era cortar en x 188 y la pared izquierda de la cámara de la pluma C era x 187: la cámara quedaba abierta al vacío; se cortó un tile antes); una zona `rect Cave` que cruza el corte no se corre, se recorta; y una plataforma fina **cuenta como suelo firme**: sin la zona `rect PitReturn`, una caída devuelve a la última plataforma pisada, no al fuego.
+
 ---
 
 ## 3. Pozos, plataformas, piedras y fuegos

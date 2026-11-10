@@ -350,10 +350,10 @@ async function main() {
     const backdropState = (page) => page.evaluate(() => window.__KERANA_DEBUG__.scene.backdrop.debugState);
     const bgStart = await backdropState(title);
     check(bgStart.images === 2 && bgStart.cave && !bgStart.far, `nivel 1: la cueva inicial usa solo el fondo de cueva (${JSON.stringify(bgStart)})`);
-    // Boca de la cueva inicial (x ≈ 45) y de la cueva de C (x ≈ 190, S19): cielo y cueva a la vez, con el borde oscuro.
+    // Boca de la cueva inicial (x ≈ 45) y de la cueva de C (x ≈ 230; S19, corrida 40 tiles por la quebrada en S85): cielo y cueva a la vez, con el borde oscuro.
     for (const [tx, ty] of [
       [45, 11],
-      [190, 10],
+      [230, 10],
     ]) {
       await title.evaluate(([x, y]) => window.__KERANA_DEBUG__.player.body.reset(x * 16, y * 16), [tx, ty]);
       await sleep(1200);
@@ -461,7 +461,7 @@ async function main() {
     await bossPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     const bx = await bossPage.evaluate(() => window.__KERANA_DEBUG__.player.x);
-    check(bx > 250 * TILE && bx < 274 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
+    check(bx > 290 * TILE && bx < 314 * TILE, `boss=1 empieza en la antesala (x ${Math.round(bx / TILE)} tiles)`);
     const anteMusic = await audioState(bossPage);
     check(anteMusic?.wanted === 'l1', `música: la antesala sigue con la del nivel, la calma de antes (${anteMusic?.wanted})`);
     await walkIntoArena(bossPage);
@@ -501,8 +501,8 @@ async function main() {
       };
     });
     check(
-      l1Info.movers === 3 && l1Info.gates === 3 && l1Info.switches === 5 && l1Info.bouncers === 'ready,ready,asleep' && l1Info.feathers === 3,
-      `nivel 1: 3 plataformas, 3 rejas, 5 piedras (S28: la segunda del nicho de la pluma A), hongos de un uso y dormido, 3 plumas (${JSON.stringify(l1Info)})`,
+      l1Info.movers === 4 && l1Info.gates === 3 && l1Info.switches === 5 && l1Info.bouncers === 'ready,ready,asleep' && l1Info.feathers === 3,
+      `nivel 1: 4 plataformas (S85: la de la quebrada), 3 rejas, 5 piedras (S28: la segunda del nicho de la pluma A), hongos de un uso y dormido, 3 plumas (${JSON.stringify(l1Info)})`,
     );
     await l1Page.evaluate(installPilot, L1_CHIPAS);
     const pilot = (page) => page.evaluate(() => {
@@ -569,7 +569,7 @@ async function main() {
     for (let t = 0; t < 3000 && !(await powered('reja_cueva')); t += 50) await sleep(50);
     check(closedInside && (await powered('reja_cueva')), 'nivel 1: encerrada en el nicho de la pluma A, la piedra de adentro abre la reja');
     const sealedBefore = await powered('reja_camara');
-    await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(204 * 16 + 10, 22 * 16));
+    await l1Back.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(244 * 16 + 10, 22 * 16));
     await sleep(300);
     await l1Back.evaluate(() => (window.__KERANA_DEBUG__.player.motor.facing = -1));
     await l1Back.keyboard.down('KeyX');
@@ -632,7 +632,7 @@ async function main() {
     // S39: la pausa ofrece volver desde el inicio del nivel, antes de llegar a la puerta.
     const ofrStart = await ofrState();
     check(ofrStart.canReturn && ofrStart.x < 20 && ofrStart.line === '', `S39: con una chipa por buscar, la pausa ofrece volver desde el inicio, sin haber llegado a la puerta (${JSON.stringify(ofrStart)})`);
-    await ofrAt(244, 30);
+    await ofrAt(284, 30);
     await sleep(300);
     await ofr.keyboard.down('ArrowRight');
     for (let t = 0; t < 8000 && !(await ofrState()).line; t += 200) await sleep(200);
@@ -641,7 +641,7 @@ async function main() {
     await ofr.keyboard.up('ArrowRight');
     await ofr.screenshot({ path: join(SHOTS, 'ofrenda-cerrada.png') });
     check(
-      ofrClosed.door === 'closed' && ofrClosed.x < 249 && ofrClosed.hud === 2 && ofrClosed.line.includes('2') && ofrClosed.canReturn,
+      ofrClosed.door === 'closed' && ofrClosed.x < 289 && ofrClosed.hud === 2 && ofrClosed.line.includes('2') && ofrClosed.canReturn,
       `puerta de la ofrenda: con dos chipas no se pasa, Mainumby dice cuántas lleva y la pausa ofrece volver (${JSON.stringify(ofrClosed)})`,
     );
     // Pausa → "Volver a buscar chipas" (el segundo ítem cuando aparece).
@@ -662,15 +662,15 @@ async function main() {
     // La que faltaba (la B, en la ruta alta) y de vuelta a la puerta: la ofrenda la abre.
     await ofrAt(163, 4);
     for (let t = 0; t < 3000 && (await ofrState()).hud < 3; t += 100) await sleep(100);
-    await ofrAt(244, 30);
+    await ofrAt(284, 30);
     await sleep(300);
     await ofr.keyboard.down('ArrowRight');
-    for (let t = 0; t < 20000 && (await ofrState()).x < 252; t += 200) await sleep(200);
+    for (let t = 0; t < 20000 && (await ofrState()).x < 292; t += 200) await sleep(200);
     await ofr.keyboard.up('ArrowRight');
     const ofrOpen = await ofrState();
     await ofr.screenshot({ path: join(SHOTS, 'ofrenda-abierta.png') });
     check(
-      ofrOpen.hud === 3 && ofrOpen.door === 'open' && ofrOpen.x >= 252 && !ofrOpen.canReturn,
+      ofrOpen.hud === 3 && ofrOpen.door === 'open' && ofrOpen.x >= 292 && !ofrOpen.canReturn,
       `puerta de la ofrenda: con las tres chipas Kerana las entrega y el paso se abre (${JSON.stringify(ofrOpen)})`,
     );
     // Partida de antes de S36: Teju Jagua ya libre y ninguna chipa guardada. La puerta no la deja encerrada.
@@ -680,7 +680,7 @@ async function main() {
     check(ofrOld.door === 'open' && ofrOld.hud === 0, `puerta de la ofrenda: con el hijo ya libre (partida vieja) está abierta de entrada (${JSON.stringify(ofrOld)})`);
     await ofr.close();
 
-    // 1b5) S62: los payeseros de l1 (ladera x 73, cueva x 230). Miran a Kerana y giran si les pasa al otro lado, cargan
+    // 1b5) S62: los payeseros de l1 (ladera x 73, cueva x 270). Miran a Kerana y giran si les pasa al otro lado, cargan
     // con el aura encendida y lanzan el payé desde la mano; el sable lo corta; su golpe empuja hacia la zanja, no al pozo
     // 1; la purificación termina sin errores. Sin god=1: el payé tiene que pegar.
     const payPage = await open('/?debug=1&level=1');
@@ -711,9 +711,9 @@ async function main() {
       }
       return info;
     };
-    // S63: cuatro. Los dos de S62 y dos más: la ruta alta de la ladera (x 156) y la repisa del secreto en la cueva (x 242).
+    // S63: cuatro. Los dos de S62 y dos más: la ruta alta de la ladera (x 156) y la repisa del secreto en la cueva (x 282).
     const payXs = async () => (await payInfo()).xs.split(',').map(Number).sort((a, b) => a - b).join(',');
-    check((await payXs()) === '73,156,230,242', `payesero: cuatro en l1, ladera x 73 y x 156, cueva x 230 y x 242 (${await payXs()})`);
+    check((await payXs()) === '73,156,270,282', `payesero: cuatro en l1, ladera x 73 y x 156, cueva x 270 y x 282 (${await payXs()})`);
     // Cada golpe a Kerana y cada caída se anotan dentro del juego: con el contenedor cargado, sondear desde afuera
     // llega tarde (en S62 el chequeo vio dos corazones menos: ya había pegado el segundo payé).
     await payPage.evaluate(() => {
@@ -819,12 +819,12 @@ async function main() {
     }
     check(fading?.purified && fading.aura < 2, `payesero: al purificarlo el aura se apaga (${JSON.stringify(fading)})`);
     await sleep(3000);
-    check((await payXs()) === '156,230,242', `payesero: purificado, se desvanece y se va (${await payXs()})`);
+    check((await payXs()) === '156,270,282', `payesero: purificado, se desvanece y se va (${await payXs()})`);
     // S63: los dos nuevos llegan a donde pasa Kerana y su payé no la tira a un pozo. Ladera: en la primera repisa de la ruta
-    // alta (x 151, donde se cae del rebote del hongo). Cueva: en la galería 1, antes del hueco a la galería 2 (x 234).
+    // alta (x 151, donde se cae del rebote del hongo). Cueva: en la galería 1, antes del hueco a la galería 2 (x 274).
     for (const [where, kx, feet, px] of [
       ['ruta alta de la ladera', 151, 8, 156],
-      ['galería 1 de la cueva', 234, 14, 242],
+      ['galería 1 de la cueva', 274, 14, 282],
     ]) {
       await clearPayes();
       await payPage.evaluate(

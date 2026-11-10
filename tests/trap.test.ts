@@ -194,7 +194,7 @@ describe('red de seguridad: encierros (S23, alcances de S24)', () => {
     // Desde S36 los dones se tienen desde el primer nivel: todos con salto doble. Cada bolsillo está cerrado por el
     // rompible (o la ofrenda) que hay que abrir para entrar: estando sano no se pisa, y al abrirlo se recalcula.
     const closed: Record<string, string[]> = {
-      l1: ['x 246-248 fila 14'], // secreto tras la liana (x 245)
+      l1: ['x 286-288 fila 14'], // secreto tras la liana (x 285)
       l3: [],
       l4: ['x 167-168 fila 37', 'x 170-172 fila 37'], // jaula de fardo y rocas (x 166-173)
       l5: ['x 262-263 fila 80'], // entre el fardo (x 261) y la ofrenda (x 264)
