@@ -277,7 +277,7 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
     epithetKey: 'boss.luison.epithet',
     hp: LUISON_HP,
     phases: [
-      // Fase 1 (entre las tumbas): desde un techo gira el brazo (0,6 s) y tira terrones en arco (sin ventana);
+      // Fase 1 (entre las tumbas): desde un techo gira el brazo (0,6 s) y tira huesos en arco (sin ventana);
       // trepa a la lápida (1 s), aúlla y llama 2 póra: la ventana es mientras aúlla (1,5 s).
       {
         untilHpRatio: 12 / LUISON_HP,
@@ -298,14 +298,14 @@ export const BOSSES: Partial<Record<BossId, BossDef>> = {
           { id: 'clods', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 300, punishable: false },
         ],
       },
-      // Fase 3 (la marca de Tau): la sombra de Tau lo mueve como a un títere. Aviso 0,6 s, ventana 1 s.
-      // La cadena es embestida → terrones → póra.
+      // Fase 3 (la marca de Tau): la sombra de Tau lo mueve como a un títere. Aviso 0,6 s, ventana 1,6 s
+      // (S89: era 1 s; llegando desde lejos entraba un solo tajo). La cadena es embestida → huesos → póra.
       {
         untilHpRatio: 0,
         idleMs: 600,
         attacks: [
-          { id: 'chain', weight: 2, telegraphMs: 600, activeMs: 2400, recoverMs: 1000 },
-          { id: 'charge', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 1000 },
+          { id: 'chain', weight: 2, telegraphMs: 600, activeMs: 2400, recoverMs: 1600 },
+          { id: 'charge', weight: 1, telegraphMs: 600, activeMs: 900, recoverMs: 1600 },
         ],
       },
     ],
