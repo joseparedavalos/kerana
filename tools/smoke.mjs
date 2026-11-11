@@ -112,6 +112,53 @@ async function main() {
     await page.keyboard.up('ArrowRight');
   }
 
+  // S91: con la arena de Mbói Tu'i trabada, Kerana camina al primer camalote (x 405-407) y se queda hasta que se hunde.
+  // Solo teclas; lee el estado para comprobar adónde volvió.
+  async function camaloteFall(page) {
+    const T = 16;
+    const st = () =>
+      page.evaluate(() => {
+        const d = window.__KERANA_DEBUG__;
+        const b = d.player.body;
+        const view = d.scene.cameras.main.worldView;
+        const arena = d.scene.arena.rect;
+        return {
+          x: b.center.x,
+          bottom: b.bottom,
+          fighting: d.scene.fighting === true,
+          visible: view.contains(b.center.x, b.center.y),
+          inside: b.center.x > arena.left + 16 && b.center.x < arena.right && b.bottom <= arena.bottom,
+        };
+      });
+    const start = await st();
+    await page.keyboard.down('ArrowRight');
+    for (let t = 0; t < 10000 && (await st()).x < 406.3 * T; t += 50) await sleep(50);
+    await page.keyboard.up('ArrowRight');
+    // Quieta sobre el camalote: se hunde y cae al agua; la vuelta la saca de ahí (fuera de x 404-409 o arriba).
+    let fell = false;
+    for (let t = 0; t < 10000 && !fell; t += 50) {
+      const s = await st();
+      fell = s.x < 404 * T || s.x > 409 * T;
+      if (!fell) await sleep(50);
+    }
+    await sleep(800);
+    const back = await st();
+    // ¿Se mueve? Medio segundo hacia el medio de la arena.
+    await page.keyboard.down('ArrowRight');
+    await sleep(500);
+    await page.keyboard.up('ArrowRight');
+    await sleep(200);
+    const moved = await st();
+    return {
+      fighting: start.fighting && back.fighting,
+      fell,
+      inside: back.inside,
+      visible: back.visible,
+      moved: Math.abs(moved.x - back.x) > 4,
+      backTile: [Math.round((back.x / T) * 10) / 10, Math.round((back.bottom / T) * 10) / 10],
+    };
+  }
+
   // S36: el nivel como la primera vez: sin sus chipas y con su hijo sin liberar (la puerta de la ofrenda, cerrada). Si
   // el hijo ya estaba libre y su don es un corazón, ese corazón también se devuelve (la liberación lo vuelve a dar).
   async function freshLevel(page, levelId, bossId, heartUp = false) {
@@ -1046,6 +1093,17 @@ async function main() {
     }
     check(await rockA(), 'nivel 2: el tajo cargado rompe la roca agrietada entera (3 × 4 tiles de un golpe)');
     console.log(`  l2 (ruta principal): ${(run2.timeMs / 1000).toFixed(1)} s de juego hasta la arena; parciales ${JSON.stringify(run2.splits)}`);
+    // S91: el piloto entró caminando y la arena se trabó. Kerana se queda en el primer camalote (x 405-407) hasta que
+    // se hunde y cae al agua: tiene que volver dentro de la arena, a la vista y pudiendo moverse (antes volvía a x 233,
+    // afuera de la pared y de la cámara, si el último suelo firme había quedado congelado).
+    if (run2.done) {
+      const fall = await camaloteFall(l2Run);
+      check(
+        fall.fighting && fall.fell && fall.inside && fall.visible && fall.moved,
+        `nivel 2: cae al agua de un camalote de la arena y vuelve dentro de ella, a la vista y moviéndose (${JSON.stringify(fall)})`,
+      );
+      if (!fall.inside || !fall.visible) await l2Run.screenshot({ path: join(SHOTS, 'l2-camalote-afuera.png') });
+    }
     await l2Run.evaluate(() => window.__KERANA_DEBUG__.defeatBoss());
     for (let i = 0; i < PRESS_MAX && !(await l2Run.evaluate(() => { const s = window.__KERANA_GAME__?.scene; return !!s && (s.isActive('LevelComplete') || s.isActive('Map')); })); i++) {
       if (await dialogueOpen(l2Run)) await l2Run.keyboard.press('Space');
