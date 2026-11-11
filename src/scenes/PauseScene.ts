@@ -3,11 +3,11 @@ import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { EventBus, GameEvents } from '../systems/EventBus';
-import { InputManager } from '../systems/InputManager';
+import { inputDevices, InputManager } from '../systems/InputManager';
 import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
-// Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Volver al último fuego (S39; antes «Reiniciar desde el fuego») · Opciones · Salir al mapa.
+// Pausa (GDD §8.6): Continuar · (Volver a buscar chipas, S36) · Volver al último fuego (S39; antes «Reiniciar desde el fuego») · Opciones · (Botones, S90, solo en táctil) · Salir al mapa.
 export class PauseScene extends Phaser.Scene {
   private inputs!: InputManager;
   private items: { labelKey: string; action: () => void }[] = [];
@@ -31,6 +31,8 @@ export class PauseScene extends Phaser.Scene {
       ...(this.registry.get('chipaReturn') === true ? [{ labelKey: 'pause.chipa_return', action: () => this.returnForChipas() }] : []),
       { labelKey: 'pause.restart', action: () => this.restart() },
       { labelKey: 'pause.options', action: () => this.scene.start('Options', { returnScene: 'Pause' }) },
+      // S90: en el celular, el editor de botones a un toque (es el mismo de Opciones) y al cerrar vuelve acá.
+      ...(inputDevices().current === 'touch' ? [{ labelKey: 'pause.buttons', action: () => this.scene.start('Buttons', { returnTo: 'Pause' }) }] : []),
       { labelKey: 'pause.exit_to_map', action: () => this.exitToMap() },
     ];
     this.selected = 0;

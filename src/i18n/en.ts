@@ -191,6 +191,8 @@ export const en: Record<TextKey, string> = {
   'pause.restart': 'Back to the last campfire',
   'pause.chipa_return': 'Go back for chipas',
   'pause.options': 'Options',
+  'pause.buttons': 'Buttons',
+  'rotate.title': 'Rotate your phone',
   'pause.exit_to_map': 'Back to the map',
   'options.title': 'Options',
   'options.music': 'Music',

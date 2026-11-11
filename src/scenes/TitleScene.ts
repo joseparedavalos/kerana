@@ -9,6 +9,7 @@ import { addEichu, addNightSky } from '../systems/Backdrops';
 import { InputManager } from '../systems/InputManager';
 import { SaveManager } from '../systems/SaveManager';
 import { centerHitArea } from '../systems/hitArea';
+import { armFullscreenOnTouch } from '../systems/mobileShell';
 import { setupView, VIEW } from '../systems/View';
 
 const SKY_KEY = 'bg_yvaga_far';
@@ -36,6 +37,8 @@ export class TitleScene extends Phaser.Scene {
     this.started = false;
     SaveManager.load();
     AudioManager.music('title');
+    // S90: en el celular, el primer toque pide pantalla completa y, si se puede, fija la orientación horizontal.
+    armFullscreenOnTouch();
     const { width, height } = VIEW;
     this.inputs = new InputManager(this);
     this.paintSky(width, height);

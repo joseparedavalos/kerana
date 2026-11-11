@@ -5,6 +5,8 @@ import { SaveManager } from '../systems/SaveManager';
 import { drawTouchIcon } from '../systems/TouchControls';
 import {
   defaultTouchLayout,
+  inMoveZone,
+  moveArrowOffset,
   resolveTouchLayout,
   stepTouchScale,
   touchButtonRadius,
@@ -16,8 +18,10 @@ import {
 import { centerHitArea } from '../systems/hitArea';
 import { setupView, VIEW } from '../systems/View';
 
+// La zona de moverse (`move`) se dibuja con dos piezas, una por flecha; se mueve y se agranda entera.
 interface Drawn {
   id: TouchButtonId;
+  side: -1 | 0 | 1;
   bg: Phaser.GameObjects.Arc;
   icon: Phaser.GameObjects.Graphics;
 }
@@ -25,6 +29,8 @@ interface Drawn {
 // Se arrastran los botones y se les cambia el tamaño. Se guarda al tocar Listo.
 export class ButtonLayoutScene extends Phaser.Scene {
   private optionsReturn = 'Title';
+  // S90: desde la pausa se entra directo y al cerrar se vuelve a la pausa, sin pasar por Opciones.
+  private returnTo: 'Options' | 'Pause' = 'Options';
   private layout!: TouchLayout;
   private drawn: Drawn[] = [];
   private selected: TouchButtonId = 'jump';
@@ -34,9 +40,12 @@ export class ButtonLayoutScene extends Phaser.Scene {
     super('Buttons');
   }
 
-  init(data: { optionsReturn?: string }): void {
+  init(data: { optionsReturn?: string; returnTo?: 'Options' | 'Pause' }): void {
     this.optionsReturn = data.optionsReturn ?? 'Title';
+    this.returnTo = data.returnTo ?? 'Options';
     this.drag = null;
+    // La instancia se reusa: las piezas de la visita anterior ya se destruyeron con la escena.
+    this.drawn = [];
   }
 
   create(): void {
@@ -48,9 +57,11 @@ export class ButtonLayoutScene extends Phaser.Scene {
     this.add.text(width / 2, 38, t('buttons.hint'), { fontFamily: FONT_FAMILY, fontSize: '10px', color: '#CFE3F2' }).setOrigin(0.5);
 
     for (const id of TOUCH_IDS) {
-      const bg = this.add.circle(0, 0, 8, 0x1b1a2e, 0.4).setStrokeStyle(1.5, 0xf2eee3, 0.9).setDepth(2);
-      const icon = this.add.graphics().setDepth(3);
-      this.drawn.push({ id, bg, icon });
+      for (const side of id === 'move' ? ([-1, 1] as const) : ([0] as const)) {
+        const bg = this.add.circle(0, 0, 8, 0x1b1a2e, 0.4).setStrokeStyle(1.5, 0xf2eee3, 0.9).setDepth(2);
+        const icon = this.add.graphics().setDepth(3);
+        this.drawn.push({ id, side, bg, icon });
+      }
     }
     this.paint();
 
@@ -62,9 +73,11 @@ export class ButtonLayoutScene extends Phaser.Scene {
     });
     this.tool(width / 2 + 110, height - 22, t('buttons.done'), () => this.finish());
 
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    // S90: antes se ignoraba todo toque en los 40 px de abajo (la franja de − + Reiniciar Listo), y ahí están de
+    // fábrica las flechas: no se podían elegir ni arrastrar. Ahora solo se ignora el toque que cae en una herramienta.
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (over.length > 0) return;
       const point = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-      if (point.y > height - 40) return;
       const hit = this.hit(point.x, point.y);
       if (!hit) return;
       this.selected = hit;
@@ -97,7 +110,8 @@ export class ButtonLayoutScene extends Phaser.Scene {
       const dy = y - place.y;
       const r = touchButtonRadius(id, place.scale);
       const d = dx * dx + dy * dy;
-      if (d <= r * r && d < best) {
+      const inside = id === 'move' ? inMoveZone(place, x, y) : d <= r * r;
+      if (inside && d < best) {
         best = d;
         found = id;
       }
@@ -121,8 +135,10 @@ export class ButtonLayoutScene extends Phaser.Scene {
       const place = this.layout[item.id];
       const size = touchButtonSize(item.id) * place.scale;
       const selected = item.id === this.selected;
-      item.bg.setPosition(place.x, place.y).setRadius(size / 2).setStrokeStyle(selected ? 2.5 : 1.5, selected ? 0xf2c14e : 0xf2eee3, 0.95);
-      drawTouchIcon(item.icon, place.x, place.y, item.id, 0xf2eee3, place.scale);
+      const x = place.x + item.side * moveArrowOffset(place.scale);
+      item.bg.setPosition(x, place.y).setRadius(size / 2).setStrokeStyle(selected ? 2.5 : 1.5, selected ? 0xf2c14e : 0xf2eee3, 0.95);
+      const icon = item.id === 'move' ? (item.side < 0 ? 'left' : 'right') : item.id;
+      drawTouchIcon(item.icon, x, place.y, icon, 0xf2eee3, place.scale);
     }
   }
 
@@ -137,6 +153,7 @@ export class ButtonLayoutScene extends Phaser.Scene {
 
   private finish(): void {
     SaveManager.updateSettings({ touchLayout: this.layout });
-    this.scene.start('Options', { returnScene: this.optionsReturn });
+    if (this.returnTo === 'Pause') this.scene.start('Pause');
+    else this.scene.start('Options', { returnScene: this.optionsReturn });
   }
 }

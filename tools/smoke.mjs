@@ -299,8 +299,8 @@ async function main() {
     const levels = rendered.tracks.map((tr) => tr.rms);
     const spreadDb = 20 * Math.log10(Math.max(...levels) / Math.min(...levels));
     check(
-      rendered.tracks.length === 20 && rendered.tracks.every((tr) => tr.seconds > 8 && tr.peak <= 1 && Number.isFinite(tr.rms)) && spreadDb < 1.5,
-      `música: 13 pistas (S61: Tau, liberación y sellado) y 7 variantes de jefe generadas, parejas (${spreadDb.toFixed(2)} dB entre la más fuerte y la más suave)`,
+      rendered.tracks.length === 21 && rendered.tracks.every((tr) => tr.seconds > 8 && tr.peak <= 1 && Number.isFinite(tr.rms)) && spreadDb < 1.5,
+      `música: 14 pistas (S61: Tau, liberación y sellado; después, los créditos) y 7 variantes de jefe generadas, parejas (${spreadDb.toFixed(2)} dB entre la más fuerte y la más suave)`,
     );
     const sfxLevels = await title.evaluate(() => window.__KERANA_AUDIO__.sfxRms(['jump', 'slash', 'hit', 'hurt', 'bossWarn']));
     const quietestSfx = Math.min(...sfxLevels.map((x) => x.rms));
