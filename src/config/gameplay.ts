@@ -295,6 +295,8 @@ export const GAMEPLAY = {
 
   /** Base común de jefes (GDD §11.5). */
   boss: {
+    /** S91: tiles desde el borde izquierdo de la arena donde se empieza a buscar su entrada (el punto de regreso al trabarse). */
+    arenaEntryTiles: 2,
     /** Cámara lenta del último golpe (ms, tiempo real) y factor de velocidad. */
     slowMoMs: 500,
     slowMoScale: 0.25,

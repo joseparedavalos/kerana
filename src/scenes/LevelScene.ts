@@ -44,6 +44,7 @@ import type { PlayerStateName } from '../entities/PlayerMotor';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
+import { arenaEntry, insideArena } from '../systems/arenaGround';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
 import { canReturnForChipas, chipaReturnTarget, OfferingMotor, offeringLineKey, offeringStartsOpen, type ChipaReturnPoint } from '../systems/offeringLogic';
 import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } from '../systems/trapLogic';
@@ -259,6 +260,8 @@ export class LevelScene extends Phaser.Scene {
   private arenaRect?: Phaser.Geom.Rectangle;
   private arenaBossId?: BossId;
   private arena?: BossArena;
+  /** S91: suelo firme de la entrada de la arena: el punto de regreso mientras está trabada. */
+  private arenaEntry?: Phaser.Math.Vector2;
   private boss?: Boss;
   /** Pelea en curso (después de cerrar la arena). */
   private fighting = false;
@@ -711,6 +714,11 @@ export class LevelScene extends Phaser.Scene {
 
   /** Adónde vuelve Kerana tras una caída: el último suelo firme o, en la persecución, el último pindó o la largada. */
   private respawnSpot(): Phaser.Math.Vector2 {
+    // S91: red de seguridad: con la arena trabada, nunca se vuelve afuera de ella.
+    const arena = this.arena;
+    if (arena?.locked && this.arenaEntry && !insideArena(arena.rect, this.map.tileWidth, this.safeGround.x, this.safeGround.y)) {
+      this.safeGround.copy(this.arenaEntry);
+    }
     if (!this.chase?.active) return this.safeGround;
     const x = this.chase.restart();
     const refuge = x === null ? undefined : this.chase.refuges.find((r) => (r.left + r.right) / 2 === x);
@@ -796,6 +804,19 @@ export class LevelScene extends Phaser.Scene {
     // S66: la pared llega al suelo firme. Con `floorY` se quedaba en la copa del medio de Moñái ("=" a 3 tiles del suelo)
     // y por debajo se salía de la arena en plena pelea.
     this.arena = new BossArena(this, rect, Math.max(floorY, groundY), this.player);
+    const tile = this.map.tileWidth;
+    const cell = (layer: TileLayerName, c: number, r: number) => this.tileAt(layer, (c + 0.5) * tile, (r + 0.5) * tile);
+    const entry = arenaEntry(
+      rect,
+      tile,
+      {
+        ground: (c, r) => cell('Ground', c, r),
+        blocked: (c, r) => cell('Ground', c, r) || cell('Hazards', c, r) || cell('Water', c, r),
+      },
+      GAMEPLAY.boss.arenaEntryTiles,
+    );
+    if (entry) this.arenaEntry = new Phaser.Math.Vector2(entry.x, entry.y);
+    else console.warn(`[ARENA] ${this.def.id}: sin suelo firme en la entrada de la arena`);
   }
 
   private updateBoss(deltaMs: number): void {
@@ -831,6 +852,9 @@ export class LevelScene extends Phaser.Scene {
   private startBossFight(): void {
     this.fighting = true;
     this.arena!.lock(this.cameras.main);
+    // S91: con la arena trabada, el punto de regreso pasa a su entrada (antes podía quedar 160 tiles atrás, del otro
+    // lado de la pared y fuera de la cámara: Kerana caía al agua de un camalote de Mbói Tu'i y no volvía nunca).
+    if (this.arenaEntry) this.safeGround.copy(this.arenaEntry);
     AudioManager.play('arenaLock');
     AudioManager.music(bossTrack(this.def.id), [liberationTrack(this.def.id)]);
     this.shake(GAMEPLAY.boss.lockShakeMs, GAMEPLAY.boss.lockShakeIntensity);
@@ -2127,6 +2151,8 @@ export class LevelScene extends Phaser.Scene {
     this.trapGfx?.destroy();
     this.trapGfx = undefined;
     this.trapCells = result.trappedSpans.length === 0 ? undefined : result.trapped;
+    // S91: sin encierros no hay de qué rescatar: el reloj se corta ya (no espera a que pise).
+    if (!this.trapCells) this.trapWatch.reset();
     if (!this.trapCells || !DEBUG.debug) return;
     // Con ?debug=1, una raya roja sobre cada piso encerrado.
     const gfx = (this.trapGfx = this.add.graphics().setDepth(30));
@@ -2156,7 +2182,9 @@ export class LevelScene extends Phaser.Scene {
    * último suelo firme.
    */
   private updateTrap(deltaMs: number, body: Phaser.Physics.Arcade.Body): void {
-    if (!this.trapCells) return;
+    // S91: sin encierros también se mira (`trappedUnder` da false): antes se salía acá y, si el último encierro se
+    // abría con Kerana adentro (el fardo del hueco del premio de l2 con el nido del inicio ya roto), el reloj quedaba
+    // "adentro" para siempre y `trackSafeGround` no volvía a guardar suelo en todo el nivel.
     if (this.trapWatch.step(deltaMs, body.blocked.down, this.trappedUnder(body), GAMEPLAY.trap.waitMs)) this.respawn('trap');
   }
 
@@ -2168,6 +2196,8 @@ export class LevelScene extends Phaser.Scene {
   private trackSafeGround(body: Phaser.Physics.Arcade.Body): void {
     if (!body.blocked.down || this.trapWatch.active || this.player.isIntangible) return;
     const tile = this.map.tileWidth;
+    // S91: con la arena trabada, solo cuenta el suelo firme de adentro.
+    if (this.arena?.locked && !insideArena(this.arena.rect, tile, body.center.x, body.bottom)) return;
     const below = body.bottom + 1;
     const feetY = body.bottom - 2;
     if (!this.isSolidAt(body.left + 1, below) || !this.isSolidAt(body.right - 1, below)) return;
