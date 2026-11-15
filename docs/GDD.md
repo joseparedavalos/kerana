@@ -839,7 +839,20 @@ Al liberar a Luisón, las siete estrellas se reúnen en el cielo y forman Eichu,
 
 Tau dejó de ser jefe secreto (antes pedía las 21 plumas y estaba recortado, §12.2): es el jefe final para todos, después de liberar a Luisón.
 
-- **Arena:** Yvága, el cielo. Solo la arena, sin nivel previo: suelo de nubes y las siete estrellas como plataformas de un solo sentido (3 tiles, ninguna a más de 3 tiles de la anterior). Se abre con `?debug=1&level=yvaga` (o `level=8`).
+- **La subida (S92):** Yvága ya no es solo la arena. Kerana empieza abajo, sobre una isla de nubes que va de lado a lado, y sube hasta Tau por un nivel vertical de 44 × 278 tiles: siete tramos, uno por hijo liberado, cada uno con los enemigos y la pieza de ese hijo. No hay pozos ni paredes ni espinas: solo islas finas, plataformas de un sentido, piezas móviles y viento. Entre tramo y tramo hay una red, una fila entera de plataforma de un sentido: se atraviesa subiendo y no se cae por ella, así que una caída nunca cuesta un corazón, solo volver a subir a lo sumo un tramo. Fuegos en la base, en los pisos 2, 4 y 6 y en la antesala; una guavirá en cada piso y la Luz de Arasy antes del tramo 4. El dash recién hace falta desde el tramo 5. El detalle con filas y x está en la cabecera de `tools/levels/yvaga.txt`.
+
+| Tramo | Hijo | Qué pide | Enemigos |
+|---|---|---|---|
+| 1 | Teju Jagua | tres islas anchas en zigzag, con escalones a los costados; sin piezas móviles | teju'i, mbopi |
+| 2 | Mbói Tu'ĩ | dos pares de balsas que se juntan al medio | ñakurutu, un payesero |
+| 3 | Moñái | dos saltos con viento en contra, uno para cada lado, y un tercero sin viento | karakara |
+| 4 | Jasy Jatere | cadena de cuatro ascensores con el enjambre detrás | abejas |
+| 5 | Kurupi | dos pasillos bajo una isla y el primer salto que pide el dash (12 tiles de aire) | ka'i, mbói colgante |
+| 6 | Ao Ao | dos corrales (isla larga con un labio en cada punta) y dos islas largas | taitetu, yaguareté avá |
+| 7 | Luisón | islas de 3 y móviles rápidos; termina en calma | payeseros, jagua hũ, mbopi |
+
+  Regla del nivel: **ningún enemigo está sobre la pieza donde aterriza un salto obligatorio**. A una isla con enemigos se llega a una repisa de un sentido, dos filas más arriba, y desde ahí se baja: se los mira antes de entrar. Los que embisten (taitetu, jagua hũ) viven en un corral, porque no frenan en un borde. El fondo es un solo cielo vertical que se recorre con la subida: el mar de nubes abajo, la noche con estrellas arriba (ASSETS §7). La cámara mira un poco hacia arriba.
+- **Arena:** arriba de todo, la de siempre: suelo de nubes y las siete estrellas como plataformas de un solo sentido (3 tiles, ninguna a más de 3 tiles de la anterior). A la antesala se entra por debajo; su piso es de un sentido. `?debug=1&level=yvaga` (o `level=8`) empieza al pie de la subida; con `&boss=1`, en la antesala. Si Tau deja a Kerana sin corazones, vuelve al fuego de la antesala.
 - **Fase 1, el joven de la flauta:** Tau con su disfraz del mito, en las nubes; cambia de lado en un parpadeo de humo. Notas que vuelan hacia Kerana y una melodía en anillo que hipnotiza (la hipnosis de Moñái: controles invertidos). Ventana después de cada ataque.
 - **Fase 2, los ecos:** Tau sube al cielo y llama sombras de tres hijos, que repiten un ataque cada una (**reutiliza lo de los jefes**): Teju Jagua, rocas que caen con aviso; Mbói Tu'i, graznido que empuja y barrida por las nubes; Jasy Jatere, un enjambre. Después del eco baja cansado a las nubes (ventana).
 - **Fase 3, las siete estrellas:** su forma real, humo violeta con ojos rojos, flotando en lo alto. El humo cubre las nubes (aviso: subir a una estrella); la estrella más cercana a Kerana se enciende y, al terminar el humo, lo baja con su rayo junto a ella (ventana). Rayos rojos hacia Kerana, sin ventana.
@@ -857,7 +870,7 @@ Boot → Preload → Título ─┬─ Nueva partida → Prólogo → Mapa
                          ├─ Opciones
                          └─ Créditos
 Mapa → Nivel N → (jefe) → Liberación → Nivel completado → Mapa
-Nivel 7 completado → Eichu y Tau → Yvága (Tau) → Final verdadero → Créditos → Título
+Nivel 7 completado → Eichu y Tau → Yvága (la subida y Tau) → Final verdadero → Créditos → Título
 ```
 
 ### 8.2 Título [MVP]
@@ -1245,7 +1258,7 @@ Los objetos rectangulares (zonas de viento, niebla, oscuridad, arena, pindó, ca
 **Piezas de motor (S18).**
 
 - **Plataforma móvil:** se dibuja en su punto de origen (`---` o `+++`) y su recorrido con `:` pegados a ella, a la derecha o a la izquierda (horizontal) o arriba o abajo de su primer tile (vertical). `---:::::` va 5 tiles a la derecha, espera y vuelve. Sin `:` o con `:` en dos lados, `npm run maps` da error. Velocidad (`GAMEPLAY.mover.speed`) y espera en cada extremo (`waitMs`) por defecto; lleva a Kerana y a los enemigos que caminan encima.
-- **Propiedades por objeto:** la línea de cabecera `at X,Y clave=valor…` agrega propiedades al objeto de la grilla que ocupa el tile (X, Y) (cualquiera de sus tiles). Si no hay objeto ahí, error.
+- **Propiedades por objeto:** la línea de cabecera `at X,Y clave=valor…` agrega propiedades al objeto de la grilla que ocupa el tile (X, Y) (cualquiera de sus tiles). Si no hay objeto ahí, error. S92: si en el tile no hay un objeto con área, vale el punto dibujado ahí (un fuego: `at X,Y id=N`). Los fuegos se numeran solos en el orden de la grilla, por filas de arriba abajo, y `?boss=1` empieza en el de número más alto: en un nivel que sube (Yvága) el de la antesala es el primero de la grilla, así que ahí se numeran con `at`, en el orden del recorrido.
 
 | Objeto | Propiedades con `at` |
 |---|---|
@@ -1309,7 +1322,7 @@ La luz de la onda del tajo cargado enciende un Switch hasta 6 tiles adelante aun
 | `Crumble` | Rectángulo | `delayMs` (rama que se quiebra) |
 | `Sinking` | Rectángulo | `sinkMs`, `respawnMs` (camalote) |
 | `Bouncer` | Rectángulo | `force` (hongo) |
-| `WindZone` | Rectángulo | `forceX`, `periodMs` |
+| `WindZone` | Rectángulo | `dir` (1 derecha, −1 izquierda), `speed` (px/s), `offsetMs` · S92: `grass=false` saca las matas de pasto del aviso (una zona en el aire, sin suelo: quedan las rayas de viento) |
 | `SleepFog` | Rectángulo | — |
 | `DarkZone` | Rectángulo | — |
 | `Lantern` | Punto | `lit` (empieza encendido) · S32: `target` (reja o Mover que maneja, como un Switch) · `ms` (se apaga solo; 0 o nada = permanente) |
@@ -1322,6 +1335,7 @@ La luz de la onda del tajo cargado enciende un Switch hasta 6 tiles adelante aun
 | `Waterfall` | Rectángulo | — (S31): cascada por código, delante de Kerana y sin choque |
 | `Offering` | Rectángulo | `front` (fila de los pies frente a la puerta, si se llega desde más alto que su pie). S36: el paso de la ofrenda, 1 tile de ancho y de techo a piso; lo abren las tres chipas del nivel |
 | `ChipaReturn` | Punto | `chipa` (índice 0 a 2). S36: dónde reaparece Kerana desde la pausa para buscar esa chipa (el inicio o un fuego). Van en el orden del recorrido: se usa el de la primera que falta |
+| `CameraFloor` | Rectángulo | `floor` (fila; por defecto, el borde de abajo del rectángulo). S92: con Kerana adentro, la vista no baja de esa fila; sube hasta ahí con suavidad (`GAMEPLAY.camera.floorSpeed`). En Yvága cubre la antesala: la vista sube a encuadrar la arena antes de que se trabe, en vez de saltar medio alto de pantalla |
 | `PitReturn` | Rectángulo | S85: tramo de plataformas sobre el vacío (la quebrada de l1). Caer al pozo dentro de sus columnas devuelve al último fuego encendido, no al último suelo firme (una plataforma fina de un solo sentido también cuenta como suelo firme) |
 
 - **Autotile:** si el tileset del bioma sigue el orden de 16 variantes descrito en `docs/ASSETS.md`, el script elige bordes y esquinas automáticamente; si no, usa un solo tile y el autor decora en Tiled.
