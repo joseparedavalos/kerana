@@ -11,9 +11,12 @@ import {
   farSide,
   floatsOutOfReach,
   formForPhase,
+  floatBottom,
   pickLitStar,
+  pullSpot,
   smokeHurts,
   TAU_ECHOES,
+  type StarBox,
 } from '../src/entities/bosses/tauLogic';
 
 const def = getBossDef('tau');
@@ -153,5 +156,72 @@ describe('Flujo y final (GDD §2.6, §6.8, §7)', () => {
     const slides = endingSlides(21, 21);
     expect(slides).toHaveLength(ENDING_SLIDES.length + 1);
     expect(slides[slides.length - 1]).toBe(FEATHERS_SLIDE);
+  });
+});
+
+describe('Tau crece en cada fase (S94)', () => {
+  const cfg = GAMEPLAY.tau;
+  const TILE = 16;
+  // Arena de tools/levels/yvaga.txt, relativa a su esquina: 40 tiles de ancho y el piso en la fila 23. Peleando, la
+  // cámara va de y 0 a 384 (CameraFloor) con una vista de 360: lo más bajo que llega el borde de arriba es y 24.
+  const ARENA_W = 40 * TILE;
+  const FLOOR_Y = 23 * TILE;
+  const VIEW_TOP = 384 - 360;
+  // Sprites (public/assets/sprites/*.json): disfraz 64 × 68 y forma real 88 × 80, detail 2.
+  const DISGUISE_H = 68 / 2;
+  const [ox, oy] = GAMEPLAY.sprites.tauTrue.origin;
+  const k3 = cfg.phaseScale[2];
+  const ext = {
+    halfW: Math.max(cfg.trueWidth / 2, (Math.max(ox, 1 - ox) * 88) / 2) * k3,
+    above: Math.max(cfg.trueHeight / 2, (oy * 80) / 2) * k3,
+    below: Math.max(cfg.trueHeight / 2, ((1 - oy) * 80) / 2) * k3,
+  };
+  const stars: StarBox[] = cfg.starTiles.map(([x, row]) => ({ left: x * TILE, right: (x + cfg.starWidthTiles) * TILE, top: row * TILE }));
+  /** ¿El rectángulo tapa una estrella o el lugar de Kerana parada sobre ella? */
+  const coversStar = (left: number, right: number, bottom: number) =>
+    stars.some((s) => s.left < right && s.right > left && bottom > s.top - cfg.trueClearPx);
+
+  it('fase 1 igual, la 2 al doble y la 3 al triple: solo enteros', () => {
+    expect(cfg.phaseScale).toEqual([1, 2, 3]);
+    for (const k of cfg.phaseScale) expect(Number.isInteger(k)).toBe(true);
+  });
+
+  it('fase 2: flotando no tapa las estrellas ni la corta el borde de arriba', () => {
+    const feet = FLOOR_Y - cfg.floatTiles * TILE;
+    const top = feet - DISGUISE_H * cfg.phaseScale[1];
+    expect(top).toBeGreaterThanOrEqual(VIEW_TOP);
+    // La estrella se dibuja 7 px alrededor de su punto, 1 px sobre la plataforma.
+    expect(feet).toBeLessThan(Math.min(...stars.map((s) => s.top)) - 8);
+  });
+
+  it('fase 3: flotando queda entero en la vista y por encima de las siete estrellas', () => {
+    const bottom = floatBottom(stars, cfg.trueClearPx);
+    const center = bottom - ext.below;
+    expect(center - ext.above).toBeGreaterThanOrEqual(VIEW_TOP);
+    // Pasa sobre cualquier lugar de las nubes (GAMEPLAY.tau.floorTiles) sin tapar ninguna.
+    for (let x = cfg.floorTiles[0] * TILE; x <= cfg.floorTiles[1] * TILE; x += 4) {
+      expect(coversStar(x - ext.halfW, x + ext.halfW, bottom)).toBe(false);
+      expect(x - ext.halfW).toBeGreaterThanOrEqual(0);
+      expect(x + ext.halfW).toBeLessThanOrEqual(ARENA_W);
+    }
+  });
+
+  it('fase 3: el rayo de cada estrella lo baja sobre ella, sin tapar ninguna y al alcance de un salto', () => {
+    const jumpReach = 115; // salto y salto doble: 400² / 2400 + 340² / 2400 ≈ 115 px (GAMEPLAY.player)
+    stars.forEach((star, i) => {
+      const { x, y } = pullSpot(stars, i, ext, cfg.trueClearPx, 0, ARENA_W, cfg.pullOverlapPx);
+      const left = x - ext.halfW;
+      const right = x + ext.halfW;
+      const bottom = y + ext.below;
+      expect(left).toBeGreaterThanOrEqual(0);
+      expect(right).toBeLessThanOrEqual(ARENA_W);
+      expect(y - ext.above).toBeGreaterThanOrEqual(VIEW_TOP);
+      expect(coversStar(left, right, bottom)).toBe(false);
+      // Montado sobre la encendida, y Kerana parada en ella le llega saltando con el tajo (18 px de alto).
+      expect(Math.min(right, star.right) - Math.max(left, star.left)).toBeGreaterThanOrEqual(cfg.pullOverlapPx);
+      expect(star.top - bottom).toBeLessThan(jumpReach + 18);
+      // Más bajo que flotando, salvo en las más altas, donde ya está lo más bajo posible.
+      expect(bottom).toBeGreaterThanOrEqual(floatBottom(stars, cfg.trueClearPx));
+    });
   });
 });
