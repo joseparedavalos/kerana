@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 15 de noviembre de 2026 en S94, contra lo que ya está en `main` hasta S93.
+Revisado el 15 de noviembre de 2026 en S95, contra lo que ya está en `main` hasta S94.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -83,6 +83,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - Yvága tiene su subida (S92). Kerana ya no aparece al lado de Tau: empieza abajo, sobre el mar de nubes, y sube hasta él por siete tramos, uno por cada hijo que liberó, con los enemigos y la pieza de ese hijo (islas anchas, balsas, viento, ascensores, el primer salto con dash, corrales, móviles rápidos). No hay pozos: si cae, queda en la red del tramo y vuelve a subir, sin perder un corazón. Hay fuegos en la base, en los pisos 2, 4 y 6 y en la antesala, a la que se entra por debajo. El cielo es uno solo y sube con ella, de las nubes a la noche con estrellas. La pelea de Tau es la misma.
 - La subida a Yvága tiene música épica (S93): una marcha en re menor a 120, con el angu'a en cada tiempo, el takuapu en redoble, el bajo al galope, el cuerno con una frase heroica que la segunda vez sube, el coro y el arpa debajo, y cada 8 compases siete campanas que suben (Eichu). Un ciclo dura 32 s. Al cerrarse la arena entra la pieza de Tau, que sigue igual.
 - Tau crece en cada fase (S94): el joven de la flauta mide lo de siempre, en la fase 2 el doble y su forma real el triple, de golpe y tapado por el estallido de humo, con cada píxel del arte como un bloque parejo. Con él crecen el cuerpo que recibe el tajo y de dónde salen las notas, el anillo, los rayos y los ojos. En la fase 3 flota por encima de las siete estrellas, entero en la vista, y la estrella encendida lo baja sobre ella, justo arriba de Kerana: para pegarle hay que saltar. Se prueba con `npm run tau`, la pelea jugada con teclas.
+- La carga del tajo suena (S95): un zumbido que sube de tono mientras el sable brilla y se corta si Kerana suelta antes o la lastiman, un «ting» de campanita cuando está lista para soltar, y el tajo cargado, más grave y largo que el común, con un brillo agudo encima.
 
 ## Ahora
 
@@ -138,6 +139,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 51. Probar el fondo de Yvága en un celular (S92). La textura mide 1280 × 2264: un teléfono cuyo WebGL no pase de 2048 px de lado no la cargaría, y hoy no hay una versión más chica. Si pasa, la salida es sacarla también a la mitad (640 × 1132) y elegir según `MAX_TEXTURE_SIZE`.
 52. El comentario de la pieza 'tau' en `src/data/music.ts` y su línea en GDD §10.1 dicen «los tonos enteros de Yvága»: desde S93 Yvága es una marcha en re menor y los tonos enteros son solo de Tau. S93 no tocó la pista 'tau' (fuera del alcance); corregir el texto cuando se toque.
 53. Jugar a Tau sin `god=1` (Jose, S94, `?debug=1&level=yvaga&boss=1`). Mirar: (a) si se ve imponente al doble y al triple, y si el cambio de tamaño queda bien tapado por el estallido de humo; (b) la ventana de la fase 3: ahora la estrella lo baja sobre ella y hay que saltar para pegarle (en la de abajo a la derecha, salto doble, porque al triple no entra más bajo sin tapar la vecina). Con el piloto, la fase 3 bajó de 35 a 23 s en promedio: entran 2 o 3 tajos por ventana. Si queda corta, se puede subir `trueClearPx` (Tau más alto) o bajar `pullOverlapPx` en `GAMEPLAY.tau`; no los tiempos.
+54. Escuchar la carga del tajo (Jose, S95, `?debug=1&level=1&gifts=all`, mantener X) y ajustarla en `src/systems/sfxPresets.ts`: el zumbido (`CHARGE_UP`: volumen, de qué tono a qué tono, el filtro; dura solo lo que va del brillo a la carga lista), el «ting» (`chargeReady`) y el tajo cargado (`chargedSlash` y su brillo en `SFX_LAYERS`). Claude no puede oír: si el zumbido molesta al cargar seguido, si el «ting» se oye sobre la música y si el tajo cargado ya no se confunde con el común.
 
 ## itch.io
 
