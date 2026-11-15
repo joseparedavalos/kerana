@@ -1356,6 +1356,11 @@ export const GAMEPLAY = {
     lookahead: 40,
     /** Suavizado del cambio de anticipación al girar (0 a 1 por frame). */
     lookaheadLerp: 0.05,
+    /**
+     * Piso de la cámara (S92, `rect CameraFloor` del mapa): velocidad (px/s) con la que la vista sube hasta él cuando
+     * Kerana entra en su zona (la antesala de Yvága: la vista sube a encuadrar la arena en vez de saltar al trabarse).
+     */
+    floorSpeed: 300,
   },
 
   respawn: {
