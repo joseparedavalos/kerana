@@ -61,7 +61,6 @@ export const BOSS_LAYER: BossLayer = {
 
 // Tónicas.
 const A2 = 110;
-const C3 = 130.81;
 const D3 = 146.83;
 const E2 = 82.41;
 const E3 = 164.81;
@@ -299,28 +298,71 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       { inst: 'campana', gain: 0.3, pattern: '0 . . . . . | . . . . . . | . . . . . . | . . . . . . | 0 . . . . . | . . . . . . | . . . . . . | . . . . . .' },
     ],
   },
-  // Yvága y la pelea con Tau: el cielo, hermoso y ajeno. Escala de tonos enteros, coro sobre un tritono, campanas.
+  // La subida a Yvága (S93): marcha épica en re menor, de último nivel. El angua en cada tiempo con acento al empezar
+  // el compás, el takuapu en redoble (rueda entera antes de cada vuelta), el bajo al galope sin parar y el cuerno que
+  // canta una frase heroica de 8 compases; la segunda vez sube y cierra más arriba. Debajo, el coro tenido en re y la,
+  // y el arpa en arpegios que suben. Cada 8 compases, siete campanas que suben: Eichu arriba. Armonía: Rem Sib Fa Do
+  // Rem Sib Solm La; la vuelta, Rem Sib Fa Do Sib Do Rem La. Sin tonos enteros ni tritono, y más lenta que 'tau', para
+  // que al cerrarse la arena se sienta el cambio. 16 compases a 120: un ciclo de 32 segundos.
   yvaga: {
     id: 'yvaga',
-    bpm: 70,
-    stepsPerBeat: 2,
+    bpm: 120,
+    stepsPerBeat: 4,
     beatsPerBar: 4,
-    root: C3,
-    echo: { ms: 520, feedback: 0.45 },
+    root: D3,
+    echo: { ms: 375, feedback: 0.28 },
     voices: [
+      { inst: 'angua', gain: 1, pattern: 'x! . . . x . . . x . . . x . . .' },
       {
-        inst: 'voz',
+        inst: 'takuapu',
         gain: 0.4,
-        pattern: '0+6 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - | -2+4 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -',
+        pattern:
+          'x . x x x . x x x . x x x x x x | x . x x x . x x x . x x x . x x | x . x x x . x x x . x x x x x x | x . x x x . x x x . x x x . x x | ' +
+          'x . x x x . x x x . x x x x x x | x . x x x . x x x . x x x . x x | x . x x x . x x x . x x x x x x | x! x x x x! x x x x! x x x x! x x x',
       },
-      { inst: 'campana', octave: 24, gain: 0.25, pattern: '0 . . 6 . . . . | 4 . . . 10 . . 8' },
-      { inst: 'arpa', octave: -12, gain: 0.5, pattern: '0 . . . . . 6 . | . . 4 . . . . .' },
-      { inst: 'mbaraka', gain: 0.3, pattern: '. . . . . . . x | . . . . . . . . | . . . x . . . . | . . . . . . . .' },
+      {
+        inst: 'bajo',
+        octave: -12,
+        gain: 0.65,
+        pattern:
+          '0! . 0 0 12 . 0 0 0 . 0 0 7 . 0 0 | -4! . -4 -4 8 . -4 -4 -4 . -4 -4 3 . -4 -4 | 3! . 3 3 15 . 3 3 3 . 3 3 10 . 3 3 | -2! . -2 -2 10 . -2 -2 -2 . -2 -2 5 . -2 -2 | ' +
+          '0! . 0 0 12 . 0 0 0 . 0 0 7 . 0 0 | -4! . -4 -4 8 . -4 -4 -4 . -4 -4 3 . -4 -4 | -7! . -7 -7 5 . -7 -7 -7 . -7 -7 0 . -7 -7 | -5! . -5 -5 7 . -5 -5 -5 . -5 -5 2 . -5 -5 | ' +
+          '0! . 0 0 12 . 0 0 0 . 0 0 7 . 0 0 | -4! . -4 -4 8 . -4 -4 -4 . -4 -4 3 . -4 -4 | 3! . 3 3 15 . 3 3 3 . 3 3 10 . 3 3 | -2! . -2 -2 10 . -2 -2 -2 . -2 -2 5 . -2 -2 | ' +
+          '-4! . -4 -4 8 . -4 -4 -4 . -4 -4 3 . -4 -4 | -2! . -2 -2 10 . -2 -2 -2 . -2 -2 5 . -2 -2 | 0! . 0 0 12 . 0 0 0 . 0 0 7 . 0 0 | -5! . -5 -5 7 . -5 -5 -5 . -5 -5 2 . -5 -5',
+      },
       {
         inst: 'voz',
+        gain: 0.3,
+        pattern: '0+7 - - - - - - - - - - - - - - - | - - - - - - - - - - - - - - - - | - - - - - - - - - - - - - - - - | - - - - - - - - - - - - - - - -',
+      },
+      {
+        inst: 'arpa',
+        octave: -12,
+        gain: 0.4,
+        pattern:
+          '0 . 7 . 12 . 15 . 19 . 24 . 27 . 31 . | -4 . 3 . 8 . 12 . 15 . 20 . 24 . 27 . | 3 . 10 . 15 . 19 . 22 . 27 . 31 . 34 . | -2 . 5 . 10 . 14 . 17 . 22 . 26 . 29 . | ' +
+          '0 . 7 . 12 . 15 . 19 . 24 . 27 . 31 . | -4 . 3 . 8 . 12 . 15 . 20 . 24 . 27 . | -7 . 0 . 5 . 8 . 12 . 17 . 20 . 24 . | -5 . 2 . 7 . 12 . 14 . 19 . 24 . 26 . | ' +
+          '0 . 7 . 12 . 15 . 19 . 24 . 27 . 31 . | -4 . 3 . 8 . 12 . 15 . 20 . 24 . 27 . | 3 . 10 . 15 . 19 . 22 . 27 . 31 . 34 . | -2 . 5 . 10 . 14 . 17 . 22 . 26 . 29 . | ' +
+          '-4 . 3 . 8 . 12 . 15 . 20 . 24 . 27 . | -2 . 5 . 10 . 14 . 17 . 22 . 26 . 29 . | 0 . 7 . 12 . 15 . 19 . 24 . 27 . 31 . | -5 . 2 . 7 . 12 . 14 . 19 . 24 . 26 .',
+      },
+      {
+        inst: 'cuerno',
+        lead: true,
         octave: 12,
-        gain: 0.35,
-        pattern: '0 - - - 2 - - - | 4 - - - - - - - | 6 - - - 4 - - - | 2 - - - - - . . | 8 - - - 6 - - - | 4 - - - 2 - - - | 0 - - - -2 - - - | 0 - - - - - . .',
+        gain: 0.6,
+        pattern:
+          '0 - - 0 7 - - - - - - - 5 - 3 - | 3 - - - - - - - 0 - - - -4 - - - | -2 - - -2 3 - - - - - - - 5 - 7 - | 5 - - - - - - - 2 - - - - - . . | ' +
+          '0 - - 0 7 - - - 10 - - - 12 - - - | 15 - - - - - - - 12 - - - 10 - - - | 8 - - - 10 - 8 - 7 - - - 5 - - - | 7 - - - - - - - - - - - - - . . | ' +
+          '0 - - 0 7 - - - - - - - 10 - 12 - | 15 - - - - - - - 12 - - - 8 - - - | 10 - - 10 15 - - - - - - - 17 - 15 - | 17 - - - - - - - 14 - - - 12 - - - | ' +
+          '15 - - - - - 17 - 15 - - - 12 - - - | 14 - - - - - - - 12 - 10 - 12 - - - | 19 - - - - - - - 17 - 15 - 12 - - - | 12 - - 10 7 - - - - - - - - - . .',
+      },
+      {
+        inst: 'campana',
+        octave: 24,
+        gain: 0.3,
+        pattern:
+          '0 . 3 . 5 . 7 . 10 . 12 . 15 . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | ' +
+          '. . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . . | . . . . . . . . . . . . . . . .',
       },
     ],
   },
