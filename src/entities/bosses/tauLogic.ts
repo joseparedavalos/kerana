@@ -59,3 +59,59 @@ export function echoRockXs(playerX: number, count: number, gapPx: number, minX: 
   }
   return xs;
 }
+
+/** Una estrella de la fase 3: su plataforma (px). */
+export interface StarBox {
+  left: number;
+  right: number;
+  top: number;
+}
+
+/** Cuánto ocupa Tau alrededor de su centro (px): media anchura, y alto por arriba y por abajo. */
+export interface TauExtents {
+  halfW: number;
+  above: number;
+  below: number;
+}
+
+/** Más bajo que puede quedar el borde de abajo de Tau con su centro en `x` (sin tapar estrellas ni a Kerana encima). */
+function lowestBottom(stars: readonly StarBox[], x: number, halfW: number, clearPx: number): number {
+  let bottom = Infinity;
+  for (const s of stars) if (s.left < x + halfW && s.right > x - halfW) bottom = Math.min(bottom, s.top - clearPx);
+  return bottom;
+}
+
+/** Fase 3: borde de abajo de Tau flotando, por encima de la estrella más alta (S94). */
+export function floatBottom(stars: readonly StarBox[], clearPx: number): number {
+  return Math.min(...stars.map((s) => s.top)) - clearPx;
+}
+
+/**
+ * Fase 3: dónde lo baja el rayo de la estrella encendida (S94). Sobre ella, montado al menos `minOverlap` px, dentro de
+ * [minX, maxX], y lo más bajo posible sin tapar ninguna estrella ni tocar a Kerana parada encima (`clearPx` sobre cada
+ * plataforma que tenga debajo). A igual altura, lo más cerca del centro de la estrella. Devuelve su centro.
+ */
+export function pullSpot(
+  stars: readonly StarBox[],
+  lit: number,
+  ext: TauExtents,
+  clearPx: number,
+  minX: number,
+  maxX: number,
+  minOverlap: number,
+): { x: number; y: number } {
+  const star = stars[lit];
+  const cx = (star.left + star.right) / 2;
+  const lo = Math.max(minX + ext.halfW, star.left + minOverlap - ext.halfW);
+  const hi = Math.min(maxX - ext.halfW, star.right - minOverlap + ext.halfW);
+  let bestX = Math.max(lo, Math.min(hi, cx));
+  let best = lowestBottom(stars, bestX, ext.halfW, clearPx);
+  for (let x = Math.ceil(lo); x <= hi; x++) {
+    const bottom = lowestBottom(stars, x, ext.halfW, clearPx);
+    if (bottom > best || (bottom === best && Math.abs(x - cx) < Math.abs(bestX - cx))) {
+      best = bottom;
+      bestX = x;
+    }
+  }
+  return { x: bestX, y: best - ext.below };
+}

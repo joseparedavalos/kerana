@@ -1216,6 +1216,12 @@ export const GAMEPLAY = {
     height: 32,
     trueWidth: 44,
     trueHeight: 36,
+    /**
+     * Tamaño por fase (S94): × sobre el de la fase 1, para el sprite, el cuerpo que recibe el tajo y de dónde salen
+     * las notas, el anillo, los rayos y los ojos. Solo enteros: cada píxel del arte queda como un bloque parejo.
+     * Cambia al empezar la fase, tapado por el estallido de humo.
+     */
+    phaseScale: [1, 2, 3] as readonly number[],
     /** Las siete estrellas: borde izquierdo (tile) y fila de la plataforma (3 tiles de ancho). */
     starTiles: [
       [3, 20],
@@ -1258,8 +1264,14 @@ export const GAMEPLAY = {
     boltColor: 0xe04848,
     eyeColor: 0xe04848,
     beamColor: 0xfff2c0,
-    /** El rayo de la estrella baja a Tau junto a ella: distancia al centro de la estrella (px). */
-    pullOffsetPx: 30,
+    /**
+     * Fase 3 (S94): Tau flota y baja siempre por encima de las siete estrellas. `trueClearPx`: lo que deja libre sobre
+     * cada plataforma (Kerana parada mide ≈ 32 de alto). Flotando, sobre la más alta; el rayo de la estrella encendida
+     * lo baja sobre ella, lo más bajo que se pueda sin tapar otra, y montado `pullOverlapPx` px sobre la encendida
+     * como mínimo, para que Kerana le llegue saltando.
+     */
+    trueClearPx: 44,
+    pullOverlapPx: 24,
     /** Estrella encendida: brillo y escala. */
     starColor: 0xf2eee3,
     starLitColor: 0xf2c14e,

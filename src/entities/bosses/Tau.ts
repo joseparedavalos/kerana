@@ -1,10 +1,22 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
-import { skinIfAvailable, type SpriteSkin } from '../../systems/SpriteSkin';
+import { skinIfAvailable, spriteDetail, type SpriteSkin } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
-import { echoOf, echoRockXs, farSide, formForPhase, pickLitStar, smokeHurts, type TauForm } from './tauLogic';
+import {
+  echoOf,
+  echoRockXs,
+  farSide,
+  floatBottom,
+  formForPhase,
+  pickLitStar,
+  pullSpot,
+  smokeHurts,
+  type StarBox,
+  type TauExtents,
+  type TauForm,
+} from './tauLogic';
 
 const CFG = GAMEPLAY.tau;
 const TILE = 16;
@@ -15,6 +27,12 @@ const ECHO_SHADOW = 0x1b1a2e;
 const ECHO_COLORS: Record<string, number> = { echo_teju: 0xe04848, echo_mboi: 0x4e8c6a, echo_jasy: 0xf2c14e };
 /** Tamaño de cada sombra (px). */
 const ECHO_SIZES: Record<string, [number, number]> = { echo_teju: [44, 18], echo_mboi: [40, 12], echo_jasy: [12, 18] };
+
+/** Tamaño de una fase (`phase` empieza en 0; más allá de la tabla, el último). */
+function phaseScale(phase: number): number {
+  const table = CFG.phaseScale;
+  return table[Math.min(table.length - 1, Math.max(0, phase))];
+}
 
 interface Shot {
   arc: Phaser.GameObjects.Arc;
@@ -52,6 +70,7 @@ export class Tau extends Boss {
   private readonly stars: Phaser.GameObjects.Star[] = [];
   private readonly starCenters: number[] = [];
   private readonly starTops: number[] = [];
+  private readonly starBoxes: StarBox[] = [];
   private readonly echoes: Record<string, Phaser.GameObjects.Ellipse> = {};
   private readonly ring: Phaser.GameObjects.Arc;
   private readonly smokeRect: Phaser.GameObjects.Rectangle;
@@ -63,6 +82,8 @@ export class Tau extends Boss {
   private readonly sweepRect = new Phaser.Geom.Rectangle();
   private readonly ringState = { r: 0 };
   private form: TauForm = 'disguise';
+  /** Tamaño de la fase en curso (× sobre la fase 1, `CFG.phaseScale`). */
+  private size = 1;
   /** Fase cuyos efectos (subir, forma real) ya se aplicaron. */
   private appliedPhase = 0;
   private moveTween?: Phaser.Tweens.Tween;
@@ -82,6 +103,7 @@ export class Tau extends Boss {
       const top = ctx.arena.top + row * TILE;
       this.starCenters.push(cx);
       this.starTops.push(top);
+      this.starBoxes.push({ left: this.tileX(tx), right: this.tileX(tx + CFG.starWidthTiles), top });
       this.stars.push(scene.add.star(cx, top - 1, 5, 3, 7, CFG.starColor, 0.9).setDepth(2));
     }
     this.smokeRect = scene.add
@@ -164,7 +186,7 @@ export class Tau extends Boss {
     const idleMs = this.brain.phaseDef.idleMs;
     if (this.form === 'disguise') return;
     // Fases 2 y 3: vuelve a flotar fuera del alcance, más o menos sobre Kerana.
-    this.moveTo(this.clampX(this.ctx.playerX()), this.floatY(), Math.min(CFG.floatMs, idleMs));
+    this.moveTo(this.clampX(this.ctx.playerX()), this.form === 'true' ? this.trueFloatY() : this.floatY(), Math.min(CFG.floatMs, idleMs));
   }
 
   private telegraph(id: string): void {
@@ -190,7 +212,7 @@ export class Tau extends Boss {
         break;
       }
       case 'bolts':
-        for (const eye of this.eyes) this.scene.tweens.add({ targets: eye, scaleX: 2, duration: 150, yoyo: true, repeat: 1 });
+        for (const eye of this.eyes) this.scene.tweens.add({ targets: eye, scaleX: 2 * this.size, duration: 150, yoyo: true, repeat: 1 });
         this.ctx.sfxAt('growl', this.core.x);
         break;
     }
@@ -235,12 +257,11 @@ export class Tau extends Boss {
   private recover(id: string): void {
     this.endEffects();
     if (id === 'smoke' && this.litStar >= 0) {
-      // La estrella encendida lo baja con su rayo, junto a ella: esa es la ventana.
+      // La estrella encendida lo baja con su rayo sobre ella, sin tapar otra estrella: esa es la ventana.
       const i = this.litStar;
       const cx = this.starCenters[i];
-      const dir = cx < this.ctx.arena.centerX ? 1 : -1;
-      const x = cx + dir * CFG.pullOffsetPx;
-      const y = this.starTops[i] - 4;
+      const arena = this.ctx.arena;
+      const { x, y } = pullSpot(this.starBoxes, i, this.trueExtents(), CFG.trueClearPx, arena.left, arena.right, CFG.pullOverlapPx);
       this.beam.setVisible(true).setAlpha(0.9).setPosition(cx, this.ctx.arena.top).setSize(4, this.starTops[i] - this.ctx.arena.top);
       this.scene.tweens.add({ targets: this.beam, alpha: 0, duration: 600, onComplete: () => this.beam.setVisible(false) });
       this.moveTo(x, y, 300);
@@ -294,7 +315,7 @@ export class Tau extends Boss {
     this.ringActive = true;
     this.ringHit = false;
     this.ringState.r = 8;
-    this.ring.setPosition(this.body.x, this.body.y - CFG.height / 2).setVisible(true).setAlpha(1);
+    this.ring.setPosition(this.body.x, this.bodyMidY()).setVisible(true).setAlpha(1);
     this.scene.tweens.killTweensOf(this.ringState);
     this.scene.tweens.add({ targets: this.ringState, r: CFG.melodyRadius, duration: activeMs, ease: 'Sine.easeOut' });
     this.ctx.sfxAt('hypnosis', this.body.x);
@@ -375,12 +396,12 @@ export class Tau extends Boss {
   /** Desaparece en humo y aparece en otro lado (fase 1). */
   private blinkTo(x: number): void {
     this.stopMove();
-    this.smokeFx.explode(8, this.body.x, this.body.y - CFG.height / 2);
+    this.smokeFx.explode(8, this.body.x, this.bodyMidY());
     this.body.setAlpha(0);
     this.timers.push(
       this.scene.time.delayedCall(CFG.blinkMs, () => {
         this.body.setPosition(x, this.ctx.floorY).setAlpha(1);
-        this.smokeFx.explode(8, x, this.ctx.floorY - CFG.height / 2);
+        this.smokeFx.explode(8, x, this.bodyMidY());
         this.body.setFlipX(this.ctx.playerX() < x);
       }),
     );
@@ -414,7 +435,11 @@ export class Tau extends Boss {
     }
     this.endEffects();
     for (const shot of this.shots) this.hideShot(shot);
-    this.smokeFx.explode(16, this.body.x, this.body.y - CFG.height / 2);
+    // Crece al empezar la fase (S94), de golpe y tapado por el estallido: nada de estirarlo con un tween.
+    const oldMid = this.bodyMidY();
+    this.setSize(phaseScale(phase));
+    // El estallido tapa el disfraz que crece (fase 2) o el que se va (fase 3, el humo aparece arriba).
+    this.smokeFx.explode(16, this.body.x, form === 'echoes' ? this.bodyMidY() : oldMid);
     this.ctx.sfx('laugh');
     this.ctx.shake(300, 0.008);
     if (form === 'echoes') {
@@ -426,7 +451,7 @@ export class Tau extends Boss {
       const x = this.body.x;
       this.form = form;
       this.body.setVisible(false);
-      this.core.setPosition(x, this.floatY() - CFG.trueHeight / 2).setVisible(true).setAlpha(0);
+      this.core.setPosition(x, this.trueFloatY()).setVisible(true).setAlpha(0);
       this.scene.tweens.add({ targets: this.core, alpha: 0.85, duration: 600 });
       for (const eye of this.eyes) eye.setVisible(true);
       this.smokeFx.startFollow(this.core);
@@ -474,7 +499,7 @@ export class Tau extends Boss {
 
   markPosition(out: Phaser.Math.Vector2): Phaser.Math.Vector2 {
     if (this.form === 'true') return out.set(this.core.x, this.core.y);
-    return out.set(this.body.x, this.body.y - CFG.height / 2);
+    return out.set(this.body.x, this.bodyMidY());
   }
 
   fadeOut(ms: number): void {
@@ -490,10 +515,11 @@ export class Tau extends Boss {
     this.updateShots(deltaMs);
     if (this.ringActive) this.ring.setRadius(this.ringState.r);
     if (this.form === 'true') {
+      // Sin estirar el humo (S94): con el tamaño entero, cada píxel del arte queda parejo; el sprite ya se mueve solo.
       const sway = Math.sin(this.scene.time.now / 400) * 2;
-      this.eyes[0].setPosition(this.core.x - 7, this.core.y - 4 + sway * 0.3);
-      this.eyes[1].setPosition(this.core.x + 7, this.core.y - 4 + sway * 0.3);
-      this.core.setScale(1 + sway * 0.02, 1 - sway * 0.02);
+      const k = this.size;
+      this.eyes[0].setPosition(this.core.x - 7 * k, this.core.y + (-4 + sway * 0.3) * k);
+      this.eyes[1].setPosition(this.core.x + 7 * k, this.core.y + (-4 + sway * 0.3) * k);
     } else if (this.brain.state !== 'defeated') {
       this.body.setFlipX(this.ctx.playerX() < this.body.x);
     }
@@ -515,18 +541,18 @@ export class Tau extends Boss {
     for (const star of this.stars) star.setAngle(0).setAlpha(0.9);
     for (const shot of this.shots) this.hideShot(shot);
     for (const shadow of Object.values(this.echoes)) shadow.setVisible(false);
-    for (const eye of this.eyes) eye.setVisible(false).setAlpha(1).setScale(1);
+    this.setSize(phaseScale(0));
+    for (const eye of this.eyes) eye.setVisible(false).setAlpha(1);
     this.ring.setVisible(false);
     this.smokeRect.setVisible(false);
     this.beam.setVisible(false);
     this.smokeFx.stopFollow();
     this.smokeFx.emitting = false;
-    this.core.setVisible(false).setScale(1).setAlpha(0.85);
+    this.core.setVisible(false).setAlpha(0.85);
     this.body
       .setVisible(true)
       .setPosition(this.tileX(CFG.floorTiles[1]), this.ctx.floorY)
       .setAlpha(0)
-      .setScale(1)
       .clearTint()
       .setTintMode(Phaser.TintModes.MULTIPLY);
   }
@@ -540,6 +566,41 @@ export class Tau extends Boss {
     return this.ctx.floorY - CFG.floatTiles * TILE;
   }
 
+  /** Fase 3: centro del humo flotando, entero por encima de las siete estrellas (S94). */
+  private trueFloatY(): number {
+    return floatBottom(this.starBoxes, CFG.trueClearPx) - this.trueExtents().below;
+  }
+
+  /** Lo que ocupa la forma real alrededor de su centro, con el tamaño de ahora: lo que más sobresale, sprite o cuerpo. */
+  private trueExtents(): TauExtents {
+    const k = this.size;
+    let halfW = CFG.trueWidth / 2;
+    let above = CFG.trueHeight / 2;
+    let below = CFG.trueHeight / 2;
+    if (this.trueSkin) {
+      const frame = this.trueSkin.sprite.frame;
+      const detail = spriteDetail(this.scene, 'tau_true');
+      const [ox, oy] = GAMEPLAY.sprites.tauTrue.origin;
+      halfW = Math.max(halfW, (Math.max(ox, 1 - ox) * frame.width) / detail);
+      above = Math.max(above, (oy * frame.height) / detail);
+      below = Math.max(below, ((1 - oy) * frame.height) / detail);
+    }
+    return { halfW: halfW * k, above: above * k, below: below * k };
+  }
+
+  /** Medio del disfraz (de donde salen las notas y el anillo), con el tamaño de ahora. */
+  private bodyMidY(): number {
+    return this.body.y - (CFG.height * this.size) / 2;
+  }
+
+  /** Tamaño entero de la fase: sprite, cuerpo y ojos crecen juntos (el SpriteSkin copia la escala). */
+  private setSize(k: number): void {
+    this.size = k;
+    this.body.setScale(k);
+    this.core.setScale(k);
+    for (const eye of this.eyes) eye.setScale(k);
+  }
+
   private smokeTop(): number {
     return this.ctx.floorY - CFG.smokeTiles * TILE;
   }
@@ -549,8 +610,13 @@ export class Tau extends Boss {
   }
 
   private bounds(out: Phaser.Geom.Rectangle): Phaser.Geom.Rectangle {
-    if (this.form === 'true') return out.setTo(this.core.x - CFG.trueWidth / 2, this.core.y - CFG.trueHeight / 2, CFG.trueWidth, CFG.trueHeight);
-    return out.setTo(this.body.x - CFG.width / 2, this.body.y - CFG.height, CFG.width, CFG.height);
+    const k = this.size;
+    if (this.form === 'true') {
+      const w = CFG.trueWidth * k;
+      const h = CFG.trueHeight * k;
+      return out.setTo(this.core.x - w / 2, this.core.y - h / 2, w, h);
+    }
+    return out.setTo(this.body.x - (CFG.width * k) / 2, this.body.y - CFG.height * k, CFG.width * k, CFG.height * k);
   }
 
   private flash(): void {
