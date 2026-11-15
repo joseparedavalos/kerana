@@ -2893,13 +2893,14 @@ async function main() {
     for (let t = 0; t < 5000 && !(await inYvaga()); t += 100) await sleep(100);
     await l7Page.keyboard.up('Escape');
     check(await inYvaga(), 'diapositivas → Yvága');
-    // S92: Yvága ya no es solo la arena: Kerana empieza abajo, en la isla base, y la pelea no arranca desde ahí.
+    // S92: esta página trae boss=1 desde l7, así que en Yvága empieza en la antesala (el inicio en la base lo mira 1l0).
+    // Lo que importa acá: llegar a Yvága no arranca la pelea (antes de S92 la arena solo miraba x).
     await sleep(500);
     const yvStart = await l7Page.evaluate(() => {
       const d = window.__KERANA_DEBUG__;
-      return { feet: Math.round(d.player.body.bottom / 16), rows: d.scene.map.height, fighting: d.scene.fighting === true };
+      return { feet: Math.round(d.player.body.bottom / 16), x: +(d.player.body.center.x / 16).toFixed(1), fighting: d.scene.fighting === true };
     });
-    check(yvStart.feet === yvStart.rows - 2 && !yvStart.fighting, `Yvága: Kerana empieza en la isla base, al pie de la subida, sin pelea (${JSON.stringify(yvStart)})`);
+    check(yvStart.feet === 23 && yvStart.x < 4 && !yvStart.fighting, `Yvága (con boss=1 desde l7): Kerana empieza en la antesala, sin pelea (${JSON.stringify(yvStart)})`);
     await l7Page.close();
 
     // 1l0) Yvága, la subida (S92): nivel vertical de siete tramos, sin pozos (la base va de lado a lado y entre tramos
