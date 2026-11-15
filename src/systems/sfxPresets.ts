@@ -1,11 +1,16 @@
 // Parámetros de ZzFX por efecto (GDD §10.3). Provisionales: Jose los puede reafinar
 // en https://killedbyapixel.github.io/ZzFX/ y pegar el array actualizado aquí.
 
+import { chargeRiseSec } from '../entities/chargeSoundLogic';
+
 export type SfxKey =
   | 'jump'
   | 'land'
   | 'slash'
   | 'chargedSlash'
+  // S95: la carga del tajo. Zumbido que sube mientras brilla y «ting» cuando está lista.
+  | 'chargeUp'
+  | 'chargeReady'
   | 'hit'
   | 'purify'
   | 'hurt'
@@ -88,8 +93,27 @@ export type SfxKey =
   // El aullido de Luisón (GDD §10.3), más grave y largo que el «ao, ao».
   | 'luisonHowl';
 
+/** Al cortar un efecto (el zumbido de la carga) baja a cero en esto, para que no haga clic (ms). */
+export const SFX_STOP_FADE_MS = 25;
+
+/**
+ * El zumbido de la carga (S95): un serrucho suave, tapado con un filtro, que sube de `fromHz` a `toHz`
+ * justo en lo que tarda la carga del brillo a lista (`GAMEPLAY.chargedSlash`): el tono dice cuánto falta.
+ */
+const CHARGE_UP = { volume: 0.28, fromHz: 150, toHz: 450, attackSec: 0.06, releaseSec: 0.03, lowpassHz: 1400 };
+const CHARGE_RISE_SEC = chargeRiseSec();
+/** ZzFX sube `slide × 500` Hz por segundo. */
+const ZZFX_SLIDE_HZ_PER_SEC = 500;
+
+function chargeUpPreset(): number[] {
+  const c = CHARGE_UP;
+  const sustain = Math.max(0, CHARGE_RISE_SEC - c.attackSec - c.releaseSec);
+  const slide = (c.toHz - c.fromHz) / ZZFX_SLIDE_HZ_PER_SEC / Math.max(0.01, CHARGE_RISE_SEC);
+  return [c.volume, 0, c.fromHz, c.attackSec, sustain, c.releaseSec, 2, 1, slide, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, -c.lowpassHz];
+}
+
 // [volumen, aleatoriedad, frecuencia, ataque, sostenido, caída, forma, curva, slide, deltaSlide,
-//  saltoDeTono, tiempoSaltoDeTono, repetición, ruido, modulación, bitCrush, delay, sostenidoVol, decay, tremolo]
+//  saltoDeTono, tiempoSaltoDeTono, repetición, ruido, modulación, bitCrush, delay, sostenidoVol, decay, tremolo, filtro]
 export const SFX_PRESETS: Record<SfxKey, number[]> = {
   jump: [0.9, 0.05, 320, 0.02, 0.05, 0.08, 1, 1.6, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0.05],
   land: [0.6, 0.1, 120, 0, 0.03, 0.05, 4, 0.6, 0, 0, 0, 0, 0, 0.6, 0, 0, 0, 0.5, 0.02],
@@ -101,7 +125,11 @@ export const SFX_PRESETS: Record<SfxKey, number[]> = {
   luzArasy: [0.7, 0.05, 660, 0.05, 0.2, 0.3, 0, 1, 0, 0, 330, 0.1, 0.02, 0, 0, 0, 0, 0.7, 0.15],
   feather: [0.5, 0.05, 700, 0, 0.06, 0.1, 0, 1, 0, 0, 260, 0.05, 0, 0, 0, 0, 0, 0.6, 0.05],
   fire: [0.5, 0.1, 200, 0.02, 0.08, 0.15, 3, 1, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.03],
-  chargedSlash: [1, 0.05, 600, 0.01, 0.06, 0.18, 3, 1.4, -30, 0, 0, 0, 0, 0.3, 0, 0, 0.05, 0.6, 0.05],
+  // S95: más grave y más largo que `slash` (un barrido con cuerpo); el brillo agudo va en `SFX_LAYERS`.
+  chargedSlash: [1, 0.05, 260, 0.01, 0.12, 0.3, 3, 1.4, -9, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.6, 0.06],
+  chargeUp: chargeUpPreset(),
+  // Campanita: seno agudo que cae rápido, con un eco corto que lo hace brillar. Una sola vez, al quedar lista.
+  chargeReady: [1, 0, 1760, 0, 0.03, 0.3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0.06, 0.6, 0.03],
   rockBreak: [0.9, 0.2, 90, 0, 0.06, 0.25, 4, 1.5, -2, 0, 0, 0, 0, 1.2, 0, 0.2, 0, 0.5, 0.05],
   growl: [0.8, 0.1, 70, 0.08, 0.3, 0.25, 2, 2.5, -1, 0, 0, 0, 0, 0.8, 8, 0.1, 0, 0.6, 0.1],
   bite: [0.9, 0.1, 160, 0, 0.04, 0.1, 3, 2, -12, 0, 0, 0, 0, 0.6, 0, 0.1, 0, 0.6, 0.02],
@@ -169,4 +197,10 @@ export const SFX_PRESETS: Record<SfxKey, number[]> = {
   // La red de seguridad saca a Kerana de un encierro.
   rescue: [0.6, 0.05, 300, 0.05, 0.15, 0.25, 0, 1, 10, 0, 150, 0.12, 0, 0, 0, 0, 0, 0.6, 0.05],
   luisonHowl: [0.9, 0.05, 150, 0.12, 0.5, 0.4, 0, 1, 0, 0, -40, 0.3, 0.35, 0, 4, 0, 0, 0.75, 0.2],
+};
+
+/** Capas que suenan encima del preset, mezcladas en el mismo efecto (S95: ZzFX es una sola voz). */
+export const SFX_LAYERS: Partial<Record<SfxKey, number[][]>> = {
+  // El brillo del tajo cargado: dos notas agudas (do y sol) que se apagan detrás del barrido.
+  chargedSlash: [[0.35, 0, 2093, 0.01, 0.06, 0.32, 0, 1, 0, 0, 1043, 0.05, 0, 0, 0, 0, 0.05, 0.5, 0.04]],
 };
