@@ -41,6 +41,7 @@ import { Player } from '../entities/Player';
 import { DashTrail } from '../entities/DashTrail';
 import { Pickup, type PickupKind } from '../entities/pickups/Pickup';
 import type { PlayerStateName } from '../entities/PlayerMotor';
+import { ChargeSound } from '../entities/chargeSoundLogic';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
 import { BossArena } from '../systems/BossArena';
@@ -160,6 +161,8 @@ export class LevelScene extends Phaser.Scene {
   private arenaLuzUsed = false;
   private lastPlayerState: PlayerStateName = 'idle';
   private lastAirJumped = false;
+  /** El sonido de la carga del tajo (S95). */
+  private chargeSound = new ChargeSound(AudioManager);
   private wasImmune = false;
   private readonly safeGround = new Phaser.Math.Vector2();
   /** Red de seguridad (S23): 1 = piso encerrado (celda de los pies); el reloj corre mientras Kerana está en uno. */
@@ -287,6 +290,7 @@ export class LevelScene extends Phaser.Scene {
     this.arenaLuzUsed = false;
     this.lastPlayerState = 'idle';
     this.lastAirJumped = false;
+    this.chargeSound = new ChargeSound(AudioManager);
     this.levelExitZone = undefined;
     this.completing = false;
     this.runMs = 0;
@@ -566,6 +570,7 @@ export class LevelScene extends Phaser.Scene {
     const offDevice = inputDevices().onChange(() => this.relabelSigns());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offDevice();
+      this.chargeSound.interrupt();
       AudioManager.duck(false);
       this.touchControls?.destroy();
       this.scene.stop('UI');
@@ -587,6 +592,7 @@ export class LevelScene extends Phaser.Scene {
     SaveManager.addPlayTime(delta);
     if (!this.runStopped) this.runMs += delta;
 
+    if (this.dialogueBox.active || this.cutscene) this.chargeSound.interrupt();
     if (this.dialogueBox.active) {
       this.dialogueBox.update(delta, this.inputs.justPressed('jump') || this.inputs.justPressed('attack'));
       return;
@@ -644,6 +650,7 @@ export class LevelScene extends Phaser.Scene {
 
   private openPause(): void {
     this.touchControls?.setHidden(true);
+    this.chargeSound.interrupt();
     this.scene.pause();
     this.scene.launch('Pause', { levelId: this.def.id });
   }
@@ -2482,7 +2489,10 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private reportPlayerStateSfx(): void {
-    const state = this.player.motor.state;
+    const motor = this.player.motor;
+    const state = motor.state;
+    // S95: el zumbido de la carga, el «ting» de lista y el tajo cargado al soltar.
+    this.chargeSound.step(motor.chargeFraction, motor.chargedSwing && state === 'attack');
     // El salto doble no cambia de estado: se oye por su cuenta.
     const airJumped = this.player.motor.airJumped;
     if (airJumped && !this.lastAirJumped) AudioManager.play('doubleJump');
@@ -2495,9 +2505,9 @@ export class LevelScene extends Phaser.Scene {
       const body = this.player.body;
       this.dust.emitParticleAt(body.center.x, body.bottom, GAMEPLAY.juice.landDust);
     } else if (state === 'attack') {
-      const charged = this.player.motor.chargedSwing;
-      AudioManager.play(charged ? 'chargedSlash' : 'slash');
-      if (charged) this.fireLightWave();
+      // El tajo cargado suena desde `chargeSound`.
+      if (motor.chargedSwing) this.fireLightWave();
+      else AudioManager.play('slash');
     }
     this.lastPlayerState = state;
   }

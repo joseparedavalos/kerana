@@ -3,7 +3,7 @@ import { BOSS_LAYER, BOSS_LEVEL_TRACKS, INSTRUMENTS, TRACKS, type MusicKey, type
 import { bossVariant, normalize, peak, renderTrack, rms, type TrackDef } from './musicLogic';
 import { SaveManager } from './SaveManager';
 import type { MusicJob, MusicResult } from './musicWorker';
-import { SFX_PRESETS, type SfxKey } from './sfxPresets';
+import { SFX_LAYERS, SFX_PRESETS, SFX_STOP_FADE_MS, type SfxKey } from './sfxPresets';
 
 // AudioManager (GDD §10.4): efectos y música, los dos generados por código con ZzFX.
 // S37: una pista por escena con fundidos, música más baja durante los diálogos, pausa al perder el foco,
@@ -11,6 +11,8 @@ import { SFX_PRESETS, type SfxKey } from './sfxPresets';
 
 type ZzfxModule = typeof import('zzfx');
 type Playing = { key: MusicKey; source: AudioBufferSourceNode; gain: GainNode };
+/** Un efecto que se puede cortar; sin `source` todavía mientras carga ZzFX. */
+type Voice = { source?: AudioBufferSourceNode; gain?: GainNode };
 
 const CFG = GAMEPLAY.audio;
 /** Gestos que cuentan para los navegadores (en iOS, el de soltar el dedo). */
@@ -37,6 +39,8 @@ export class AudioManager {
   /** Para la prueba de humo: pistas que arrancaron, en orden, y errores de audio. */
   private static readonly started: MusicKey[] = [];
   private static readonly failures: string[] = [];
+  /** Efectos cortables sonando (S95): uno por clave. Van directo a la salida, como ZzFX; la música no pasa por acá. */
+  private static readonly voices = new Map<SfxKey, Voice>();
 
   /** Una vez, al arrancar el juego: escucha el primer gesto y el foco de la ventana. */
   static install(): void {
@@ -61,15 +65,76 @@ export class AudioManager {
     if (this.muted || volume <= 0) return;
     void this.zzfxModule()
       .then(({ ZZFX }) => {
-        ZZFX.playSamples([ZZFX.buildSamples(...SFX_PRESETS[key])], volume, 1, Math.max(-1, Math.min(1, pan)));
+        ZZFX.playSamples([sfxSamples(ZZFX, key)], volume, 1, Math.max(-1, Math.min(1, pan)));
       })
       .catch(() => {
         /* sin audio disponible: se ignora */
       });
   }
 
+  /**
+   * Un efecto que se puede cortar con `stop` (S95: el zumbido de la carga). Una voz por clave: si ya sonaba,
+   * la anterior se corta. `offsetSec`: desde dónde empieza. Mismo volumen que `play`.
+   */
+  static start(key: SfxKey, offsetSec = 0): void {
+    this.stop(key);
+    const volume = SaveManager.current.settings.sfx;
+    if (this.muted || volume <= 0) return;
+    const voice: Voice = {};
+    this.voices.set(key, voice);
+    void this.zzfxModule()
+      .then(({ ZZFX }) => {
+        // Se cortó (o se pidió otra) antes de que cargara ZzFX.
+        if (this.voices.get(key) !== voice) return;
+        const samples = sfxSamples(ZZFX, key);
+        const offset = Math.max(0, offsetSec);
+        if (offset * ZZFX.sampleRate >= samples.length) {
+          this.voices.delete(key);
+          return;
+        }
+        const ctx = ZZFX.audioContext;
+        const buffer = ctx.createBuffer(1, samples.length, ZZFX.sampleRate);
+        buffer.getChannelData(0).set(samples);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const gain = ctx.createGain();
+        gain.gain.value = ZZFX.volume * volume;
+        source.connect(gain).connect(ctx.destination);
+        source.onended = () => {
+          gain.disconnect();
+          if (this.voices.get(key) === voice) this.voices.delete(key);
+        };
+        source.start(0, offset);
+        voice.source = source;
+        voice.gain = gain;
+      })
+      .catch(() => {
+        this.voices.delete(key);
+      });
+  }
+
+  /** Corta un efecto de `start` (con un fundido corto, sin clic). Si no suena, no hace nada. */
+  static stop(key: SfxKey): void {
+    const voice = this.voices.get(key);
+    if (!voice) return;
+    this.voices.delete(key);
+    const { source, gain } = voice;
+    if (!source || !gain) return;
+    const now = gain.context.currentTime;
+    const end = now + SFX_STOP_FADE_MS / 1000;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, end);
+    try {
+      source.stop(end);
+    } catch {
+      /* ya estaba parada */
+    }
+  }
+
   static setMuted(muted: boolean): void {
     this.muted = muted;
+    if (muted) for (const key of [...this.voices.keys()]) this.stop(key);
     this.refreshVolumes();
   }
 
@@ -326,6 +391,7 @@ export class AudioManager {
       cached: [...this.buffers.keys()],
       failures: [...this.failures],
       busGain: this.musicBus?.gain.value ?? 0,
+      voices: [...this.voices.keys()],
       renderer: this.worker ? 'worker' : this.worker === null ? 'hilo principal' : 'sin usar',
     };
   }
@@ -349,6 +415,18 @@ export class AudioManager {
       return { key: k, rms: rms(s) * ZZFX.volume, peak: peak(s) * ZZFX.volume };
     });
   }
+}
+
+/** Las muestras de un efecto: el preset y, si tiene, sus capas mezcladas encima. */
+function sfxSamples(ZZFX: ZzfxModule['ZZFX'], key: SfxKey): number[] {
+  const base = ZZFX.buildSamples(...SFX_PRESETS[key]);
+  const layers = SFX_LAYERS[key];
+  if (!layers) return base;
+  for (const params of layers) {
+    const layer = ZZFX.buildSamples(...params);
+    for (let i = 0; i < layer.length; i++) base[i] = (base[i] ?? 0) + layer[i];
+  }
+  return base;
 }
 
 function trackDef(key: MusicKey): TrackDef | null {
