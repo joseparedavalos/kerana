@@ -957,8 +957,9 @@ L7_CHIPAS.steps = chain(
   [L7_MAIN.steps, 49],
 );
 
-// Yvága (S92): la subida, de la isla base a la antesala de Tau. Sale del mismo generador que el mapa (scratchpad), así
-// que las coordenadas coinciden con tools/levels/yvaga.txt: si el mapa cambia, se regeneran los dos.
+// Yvága (S92): la subida, de la isla base a la antesala de Tau. Las coordenadas son las de tools/levels/yvaga.txt
+// (salieron del mismo generador que el mapa, que no está en el repo): si se mueve una pieza del mapa, se corrige acá
+// la fila o la x del paso que cae en ella (tests/yvaga.test.ts avisa si un salto ya no cae en nada).
 // Es un nivel vertical sin pozos: una caída no hace reaparecer, deja a Kerana más abajo. Por eso cada tramo empieza
 // con { floor } (baja a su piso si hace falta) y cada paso lleva fallBack a ese paso: si pierde un salto, baja y sube el
 // tramo otra vez, como una persona. Los saltos son `jumpTo` (simples; con `double` y `dash` solo donde el mapa lo pide,

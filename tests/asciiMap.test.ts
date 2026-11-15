@@ -232,6 +232,16 @@ describe('objetos de motor (S18)', () => {
     expect(parsed.warnings).toEqual([]);
   });
 
+  it('"at" también alcanza a un punto de la grilla: un fuego con su número (S92)', () => {
+    // Sin "at" los fuegos se numeran por filas, de arriba abajo; en un nivel que sube, el de arriba es el último.
+    const { of } = build('size 6x4\nat 4,0 id=1\nat 1,2 id=0', ['....C.', '..====', 'PC....', '######'].join('\n'));
+    const fires = of('Checkpoint').map((c) => [c.x / 16 - 0.5, c.y / 16 - 1, props(c).id]);
+    expect(fires).toEqual([[4, 0, 1], [1, 2, 0]]);
+    // Un objeto con área en ese tile sigue teniendo prioridad (la plataforma, no lo que haya dibujado encima).
+    const mover = build('size 6x3\nat 0,1 speed=60', ['......', '--::..', 'P#####'].join('\n'));
+    expect(props(mover.of('Mover')[0])).toEqual({ dx: 2, dy: 0, speed: 60 });
+  });
+
   it('el Switch tiene que nombrar un objetivo que exista', () => {
     expect(() => build('size 4x2', 'P*..\n####')).toThrow(/sin "target"/);
     expect(() => build('size 4x2\nat 1,0 target=nada', 'P*..\n####')).toThrow(/id "nada"/);

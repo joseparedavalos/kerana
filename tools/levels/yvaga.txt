@@ -9,27 +9,30 @@
 # Pisos (redes): 1 fila 243 · 2 fila 210 · 3 fila 177 · 4 fila 139 · 5 fila 100 · 6 fila 57. Fuegos: la base, los pisos 2, 4 y 6 y la antesala
 #   (numerados en el orden de la subida con "at": ?boss=1 empieza en el de la antesala). Guavirá (G) en cada piso;
 #   la Luz de Arasy (L), en el piso 3, antes del tramo 4.
-# Tramos, de abajo arriba (uno por hijo liberado; u = filas sobre el piso del tramo):
-#   1 Teju Jagua (filas 243-276): tres islas anchas en zigzag (u 7, 14, 21) con escalones a los costados. Se llega a cada
-#     isla por una repisa de un sentido, dos filas más arriba: el salto cae en la repisa y a la isla se baja. Teju'i (t)
+# Tramos, de abajo arriba (uno por hijo liberado; u = filas sobre el piso del tramo). Los tramos 4 y 5 van en espejo.
+#   1 Teju Jagua (filas 243-276): tres islas anchas en zigzag (u 7, 14, 21) con escalones a los costados. A cada isla se
+#     llega por una repisa de un sentido, dos filas más arriba: el salto cae en la repisa y a la isla se baja. Teju'i (t)
 #     en la primera y la tercera; mbopi (m) sobre la segunda y la tercera. Sin piezas móviles.
 #   2 Mbói Tu'ĩ (filas 210-243): dos pares de balsas que se juntan al medio (u 9 hacia la derecha, u 21 hacia la
 #     izquierda). Un ñakurutu (n) en su percha sobre el primer viaje de cada par; el payesero (p), en una repisa propia
 #     sobre la orilla derecha (x 41-43, u 13).
-#   3 Moñái (filas 177-210): dos saltos de 4 tiles con viento en contra (rect WindZone, solo sobre el hueco, sin
-#     pasto: grass=false): u 9 hacia la derecha con viento a la izquierda, u 21 hacia la izquierda con viento a la
-#     derecha. Un karakara (k) sobre cada hueco, del lado del que se salta.
-#   4 Jasy Jatere (filas 139-177): cadena de cuatro ascensores (x 18, 22, 26 y 30; se esperan de a dos a la misma
-#     altura, como los de l5) con dos panales de abejas (a) a la izquierda: el enjambre llega por detrás.
-#   5 Kurupi (filas 100-139): dos pasillos bajo una isla con un mbói colgante (s) en cada una, un ka'i (o) en una repisa
-#     de cada costado y el primer salto que pide el dash: 12 tiles de aire (x 23-34, u 10).
-#   6 Ao Ao (filas 57-100): el corral de los taitetu (x: isla larga con un labio de 1 tile en cada punta, para que no se
-#     caigan; se entra bajando de una repisa) y el yaguareté avá (y) en su isla, a un hueco de 3 de la isla larga.
+#   3 Moñái (filas 177-210): tres cruces de 4 tiles de aire (x 19-22 y x 21-24). Los dos primeros, con viento en contra
+#     (rect WindZone, solo sobre el hueco y sin pasto, grass=false): u 6 hacia la derecha con viento a la izquierda y
+#     u 15 hacia la izquierda con viento a la derecha; el tercero (u 24), sin viento. Un karakara (k) sobre cada hueco,
+#     del lado del que se salta.
+#   4 Jasy Jatere (filas 139-177): cadena de cuatro ascensores de 8 filas (x 23, 19, 15 y 11; se esperan de a dos a la
+#     misma altura, como los de l5) con dos panales de abejas (a) del lado por el que se llega: el enjambre va detrás.
+#   5 Kurupi (filas 100-139): dos pasillos de 3 filas bajo una isla con un mbói colgante (s) en cada una (se entra bajando
+#     de una repisa), un ka'i (o) en una repisa de cada costado y dos saltos que piden el dash: 12 tiles de aire a la
+#     misma altura (x 9-20, u 8, el primero del nivel, y x 12-23, u 30).
+#   6 Ao Ao (filas 57-100): dos corrales de taitetu (x: isla larga con un labio de 1 tile en cada punta, para que no se
+#     caigan al embestir; se entra bajando de una repisa) y dos islas largas, cada una con un yaguareté avá (y) en su
+#     propia isla, a un hueco de 3. La repisa del segundo corral pide el salto doble (5 filas).
 #   7 Luisón (filas 23-57): islas de 3, tres móviles rápidos (90 px/s), dos payeseros (p, q) en islas propias, un jagua hũ
 #     (j) en un corral de 14 (en una isla de 3 se cae al embestir) y dos mbopi sobre los móviles. Las últimas 6 filas
 #     antes de la antesala (24-29), sin enemigos.
 # Ningún enemigo está sobre una pieza donde aterriza un salto obligatorio (tests/yvaga.test.ts lo comprueba con el plan
-#   del piloto, YVAGA_MAIN).
+#   del piloto, YVAGA_MAIN). En la antesala, rect CameraFloor sube la vista a la arena antes de que se trabe.
 size 44x278
 biome cielo
 enemy m=mbopi t=teju_i n=nakurutu p=payesero q=payesero:right k=karakara a=abejas o=kai s=mboi_colgante
