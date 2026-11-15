@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { preview } from 'vite';
 import { installPilot } from './lib/pilot.mjs';
-import { L1_CHIPAS, L1_HIGH, L2_CHIPAS, L2_COPA, L2_HIGH, L3_CHIPAS, L3_SECRET, L4_CHIPAS, L4_SECRET, L5_CHIPAS, L5_SECRET, L6_CHIPAS, L6_FEATHER_A, L6_FEATHER_C, L6_SECRET, L7_CHIPAS, L7_FEATHER_B, L7_FEATHER_C, L7_SECRET } from './lib/pilot-plans.mjs';
+import { L1_CHIPAS, L1_HIGH, L2_CHIPAS, L2_COPA, L2_HIGH, L3_CHIPAS, L3_SECRET, L4_CHIPAS, L4_SECRET, L5_CHIPAS, L5_SECRET, L6_CHIPAS, L6_FEATHER_A, L6_FEATHER_C, L6_SECRET, L7_CHIPAS, L7_FEATHER_B, L7_FEATHER_C, L7_SECRET, YVAGA_MAIN } from './lib/pilot-plans.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'tmp', 'screenshots');
@@ -2892,11 +2892,154 @@ async function main() {
       l7Page.evaluate(() => (window.__KERANA_GAME__?.scene.isActive('Level') ?? false) && window.__KERANA_DEBUG__?.scene.def.id === 'yvaga');
     for (let t = 0; t < 5000 && !(await inYvaga()); t += 100) await sleep(100);
     await l7Page.keyboard.up('Escape');
-    check(await inYvaga(), 'diapositivas → Yvága (arena de Tau)');
+    check(await inYvaga(), 'diapositivas → Yvága');
+    // S92: Yvága ya no es solo la arena: Kerana empieza abajo, en la isla base, y la pelea no arranca desde ahí.
+    await sleep(500);
+    const yvStart = await l7Page.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      return { feet: Math.round(d.player.body.bottom / 16), rows: d.scene.map.height, fighting: d.scene.fighting === true };
+    });
+    check(yvStart.feet === yvStart.rows - 2 && !yvStart.fighting, `Yvága: Kerana empieza en la isla base, al pie de la subida, sin pelea (${JSON.stringify(yvStart)})`);
     await l7Page.close();
 
-    // 1l) Yvága con ?level=yvaga: Tau en 3 fases (disfraz, ecos, forma real), sellado, final y créditos.
-    const tauPage = await open('/?debug=1&level=yvaga&god=1');
+    // 1l0) Yvága, la subida (S92): nivel vertical de siete tramos, sin pozos (la base va de lado a lado y entre tramos
+    // hay una red). Inventario, el fondo que avanza del mar de nubes a las estrellas y el piloto (YVAGA_MAIN) de la
+    // base a la antesala con teclas, sin teletransportes.
+    const yvRun = await open('/?debug=1&level=yvaga&god=1&gifts=all');
+    await yvRun.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const yvInfo = await yvRun.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const b = d.player.body;
+      const kinds = {};
+      for (const e of s.enemies) kinds[e.def.id] = (kinds[e.def.id] ?? 0) + 1;
+      const picks = {};
+      for (const p of s.pickups.filter((k) => k.active)) picks[p.kind] = (picks[p.kind] ?? 0) + 1;
+      return {
+        size: [s.map.width, s.map.height],
+        feet: Math.round(b.bottom / 16),
+        x: +(b.center.x / 16).toFixed(1),
+        fighting: s.fighting === true,
+        checkpoints: s.checkpoints.length,
+        movers: s.movers.length,
+        vertical: s.movers.filter((m) => m.motor.spec.dy !== 0).length,
+        wind: s.windZones.map((z) => z.dir).sort(),
+        pickups: picks,
+        enemies: kinds,
+        bg: s.backdrop.debugState,
+      };
+    });
+    const YV = { mbopi: 4, teju_i: 2, nakurutu: 2, payesero: 3, karakara: 3, abejas: 2, kai: 2, mboi_colgante: 2, taitetu: 4, yaguarete_ava: 2, jagua_hu: 1 };
+    check(
+      yvInfo.size[0] === 44 &&
+        yvInfo.feet === yvInfo.size[1] - 2 &&
+        Math.abs(yvInfo.x - 22) <= 1 &&
+        !yvInfo.fighting &&
+        yvInfo.checkpoints === 5 &&
+        yvInfo.movers === 11 &&
+        yvInfo.vertical === 5 &&
+        yvInfo.wind.join() === '-1,1' &&
+        yvInfo.pickups.guavira === 6 &&
+        yvInfo.pickups.luz_arasy === 1 &&
+        Object.keys(YV).length === Object.keys(yvInfo.enemies).length &&
+        Object.entries(YV).every(([k, n]) => yvInfo.enemies[k] === n),
+      `Yvága: 44 × ${yvInfo.size[1]}, Kerana abajo al centro, 5 fuegos, 11 móviles (5 ascensores), viento para cada lado, 6 guavirá y la Luz de Arasy, y los enemigos de los siete tramos (${JSON.stringify(yvInfo.enemies)})`,
+    );
+    // El fondo de la subida: abajo, el pie de la imagen pegado al borde de abajo de la vista (sin destapar nada).
+    check(
+      yvInfo.bg.far && yvInfo.bg.climb > 0 && Math.abs(yvInfo.bg.farTop + yvInfo.bg.farHeight - 360) <= 0.5,
+      `Yvága: en la base se ve el pie del cielo vertical, el mar de nubes (${JSON.stringify(yvInfo.bg)})`,
+    );
+    await yvRun.screenshot({ path: join(SHOTS, 'yvaga-base.png') });
+    await yvRun.evaluate(installPilot, YVAGA_MAIN);
+    for (let t = 0; t < 900000 && !(await pilot(yvRun)).done; t += 500) await sleep(500);
+    const yvPilot = await pilot(yvRun);
+    await sleep(1200);
+    const yvEnd = await yvRun.evaluate(() => {
+      const d = window.__KERANA_DEBUG__;
+      const s = d.scene;
+      const b = d.player.body;
+      const cam = s.cameras.main;
+      return {
+        x: +(b.center.x / 16).toFixed(1),
+        feet: +(b.bottom / 16).toFixed(1),
+        falls: window.__KERANA_PILOT__.falls ?? 0,
+        fighting: s.fighting === true,
+        fire: [+(s.checkpointPos.x / 16).toFixed(1), s.checkpointPos.y / 16],
+        viewTop: +(cam.worldView.y / 16).toFixed(1),
+        boundsBottom: cam.getBounds().height / 16,
+        bg: s.backdrop.debugState,
+      };
+    });
+    const yvSecs = yvPilot.timeMs / 1000;
+    check(
+      yvPilot.done && yvEnd.feet === 23 && yvEnd.x < 4 && yvPilot.respawns === 0,
+      `Yvága: el piloto sube de la base a la antesala con teclas (${yvSecs.toFixed(1)} s de juego, ${yvEnd.falls} caídas con vuelta; ${JSON.stringify(yvEnd)})`,
+    );
+    // Con una caída el piloto baja al piso del tramo y lo sube otra vez: el tiempo ya no es el de una subida limpia.
+    check(!yvPilot.done || yvEnd.falls > 0 || (yvSecs >= 150 && yvSecs <= 190), `Yvága: la subida limpia dura entre 150 y 190 s de juego (${yvSecs.toFixed(1)} s)`);
+    console.log(`  yvaga (la subida): ${yvSecs.toFixed(1)} s de juego; parciales ${JSON.stringify(yvPilot.splits)}`);
+    if (!yvPilot.done || yvEnd.falls > 0) {
+      await yvRun.screenshot({ path: join(SHOTS, 'yvaga-piloto-atascado.png') });
+      console.log((await yvRun.evaluate(() => window.__KERANA_PILOT__.log.filter((l) => /^(paso|cayó|caída)/.test(l)))).slice(-30).join('\n'));
+    }
+    // Arriba: el fuego de la antesala queda encendido, la vista subió a encuadrar la arena (piso de cámara en la fila 26)
+    // y el fondo llegó al tope de la imagen, la noche con estrellas. La pelea todavía no empezó.
+    check(
+      yvPilot.done && !yvEnd.fighting && yvEnd.fire[0] === 2.5 && yvEnd.fire[1] === 23 && yvEnd.boundsBottom === 26 && yvEnd.viewTop <= 3.5,
+      `Yvága: en la antesala el fuego queda encendido y la vista sube a la arena sin que empiece la pelea (${JSON.stringify(yvEnd)})`,
+    );
+    check(yvEnd.bg.farTop <= 0 && yvEnd.bg.farTop >= -16 && yvEnd.bg.farTop > yvInfo.bg.farTop + 700, `Yvága: en la antesala el fondo llegó al tope, la noche con estrellas (${JSON.stringify(yvEnd.bg)})`);
+    await yvRun.screenshot({ path: join(SHOTS, 'yvaga-antesala.png') });
+    await walkIntoArena(yvRun, 8000);
+    check(await yvRun.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'Yvága: desde la antesala, caminando, la arena de Tau se cierra');
+    await yvRun.close();
+
+    // 1l1) Yvága con ?boss=1 y sin god (S92): Kerana empieza en la antesala, junto a su fuego; si Tau la deja sin
+    // corazones vuelve a ese fuego (no a la base, 250 filas más abajo) y la pelea empieza de nuevo al entrar.
+    const tauKo = await open('/?debug=1&level=yvaga&boss=1');
+    await tauKo.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
+    await sleep(500);
+    const koState = () =>
+      tauKo.evaluate(() => {
+        const d = window.__KERANA_DEBUG__;
+        const b = d.player.body;
+        const view = d.scene.cameras.main.worldView;
+        return {
+          x: +(b.center.x / 16).toFixed(1),
+          feet: +(b.bottom / 16).toFixed(1),
+          fighting: d.scene.fighting === true,
+          hearts: d.player.health.current,
+          max: d.player.health.max,
+          visible: view.contains(b.center.x, b.center.y),
+        };
+      });
+    const koStart = await koState();
+    check(koStart.feet === 23 && koStart.x < 4 && !koStart.fighting, `Yvága con ?boss=1: Kerana empieza en la antesala (${JSON.stringify(koStart)})`);
+    await walkIntoArena(tauKo, 8000);
+    const koFight = await koState();
+    // Sin corazones por el camino de siempre (hurtPlayer → koRespawn); si justo es invulnerable, se repite.
+    for (let t = 0; t < 6000 && (await koState()).fighting; t += 300) {
+      await tauKo.evaluate(() => {
+        const d = window.__KERANA_DEBUG__;
+        d.scene.hurtPlayer(d.player.x + 10, 99);
+      });
+      await sleep(300);
+    }
+    await sleep(600);
+    const koBack = await koState();
+    check(
+      koFight.fighting && !koBack.fighting && koBack.feet === 23 && Math.abs(koBack.x - 2.5) <= 0.6 && koBack.hearts === koBack.max && koBack.visible,
+      `Yvága: al caer contra Tau, Kerana vuelve al fuego de la antesala con la vida completa y a la vista (${JSON.stringify(koBack)})`,
+    );
+    await walkIntoArena(tauKo, 8000);
+    check((await koState()).fighting, 'Yvága: después de caer, la pelea empieza de nuevo al volver a entrar');
+    await tauKo.close();
+
+    // 1l) Yvága con ?level=yvaga&boss=1 (S92: sin boss=1 empieza abajo, al pie de la subida): Tau en 3 fases (disfraz,
+    // ecos, forma real), sellado, final y créditos.
+    const tauPage = await open('/?debug=1&level=yvaga&god=1&boss=1');
     await tauPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     await walkIntoArena(tauPage, 8000);
