@@ -42,7 +42,10 @@ function installRecorder() {
     if (!b || (!sc.fighting && b.brain.state !== 'defeated')) return;
     const last = window.__REC[window.__REC.length - 1];
     if (b.brain.state === 'defeated' && last?.st === 'defeated') return;
-    window.__REC.push({ t: Math.round(sc.time.now), hp: b.brain.hp, ph: b.brain.phase, st: b.brain.state, atk: b.brain.attack?.id ?? null, vul: b.brain.vulnerable });
+    const p = window.__KERANA_DEBUG__.player;
+    const t = b.form === 'true' ? b.core : b.body;
+    window.__REC.push({ t: Math.round(sc.time.now), hp: b.brain.hp, ph: b.brain.phase, st: b.brain.state, atk: b.brain.attack?.id ?? null, vul: b.brain.vulnerable,
+      px: Math.round(p.x), py: Math.round(p.y), tx: Math.round(t.x), ty: Math.round(t.y), hyp: p.status.hypnotized });
   });
 }
 
@@ -142,7 +145,9 @@ async function runFight(browser, base, label) {
               await move(dir * 10);
               await page.keyboard.down('Space');
               await sleep(260);
-              await tap('Space', 40); // salto doble, por las dudas
+              await page.keyboard.up('Space');
+              await sleep(20);
+              await page.keyboard.down('Space'); // salto doble, por las dudas (hay que soltar y volver a apretar)
               await sleep(250);
               await page.keyboard.up('Space');
               for (let i = 0; i < 20; i++) {
@@ -168,7 +173,12 @@ async function runFight(browser, base, label) {
         await face(tcx >= s.px ? 1 : -1, s);
         await page.keyboard.down('Space');
         await sleep(gapUp > 50 ? 230 : 170);
-        if (gapUp > 50) await tap('Space', 40);
+        if (gapUp > 50) {
+          await page.keyboard.up('Space');
+          await sleep(20);
+          await page.keyboard.down('Space');
+          await sleep(120);
+        }
         await tap('x', 40);
         await sleep(120);
         await page.keyboard.up('Space');
@@ -230,7 +240,11 @@ async function runFight(browser, base, label) {
     const rise = w.floorY - g.top;
     await page.keyboard.down('Space');
     await sleep(300);
-    if (rise > 3 * TILE + 8) await tap('Space', 40);
+    if (rise > 3 * TILE + 8) {
+      await page.keyboard.up('Space');
+      await sleep(20);
+      await page.keyboard.down('Space');
+    }
     await sleep(250);
     await page.keyboard.up('Space');
     // Cae sobre la estrella: se queda quieto encima.
