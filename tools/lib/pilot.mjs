@@ -54,6 +54,13 @@
 //   Además, un paso run puede llevar wait: [x, y] (espera en el lugar a que esa plataforma esté por llegar a su
 //   origen o esperando ahí; S36: con waitAt: 'end', en la otra punta) y untilMover: [x, y] (termina al quedar parada
 //   sobre esa plataforma).
+//   S92 (Yvága, un nivel que sube: una caída no hace reaparecer, deja a Kerana más abajo):
+//   { floor: fila }                                   baja hasta el piso de esa fila: en cada plataforma camina hacia el
+//                                                     borde más cercano y se deja caer (un pretil lo salta); termina
+//                                                     parada con los pies en esa fila. Ya en ese piso, no hace nada.
+//   Cualquier paso con fallBack (n): si Kerana queda parada más de fallRows filas (3,5 por defecto) por debajo de donde
+//   empezó el paso, vuelve al paso n (el `floor` del tramo: baja y lo sube otra vez). En un ascensor, fallRows mayor que
+//   su recorrido (si pierde el trasbordo vuelve a bajar con él y el paso lo reintenta solo).
 //   { bounce: [x, y], wait?: { mover, at }, onto?: [x, y], landX?, landTop? }
 //                                                     hongo que ocupa (x, y): si wait, espera a que esa plataforma
 //                                                     esté en esa punta; pisa el hongo y en el aire va hacia la
@@ -333,6 +340,7 @@ export function installPilot(plan) {
     }
     if (s.charge !== undefined) return doCharge(s);
     if (s.stop !== undefined) return doStop(s);
+    if (s.floor !== undefined) return doFloor(s);
     // S36: { ensureChipa: i, back: n } si la chipa de índice i sigue en el mapa (el desvío no la tocó), vuelve n pasos
     // atrás y lo repite; queda anotado en el registro. A lo sumo `tries` veces (3 por defecto).
     if (s.ensureChipa !== undefined) {
@@ -558,6 +566,32 @@ export function installPilot(plan) {
     return grounded() && Math.abs(dx) <= 6 && Math.abs(body().velocity.x) <= 5;
   };
 
+  // S92: { floor: fila } baja hasta ese piso. En cada plataforma elige el borde más cercano (los del mapa no cuentan)
+  // y camina hasta caer; un pretil de 1 tile (el labio de un corral) lo salta.
+  const doFloor = (s) => {
+    const b = body();
+    if (grounded() && Math.abs(b.bottom - s.floor * T) <= 3 && !onMover(b)) {
+      move(0);
+      return true;
+    }
+    if (!grounded()) return false;
+    if (st.phase === 'start' || st.floorTop !== b.bottom) {
+      const edge = (x) => x > 0 && x < scene.map.widthInPixels && !solid(x, b.bottom + 4);
+      let left = Infinity;
+      let right = Infinity;
+      for (let k = 1; k <= 60 && left === Infinity && right === Infinity; k++) {
+        if (edge(b.center.x - k * T)) left = k;
+        if (edge(b.center.x + k * T)) right = k;
+      }
+      st.floorDir = left <= right ? -1 : 1;
+      st.floorTop = b.bottom;
+      st.phase = 'go';
+    }
+    move(st.floorDir);
+    if (solid(b.center.x + st.floorDir * (b.halfWidth + 4), b.bottom - 6)) startJump();
+    return false;
+  };
+
   const doCharge = (s) => {
     switch (st.phase) {
       case 'start':
@@ -670,6 +704,23 @@ export function installPilot(plan) {
     if (st.trace.length === 0 || st.timeMs - st.trace[st.trace.length - 1][0] >= 100) st.trace.push([Math.round(st.timeMs), +tx.toFixed(1), +(body().bottom / T).toFixed(1)]);
     // S30: un parcial puede pedir además estar a esa altura o más arriba (pies en la fila `top` o menos): l5 sube y baja.
     for (const [name, x, top] of splits) if (st.splits[name] === undefined && tx >= x && (top === undefined || body().bottom / T <= top)) st.splits[name] = Math.round(st.timeMs);
+    // S92: fallBack. La altura de salida del paso se toma la primera vez que está en el piso dentro de él.
+    if (st.fromStep !== st.step && grounded()) {
+      st.fromStep = st.step;
+      st.fromBottom = body().bottom;
+    }
+    const cur = steps[st.step];
+    if (cur.fallBack !== undefined && st.fromStep === st.step && grounded() && body().bottom > st.fromBottom + (cur.fallRows ?? 3.5) * T) {
+      st.falls = (st.falls ?? 0) + 1;
+      st.log.push(`cayó en el paso ${st.step} (x ${tx.toFixed(1)}, fila ${(body().bottom / T).toFixed(1)}): vuelve al paso ${cur.fallBack}`);
+      st.step = cur.fallBack;
+      st.phase = 'start';
+      st.aim = null;
+      st.doubled = false;
+      st.dashed = false;
+      st.jumpMs = 0;
+      return;
+    }
     const finished = doStep(steps[st.step]);
     // Un salto decidido justo cuando el paso termina en el piso no se hace: lo decide el paso siguiente.
     if (finished && grounded() && held.jump === false) st.jumpMs = 0;
