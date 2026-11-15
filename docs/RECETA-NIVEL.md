@@ -945,3 +945,60 @@ Karaí Vosá no camina ni persigue: avisa (levanta la cuchara), pega un cucharaz
 - **No ve a través de un fardo o un muro** (línea a la altura del pecho, `eyeHeight`): así no le pega al fardo mientras Kerana lo rompe del otro lado (el zaguán y la despensa).
 - **Comprobarlo:** `tests/karaiVosa.test.ts` (piso, lejos de fuegos, espinas y enemigos, separados más de 20 tiles, el fardo entre los dos) y el piloto con y sin `god`, alternando builds.
 
+
+## 22. Un nivel que solo sube (S92, la subida a Yvága)
+
+Yvága es el primer nivel puramente vertical: 44 × 278, siete tramos de 33 a 43 filas, sin pozos, sin paredes y sin espinas. Lo que vale de §13 (diseñar en vertical) sigue valiendo; esto es lo que agregó.
+
+**Medidas.** El piloto sube de la base a la antesala en **167 a 172 s** (tres de tres, sin caídas). Por tramo: 20 · 31 · 21,5 · 24 · 23 a 26 · 21 · 24 a 28 s. La primera versión (siete tramos de 34 filas) daba 145 s: se alargaron los tramos cortos, no se frenó a nadie.
+
+### 22.1 La red y la caída
+
+- **Sin pozos:** la base va de lado a lado. **Entre tramos, una red:** una fila entera de plataforma de un sentido (`=`), de borde a borde. Se atraviesa subiendo desde cualquier lado y no se cae por ella. La caída más larga es un tramo y nunca cuesta un corazón; por eso el nivel no lleva espinas (caer sobre una sí costaría).
+- **La red es el piso del tramo:** ahí van el fuego, la guavirá y la Luz. Lo último de cada tramo queda a 3 filas de la red (salto simple).
+- **Cuántos cruces tiene un tramo decide por qué lado sale:** con un número impar de cruces del ancho se sale del lado opuesto al de entrada; con uno par, del mismo. Al agregar un cruce a un tramo hay que dar vuelta (en espejo) los de arriba o sumar otro cruce más. El generador dibuja un tramo «como si empezara por la izquierda» y lo espeja con una bandera.
+
+### 22.2 Enemigos en islas
+
+- **Ningún enemigo sobre la pieza donde aterriza un salto obligatorio.** A una isla con enemigos se llega a una **repisa de un sentido, dos filas más arriba y pegada a su punta**, y desde ahí se baja caminando: el salto cae en la repisa (sin enemigos) y el jugador los mira antes de entrar. Sirve igual para una isla ancha con teju'i, un corral o un pasillo bajo un mbói. `tests/yvaga.test.ts` lo comprueba con el plan del piloto: para cada `jumpTo`, ningún enemigo parado en esa pieza ni a menos de 4 filas por encima (los voladores, con todo lo que recorren).
+- **Los que embisten no frenan en un borde.** `Charger` solo se detiene contra una pared: un taitetu o un jagua hũ en una isla sin paredes se tira al vacío y queda abajo, en el piso por el que se sube. Van en un **corral**: isla larga (≥ 12 tiles) con un labio de 1 tile en cada punta. El labio se salta sin pensar y la isla sigue midiendo 2 filas. Desde la repisa (2 filas sobre el piso del corral) no ven a Kerana; desde el labio (1 fila), sí.
+- **El teju'i (Walker) tampoco mira el borde:** patrulla ± 40 px. La isla tiene que cubrir esa patrulla entera.
+- **El yaguareté avá necesita suelo de verdad** (capa Ground, no plataformas) y un hueco de 4 tiles o menos hasta la isla de Kerana, a la misma altura. No ataca a quien tiene un borde a menos de 4,5 tiles detrás: la isla de Kerana, larga.
+- **El mbói colgante cuelga bajo una isla sólida y amenaza un pasillo de 3 filas libres** debajo (48 px para los 42 de Kerana): colgado baja 16 px y le toca la cabeza. Con 4 filas libres ya no la toca.
+- **Karakara y ñakurutu:** sobre el hueco, del lado del que se salta, 6 filas sobre el borde. A 1 tile del borde de salida queda a 97 px (ataca a quien espera; su radio es 110) y a 4 tiles del de llegada, a 115 (no ataca a quien aterriza). El ñakurutu, en una percha propia sobre el primer viaje de una balsa: avisa y se lo corta sin estar saltando.
+- **El panal** cuelga de una plataforma chica (la letra, en el tile de abajo). El enjambre ve a 80 px: del lado por el que se llega, para que salga detrás.
+- **Tiradores (payesero, ka'i):** en una repisa propia, nunca en el camino. Acá un golpe en el aire no cuesta un corazón, solo la caída.
+
+### 22.3 Techos
+
+- **Para saltar bajo una isla sólida hacen falta 7 filas libres** (el salto sube 3,96 y Kerana mide 2,63). Con menos, la cabeza toca y el salto se corta: un escalón nunca va debajo de una isla sólida a menos de 7 filas, ni se salta hacia un escalón pasando por debajo de una. Las de un sentido no molestan.
+- **El salto con doble y dash sube 6,8 filas:** sobre la carrera y el vuelo, 10 filas libres. La isla del segundo pasillo del tramo 5 estaba a 9 y cortaba el salto doble del primer salto con dash.
+- **Rodear la punta de una isla sólida con salto doble falla a veces** (el piloto, una de cinco: la esquina le corta el salto). Un escalón de un sentido al lado es más claro y no falla.
+
+### 22.4 Lo que el motor daba por sentado
+
+Los otros siete niveles son horizontales. Un nivel vertical encontró cuatro supuestos:
+
+1. **La arena se cerraba con Kerana 250 filas más abajo.** `ArenaGate` solo miraba x. Ahora no se cierra con Kerana por debajo de la arena; en los niveles horizontales la arena llega al suelo y no cambia nada.
+2. **`?boss=1` empezaba en la base.** Los fuegos se numeran en el orden de la grilla (por filas, de arriba abajo) y `?boss=1` va al de número más alto. En un nivel que sube se numeran con `at X,Y id=N`, en el orden del recorrido.
+3. **La cámara saltaba medio alto de pantalla al trabarse la arena** (antes el mapa terminaba 2 filas bajo el piso de la arena y la vista ya estaba ahí). `rect CameraFloor` sobre la antesala: con Kerana adentro, la vista sube sola hasta el encuadre de siempre.
+4. **Subiendo se veían 7 filas sobre la cabeza.** `cameraLookUp` en `levels.ts` (40 en Yvága): 10 filas. Con la arena trabada no se aplica.
+
+Además: el aviso del viento dibuja matas de pasto en el borde de abajo de la zona (`grass=false` en el aire) y `resizeImage` no sirve para agrandar un fondo (ASSETS §7).
+
+### 22.5 El piloto en un nivel sin pozos
+
+- Una caída no hace reaparecer: deja a Kerana más abajo y el paso siguiente salta en el lugar para siempre. Cada tramo empieza con `{ floor: fila }` (baja hasta su piso: camina al borde más cercano de cada pieza y se deja caer; un labio lo salta) y cada paso lleva `fallBack` a ese paso: si queda parada 3,5 filas por debajo de donde empezó, baja y sube el tramo otra vez. En un ascensor, `fallRows` mayor que su recorrido.
+- **Probarlo rompiendo algo:** con el dash apagado (`player.motor.dashEnabled = false`), el salto de 12 tiles falla 6 de 6, el piloto cae, baja al piso y vuelve a subir, en ≈ 9 s por vuelta. Es también la prueba de que ese salto pide el dash.
+- `jumpTo` camina hasta 2,5 tiles del destino antes de saltar: si el destino está arriba de un techo sólido, se mete debajo. Antes, un `stop` en el lugar de despegue. `stop` también sirve para bajar de una repisa: camina, cae y frena.
+- Los parciales por altura: `['piso 3', 0, 177]` (x 0 y la fila).
+
+### 22.6 Errores de S92 y su corrección
+
+1. **La pelea de Tau empezaba al cargar el nivel** y la cámara quedaba fija en la arena mientras el piloto subía a ciegas (los tiempos salían igual: lo delató la primera captura). `ArenaGate` (§22.4).
+2. **El fondo salió con una rejilla negra:** el escalador por moda deja vacíos los píxeles que no cubren un bloque del original. Vecino más cercano para el fondo vertical.
+3. **Un taitetu sin corral se tira de la isla** (§22.2): corrales con labio.
+4. **El mbói colgaba sobre el pasillo donde caía un salto:** repisa de llegada también ahí.
+5. **La isla del segundo pasillo cortaba el salto con dash** (§22.3): 11 filas más arriba que la de despegue.
+6. **Rodear la isla con salto doble** trabó al piloto una vez (§22.3): escalón.
+7. **El tramo 6 duraba 13 s y el total, 145:** un segundo corral y una segunda isla del yaguareté, un segundo salto con dash en el 5 y ascensores de 8 filas a 45 px/s en el 4.

@@ -23,6 +23,12 @@ export interface LevelBackgrounds {
   mist?: { region: readonly [number, number, number, number] };
   /** El relleno de arriba es dosel (S60): siluetas de copas, niebla en bandas y rayos de luz (GAMEPLAY.backdrop.canopy). */
   canopy?: boolean;
+  /**
+   * Fondo de una subida (S92): si `far` es más alta que la vista, va al ancho de la vista en su proporción y se recorre
+   * entera con el avance vertical: abajo del nivel se ve su pie y arriba, su tope. Sin agrandado, `shiftY` ni relleno.
+   * Con una imagen que no es más alta que la vista no cambia nada.
+   */
+  climb?: boolean;
 }
 
 export interface LevelDef {
@@ -54,6 +60,11 @@ export interface LevelDef {
   gift: GiftId | null;
   /** Nivel de noche con iluminación (GDD §4.8): halo de Kerana, faroles y zonas oscuras. */
   dark?: boolean;
+  /**
+   * Cuánto mira la cámara hacia arriba (unidades del mundo, S92): un nivel que sube quiere ver lo que viene. Solo fuera
+   * de la arena trabada. Sin valor, Kerana va al centro de la vista, como siempre.
+   */
+  cameraLookUp?: number;
   /** Arena final (Yvága): fuera del mapa del mundo; al ganar, final verdadero y créditos (GDD §7). */
   finale?: boolean;
   /** Coordenadas aproximadas del nodo en el mapa (GDD §8.4): x = longitud, y = latitud. */

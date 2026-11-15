@@ -46,6 +46,26 @@ export function backdropPanY(viewY: number, maxViewY: number, travel: number): n
 }
 
 /**
+ * Alto con el que se dibuja una imagen de `width` × `height` px llevada al ancho de la vista, sin deformarla (S92).
+ */
+export function backdropClimbHeight(width: number, height: number, viewWidth: number): number {
+  return width > 0 ? (height * viewWidth) / width : 0;
+}
+
+/**
+ * Borde de arriba (≤ 0) de un fondo de subida (S92), más alto que la vista: con la vista arriba del nivel se ve el
+ * tope de la imagen (0) y con la vista abajo, su pie (`-travel`, donde `travel` es lo que la imagen le sobra a la
+ * vista). En el medio, proporcional al avance. Va a pasos de `snap` unidades (medio = un píxel del lienzo) para que el
+ * pixel art no tiemble. `viewY` es el borde de arriba de la vista; `maxViewY`, el mayor posible.
+ */
+export function backdropClimbTop(viewY: number, maxViewY: number, travel: number, snap = 0.5): number {
+  if (travel <= 0) return 0;
+  const progress = maxViewY <= 0 ? 1 : Math.min(1, Math.max(0, viewY / maxViewY));
+  const top = -travel * progress;
+  return (snap > 0 ? Math.round(top / snap) * snap : top) || 0;
+}
+
+/**
  * Color medio (`0xRRGGBB`) de una fila de píxeles RGBA (de `getImageData`), para el relleno del fondo (S29).
  */
 export function averageColor(rgba: ArrayLike<number>): number {

@@ -48,7 +48,7 @@ import { arenaEntry, insideArena } from '../systems/arenaGround';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
 import { canReturnForChipas, chipaReturnTarget, OfferingMotor, offeringLineKey, offeringStartsOpen, type ChipaReturnPoint } from '../systems/offeringLogic';
 import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } from '../systems/trapLogic';
-import { CameraController } from '../systems/CameraController';
+import { CameraController, type CameraFloor } from '../systems/CameraController';
 import { Chase } from '../systems/Chase';
 import { Waterfall } from '../entities/Waterfall';
 import { Darkness, type LevelLight } from '../systems/Darkness';
@@ -231,6 +231,8 @@ export class LevelScene extends Phaser.Scene {
   private chipaReturns: ChipaReturnPoint[] = [];
   /** S85: tramos (rect PitReturn) donde caer al vacío devuelve al último fuego, no a la última plataforma pisada. */
   private pitReturns: Phaser.Geom.Rectangle[] = [];
+  /** S92: pisos de la cámara (rect CameraFloor): en la antesala de Yvága la vista sube a encuadrar la arena. */
+  private cameraFloors: CameraFloor[] = [];
   private switches: Switch[] = [];
   private switchBoard = new SwitchBoard();
   /** Cuerpos que pueden viajar sobre una plataforma móvil o una vaca (se arma en cada frame, sin asignar). */
@@ -312,6 +314,7 @@ export class LevelScene extends Phaser.Scene {
     this.offering = undefined;
     this.chipaReturns = [];
     this.pitReturns = [];
+    this.cameraFloors = [];
     this.switches = [];
     this.switchBoard = new SwitchBoard();
     this.darkness = undefined;
@@ -512,10 +515,13 @@ export class LevelScene extends Phaser.Scene {
     }
     this.setupBoss();
 
-    this.cameraCtl = new CameraController(this.cameras.main, this.player, {
-      width: this.map.widthInPixels,
-      height: this.map.heightInPixels,
-    });
+    this.cameraCtl = new CameraController(
+      this.cameras.main,
+      this.player,
+      { width: this.map.widthInPixels, height: this.map.heightInPixels },
+      this.def.cameraLookUp ?? 0,
+    );
+    this.cameraCtl.setFloors(this.cameraFloors);
     if (this.chaseZone) {
       this.chase = new Chase(this, this.chaseZone.rect, this.chaseZone.speed, this.refuges, {
         camera: this.cameras.main,
@@ -595,7 +601,8 @@ export class LevelScene extends Phaser.Scene {
     this.reportPlayerStateSfx();
     this.updateSlashFx();
     this.dashTrail.update(delta);
-    this.cameraCtl.update(this.player.motor.facing);
+    // S92: con la arena trabada la pelea se encuadra como siempre (sin la mirada hacia arriba del nivel).
+    this.cameraCtl.update(this.player.motor.facing, this.arena?.locked !== true, delta);
     if (this.updateChase(delta)) return;
     this.updateEnemies(delta);
     this.updateCarriers(delta);
@@ -1905,7 +1912,9 @@ export class LevelScene extends Phaser.Scene {
           const dir: 1 | -1 = Number(objectProp(obj, 'dir') ?? 1) < 0 ? -1 : 1;
           const speed = Number(objectProp(obj, 'speed') ?? GAMEPLAY.wind.speed);
           const offsetMs = Number(objectProp(obj, 'offsetMs') ?? 0);
-          this.windZones.push(new WindZone(this, zone, dir, speed, offsetMs, (phase, z) => phase === 'gust' && this.onWindPhase(z)));
+          // S92: `grass=false` saca las matas de pasto (una zona en el aire, sin suelo donde crezcan).
+          const grass = objectProp(obj, 'grass') !== false;
+          this.windZones.push(new WindZone(this, zone, dir, speed, offsetMs, (phase, z) => phase === 'gust' && this.onWindPhase(z), grass));
           break;
         }
         case 'Bouncer': {
@@ -1963,6 +1972,13 @@ export class LevelScene extends Phaser.Scene {
         case 'PitReturn':
           this.pitReturns.push(new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)));
           break;
+        case 'CameraFloor': {
+          // S92: con Kerana dentro del rectángulo, la vista no baja de la fila `floor` (por defecto, su borde de abajo).
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          const row = objectProp(obj, 'floor');
+          this.cameraFloors.push({ zone, bottom: row === undefined ? zone.bottom : Number(row) * this.map.tileHeight });
+          break;
+        }
         case 'Switch': {
           const target = String(objectProp(obj, 'target') ?? '');
           const sw = new Switch(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)), target, Number(objectProp(obj, 'ms') ?? 0));

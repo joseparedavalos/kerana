@@ -17,7 +17,7 @@ import {
   seeded,
   splitRain,
 } from './ambientLogic';
-import { backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
+import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
@@ -43,6 +43,8 @@ function mixTint(hex: string, tint: number): number {
 // degradado a ese color hacia arriba (l5: la luz que se filtra por el dosel). La lluvia pintada (l5) cae en
 // fotogramas de la propia imagen, como el agua de S47; la niebla pintada (l7) tiene una copia que corre de costado.
 // S60: con `canopy` (l5), el relleno lleva las copas horneadas y por encima cruzan bandas de niebla y bajan rayos de luz.
+// S92: con `climb` (Yvága), una imagen más alta que la vista va al ancho de la vista, sin deformar, y se recorre entera
+// con el avance vertical (el pie abajo del nivel, el tope arriba). No lleva agrandado, `shiftY` ni relleno.
 export class LevelBackdrop {
   private readonly far?: Phaser.GameObjects.Image;
   /** Relleno de la franja destapada arriba de la imagen lejana (S29; S59 por columnas y en degradado). */
@@ -66,6 +68,8 @@ export class LevelBackdrop {
   private readonly travelY: number;
   /** Lo más que puede destapar el desplazamiento arriba de la imagen (unidades de la vista; ≤ 0 si nunca). */
   private readonly maxUncovered: number;
+  /** Fondo de subida (S92): lo que la imagen le sobra a la vista en alto (unidades); 0 si el nivel no lo usa. */
+  private readonly climbTravel: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -74,10 +78,12 @@ export class LevelBackdrop {
     private readonly mapHeight: number,
   ) {
     this.brightness = defs.brightness ?? 1;
-    this.travelY = CFG.panYRange * Math.max(0, mapHeight - VIEW.height);
-    this.fit = backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0);
+    this.climbTravel = defs.climb ? Math.max(0, this.climbHeight(defs.far) - VIEW.height) : 0;
+    const climb = this.climbTravel > 0;
+    this.travelY = climb ? 0 : CFG.panYRange * Math.max(0, mapHeight - VIEW.height);
+    this.fit = climb ? { scale: 1, top: 0 } : backdropFit(VIEW.height, CFG.overscale, defs.shiftY ?? 0);
     this.maxUncovered = this.fit.top + this.travelY;
-    this.far = this.makeImage(defs.far);
+    this.far = this.makeImage(defs.far, climb ? this.climbTravel + VIEW.height : undefined);
     if (this.far && defs.far) {
       if (this.maxUncovered > 0) this.makeFill(defs.far, defs.fillTop, defs.canopy === true);
       if (defs.rain) this.makeRain(defs.far);
@@ -129,7 +135,11 @@ export class LevelBackdrop {
     const off = fixedOffset(cam);
     const width = VIEW.width * this.fit.scale;
     const panX = backdropPanX(cam.worldView.x, this.mapWidth - VIEW.width, width - VIEW.width, CFG.panRange);
-    const panY = backdropPanY(cam.worldView.y, this.mapHeight - VIEW.height, this.travelY);
+    // S92: en una subida la imagen baja entera con el avance; si no, el desplazamiento corto de S28.
+    const panY =
+      this.climbTravel > 0
+        ? backdropClimbTop(cam.worldView.y, this.mapHeight - VIEW.height, this.climbTravel)
+        : backdropPanY(cam.worldView.y, this.mapHeight - VIEW.height, this.travelY);
     for (const img of this.images) img.setPosition(off.x + panX, off.y + this.fit.top + panY);
     // Franja destapada arriba de la imagen (unidades de la vista); casi siempre ninguna.
     const uncovered = this.fit.top + panY;
@@ -215,12 +225,16 @@ export class LevelBackdrop {
   }
 
   /** Estado para la prueba de humo. */
-  get debugState(): { images: number; far: boolean; cave: boolean; edges: number } {
+  get debugState(): { images: number; far: boolean; cave: boolean; edges: number; climb: number; farTop: number; farHeight: number } {
     return {
       images: this.images.length,
       far: this.far?.visible ?? false,
       cave: this.cave?.visible ?? false,
       edges: this.edges.filter((e) => e.visible).length,
+      // S92: recorrido del fondo de subida, y dónde quedó la imagen lejana en la vista (borde de arriba y alto, unidades).
+      climb: this.climbTravel,
+      farTop: this.far ? this.far.y - fixedOffset(this.scene.cameras.main).y : 0,
+      farHeight: this.far?.displayHeight ?? 0,
     };
   }
 
@@ -466,14 +480,22 @@ export class LevelBackdrop {
     tex.refresh();
   }
 
-  private makeImage(key?: string): Phaser.GameObjects.Image | undefined {
+  /** Alto (unidades) de la imagen `key` llevada al ancho de la vista sin deformarla (S92); 0 si falta. */
+  private climbHeight(key?: string): number {
+    if (!key || !this.scene.textures.exists(key)) return 0;
+    const src = this.scene.textures.get(key).getSourceImage();
+    return backdropClimbHeight(src.width, src.height, VIEW.width);
+  }
+
+  /** `height` (S92): alto propio de un fondo de subida; sin él, el de la vista (con el agrandado). */
+  private makeImage(key?: string, height?: number): Phaser.GameObjects.Image | undefined {
     if (!key || !this.scene.textures.exists(key)) return undefined;
     return this.scene.add
       .image(0, 0, key)
       .setOrigin(0)
       .setScrollFactor(0)
       // Arte de 1280 × 720 en una vista de 640 × 360: escala 0,5 (doble detalle), más el agrandado.
-      .setDisplaySize(VIEW.width * this.fit.scale, VIEW.height * this.fit.scale)
+      .setDisplaySize(VIEW.width * this.fit.scale, height ?? VIEW.height * this.fit.scale)
       .setDepth(CFG.depth);
   }
 }

@@ -161,7 +161,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     dark: true,
     mapNode: { x: -57.63, y: -25.28 },
   },
-  // Yvága, el cielo (GDD §7): solo la arena de Tau, sin nivel previo. Se llega al liberar a Luisón.
+  // Yvága, el cielo (GDD §7): la subida (S92), un nivel vertical de siete tramos, y arriba la arena de Tau. Se llega
+  // al liberar a Luisón; Kerana empieza abajo y entra a la antesala por debajo.
   yvaga: {
     id: 'yvaga',
     order: 8,
@@ -170,7 +171,11 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_yvaga',
     mapSource: 'ascii',
     biome: 'cielo',
-    backgrounds: { far: 'bg_yvaga_far' },
+    // S92: un solo cielo vertical, del mar de nubes (la base) a la noche con estrellas (la arena); se recorre entero
+    // con la subida (`climb`). `bg_yvaga_far` queda para el título.
+    backgrounds: { far: 'bg_yvaga_subida', climb: true },
+    // S92: la cámara mira 2,5 tiles hacia arriba: subiendo, sobre la cabeza de Kerana se ven unas 10 filas (sin esto, 7).
+    cameraLookUp: 40,
     musicKey: '',
     boss: 'tau',
     gift: null,

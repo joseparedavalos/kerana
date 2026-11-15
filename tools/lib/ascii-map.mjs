@@ -15,6 +15,8 @@
 //     Gate:    id=…
 //     Switch:  target=<id de una reja o un Mover> (obligatorio) ms=<0 permanente | ms encendido>
 //     Bouncer: kind=once (un solo uso) | kind=sleep (dormido hasta un tajo cargado)
+//     Checkpoint (S92): id=N. Sin esto los fuegos se numeran en el orden de la grilla (por filas, de arriba abajo);
+//       `?boss=1` empieza en el de número más alto, que tiene que ser el de la antesala (Yvága sube: va primero).
 //   Props por bioma (S46) con la línea "prop X,Y carpeta/nombre [scale=N] [flip] [front]": objeto Prop con
 //   art=carpeta/nombre en el pie del tile (X, Y). Los que cuelgan (sheets.<nombre>.hang) van del techo del tile.
 //   S54: X e Y aceptan decimales, y "prop X1-X2,Y …" (entre dos puntos: tendedero, toldo con poste) escala el dibujo
@@ -215,7 +217,10 @@ function applyAts(objects, ats, prop) {
   for (const a of ats) {
     const cx = a.x * TILE + TILE / 2;
     const cy = a.y * TILE + TILE / 2;
-    const obj = objects.find((o) => !o.point && cx >= o.x && cx < o.x + o.width && cy >= o.y && cy < o.y + o.height);
+    // S92: si en el tile no hay un objeto con área, vale el punto de la grilla dibujado ahí (un fuego: `at X,Y id=N`).
+    const obj =
+      objects.find((o) => !o.point && cx >= o.x && cx < o.x + o.width && cy >= o.y && cy < o.y + o.height) ??
+      objects.find((o) => o.point && Math.floor(o.x / TILE) === a.x && o.y / TILE - 1 === a.y);
     if (!obj) throw new Error(`"at ${a.x},${a.y}": no hay ningún objeto de la grilla en ese tile.`);
     const list = obj.properties ?? [];
     for (const [k, v] of Object.entries(a.props)) {

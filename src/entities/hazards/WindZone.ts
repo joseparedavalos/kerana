@@ -22,9 +22,11 @@ export class WindZone {
     private readonly speed: number,
     offsetMs: number,
     private readonly onPhase?: (phase: WindPhase, zone: WindZone) => void,
+    /** false (S92, `grass=false` en el mapa): sin las matas de pasto; el aviso son solo las rayas (Yvága, en el aire). */
+    grass = true,
   ) {
     this.cycle = new WindCycle(CFG, offsetMs);
-    for (let x = zone.left + 4; x < zone.right; x += CFG.grassSpacing) {
+    for (let x = zone.left + 4; grass && x < zone.right; x += CFG.grassSpacing) {
       this.blades.push(scene.add.rectangle(x, zone.bottom, 2, CFG.grassHeight, GRASS_COLOR).setOrigin(0.5, 1).setDepth(11));
     }
     this.streaks = scene.add

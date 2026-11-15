@@ -128,7 +128,7 @@ describe('Tau: estrellas, humo y ecos', () => {
 });
 
 describe('Flujo y final (GDD §2.6, §6.8, §7)', () => {
-  it('Yvága es solo la arena final, fuera del mapa del mundo', () => {
+  it('Yvága (la subida y la arena final) queda fuera del mapa del mundo', () => {
     const yvaga = getLevel('yvaga');
     expect(yvaga.boss).toBe('tau');
     expect(yvaga.finale).toBe(true);
