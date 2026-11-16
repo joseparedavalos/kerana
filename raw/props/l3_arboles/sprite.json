@@ -39,8 +39,8 @@
   },
   "sheets": {
     "dead_tree_termite": {
-      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
-      "sink": 3,
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido) · S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: 8 filas angostas (8 a 100 de 143 px) → 5",
+      "sink": 5,
       "tufts": [
         {
           "prop": "l1_ladera/short_dry_grass",
@@ -58,8 +58,8 @@
       ]
     },
     "lapacho_pink": {
-      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
-      "sink": 3,
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido) · S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: 6 filas angostas (25 a 87 de 137 px) → 4",
+      "sink": 4,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -83,8 +83,8 @@
       ]
     },
     "lapacho_yellow": {
-      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
-      "sink": 3,
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido) · S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: 6 filas angostas (25 a 87 de 136 px) → 4",
+      "sink": 4,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -108,8 +108,8 @@
       ]
     },
     "shade_tree_green": {
-      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
-      "sink": 3,
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido) · S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: 5 filas angostas (24 a 67 de 125 px) → 3.5",
+      "sink": 3.5,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -131,6 +131,22 @@
           "flip": true
         }
       ]
+    },
+    "fallen_logs": {
+      "note": "S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: 6 filas angostas (4, 13, 23, 46, 54, 63 de 91 px) → 4",
+      "sink": 4
+    },
+    "stone_trough": {
+      "note": "S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: base plana (100 de 112 px) → 1",
+      "sink": 1
+    },
+    "wooden_gate": {
+      "note": "S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: las patas llegan enteras al piso → 1",
+      "sink": 1
+    },
+    "corral_rail": {
+      "note": "S97: se hunde hasta que la primera fila ancha de la base (≥ 75 % de la fila más ancha de las 6 unidades de abajo) quede sobre la segunda fila del borde de pasto de campo.png, la primera llena (la de arriba es rala, 5 de 16): sink = filas angostas / detail + 1. Más = más enterrado. Medido: las patas: 1 fila angosta (21 de 26 px) → 1.5",
+      "sink": 1.5
     }
   }
 }
