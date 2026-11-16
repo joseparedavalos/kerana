@@ -1788,6 +1788,44 @@ export const GAMEPLAY = {
     },
     /** Terreno como repisa (`terrainShell` en levels.ts): opacidad de la última fila antes del fondo. */
     terrainFadeAlpha: 0.55,
+    /**
+     * El sol de l2 (S96; `sun` en levels.ts): un halo aditivo que respira sobre el sol de la imagen y destellos que
+     * titilan en la columna de reflejo del agua. Se pegan a la imagen; con «Destellos» apagado no se dibujan.
+     */
+    sun: {
+      /** Ciclo del halo (ms): de su mínimo a su máximo y de vuelta. */
+      periodMs: 5000,
+      /** Radio del halo (px de arte de la imagen) en su mínimo y en su máximo. El disco del sol mide ≈ 15 de radio. */
+      radiusMin: 34,
+      radiusMax: 46,
+      /** Opacidad del halo (aditivo) en su mínimo y en su máximo. */
+      alphaMin: 0.1,
+      alphaMax: 0.22,
+      /** Color del halo. */
+      color: '#ffb45a',
+      /** Dónde pesa el halo: fracción del radio con el brillo más alto (más adentro, la mitad: no lava el disco). */
+      ringAt: 0.35,
+      glints: {
+        /** Cuántos destellos a la vez como máximo (el pool). */
+        count: 5,
+        /** Ancho (px de arte; 1 de alto). */
+        widthMin: 2,
+        widthMax: 6,
+        /** Cuánto dura encendido cada uno (ms; sube y baja). */
+        lifeMinMs: 220,
+        lifeMaxMs: 520,
+        /** Pausa apagado antes de aparecer en otro lugar (ms). */
+        gapMinMs: 150,
+        gapMaxMs: 900,
+        /** Opacidad en el pico. */
+        alpha: 0.9,
+        /** Color (dorado claro). */
+        color: '#fff2b8',
+        /** Píxel del reflejo donde puede caer un destello: rojo y verde de la imagen por encima de esto (0-255). */
+        minRed: 235,
+        minGreen: 170,
+      },
+    },
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */
     caveEdgeWidth: 32,
     /** Opacidad del degradado en su centro (0-1). */

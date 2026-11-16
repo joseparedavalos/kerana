@@ -61,7 +61,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l2',
     mapSource: 'ascii',
     biome: 'estero',
-    backgrounds: { far: 'bg_l2_far' },
+    // S96: el sol respira y el reflejo titila. Medido en l2_far.jpg: el disco va de x 712 a 741 y de y 324 a 341.
+    backgrounds: { far: 'bg_l2_far', sun: { at: [726, 334], reflection: [692, 354, 764, 442] } },
     terrainShell: 3,
     // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
     earthBackdrop: false,
