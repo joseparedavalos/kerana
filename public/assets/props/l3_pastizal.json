@@ -18,7 +18,8 @@
       "sourceSize": {
         "w": 57,
         "h": 56
-      }
+      },
+      "sink": 3
     },
     "cracked_earth_patch": {
       "frame": {
@@ -59,7 +60,8 @@
       "sourceSize": {
         "w": 13,
         "h": 80
-      }
+      },
+      "sink": 1.5
     },
     "grass_tuft_bent": {
       "frame": {
@@ -79,7 +81,8 @@
       "sourceSize": {
         "w": 52,
         "h": 56
-      }
+      },
+      "sink": 2.5
     },
     "grass_tuft_upright": {
       "frame": {
@@ -99,7 +102,8 @@
       "sourceSize": {
         "w": 53,
         "h": 64
-      }
+      },
+      "sink": 2.5
     },
     "scrub_bush_thorny": {
       "frame": {
@@ -119,7 +123,8 @@
       "sourceSize": {
         "w": 77,
         "h": 64
-      }
+      },
+      "sink": 4
     },
     "stones_halfburied": {
       "frame": {
@@ -140,7 +145,7 @@
         "w": 96,
         "h": 46
       },
-      "sink": 1,
+      "sink": 3,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -217,7 +222,8 @@
       "sourceSize": {
         "w": 80,
         "h": 38
-      }
+      },
+      "sink": 3.5
     }
   },
   "meta": {

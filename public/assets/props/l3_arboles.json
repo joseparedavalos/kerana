@@ -18,7 +18,8 @@
       "sourceSize": {
         "w": 128,
         "h": 43
-      }
+      },
+      "sink": 1.5
     },
     "dead_tree_termite": {
       "frame": {
@@ -39,7 +40,7 @@
         "w": 188,
         "h": 224
       },
-      "sink": 3,
+      "sink": 5,
       "tufts": [
         {
           "prop": "l1_ladera/short_dry_grass",
@@ -74,7 +75,8 @@
       "sourceSize": {
         "w": 96,
         "h": 39
-      }
+      },
+      "sink": 4
     },
     "lapacho_pink": {
       "frame": {
@@ -95,7 +97,7 @@
         "w": 268,
         "h": 256
       },
-      "sink": 3,
+      "sink": 4,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -137,7 +139,7 @@
         "w": 267,
         "h": 256
       },
-      "sink": 3,
+      "sink": 4,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -179,7 +181,7 @@
         "w": 245,
         "h": 240
       },
-      "sink": 3,
+      "sink": 3.5,
       "tufts": [
         {
           "prop": "l3_pastizal/grass_tuft_bent",
@@ -220,7 +222,8 @@
       "sourceSize": {
         "w": 112,
         "h": 36
-      }
+      },
+      "sink": 1
     },
     "wooden_gate": {
       "frame": {
@@ -240,7 +243,8 @@
       "sourceSize": {
         "w": 59,
         "h": 88
-      }
+      },
+      "sink": 1
     }
   },
   "meta": {
