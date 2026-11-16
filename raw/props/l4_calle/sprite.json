@@ -44,8 +44,24 @@
       "ignore": true
     },
     "wooden_crates_baskets": {
-      "note": "S50: base curva, los extremos quedaban en el aire. Objeto de pueblo (calle de tierra pisada y adoquín): hundido un poco más y sin matas al pie, que lo harían ver abandonado. Más = más enterrado",
+      "note": "S50: base curva, los extremos quedaban en el aire. Objeto de pueblo (calle de tierra pisada y adoquín): hundido un poco más y sin matas al pie, que lo harían ver abandonado. Más = más enterrado · S99: 4 filas angostas (18, 37, 53, 67 de 94 px) → 2; queda en 2.5 (S50), que también cumple",
       "sink": 2.5
+    },
+    "clay_water_jars": {
+      "note": "S99: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo, sobre el borde visible del piso), pero el borde de pueblo.png es lleno desde la primera fila (16 de 16): sink = filas angostas / detail. Más = más enterrado. Medido: 6 filas angostas (24, 40, 51, 55, 57, 63 de 86 px) → 3",
+      "sink": 3
+    },
+    "terracotta_tile_stacks": {
+      "note": "S99: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo, sobre el borde visible del piso), pero el borde de pueblo.png es lleno desde la primera fila (16 de 16): sink = filas angostas / detail. Más = más enterrado. Medido: 6 filas angostas (5, 9, 21, 31, 42, 49 de 68 px) → 3",
+      "sink": 3
+    },
+    "wooden_bench_wall": {
+      "note": "S99: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo, sobre el borde visible del piso), pero el borde de pueblo.png es lleno desde la primera fila (16 de 16): sink = filas angostas / detail. Más = más enterrado. Medido: 3 filas angostas (10, 12, 32 de 96 px) → 1.5",
+      "sink": 1.5
+    },
+    "wooden_cart": {
+      "note": "S99: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo, sobre el borde visible del piso), pero el borde de pueblo.png es lleno desde la primera fila (16 de 16): sink = filas angostas / detail. Más = más enterrado. Medido: las ruedas: 3 filas angostas (24, 32, 38 de 52 px) → 1.5",
+      "sink": 1.5
     }
   }
 }

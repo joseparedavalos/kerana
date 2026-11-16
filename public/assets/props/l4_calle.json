@@ -18,7 +18,8 @@
       "sourceSize": {
         "w": 91,
         "h": 48
-      }
+      },
+      "sink": 3
     },
     "hand_water_pump": {
       "frame": {
@@ -98,7 +99,8 @@
       "sourceSize": {
         "w": 71,
         "h": 64
-      }
+      },
+      "sink": 3
     },
     "wooden_bench_wall": {
       "frame": {
@@ -118,7 +120,8 @@
       "sourceSize": {
         "w": 96,
         "h": 41
-      }
+      },
+      "sink": 1.5
     },
     "wooden_cart": {
       "frame": {
@@ -138,7 +141,8 @@
       "sourceSize": {
         "w": 128,
         "h": 63
-      }
+      },
+      "sink": 1.5
     },
     "wooden_crates_baskets": {
       "frame": {

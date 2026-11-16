@@ -114,7 +114,8 @@
       "sourceSize": {
         "w": 69,
         "h": 64
-      }
+      },
+      "sink": 2
     },
     "stone_well": {
       "frame": {
@@ -155,7 +156,8 @@
       "sourceSize": {
         "w": 41,
         "h": 32
-      }
+      },
+      "sink": 0.5
     },
     "wooden_chair": {
       "frame": {

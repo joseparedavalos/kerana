@@ -1,7 +1,7 @@
 // Pipeline de sprites raw/ → public/assets/sprites/ (docs/ASSETS.md §2).
 // raw/<id>/<anim>_<C>x<R>.png → sprites/<id>.png + .json; raw/<id>/<parte>/ → sprites/<id>_<parte>.*
 // raw/portraits/*.png → portraits/ (96 × 96). Los fondos (raw/backgrounds) los procesa `npm run backgrounds`.
-// raw/props/*.png → props/ y raw/hud/*.png|jpg → ui/ (props e íconos de la interfaz; tamaños en raw/<carpeta>/sprite.json).
+// raw/props/*.png → props/, raw/hud/*.png|jpg → ui/ y raw/abejas/*.jpg → sprites/ (S99: el panal) (props e íconos de la interfaz; tamaños en raw/<carpeta>/sprite.json).
 // raw/props/<carpeta>/*.png → props/<carpeta>.png + .json: un atlas por carpeta de props por bioma (S46).
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,7 +13,7 @@ const RAW = 'raw';
 const OUT = 'public/assets';
 const PORTRAIT_SIZE = 96;
 /** Carpetas de props e íconos → carpeta de salida en public/assets. */
-const ICON_FOLDERS = { props: 'props', hud: 'ui' };
+const ICON_FOLDERS = { props: 'props', hud: 'ui', abejas: 'sprites' };
 /** Ancho máximo de un atlas de props (px de textura): entra en cualquier GPU de celular. */
 const ATLAS_MAX_WIDTH = 1024;
 const SPECIAL = new Set(['backgrounds', 'portraits', ...Object.keys(ICON_FOLDERS)]);

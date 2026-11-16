@@ -44,7 +44,7 @@
   },
   "sheets": {
     "mango_tree": {
-      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido) · S99: 8 filas angostas (15 a 98 de 106 px) → 4; queda en 4",
       "sink": 4,
       "tufts": [
         {
@@ -63,8 +63,16 @@
       ]
     },
     "stone_well": {
-      "note": "S50: base curva, los extremos quedaban en el aire. Objeto de pueblo (patio de tierra pisada): hundido un poco más y sin matas al pie, que lo harían ver abandonado. Más = más enterrado",
+      "note": "S50: base curva, los extremos quedaban en el aire. Objeto de pueblo (patio de tierra pisada): hundido un poco más y sin matas al pie, que lo harían ver abandonado. Más = más enterrado · S99: 3 filas angostas (25, 41, 51 de 72 px) → 1.5; queda en 4 (S50, más enterrado a propósito)",
       "sink": 4
+    },
+    "potted_plants": {
+      "note": "S99: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo, sobre el borde visible del piso), pero el borde de pueblo.png es lleno desde la primera fila (16 de 16): sink = filas angostas / detail. Más = más enterrado. Medido: 4 filas angostas (8, 10, 29, 35 de 52 px) → 2",
+      "sink": 2
+    },
+    "watering_can": {
+      "note": "S99: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo, sobre el borde visible del piso), pero el borde de pueblo.png es lleno desde la primera fila (16 de 16): sink = filas angostas / detail. Más = más enterrado. Medido: 1 fila angosta (14 de 24 px) → 0.5",
+      "sink": 0.5
     }
   }
 }
