@@ -18,6 +18,7 @@ import {
   splitRain,
 } from './ambientLogic';
 import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
+import { SunShimmer } from './Backdrops';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
@@ -59,6 +60,8 @@ export class LevelBackdrop {
   /** El dosel (S60): rayos de luz y bandas de niebla sobre el relleno, con su fase y su lugar. */
   private rays: { img: Phaser.GameObjects.Image; at: number; phase: number }[] = [];
   private canopyMist: { band: Phaser.GameObjects.Image; at: number; speed: number; offset: number }[] = [];
+  /** El sol que respira y el reflejo que titila (S96); solo si el nivel define `sun`. */
+  private sun?: SunShimmer;
   private readonly cave?: Phaser.GameObjects.Image;
   private readonly edges: Phaser.GameObjects.Image[] = [];
   private readonly caves: Area[] = [];
@@ -76,6 +79,8 @@ export class LevelBackdrop {
     defs: LevelBackgrounds,
     private readonly mapWidth: number,
     private readonly mapHeight: number,
+    /** «Destellos» de Opciones (S96): apagado, el sol no respira ni titila el reflejo. */
+    private readonly flashes: () => boolean = () => true,
   ) {
     this.brightness = defs.brightness ?? 1;
     this.climbTravel = defs.climb ? Math.max(0, this.climbHeight(defs.far) - VIEW.height) : 0;
@@ -88,6 +93,7 @@ export class LevelBackdrop {
       if (this.maxUncovered > 0) this.makeFill(defs.far, defs.fillTop, defs.canopy === true);
       if (defs.rain) this.makeRain(defs.far);
       if (defs.mist) this.makeMist(defs.far, defs.mist.region);
+      if (defs.sun) this.sun = new SunShimmer(scene, defs.sun, this.pixels(defs.far), CFG.depth + 0.3);
     }
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
@@ -119,7 +125,7 @@ export class LevelBackdrop {
 
   /** Todo lo que dibuja el fondo (para que la luz del nivel oscuro no lo toque). */
   get layers(): Phaser.GameObjects.GameObject[] {
-    return [this.far, this.cave, this.fill, this.fillEdge, this.mist, ...this.rays.map((r) => r.img), ...this.canopyMist.map((m) => m.band)].filter(
+    return [this.far, this.cave, this.fill, this.fillEdge, this.mist, ...(this.sun?.layers ?? []), ...this.rays.map((r) => r.img), ...this.canopyMist.map((m) => m.band)].filter(
       (o): o is NonNullable<typeof o> => o !== undefined,
     );
   }
@@ -196,6 +202,8 @@ export class LevelBackdrop {
       this.mist.setVisible(visible).setPosition(left + this.mistAt.x * scale, imageTop + this.mistAt.y * this.mist.scaleY);
       this.mist.tilePositionX = -scrollOffset(now, GAMEPLAY.backdrop.mist.speed / scale, this.mist.frame.width);
     }
+    // S96: en los mismos px de arte que la imagen (su esquina y su escala), así se mueve con ella en todo el nivel.
+    this.sun?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && this.flashes());
   }
 
   /**
@@ -225,7 +233,16 @@ export class LevelBackdrop {
   }
 
   /** Estado para la prueba de humo. */
-  get debugState(): { images: number; far: boolean; cave: boolean; edges: number; climb: number; farTop: number; farHeight: number } {
+  get debugState(): {
+    images: number;
+    far: boolean;
+    cave: boolean;
+    edges: number;
+    climb: number;
+    farTop: number;
+    farHeight: number;
+    sun: ReturnType<SunShimmer['debugState']> | null;
+  } {
     return {
       images: this.images.length,
       far: this.far?.visible ?? false,
@@ -235,6 +252,7 @@ export class LevelBackdrop {
       climb: this.climbTravel,
       farTop: this.far ? this.far.y - fixedOffset(this.scene.cameras.main).y : 0,
       farHeight: this.far?.displayHeight ?? 0,
+      sun: this.sun?.debugState() ?? null,
     };
   }
 

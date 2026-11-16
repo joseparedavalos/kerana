@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
+import { GAMEPLAY } from '../config/gameplay';
 import { EICHU_STARS, type EichuPlacement } from '../data/story';
+import { glintAlpha, glintRuns, pickGlint, sunPulse } from './backdropLogic';
 
 // Fondos del final (GDD §7, §6.8) por código: Eichu, el cielo de noche y, si falta el arte (ASSETS §7), el amanecer.
 
@@ -85,4 +87,135 @@ export function addDawn(scene: Phaser.Scene, key: string, width: number, height:
   parts.push(scene.add.ellipse(width * 0.36, height * 0.86, 10, 16, 0x1b1a2e));
   parts.push(scene.add.circle(width * 0.36, height * 0.815, 4, 0x1b1a2e));
   return parts;
+}
+
+const SUN = GAMEPLAY.backdrop.sun;
+const HALO_KEY = 'bg_sun_halo';
+const GLINT_KEY = 'bg_sun_glint';
+/** Lado de la textura del halo (px): se estira al radio del momento, con filtro lineal. */
+const HALO_TEX = 64;
+
+/** El sol de un fondo y su reflejo (`sun` en levels.ts), en px de arte de la imagen. */
+export interface SunPlacement {
+  at: readonly [number, number];
+  reflection: readonly [number, number, number, number];
+}
+
+/**
+ * El sol que respira y el reflejo que titila (S96, l2). Todo por código y pegado a la imagen lejana: `update` recibe
+ * dónde quedó la imagen (su esquina y su escala) y pone el halo y los destellos en los mismos px de arte. Los destellos
+ * son un pool fijo de imágenes de 1 px que caen sobre tiras doradas medidas en la imagen (`glintRuns`).
+ */
+export class SunShimmer {
+  private readonly halo: Phaser.GameObjects.Image;
+  private readonly glints: { img: Phaser.GameObjects.Image; x: number; y: number; width: number; born: number; life: number }[] = [];
+  private readonly runs: number[];
+  private readonly pick = { x: 0, y: 0, width: 0 };
+  private readonly rand = new Phaser.Math.RandomDataGenerator(['sun']);
+  /** Radio del halo ahora (px de arte). */
+  private radius = 0;
+
+  constructor(
+    scene: Phaser.Scene,
+    private readonly place: SunPlacement,
+    pixels: { data: ArrayLike<number>; width: number } | undefined,
+    depth: number,
+  ) {
+    makeSunTextures(scene);
+    const g = SUN.glints;
+    this.runs = pixels ? glintRuns(pixels.data, pixels.width, place.reflection, g.minRed, g.minGreen, g.widthMin) : [];
+    this.halo = scene.add
+      .image(0, 0, HALO_KEY)
+      .setScrollFactor(0)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(Phaser.Display.Color.HexStringToColor(SUN.color).color)
+      .setDepth(depth)
+      .setVisible(false);
+    const glintColor = Phaser.Display.Color.HexStringToColor(g.color).color;
+    for (let i = 0; i < g.count; i++) {
+      const img = scene.add.image(0, 0, GLINT_KEY).setOrigin(0).setScrollFactor(0).setTint(glintColor).setDepth(depth + 0.01).setVisible(false);
+      // Arrancan escalonados, apagados.
+      this.glints.push({ img, x: 0, y: 0, width: 0, born: this.rand.between(0, g.gapMaxMs), life: 0 });
+    }
+  }
+
+  get layers(): Phaser.GameObjects.GameObject[] {
+    return [this.halo, ...this.glints.map((g) => g.img)];
+  }
+
+  /** `left`, `top`: esquina de la imagen en la vista; `sx`, `sy`: unidades por px de arte. `on`: «Destellos» y la imagen a la vista. */
+  update(left: number, top: number, sx: number, sy: number, now: number, on: boolean): void {
+    this.halo.setVisible(on);
+    if (!on) {
+      for (const g of this.glints) g.img.setVisible(false);
+      return;
+    }
+    const k = sunPulse(now, SUN.periodMs);
+    const radius = SUN.radiusMin + (SUN.radiusMax - SUN.radiusMin) * k;
+    this.radius = radius;
+    this.halo
+      .setPosition(left + this.place.at[0] * sx, top + this.place.at[1] * sy)
+      .setDisplaySize(2 * radius * sx, 2 * radius * sy)
+      .setAlpha(SUN.alphaMin + (SUN.alphaMax - SUN.alphaMin) * k);
+    const gc = SUN.glints;
+    for (const g of this.glints) {
+      if (now >= g.born + g.life) this.respawn(g, now);
+      const a = glintAlpha((now - g.born) / g.life);
+      g.img.setVisible(a > 0);
+      if (a > 0) g.img.setPosition(left + g.x * sx, top + g.y * sy).setDisplaySize(g.width * sx, sy).setAlpha(a * gc.alpha);
+    }
+  }
+
+  /** Para la prueba de humo y las capturas: el halo y los destellos encendidos, en px de arte de la imagen. */
+  debugState(): { halo: boolean; radius: number; alpha: number; glints: { x: number; y: number; width: number }[]; runs: number } {
+    return {
+      halo: this.halo.visible,
+      radius: this.radius,
+      alpha: this.halo.alpha,
+      glints: this.glints.filter((g) => g.img.visible).map((g) => ({ x: g.x, y: g.y, width: g.width })),
+      runs: this.runs.length / 3,
+    };
+  }
+
+  /** Otro lugar, otra vida, después de una pausa apagado. */
+  private respawn(g: SunShimmer['glints'][number], now: number): void {
+    const gc = SUN.glints;
+    if (!pickGlint(this.runs, gc.widthMin, gc.widthMax, this.rand.frac(), this.rand.frac(), this.rand.frac(), this.pick)) {
+      g.born = now;
+      g.life = Number.POSITIVE_INFINITY;
+      return;
+    }
+    g.x = this.pick.x;
+    g.y = this.pick.y;
+    g.width = this.pick.width;
+    g.born = now + this.rand.between(gc.gapMinMs, gc.gapMaxMs);
+    g.life = this.rand.between(gc.lifeMinMs, gc.lifeMaxMs);
+  }
+}
+
+/** Halo (degradado radial, más fuerte en `ringAt` y casi nada en el centro) y el píxel blanco de los destellos. */
+function makeSunTextures(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(HALO_KEY)) {
+    const tex = scene.textures.createCanvas(HALO_KEY, HALO_TEX, HALO_TEX);
+    if (tex) {
+      const ctx = tex.getContext();
+      const r = HALO_TEX / 2;
+      const grad = ctx.createRadialGradient(r, r, 0, r, r, r);
+      grad.addColorStop(0, 'rgba(255,255,255,0.35)');
+      grad.addColorStop(SUN.ringAt, 'rgba(255,255,255,1)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, HALO_TEX, HALO_TEX);
+      tex.refresh();
+      tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+  }
+  if (!scene.textures.exists(GLINT_KEY)) {
+    const tex = scene.textures.createCanvas(GLINT_KEY, 1, 1);
+    if (tex) {
+      tex.getContext().fillStyle = '#ffffff';
+      tex.getContext().fillRect(0, 0, 1, 1);
+      tex.refresh();
+    }
+  }
 }

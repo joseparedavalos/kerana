@@ -29,6 +29,11 @@ export interface LevelBackgrounds {
    * Con una imagen que no es más alta que la vista no cambia nada.
    */
   climb?: boolean;
+  /**
+   * El sol de la imagen (S96; px de arte): `at`, el centro del disco; `reflection`, el rectángulo (x0, y0, x1, y1) de la
+   * columna dorada del agua. Un halo respira sobre el sol y titilan destellos en el reflejo (GAMEPLAY.backdrop.sun).
+   */
+  sun?: { at: readonly [number, number]; reflection: readonly [number, number, number, number] };
 }
 
 export interface LevelDef {

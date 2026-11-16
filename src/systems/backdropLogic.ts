@@ -101,3 +101,68 @@ export function caveSpan(
   }
   return left < right ? { left, right } : null;
 }
+
+/** Respirar del halo del sol (S96): 0 en su mínimo (al empezar) y 1 en su máximo, a mitad de `periodMs`. */
+export function sunPulse(now: number, periodMs: number): number {
+  if (periodMs <= 0) return 0;
+  return 0.5 - 0.5 * Math.cos((2 * Math.PI * now) / periodMs);
+}
+
+/** Brillo de un destello a lo largo de su vida (`t` de 0 a 1): sube y baja, 0 afuera. */
+export function glintAlpha(t: number): number {
+  return t <= 0 || t >= 1 ? 0 : Math.sin(Math.PI * t);
+}
+
+/**
+ * Tiras horizontales del reflejo dorado (S96) dentro de `region` (px de arte: x0, y0, x1, y1, el fin afuera): cada
+ * tira es una corrida de píxeles con rojo ≥ `minRed` y verde ≥ `minGreen` de al menos `minRun` px. Plano: x, y, largo.
+ */
+export function glintRuns(
+  data: ArrayLike<number>,
+  width: number,
+  region: readonly [number, number, number, number],
+  minRed: number,
+  minGreen: number,
+  minRun: number,
+): number[] {
+  const [x0, y0, x1, y1] = region;
+  const height = data.length / 4 / width;
+  const runs: number[] = [];
+  for (let y = Math.max(0, y0); y < Math.min(height, y1); y++) {
+    let start = -1;
+    for (let x = Math.max(0, x0); x <= Math.min(width, x1); x++) {
+      const i = (y * width + x) * 4;
+      const gold = x < Math.min(width, x1) && data[i]! >= minRed && data[i + 1]! >= minGreen;
+      if (gold && start < 0) start = x;
+      if (!gold && start >= 0) {
+        if (x - start >= minRun) runs.push(start, y, x - start);
+        start = -1;
+      }
+    }
+  }
+  return runs;
+}
+
+/**
+ * Dónde cae un destello (S96): una tira al azar de `runs` (de `glintRuns`) y, dentro de ella, un ancho entre
+ * `widthMin` y `widthMax` que no se pasa de la tira. `r1`, `r2` y `r3`, azares de 0 a 1. Escribe x, y y ancho en `out`.
+ */
+export function pickGlint(
+  runs: ArrayLike<number>,
+  widthMin: number,
+  widthMax: number,
+  r1: number,
+  r2: number,
+  r3: number,
+  out: { x: number; y: number; width: number },
+): boolean {
+  const count = Math.floor(runs.length / 3);
+  if (count === 0) return false;
+  const k = Math.min(count - 1, Math.floor(r1 * count)) * 3;
+  const len = runs[k + 2]!;
+  const width = Math.min(len, widthMin + Math.floor(r2 * (widthMax - widthMin + 1)));
+  out.width = Math.max(1, Math.min(width, widthMax));
+  out.x = runs[k]! + Math.min(len - out.width, Math.floor(r3 * (len - out.width + 1)));
+  out.y = runs[k + 1]!;
+  return true;
+}

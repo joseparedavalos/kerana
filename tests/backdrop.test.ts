@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropTint, caveSpan } from '../src/systems/backdropLogic';
+import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropTint, caveSpan, glintAlpha, glintRuns, pickGlint, sunPulse } from '../src/systems/backdropLogic';
+import { GAMEPLAY } from '../src/config/gameplay';
+import { LEVELS } from '../src/data/levels';
 
 describe('fondo del nivel', () => {
   it('se desplaza de 0 a -margen según el avance, sin pasarse', () => {
@@ -89,5 +91,65 @@ describe('fondo del nivel', () => {
   it('una imagen que no es más alta que la vista no se desplaza', () => {
     expect(backdropClimbTop(1000, 3960, 0)).toBe(0);
     expect(backdropClimbTop(1000, 3960, -20)).toBe(0);
+  });
+});
+
+describe('el sol de l2 (S96)', () => {
+  const sun = GAMEPLAY.backdrop.sun;
+
+  it('el halo respira: mínimo al empezar, máximo a mitad del ciclo, y vuelve', () => {
+    expect(sunPulse(0, 5000)).toBeCloseTo(0);
+    expect(sunPulse(2500, 5000)).toBeCloseTo(1);
+    expect(sunPulse(5000, 5000)).toBeCloseTo(0);
+    expect(sunPulse(1250, 5000)).toBeCloseTo(0.5);
+    expect(sun.periodMs).toBeGreaterThanOrEqual(4000);
+    expect(sun.periodMs).toBeLessThanOrEqual(6000);
+  });
+
+  it('un destello sube y baja, y está apagado fuera de su vida', () => {
+    expect(glintAlpha(-0.1)).toBe(0);
+    expect(glintAlpha(0)).toBe(0);
+    expect(glintAlpha(0.5)).toBeCloseTo(1);
+    expect(glintAlpha(1)).toBe(0);
+  });
+
+  it('las tiras doradas salen de los píxeles del reflejo, dentro de la región', () => {
+    // 10 × 3: fila 1 con oro en x 2-5 y en x 8 (solo, no alcanza), fila 2 con oro en x 0-9 (afuera de la región en x 7+).
+    const w = 10;
+    const data = new Uint8ClampedArray(w * 3 * 4);
+    const gold = (x: number, y: number) => data.set([250, 200, 120, 255], (y * w + x) * 4);
+    for (let x = 2; x <= 5; x++) gold(x, 1);
+    gold(8, 1);
+    for (let x = 0; x < 10; x++) gold(x, 2);
+    const runs = glintRuns(data, w, [1, 1, 7, 3], 235, 170, 2);
+    expect(runs).toEqual([2, 1, 4, 1, 2, 6]);
+  });
+
+  it('un destello cae entero sobre una tira y mide de 2 a 6 px', () => {
+    const runs = [10, 5, 3, 20, 6, 12];
+    const out = { x: 0, y: 0, width: 0 };
+    for (let i = 0; i < 200; i++) {
+      const r = (k: number) => ((i * 37 + k * 101) % 97) / 97;
+      expect(pickGlint(runs, sun.glints.widthMin, sun.glints.widthMax, r(1), r(2), r(3), out)).toBe(true);
+      const k = runs.findIndex((_, j) => j % 3 === 1 && runs[j] === out.y) - 1;
+      expect(out.width).toBeGreaterThanOrEqual(Math.min(2, runs[k + 2]!));
+      expect(out.width).toBeLessThanOrEqual(6);
+      expect(out.x).toBeGreaterThanOrEqual(runs[k]!);
+      expect(out.x + out.width).toBeLessThanOrEqual(runs[k]! + runs[k + 2]!);
+    }
+    expect(pickGlint([], 2, 6, 0.5, 0.5, 0.5, out)).toBe(false);
+  });
+
+  it('solo l2 tiene sol, y el reflejo queda debajo del sol', () => {
+    const withSun = Object.values(LEVELS).filter((l) => l.backgrounds.sun);
+    expect(withSun.map((l) => l.id)).toEqual(['l2']);
+    const s = withSun[0]!.backgrounds.sun!;
+    const [x0, y0, x1, y1] = s.reflection;
+    expect(x0).toBeLessThan(s.at[0]);
+    expect(x1).toBeGreaterThan(s.at[0]);
+    expect(y0).toBeGreaterThan(s.at[1]);
+    expect(y1).toBeGreaterThan(y0);
+    expect(sun.glints.widthMin).toBe(2);
+    expect(sun.glints.widthMax).toBe(6);
   });
 });
