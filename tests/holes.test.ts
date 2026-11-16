@@ -71,9 +71,6 @@ function describe_(cells: { x: number; y: number }[]): string {
 const KNOWN_HOLES: Record<string, { cells: number; where: string }> = {
   // Pendiente (S75, no se tocó): falta el relleno (earthBackdrop) o adelgazar.
   l2: { cells: 218, where: 'x 144-150, filas 28-32; x 157-158, filas 20-26; x 241-250, filas 14-32' },
-  // Pendiente (S75): ídem; l5 ya carga la lluvia y el dosel, medir el relleno en un celular.
-  // S84: la pared del sotobosque (x 18-23) se adelgazó a una repisa de 3 filas; quedan estas dos.
-  l5: { cells: 519, where: 'x 98-128, filas 36-91; x 261-263, filas 26-91' },
 };
 
 describe('nada de agujeros: ninguna masa sólida deja ver el fondo por dentro (S75)', () => {

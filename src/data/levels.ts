@@ -122,8 +122,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // S60: el dosel (copas, niebla en bandas y rayos de luz) en el relleno de arriba.
     backgrounds: { far: 'bg_l5_far', fillTop: '#a9bf98', rain: true, canopy: true },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S100: el relleno (la casilla 15 de selva, sin tinte) tapa las masas huecas: la meseta de x 98-128 y la columna de x 261-263.
+    earthBackdrop: true,
     musicKey: '',
     boss: 'kurupi',
     gift: 'heart_up',
