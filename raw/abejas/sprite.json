@@ -1,0 +1,13 @@
+{
+  "_nota": "S99: el panal (camoatí) de los enjambres, una imagen suelta con fondo verde. Tamaño en unidades del mundo: 20 de ancho, el alto en proporción. npm run sprites → public/assets/sprites/panal.png",
+  "detail": 2,
+  "key": "green",
+  "edge": "green",
+  "edgePasses": 2,
+  "coverage": 0.4,
+  "size": {
+    "panal": {
+      "width": 20
+    }
+  }
+}

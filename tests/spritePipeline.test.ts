@@ -65,6 +65,13 @@ describe('sprite pipeline', () => {
     expect(opaqueBounds(img, { x: 0, y: 0, w: 100, h: 200 })).toEqual({ x0: 40, y0: 80, x1: 59, y1: 179 });
   });
 
+  it('con key green quita el fondo verde y deja el gris del panal (S99)', () => {
+    const img = syntheticSheet(2, 100, [15, 199, 17, 255]);
+    expect(removeBackground(img, undefined, 'green')).toBe('verde');
+    expect(img.data[3]).toBe(0);
+    expect(opaqueBounds(img, { x: 0, y: 0, w: 100, h: 200 })).toEqual({ x0: 40, y0: 80, x1: 59, y1: 179 });
+  });
+
   it('escala por hoja, alinea los pies y empaqueta las animaciones', () => {
     const small = syntheticSheet(4, 100); // de pie: 100 px
     const big = syntheticSheet(3, 150); // otra escala: 150 px

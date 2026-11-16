@@ -1,12 +1,16 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import type { EnemyDef } from '../../data/enemies';
+import { ART_DETAIL } from '../../assets/manifest';
+import { hasArt } from '../../assets/art';
 import { EnemyBase } from './EnemyBase';
+import { hivePlacement, type SolidAt } from './hive';
 import { SwarmMotor } from './SwarmMotor';
 
 const CFG = GAMEPLAY.swarm;
 const BEE_TEXTURE = 'fx_bee';
 const HIVE_COLOR = 0xb07a2a;
+const HIVE_DEPTH = 2;
 /** Altura del pecho de Kerana sobre sus pies (px): ahí apunta el enjambre. */
 const TARGET_RISE = 20;
 
@@ -19,12 +23,12 @@ function ensureBeeTexture(scene: Phaser.Scene): void {
   g.destroy();
 }
 
-// Swarm (GDD §5.2): enjambre de abejas hecho con partículas, sin sprite propio (§5.3).
+// Swarm (GDD §5.2): enjambre de abejas hecho con partículas, sin sprite propio (§5.3); el panal sí lo tiene (S99).
 // El cuerpo es invisible; las partículas lo siguen.
 export class Swarm extends EnemyBase {
   private readonly motor: SwarmMotor;
   private readonly bees: Phaser.GameObjects.Particles.ParticleEmitter;
-  private readonly hive?: Phaser.GameObjects.Ellipse;
+  private readonly hive?: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Image;
   private wobbleMs = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, facing: 1 | -1 = -1, oneShot = false) {
@@ -43,7 +47,16 @@ export class Swarm extends EnemyBase {
       oneShot,
     );
     // Panal (solo los enjambres del nivel; los del jefe salen de la nada).
-    if (!oneShot) this.hive = scene.add.ellipse(x, y - def.height - 4, 10, 14, HIVE_COLOR).setDepth(2);
+    // S99: el camoatí (sprite_panal), apoyado en el piso hasta que `placeHive` vea si hay un techo; sin arte, la elipse.
+    if (!oneShot) {
+      this.hive = hasArt(scene, 'sprite_panal')
+        ? scene.add
+            .image(x, y, 'sprite_panal')
+            .setOrigin(0.5, 1)
+            .setScale(1 / ART_DETAIL)
+            .setDepth(HIVE_DEPTH)
+        : scene.add.ellipse(x, y - def.height - 4, 10, 14, HIVE_COLOR).setDepth(HIVE_DEPTH);
+    }
     this.bees = scene.add.particles(0, 0, BEE_TEXTURE, {
       x: { min: -CFG.spreadPx, max: CFG.spreadPx },
       y: { min: -CFG.spreadPx, max: CFG.spreadPx },
@@ -53,6 +66,13 @@ export class Swarm extends EnemyBase {
       alpha: { start: 1, end: 0.2 },
     });
     this.bees.setDepth(8).startFollow(this, 0, -def.height / 2);
+  }
+
+  /** S99: el panal cuelga por la ramita del terreno de arriba (hasta `hiveCeilingRows` filas) o queda en el piso. */
+  placeHive(groundAt: SolidAt, platformAt: SolidAt, tile: number): void {
+    if (!(this.hive instanceof Phaser.GameObjects.Image)) return;
+    const at = hivePlacement(this.spawnX, this.spawnY, tile, CFG.hiveCeilingRows, groundAt, platformAt, CFG.hivePlatformLip);
+    this.hive.setOrigin(0.5, at.hang ? 0 : 1).setY(at.y);
   }
 
   /** Solo pica mientras persigue. */

@@ -1287,6 +1287,10 @@ export const GAMEPLAY = {
     /** Oscilación del enjambre mientras persigue (px y Hz). */
     wobblePx: 10,
     wobbleHz: 2.2,
+    /** S99: el panal cuelga del terreno sólido que haya hasta estas filas arriba; si no hay, se apoya en el piso. */
+    hiveCeilingRows: 3,
+    /** De una plataforma de un sentido cuelga de su dibujo, no del tile: alto del borde (6 de 16 px en pueblo y cielo). */
+    hivePlatformLip: 6,
   },
   water: {
     /** Velocidad de carrera en agua baja (× runSpeed). */

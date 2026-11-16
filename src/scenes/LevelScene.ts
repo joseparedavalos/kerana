@@ -19,6 +19,7 @@ import { Cow } from '../entities/Cow';
 import { Caster, createEnemy, Guard, Pouncer } from '../entities/enemies';
 import { Diver } from '../entities/enemies/Diver';
 import { Lurker } from '../entities/enemies/Lurker';
+import { Swarm } from '../entities/enemies/Swarm';
 import { rhythmFromMovers } from '../entities/enemies/LurkerMotor';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
 import { drawBreakables, needsChargedSlash, parseBreakableKind, type BreakableKind } from '../entities/BreakableLook';
@@ -1837,6 +1838,10 @@ export class LevelScene extends Phaser.Scene {
           if (enemy instanceof Diver) {
             enemy.solidAt = (px, py) => this.isSolidAt(px, py);
             enemy.tileSize = this.map.tileWidth;
+          }
+          // El panal (S99) cuelga del terreno de arriba o se apoya en el piso.
+          if (enemy instanceof Swarm) {
+            enemy.placeHive((px, py) => this.tileAt('Ground', px, py), (px, py) => this.tileAt('Platforms', px, py), this.map.tileWidth);
           }
           // El payé del payesero (S62) se deshace contra el suelo y las paredes; las plataformas de un sentido no lo frenan.
           if (enemy instanceof Caster) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);

@@ -33,7 +33,7 @@ export function createImage(width, height) {
  * Quita el fondo: si la hoja no trae transparencia, borra el magenta (Chroma key). Modifica `img`.
  * `tolerance`: distancia RGB al magenta (los JPG lo dejan desparejo: piden más).
  */
-export function removeBackground(img, tolerance = MAGENTA_TOLERANCE) {
+export function removeBackground(img, tolerance = MAGENTA_TOLERANCE, key = 'magenta') {
   const d = img.data;
   let hasAlpha = false;
   for (let i = 3; i < d.length; i += 4) {
@@ -43,6 +43,13 @@ export function removeBackground(img, tolerance = MAGENTA_TOLERANCE) {
     }
   }
   if (hasAlpha) return 'alpha';
+  // S99: Chroma key verde (el panal): borra lo que es mucho más verde que rojo y azul.
+  if (key === 'green') {
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 1] - d[i] >= GREEN_KEY_MARGIN && d[i + 1] - d[i + 2] >= GREEN_KEY_MARGIN) d[i + 3] = 0;
+    }
+    return 'verde';
+  }
   for (let i = 0; i < d.length; i += 4) {
     const dr = 255 - d[i];
     const dg = d[i + 1];
@@ -52,6 +59,8 @@ export function removeBackground(img, tolerance = MAGENTA_TOLERANCE) {
   return 'magenta';
 }
 
+/** Chroma key verde (S99): cuánto más verde que rojo y azul tiene que ser un píxel del fondo. */
+const GREEN_KEY_MARGIN = 80;
 /** Cuánto más verde que rojo y azul tiene que ser un píxel del contorno para tratarlo como resto del Chroma key. */
 const GREEN_EDGE_MARGIN = 30;
 /** Celeste del contorno de los props (verde y azul sobre el rojo). */
@@ -525,14 +534,15 @@ export function cropToContent(src) {
  * Props e íconos de la interfaz (raw/props, raw/hud): quita el fondo y el borde de color, recorta al dibujo y lo
  * escala con muestreo por moda. `size` en unidades del mundo ({ height } o { width }); la salida mide `size × detail` px.
  * `coverage`: cobertura mínima de cada bloque (0,5 por defecto; más baja conserva contornos finos).
+ * `key: "green"` (S99) quita un fondo verde en vez del magenta.
  * `edge` puede ser una lista (S50: `["chroma", "white"]`): se borra cada color en orden, `edgePasses` pasadas cada uno.
  * Modifica `img`. Devuelve { image, background } o null si el dibujo está vacío.
  * @param {{ width: number, height: number, data: Uint8Array }} img
  * @param {{ size?: { width?: number, height?: number }, detail?: number, edge?: string | string[],
- *   edgePasses?: number, tolerance?: number, coverage?: number }} [options]
+ *   edgePasses?: number, tolerance?: number, coverage?: number, key?: string }} [options]
  */
-export function processIcon(img, { size, detail = 1, edge, edgePasses = 0, tolerance, coverage } = {}) {
-  let background = removeBackground(img, tolerance);
+export function processIcon(img, { size, detail = 1, edge, edgePasses = 0, tolerance, coverage, key } = {}) {
+  let background = removeBackground(img, tolerance, key);
   for (const color of [edge ?? []].flat()) {
     if (edgePasses > 0) background += ` · borde ${color} −${removeColorEdge(img, edgePasses, EDGE_COLORS[color])}px`;
   }

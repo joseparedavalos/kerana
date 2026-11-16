@@ -99,6 +99,8 @@ export const ART_IMAGES = {
   prop_hammock: 'props/hammock.png',
   prop_trunk: 'props/trunk.png',
   prop_liana: 'props/liana.png',
+  // S99: el panal de los enjambres (raw/abejas/panal.jpg, `npm run sprites`). Sin arte, la elipse de siempre.
+  sprite_panal: 'sprites/panal.png',
   // Piezas (S58, `npm run pieces`: raw/piezas → pieces/). Sin arte, cada pieza se dibuja por código.
   piece_mushroom: 'pieces/mushroom.png',
   piece_gate_top: 'pieces/gate_top.png',
