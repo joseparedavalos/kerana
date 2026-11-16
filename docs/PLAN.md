@@ -248,6 +248,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S97 | 2026-11-16 | — | — | — | plan Pro | 100 | — |
 | S98 | 2026-11-16 | — | — | — | plan Pro | 100 | — |
 | S99 | 2026-11-16 | — | — | — | plan Pro | 100 | — |
+| S100 | 2026-11-16 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
@@ -403,6 +404,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S97 | Hecha | rama `claude/fervent-fermat-gsbh7w` | Props de l3: que nada flote (fuera del plan, plan Pro). Salieron de `l3.txt` la cerca y el tacurú dibujados por código (x 26 y 36, fila 32); el código que los dibuja queda (otros niveles usan sus kinds). Las matas se veían flotando: la base del dibujo se angosta como una bola y la primera fila del borde de pasto de `campo.png` es rala (5 de 16). Se usó el `sink` por prop que ya existía (S47, en unidades, `sheets.<nombre>.sink` del `sprite.json` del atlas), medido en el arte para todos los props que se apoyan de `l3_pastizal` y `l3_arboles`: las matas 2,5, las flores 3,5, los troncos caídos 4, los lapachos 4, el árbol seco 5, el de sombra 3,5. Solo cambian esos dos atlas. |
 | S98 | Hecha | rama `claude/determined-carson-9kt9nn` | El cielo de l3 con vida (fuera del plan, plan Pro), todo por código (`SkyLife` en `Backdrops.ts`), sin arte nuevo. Bandadas de 3 a 7 pájaros (siluetas de 3 a 5 px de arte, dos cuadros de aleteo, vaivén) cruzan en V suelta a la altura de las nubes bajas, por encima de las sierras, cada 15 a 30 s, alternando el sentido; dos o tres sombras de nubes tenues y de bordes suaves corren por la llanura. Franjas medidas en `l3_far.jpg` (`backgrounds.skyLife` en `levels.ts`), valores en `GAMEPLAY.backdrop.skyLife`. Pegado a la imagen como el sol de S96. |
 | S99 | Hecha | rama `claude/zealous-ramanujan-od1h1d` | l4: las tejas que flotaban y el panal (fuera del plan, plan Pro). (1) El `sink` por prop (S47, medido como en S97) para los props de `l4_calle` y `l4_patio` que se apoyan con la base angosta: tejas 3, cántaros 3, banco 1,5, carreta 1,5, macetas 2, regadera 0,5. El borde de `pueblo.png` es lleno desde la primera fila, así que la regla es filas angostas / 2, sin el +1 de `campo`. (2) El panal es un sprite (`raw/abejas/panal.jpg`, fondo verde → `sprites/panal.png`, 20 × 32,5): cuelga por la ramita del terreno o de la plataforma que haya hasta 3 filas arriba; si no, se apoya en el piso. Sin el sprite, la elipse de antes. Las abejas no cambian. |
+| S100 | Hecha | rama `claude/lucid-ritchie-4kzqf6` | l5 sin agujeros (fuera del plan, plan Pro). `earthBackdrop: true` en l5: las 519 celdas huecas (la meseta y el bloque de x 98-128, la columna del tronco de x 261-263) pasan a la casilla 15 de selva, sin tinte. l5 sale de `KNOWN_HOLES` (queda l2). El túnel de raíces y todo el aire, igual. FPS en un teléfono emulado, antes y después intercalados: 41,3 → 41,4 (+0,3 %) y, con la CPU ×4, 35,3 → 35,5 (+0,5 %). |
 | S13 | Pendiente (el audio lo hizo S37) | | |
 | S14 | Eliminada (ajustes en la Reserva) | | |
 | S15 | Eliminada (QA: Jose jugando) | | |
@@ -2683,6 +2685,29 @@ Dos tareas, solo de dibujo: nada cambia en cómo funcionan las abejas ni los pro
 - **Lo que se vio.** El nido es un dibujo colgante: apoyado en el piso queda parado sobre la punta. Se hizo como pidió la sesión; el pendiente 57 deja las salidas si a Jose no le gusta. Las tejas de x 108 y x 246 bajan 3 y 2,4 unidades (la de x 246 tiene `scale=0.8`) y quedan con las tejas sueltas del pie detrás del borde del tejado.
 - **Capturas** (método de S20, en `tmp/shots/`, no se suben; script `tmp/shots.mjs`, con `god=1` y el dibujo de las cajas de física apagado antes de congelar): `before-*` y `after-*` de las tejas (x 108 y 246), los panales de l4 (x 132, 222, 269 y 307) y los dos de Yvága, cada una entera y con un recorte (`-zoom`); `comparacion.png` pone los recortes, antes arriba y después abajo, y `tejas-x3.png` las tejas de cerca. Sin errores en la consola en ninguna.
 - **Verificación:** build, test (725 pruebas; antes 721: 3 en `hive.test.ts` y 1 en `spritePipeline.test.ts`, la clave verde) y maps pasan; `npm run maps` no cambió ningún mapa. **Smoke** con el build de la rama (`CHROME_PATH=/opt/pw-browsers/chromium`): una corrida entera, 235 en verde y ninguno en rojo, sin errores en la consola. (Una primera corrida con `timeout 900` se cortó en l3, sin fallos: el smoke entero tarda más de 15 min.)
+
+### S100: l5 sin agujeros: el relleno y el celular (fuera del plan original; plan Pro)
+Dos tareas, sin tocar el mapa de l5 ni otro nivel: (1) `earthBackdrop: true` en l5, como en l1, l3, l4 y l6, para tapar las 519 celdas huecas que marca `tests/holes.test.ts` (x 98-128, filas 36-91; x 261-263, filas 26-91; Jose lo vio en x 122, fila 84, sobre la meseta que se apoya en el piso, que no se puede adelgazar sin abrir un túnel), sacar l5 de `KNOWN_HOLES` sin tocar la lógica del test, y que el aire (el túnel de raíces del principio, x 16-25, filas 89-91) se siga viendo igual; (2) medir los FPS de l5 en un teléfono emulado en tres puntos (principio, x 122 fila 84, antesala), antes y después, intercalando las corridas; avisar si el promedio baja más de un 5 %.
+
+**Criterios:** build, test y maps pasan, con l5 fuera de `KNOWN_HOLES` · capturas antes y después (método de S20): x 122 fila 84, la zona de x 100 cerca de la fila 50, la columna de x 262 y el túnel de raíces sin cambios · la tabla de FPS antes y después · el smoke pasa · PR · S100 en §6.3, §7 y §8 y `PENDIENTES.md`.
+
+**Notas para la próxima sesión (S100 → la que siga):**
+- **El cambio:** una línea en `levels.ts` (l5 no tiene zonas `Cave`, así que no hace falta nada más). En el juego, la capa `earth` tiene 519 casillas, las mismas que marcaba el test; `holes.test.ts` pasa con l5 en cero y fuera de `KNOWN_HOLES` (queda solo l2, sin el comentario de pendiente de l5). `earth.test.ts` espera ahora l1, l3, l4, l5 y l6. `npm run maps` no cambió ningún mapa.
+- **Lo que se ve:** la casilla 15 de selva tiene el mismo tono que la cáscara: no hay costura en ninguna de las cuatro vistas. Como en l1 (notas de S87, (c)), lo único que desaparece es el escalón tenue de la repisa (la fila al 50 %), que se funde con el relleno; los contornos contra el aire se siguen leyendo. La meseta de x 103-130 y la columna del tronco (x 259-265) quedan como paredes lisas grandes: no es un agujero; si a Jose le resulta chato, la salida es de arte (variantes de la casilla 15), no oscurecer. Nada se oscureció.
+- **El túnel de raíces** (x 16-25, filas 89-91) y la repisa de encima (S84) se ven igual antes y después; las diferencias de píxeles en esa captura son la lluvia, la niebla y el colibrí, que se mueven.
+- **FPS** (`tmp/s100/fps.mjs`, fuera del repo): el viewport apaisado de `tools/mobile-check.mjs` (844 × 390, `deviceScaleFactor` 2, táctil, móvil), Chromium con SwiftShader, `?debug=1&level=5&god=1` con las cajas de física y el texto de depuración apagados; Kerana teletransportada a cada punto, 2,5 s de espera y 6 s contando cuadros con `requestAnimationFrame`. Tres rondas, alternando qué build va primero (`dist` de `main` y de la rama servidos a la vez, medidos en serie):
+
+  | punto | antes | prom. | después | prom. | cambio |
+  |---|---|---|---|---|---|
+  | principio (x 4, fila 92) | 39,0 · 39,8 · 41,6 | 40,1 | 43,7 · 41,1 · 41,4 | 42,1 | +4,8 % |
+  | meseta (x 122, fila 84) | 42,5 · 41,1 · 41,5 | 41,7 | 44,1 · 40,8 · 39,8 | 41,6 | −0,3 % |
+  | antesala (x 280, fila 91) | 42,5 · 42,2 · 41,6 | 42,1 | 39,9 · 40,0 · 42,2 | 40,7 | −3,4 % |
+  | **promedio** | | **41,3** | | **41,4** | **+0,3 %** |
+
+  Con la CPU frenada ×4 (CDP, como el celular modesto de S40), dos rondas: principio 36,0 → 35,5 (−1,5 %), meseta 36,2 → 36,0 (−0,6 %), antesala 33,8 → 35,1 (+3,8 %); promedio 35,3 → 35,5 (+0,5 %). Las diferencias por punto están dentro del ruido de una ronda a otra (±2 FPS). El relleno es una capa de tiles más, sin textura nueva (la del tileset de selva). No es un celular de verdad: falta mirarlo en uno (pendiente 17 y 36 piden lo mismo para el dosel, la lluvia y la estela).
+- **Capturas** en `tmp/s100/shots/` (no se suben; `tmp/s100/shots.mjs`): `antes-*`, `despues-*` y `cmp-*` (antes arriba, después abajo) de `meseta-x122-f84`, `bloque-x100-f50` (parada en la plataforma de la fila 54, x 104: el bloque de x 96-116, filas 34-49, arriba), `columna-x262-abajo` (x 268, fila 92), `columna-x262-arriba` (la repisa de x 251, fila 32) y `tunel-raices-x20`. Sin errores en la consola.
+- **Ojo al teletransportar en l5:** x 100, filas 50-53 son rompibles (la empuja y cae) y x 250-258 en la fila 92 es un pozo (vuelve al último piso seguro).
+- **Falta:** l2 sigue en `KNOWN_HOLES` (pendiente 26); que Jose mire l5 jugando, y en un celular de verdad.
 
 ### S13: Integración de arte y música
 **Lee:** ASSETS (completo); GDD §9 y §10.2.
