@@ -79,7 +79,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l3',
     mapSource: 'ascii',
     biome: 'campo',
-    backgrounds: { far: 'bg_l3_far' },
+    // S98: medido en l3_far.jpg (px de arte): nubes bajas de y 300 a 348, sierras desde 349, llanura de 378 a 480.
+    backgrounds: { far: 'bg_l3_far', skyLife: { birds: [302, 344], shadows: [384, 474] } },
     terrainShell: 3,
     // S68: dentro de la tierra maciza se ve tierra colorada, no el cielo. l2, l4, l5 y l6: la misma línea.
     earthBackdrop: true,

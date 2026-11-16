@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropTint, caveSpan, glintAlpha, glintRuns, pickGlint, sunPulse } from '../src/systems/backdropLogic';
+import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropTint, caveSpan, flockLayout, flockLeadX, flockSpread, glintAlpha, glintRuns, pickGlint, shadowLeft, sunPulse } from '../src/systems/backdropLogic';
 import { GAMEPLAY } from '../src/config/gameplay';
 import { LEVELS } from '../src/data/levels';
 
@@ -151,5 +151,66 @@ describe('el sol de l2 (S96)', () => {
     expect(y1).toBeGreaterThan(y0);
     expect(sun.glints.widthMin).toBe(2);
     expect(sun.glints.widthMax).toBe(6);
+  });
+});
+
+describe('pájaros y sombras de nubes de l3 (S98)', () => {
+  const life = GAMEPLAY.backdrop.skyLife;
+  const b = life.birds;
+
+  it('la V: el guía adelante, las alas alternando arriba y abajo, cada fila más atrás', () => {
+    const out = Array.from({ length: 7 }, () => ({ back: 0, dy: 0, phase: 0 }));
+    flockLayout(7, 8, 3, 0, () => 0.5, out);
+    expect(out[0]).toMatchObject({ back: 0, dy: 0 });
+    expect(out.map((s) => s.back)).toEqual([0, 8, 8, 16, 16, 24, 24]);
+    expect(out.map((s) => s.dy)).toEqual([0, -3, 3, -6, 6, -9, 9]);
+  });
+
+  it('la bandada entera cabe en la franja del cielo, arriba de las sierras', () => {
+    const sky = LEVELS.l3!.backgrounds.skyLife!.birds;
+    const spread = flockSpread(b.countMax, b.spacingY, b.jitter, b.bob) + 2;
+    expect(sky[1] - sky[0]).toBeGreaterThanOrEqual(2 * spread);
+    // Sierras desde y 349 (medido en l3_far.jpg).
+    expect(sky[1]).toBeLessThan(349);
+    expect(b.countMin).toBeGreaterThanOrEqual(3);
+    expect(b.countMax).toBeLessThanOrEqual(7);
+    expect(b.sizeMin).toBeGreaterThanOrEqual(3);
+    expect(b.sizeMax).toBeLessThanOrEqual(5);
+  });
+
+  it('el guía cruza de afuera de un borde a afuera del otro, en los dos sentidos', () => {
+    expect(flockLeadX(0, 1, 1280, 40)).toBe(-40);
+    expect(flockLeadX(1, 1, 1280, 40)).toBe(1320);
+    expect(flockLeadX(0, -1, 1280, 40)).toBe(1320);
+    expect(flockLeadX(1, -1, 1280, 40)).toBe(-40);
+    expect(flockLeadX(0.5, 1, 1280, 40)).toBe(640);
+    // La cola (la última fila de la V) también queda afuera al empezar.
+    expect(b.margin).toBeGreaterThanOrEqual(Math.ceil((b.countMax - 1) / 2) * (b.spacingX + b.jitter) + b.sizeMax);
+  });
+
+  it('una sombra cruza entera y vuelve a entrar por la izquierda', () => {
+    expect(shadowLeft(0, 10, 1280, 300, 0)).toBe(-300);
+    expect(shadowLeft(1000, 10, 1280, 300, 0)).toBe(-290);
+    // Una vuelta: 1580 px a 10 px/s.
+    expect(shadowLeft(158000, 10, 1280, 300, 0)).toBeCloseTo(-300);
+    expect(shadowLeft(157000, 10, 1280, 300, 0)).toBeCloseTo(1270);
+  });
+
+  it('las sombras quedan dentro de la llanura, y solo l3 las tiene', () => {
+    const withLife = Object.values(LEVELS).filter((l) => l.backgrounds.skyLife);
+    expect(withLife.map((l) => l.id)).toEqual(['l3']);
+    const [y0, y1] = LEVELS.l3!.backgrounds.skyLife!.shadows;
+    // Llanura de l3_far.jpg: de y 378 a 480.
+    expect(y0).toBeGreaterThanOrEqual(378);
+    expect(y1).toBeLessThanOrEqual(480);
+    expect(life.shadows.length).toBeGreaterThanOrEqual(2);
+    expect(life.shadows.length).toBeLessThanOrEqual(3);
+    for (const s of life.shadows) {
+      const c = y0 + s.at * (y1 - y0);
+      expect(c - s.height / 2).toBeGreaterThanOrEqual(y0);
+      expect(c + s.height / 2).toBeLessThanOrEqual(y1);
+      expect(s.speed).toBeGreaterThan(0);
+    }
+    expect(life.shadowAlpha).toBeLessThanOrEqual(0.2);
   });
 });
