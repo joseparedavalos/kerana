@@ -1826,6 +1826,51 @@ export const GAMEPLAY = {
         minGreen: 170,
       },
     },
+    /**
+     * El cielo y la llanura de l3 (S98; `skyLife` en levels.ts, px de arte medidos en la imagen): bandadas que cruzan
+     * a la altura de las nubes bajas y sombras de nubes que corren por la llanura. Pegadas a la imagen.
+     */
+    skyLife: {
+      birds: {
+        /** Espera entre una bandada y la siguiente (ms, al azar), contada desde que la anterior salió de la imagen. */
+        gapMinMs: 15000,
+        gapMaxMs: 30000,
+        /** Espera hasta la primera bandada del nivel (ms, al azar). */
+        firstMinMs: 4000,
+        firstMaxMs: 9000,
+        /** Pájaros por bandada (el pool tiene `countMax`). */
+        countMin: 3,
+        countMax: 7,
+        /** Cuánto tarda en cruzar la imagen de lado a lado (ms, al azar). */
+        crossMinMs: 20000,
+        crossMaxMs: 30000,
+        /** Tamaño de la silueta (px de arte de ancho; hay dibujo para 3, 4 y 5). */
+        sizeMin: 3,
+        sizeMax: 5,
+        /** V suelta: cada fila del ala, cuánto más atrás y más afuera (px de arte), y el azar de cada uno. */
+        spacingX: 8,
+        spacingY: 3,
+        jitter: 1.5,
+        /** Ciclo de aleteo (ms; dos cuadros) y vaivén vertical (px de arte y ms). */
+        flapMs: 360,
+        bob: 1.2,
+        bobMs: 1800,
+        /** Cuánto sale afuera de la imagen antes de entrar y después de salir (px de arte). */
+        margin: 40,
+        /** Color de la silueta y su opacidad. */
+        color: '#2b2f3a',
+        alpha: 0.85,
+      },
+      /** Sombras de nubes: ancho y alto (px de arte), centro (fracción de la franja de llanura), velocidad (px/s), reparto. */
+      shadows: [
+        { width: 360, height: 70, at: 0.5, speed: 9, offset: 0 },
+        { width: 280, height: 56, at: 0.42, speed: 11, offset: 0.4 },
+        { width: 420, height: 76, at: 0.55, speed: 7, offset: 0.72 },
+      ],
+      /** Color de las sombras y su opacidad en el centro (los bordes se desvanecen a 0). */
+      shadowColor: '#14200c',
+      shadowAlpha: 0.12,
+    },
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */
     caveEdgeWidth: 32,
     /** Opacidad del degradado en su centro (0-1). */

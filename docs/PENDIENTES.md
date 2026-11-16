@@ -1,7 +1,7 @@
 # Pendientes para publicar
 
 El plan completo está en [docs/SESIONES.md](SESIONES.md).
-Revisado el 16 de noviembre de 2026 en S97, contra lo que ya está en `main` hasta S96.
+Revisado el 16 de noviembre de 2026 en S98, contra lo que ya está en `main` hasta S97.
 
 Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de itch.io. Steam más adelante (S34 y S35, 16 de octubre).
 
@@ -86,6 +86,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 - La carga del tajo suena (S95): un zumbido que sube de tono mientras el sable brilla y se corta si Kerana suelta antes o la lastiman, un «ting» de campanita cuando está lista para soltar, y el tajo cargado, más grave y largo que el común, con un brillo agudo encima.
 - El atardecer de l2 se mueve (S96): el sol respira con un halo cálido y suave, y en la columna dorada del agua titilan destellos cortos. Todo por código y pegado al fondo; con «Destellos» apagado no se dibuja.
 - En l3 nada flota (S97): las matas, las flores, los troncos y los árboles se hunden lo justo para que la base ancha quede sobre el borde de pasto (`sink` en el `sprite.json` de `l3_pastizal` y `l3_arboles`, medido en el arte). Y salieron la cerca y el tacurú viejos, dibujados por código, del principio del nivel.
+- El cielo de l3 tiene vida (S98): cada 15 a 30 s cruza una bandada de 3 a 7 pájaros oscuros, chiquitos, en V suelta, a la altura de las nubes bajas y por encima de las sierras, aleteando; y dos o tres sombras de nubes, muy tenues y de bordes suaves, corren despacio por la llanura del fondo. Todo por código y pegado al fondo, también en la arena de Moñái.
 
 ## Ahora
 
@@ -143,6 +144,7 @@ Primero itch.io, gratis y en navegador. Después Google Play, con el feedback de
 53. Jugar a Tau sin `god=1` (Jose, S94, `?debug=1&level=yvaga&boss=1`). Mirar: (a) si se ve imponente al doble y al triple, y si el cambio de tamaño queda bien tapado por el estallido de humo; (b) la ventana de la fase 3: ahora la estrella lo baja sobre ella y hay que saltar para pegarle (en la de abajo a la derecha, salto doble, porque al triple no entra más bajo sin tapar la vecina). Con el piloto, la fase 3 bajó de 35 a 23 s en promedio: entran 2 o 3 tajos por ventana. Si queda corta, se puede subir `trueClearPx` (Tau más alto) o bajar `pullOverlapPx` en `GAMEPLAY.tau`; no los tiempos.
 54. Escuchar la carga del tajo (Jose, S95, `?debug=1&level=1&gifts=all`, mantener X) y ajustarla en `src/systems/sfxPresets.ts`: el zumbido (`CHARGE_UP`: volumen, de qué tono a qué tono, el filtro; dura solo lo que va del brillo a la carga lista), el «ting» (`chargeReady`) y el tajo cargado (`chargedSlash` y su brillo en `SFX_LAYERS`). Claude no puede oír: si el zumbido molesta al cargar seguido, si el «ting» se oye sobre la música y si el tajo cargado ya no se confunde con el común.
 55. Mirar el sol de l2 en movimiento (Jose, S96, `?debug=1&level=2`, también en el celular): si el halo se nota lo justo (hoy de 34 a 46 px de radio y de 0,10 a 0,22 de opacidad en 5 s) y si los destellos del reflejo se ven (cinco como máximo, de 2 a 6 px, opacidad 0,9). Todo en `GAMEPLAY.backdrop.sun`; la posición del sol y de la columna, medida en la imagen, en `levels.ts` (`backgrounds.sun`). Si se cambia `l2_far.jpg`, hay que volver a medirlas.
+56. Mirar el cielo de l3 en movimiento (Jose, S98, `?debug=1&level=3`, también en el celular): si las bandadas se ven (hoy siluetas de 3 a 5 px de arte, color `#2b2f3a` al 0,85, cruzan en 20 a 30 s cada 15 a 30 s; la primera entre 4 y 9 s después de entrar) y si las sombras se notan apenas (opacidad 0,12 en el centro, de 7 a 11 px/s). Todo en `GAMEPLAY.backdrop.skyLife`; las franjas, medidas en la imagen, en `levels.ts` (`backgrounds.skyLife`). Con la vista arriba del nivel (la mitad de l3, x ≈ 250, fila 10) el fondo baja y la franja de las nubes bajas queda a la altura de algunas plataformas flotantes: los pájaros pasan detrás de ellas, chicos y oscuros, pero en esa franja. Si molesta, se puede subir la franja `birds` (hoy y 302 a 344) hacia el cielo alto. Si se cambia `l3_far.jpg`, hay que volver a medirlas.
 
 ## itch.io
 

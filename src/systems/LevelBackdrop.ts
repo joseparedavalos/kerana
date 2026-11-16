@@ -18,7 +18,7 @@ import {
   splitRain,
 } from './ambientLogic';
 import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
-import { SunShimmer } from './Backdrops';
+import { SkyLife, SunShimmer } from './Backdrops';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
@@ -62,6 +62,8 @@ export class LevelBackdrop {
   private canopyMist: { band: Phaser.GameObjects.Image; at: number; speed: number; offset: number }[] = [];
   /** El sol que respira y el reflejo que titila (S96); solo si el nivel define `sun`. */
   private sun?: SunShimmer;
+  /** Bandadas y sombras de nubes (S98); solo si el nivel define `skyLife`. */
+  private skyLife?: SkyLife;
   private readonly cave?: Phaser.GameObjects.Image;
   private readonly edges: Phaser.GameObjects.Image[] = [];
   private readonly caves: Area[] = [];
@@ -94,6 +96,7 @@ export class LevelBackdrop {
       if (defs.rain) this.makeRain(defs.far);
       if (defs.mist) this.makeMist(defs.far, defs.mist.region);
       if (defs.sun) this.sun = new SunShimmer(scene, defs.sun, this.pixels(defs.far), CFG.depth + 0.3);
+      if (defs.skyLife) this.skyLife = new SkyLife(scene, defs.skyLife, this.far.frame.width, CFG.depth + 0.3);
     }
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
@@ -125,7 +128,7 @@ export class LevelBackdrop {
 
   /** Todo lo que dibuja el fondo (para que la luz del nivel oscuro no lo toque). */
   get layers(): Phaser.GameObjects.GameObject[] {
-    return [this.far, this.cave, this.fill, this.fillEdge, this.mist, ...(this.sun?.layers ?? []), ...this.rays.map((r) => r.img), ...this.canopyMist.map((m) => m.band)].filter(
+    return [this.far, this.cave, this.fill, this.fillEdge, this.mist, ...(this.sun?.layers ?? []), ...(this.skyLife?.layers ?? []), ...this.rays.map((r) => r.img), ...this.canopyMist.map((m) => m.band)].filter(
       (o): o is NonNullable<typeof o> => o !== undefined,
     );
   }
@@ -204,6 +207,8 @@ export class LevelBackdrop {
     }
     // S96: en los mismos px de arte que la imagen (su esquina y su escala), así se mueve con ella en todo el nivel.
     this.sun?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && this.flashes());
+    // S98: igual que el sol, en px de arte de la imagen; no titila, así que no depende de «Destellos».
+    this.skyLife?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible);
   }
 
   /**
@@ -242,6 +247,7 @@ export class LevelBackdrop {
     farTop: number;
     farHeight: number;
     sun: ReturnType<SunShimmer['debugState']> | null;
+    skyLife: ReturnType<SkyLife['debugState']> | null;
   } {
     return {
       images: this.images.length,
@@ -253,7 +259,13 @@ export class LevelBackdrop {
       farTop: this.far ? this.far.y - fixedOffset(this.scene.cameras.main).y : 0,
       farHeight: this.far?.displayHeight ?? 0,
       sun: this.sun?.debugState() ?? null,
+      skyLife: this.skyLife?.debugState() ?? null,
     };
+  }
+
+  /** Para las capturas (S98): que la próxima bandada salga ya. */
+  debugLaunchFlock(): void {
+    this.skyLife?.debugLaunch(this.scene.time.now);
   }
 
   private applyTint(ambient: number): void {

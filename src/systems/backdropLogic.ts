@@ -166,3 +166,52 @@ export function pickGlint(
   out.y = runs[k + 1]!;
   return true;
 }
+
+/** Un pájaro de la bandada (S98): atrás del que guía (`back`, px de arte, ≥ 0) y arriba o abajo (`dy`), y su fase. */
+export interface FlockSlot {
+  back: number;
+  dy: number;
+  phase: number;
+}
+
+/**
+ * Formación en V suelta (S98): el primero guía; los demás se reparten en las dos alas, alternando, cada fila
+ * `spacingX` más atrás y `spacingY` más afuera, con hasta `jitter` px de azar en cada eje. `rand`, azar de 0 a 1.
+ * Llena los primeros `n` de `out` (no crea objetos).
+ */
+export function flockLayout(n: number, spacingX: number, spacingY: number, jitter: number, rand: () => number, out: FlockSlot[]): void {
+  for (let i = 0; i < n && i < out.length; i++) {
+    const rank = Math.ceil(i / 2);
+    const side = i % 2 === 1 ? -1 : 1;
+    const j = (k: number) => (rand() * 2 - 1) * k;
+    out[i]!.back = i === 0 ? 0 : Math.max(0, rank * spacingX + j(jitter));
+    out[i]!.dy = i === 0 ? 0 : side * rank * spacingY + j(jitter);
+    out[i]!.phase = rand();
+  }
+}
+
+/** Lo más que se aparta un pájaro del guía en vertical (px de arte), con el azar y el vaivén. */
+export function flockSpread(maxBirds: number, spacingY: number, jitter: number, bob: number): number {
+  return Math.ceil((maxBirds - 1) / 2) * spacingY + jitter + bob;
+}
+
+/**
+ * Dónde va el guía de una bandada (px de arte, x de la imagen) a la fracción `t` (0 a 1) de su cruce: de afuera de
+ * un borde de la imagen (`margin` px) a afuera del otro. `dir` 1 cruza de izquierda a derecha; −1, al revés.
+ */
+export function flockLeadX(t: number, dir: 1 | -1, imageWidth: number, margin: number): number {
+  const span = imageWidth + 2 * margin;
+  const p = Math.min(1, Math.max(0, t));
+  return dir > 0 ? -margin + span * p : imageWidth + margin - span * p;
+}
+
+/**
+ * Borde izquierdo de una sombra de nube (S98, px de arte) que corre a `speed` px/s y vuelve a entrar por la izquierda:
+ * cruza la imagen entera y sale entera antes de volver. `offset` (0 a 1) reparte las sombras a lo ancho.
+ */
+export function shadowLeft(now: number, speed: number, imageWidth: number, shadowWidth: number, offset: number): number {
+  const lap = imageWidth + shadowWidth;
+  if (lap <= 0) return 0;
+  const x = (((now / 1000) * speed + offset * lap) % lap + lap) % lap;
+  return x - shadowWidth;
+}
