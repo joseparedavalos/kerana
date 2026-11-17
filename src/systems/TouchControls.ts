@@ -213,7 +213,7 @@ export class TouchControls {
       btn.bg.setFillStyle(held ? ACCENT[btn.action] ?? INK : 0x1b1a2e, held ? ALPHA_DOWN : ALPHA);
       btn.bg.setStrokeStyle(held ? 5 : 3, ACCENT[btn.action] ?? INK, 1);
       btn.bg.setScale(held ? 0.94 : 1);
-      btn.icon.setTint(held ? INK_DOWN : INK);
+      btn.icon.setTint(held ? INK_DOWN : 0xffffff);
       this.input.setVirtual(btn.action, held);
     }
   }
@@ -248,7 +248,7 @@ export class TouchControls {
       arrow.bg.setFillStyle(on ? ACCENT.move : 0x1b1a2e, on ? ALPHA_DOWN : ALPHA);
       arrow.bg.setStrokeStyle(on ? 5 : 3, ACCENT.move, 1);
       arrow.bg.setScale(on ? 0.94 : 1);
-      arrow.icon.setTint(on ? INK_DOWN : INK);
+      arrow.icon.setTint(on ? INK_DOWN : 0xffffff);
     }
   }
 
@@ -294,7 +294,7 @@ const ICON_KEY: Record<TouchIcon, string> = {
 /** Ícono de pixel art del botón, blanco teñido. Cae al dibujo por código si falta la textura. */
 function touchIcon(scene: Phaser.Scene, x: number, y: number, icon: TouchIcon, size: number): Phaser.GameObjects.Image {
   const key = ICON_KEY[icon];
-  const img = scene.add.image(x, y, scene.textures.exists(key) ? key : ICON_KEY.pause).setDepth(1001).setTint(INK);
+  const img = scene.add.image(x, y, scene.textures.exists(key) ? key : ICON_KEY.pause).setDepth(1001);
   img.setDisplaySize(size * 0.52, size * 0.52);
   return img;
 }
