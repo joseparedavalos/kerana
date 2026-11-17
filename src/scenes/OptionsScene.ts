@@ -99,7 +99,7 @@ export class OptionsScene extends Phaser.Scene {
       {
         labelKey: 'options.lang',
         valueText: () => s().lang.toUpperCase(),
-        onChange: () => this.setting('lang', s().lang === 'es' ? 'en' : 'es'),
+        onChange: () => this.setting('lang', ({ es: 'en', en: 'pt', pt: 'es' } as const)[s().lang]),
       },
       {
         labelKey: 'options.assist',
