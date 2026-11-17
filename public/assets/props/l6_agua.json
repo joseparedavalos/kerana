@@ -39,7 +39,8 @@
       "sourceSize": {
         "w": 160,
         "h": 59
-      }
+      },
+      "sink": 6
     },
     "shallow_pool": {
       "frame": {
@@ -68,7 +69,8 @@
           0.92,
           0.85
         ]
-      }
+      },
+      "sink": 3
     },
     "thin_stream": {
       "frame": {

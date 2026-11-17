@@ -83,7 +83,8 @@
           0.92,
           0.85
         ]
-      }
+      },
+      "sink": 3
     },
     "mist_spray": {
       "note": "S47: sube despacio y cambia de opacidad (GAMEPLAY.props.water.mist*)",
@@ -96,6 +97,9 @@
     "moss_cushions": {
       "note": "S48: fuera. Es el peñasco de waterfall y thin_stream sin el chorro: no se anima y repite la roca",
       "ignore": true
+    },
+    "mossy_trunk": {
+      "sink": 6
     }
   }
 }
