@@ -196,9 +196,9 @@ describe('pájaros y sombras de nubes de l3 (S98)', () => {
     expect(shadowLeft(157000, 10, 1280, 300, 0)).toBeCloseTo(1270);
   });
 
-  it('las sombras quedan dentro de la llanura, y solo l3 las tiene', () => {
+  it('las sombras quedan dentro de la llanura; l3 y l6 las tienen', () => {
     const withLife = Object.values(LEVELS).filter((l) => l.backgrounds.skyLife);
-    expect(withLife.map((l) => l.id)).toEqual(['l3']);
+    expect(withLife.map((l) => l.id).sort()).toEqual(['l3', 'l6']);
     const [y0, y1] = LEVELS.l3!.backgrounds.skyLife!.shadows;
     // Llanura de l3_far.jpg: de y 378 a 480.
     expect(y0).toBeGreaterThanOrEqual(378);
