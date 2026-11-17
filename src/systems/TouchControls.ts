@@ -84,6 +84,9 @@ export class TouchControls {
   ) {
     this.onNative = (event) => {
       if (this.hidden) return;
+      // El botón de pantalla completa es del navegador: si se cancela el toque, su click no llega.
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.('#kerana-fullscreen')) return;
       if (event.cancelable) event.preventDefault();
       this.fingers.length = 0;
       // Con el aviso de girar el teléfono encima, ningún toque llega a los botones.
@@ -149,6 +152,12 @@ export class TouchControls {
     }
   }
 
+
+  /** Brillo arriba: el botón se lee con volumen, no como un círculo plano. */
+  private highlight(x: number, y: number, size: number): void {
+    this.scene.add.circle(x, y - size * 0.16, size * 0.3, 0xffffff, 0.14).setDepth(1000.5);
+  }
+
   private circle(x: number, y: number, size: number, accent: number): Phaser.GameObjects.Arc {
     return this.scene.add
       .circle(x, y, size / 2, 0x1b1a2e, ALPHA)
@@ -162,6 +171,7 @@ export class TouchControls {
     for (const dir of [-1, 1] as const) {
       const x = place.x + dir * moveArrowOffset(place.scale);
       const bg = this.circle(x, place.y, size, ACCENT.move);
+      this.highlight(x, place.y, size);
       const icon = this.scene.add.graphics().setDepth(1001);
       drawTouchIcon(icon, x, place.y, dir < 0 ? 'left' : 'right', INK, place.scale);
       arrows.push({ dir, x, bg, icon });
@@ -171,6 +181,7 @@ export class TouchControls {
 
   private addButton(action: ButtonId, x: number, y: number, size: number, scale: number): void {
     const bg = this.circle(x, y, size, ACCENT[action] ?? INK);
+    this.highlight(x, y, size);
     const mark = this.scene.add.graphics().setDepth(1001);
     drawTouchIcon(mark, x, y, action, INK, scale);
     this.buttons.push({ action, x, y, radius: touchButtonRadius(action, scale), scale, bg, icon: mark, iconKind: action, held: false });
@@ -274,32 +285,43 @@ export class TouchControls {
 
 export function drawTouchIcon(g: Phaser.GameObjects.Graphics, x: number, y: number, icon: TouchIcon, color: number, scale = 1): void {
   g.clear();
-  g.fillStyle(color, 1);
   const s = scale;
+  // Sombra corrida un píxel: le da cuerpo al ícono.
+  g.fillStyle(0x000000, 0.35);
+  drawIcon(g, x + 1 * s, y + 1 * s, icon, s);
+  g.fillStyle(color, 1);
+  drawIcon(g, x, y, icon, s);
+}
+
+function drawIcon(g: Phaser.GameObjects.Graphics, x: number, y: number, icon: TouchIcon, s: number): void {
   if (icon === 'left' || icon === 'right') {
     const dir = icon === 'left' ? -1 : 1;
-    g.fillTriangle(x + dir * 8 * s, y, x - dir * 6 * s, y - 8 * s, x - dir * 6 * s, y + 8 * s);
+    // Chevrón grueso: se lee de lejos.
+    g.fillTriangle(x + dir * 9 * s, y, x - dir * 2 * s, y - 9 * s, x - dir * 2 * s, y + 9 * s);
+    g.fillTriangle(x + dir * 2 * s, y, x - dir * 9 * s, y - 9 * s, x - dir * 9 * s, y + 9 * s);
     return;
   }
   if (icon === 'jump') {
-    g.fillTriangle(x, y - 9 * s, x - 8 * s, y + 4 * s, x + 8 * s, y + 4 * s);
-    g.fillRect(x - 2 * s, y + 2 * s, 4 * s, 6 * s);
+    g.fillTriangle(x, y - 11 * s, x - 9 * s, y + 1 * s, x + 9 * s, y + 1 * s);
+    g.fillRect(x - 3 * s, y, 6 * s, 9 * s);
     return;
   }
   if (icon === 'attack') {
-    g.fillRect(x - 2 * s, y - 10 * s, 4 * s, 14 * s);
-    g.fillTriangle(x - 2 * s, y - 10 * s, x + 2 * s, y - 10 * s, x, y - 15 * s);
-    g.fillRect(x - 6 * s, y + 4 * s, 12 * s, 3 * s);
-    g.fillRect(x - 1.5 * s, y + 7 * s, 3 * s, 4 * s);
+    // Sable: hoja curva, guarda y empuñadura.
+    g.fillTriangle(x + 1 * s, y - 13 * s, x - 3 * s, y + 2 * s, x + 4 * s, y + 2 * s);
+    g.fillRect(x - 7 * s, y + 2 * s, 14 * s, 3 * s);
+    g.fillRect(x - 1.5 * s, y + 5 * s, 3 * s, 6 * s);
+    g.fillRect(x - 3 * s, y + 10 * s, 6 * s, 2 * s);
     return;
   }
   if (icon === 'dash') {
-    g.fillTriangle(x - 8 * s, y - 6 * s, x - 1 * s, y, x - 8 * s, y + 6 * s);
-    g.fillTriangle(x - 1 * s, y - 6 * s, x + 6 * s, y, x - 1 * s, y + 6 * s);
+    g.fillTriangle(x - 9 * s, y - 7 * s, x - 1 * s, y, x - 9 * s, y + 7 * s);
+    g.fillTriangle(x - 2 * s, y - 7 * s, x + 6 * s, y, x - 2 * s, y + 7 * s);
+    g.fillTriangle(x + 4 * s, y - 7 * s, x + 11 * s, y, x + 4 * s, y + 7 * s);
     return;
   }
-  g.fillRect(x - 5 * s, y - 6 * s, 3 * s, 12 * s);
-  g.fillRect(x + 2 * s, y - 6 * s, 3 * s, 12 * s);
+  g.fillRoundedRect(x - 6 * s, y - 7 * s, 4 * s, 14 * s, 1 * s);
+  g.fillRoundedRect(x + 2 * s, y - 7 * s, 4 * s, 14 * s, 1 * s);
 }
 
 function wantsTouch(): boolean {
