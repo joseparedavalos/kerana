@@ -232,10 +232,10 @@ export const en: Record<TextKey, string> = {
 
   // Créditos (GDD §8.9).
   'credits.title': 'Credits',
-  'credits.direction': 'Idea and direction: Jose',
-  'credits.development': 'Development: with Claude Code',
-  'credits.art_audio': 'Art and sound: see CREDITS.md',
-  'credits.thanks': 'Thanks: to the Guaraní people and to everyone who keeps their stories alive',
+  'credits.direction': 'Director: Jose Paredes',
+  'credits.development': 'Game Producer: Jose Paredes',
+  'credits.art_audio': 'Game Design & Art: Jose Paredes',
+  'credits.thanks': 'Writer: Jose Paredes',
   'credits.play_time': 'Play time: {time}',
   'credits.font_test': "Mbói Tu'i, Yvy Marane'ỹ, ñe'ẽ, Ñeembucú, Paraguarí",
   'credits.back_hint': 'Press {key} to go back',

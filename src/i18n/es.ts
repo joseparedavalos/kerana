@@ -231,10 +231,10 @@ export const es = {
 
   // Créditos (GDD §8.9).
   'credits.title': 'Créditos',
-  'credits.direction': 'Idea y dirección: Jose',
-  'credits.development': 'Desarrollo: con Claude Code',
-  'credits.art_audio': 'Arte y sonido: ver CREDITS.md',
-  'credits.thanks': 'Agradecimientos: al pueblo guaraní y a quienes cuidan sus historias',
+  'credits.direction': 'Dirección: Jose Paredes',
+  'credits.development': 'Producción: Jose Paredes',
+  'credits.art_audio': 'Diseño y arte: Jose Paredes',
+  'credits.thanks': 'Guion: Jose Paredes',
   'credits.play_time': 'Tiempo de juego: {time}',
   'credits.font_test': "Mbói Tu'i, Yvy Marane'ỹ, ñe'ẽ, Ñeembucú, Paraguarí",
   'credits.back_hint': 'Pulsá {key} para volver',
