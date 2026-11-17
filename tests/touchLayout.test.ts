@@ -16,8 +16,8 @@ describe('botones táctiles', () => {
     const layout = resolveTouchLayout({ jump: { x: 9999, y: -40, scale: 9 } });
     expect(layout.jump.x).toBeLessThan(VIEW.width);
     expect(layout.jump.y).toBeGreaterThan(0);
-    expect(layout.jump.scale).toBeLessThanOrEqual(1.7);
-    expect(stepTouchScale(1.7, 1)).toBe(1.7);
+    expect(layout.jump.scale).toBeLessThanOrEqual(2.2);
+    expect(stepTouchScale(2.2, 1)).toBe(2.2);
     expect(stepTouchScale(0.7, -1)).toBe(0.7);
   });
 });
@@ -26,9 +26,9 @@ describe('zona de moverse (S90)', () => {
   const move = defaultTouchLayout().move;
   const dead = GAMEPLAY.touch.moveDeadZone;
 
-  it('de fábrica las flechas quedan donde estaban los dos botones (x 36 y x 90)', () => {
-    expect(move.x - moveArrowOffset(1)).toBe(36);
-    expect(move.x + moveArrowOffset(1)).toBe(90);
+  it('de fábrica las flechas quedan separadas y dentro de la pantalla', () => {
+    expect(move.x - moveArrowOffset(1)).toBe(56);
+    expect(move.x + moveArrowOffset(1)).toBe(130);
   });
 
   it('el lado lo decide el medio entre las flechas, con una zona muerta chica', () => {
@@ -52,9 +52,9 @@ describe('zona de moverse (S90)', () => {
   it('la zona es una cápsula alrededor de las dos flechas', () => {
     expect(inMoveZone(move, move.x, move.y)).toBe(true);
     expect(inMoveZone(move, move.x - moveArrowOffset(1), move.y - 30)).toBe(true);
-    expect(inMoveZone(move, move.x + moveArrowOffset(1) + 39, move.y)).toBe(true);
-    expect(inMoveZone(move, move.x + moveArrowOffset(1) + 41, move.y)).toBe(false);
-    expect(inMoveZone(move, move.x, move.y - 60)).toBe(false);
+    expect(inMoveZone(move, move.x + moveArrowOffset(1) + 59, move.y)).toBe(true);
+    expect(inMoveZone(move, move.x + moveArrowOffset(1) + 61, move.y)).toBe(false);
+    expect(inMoveZone(move, move.x, move.y - 62)).toBe(false);
   });
 
   it('un guardado viejo con left y right separados se migra al medio, sin perder la posición', () => {

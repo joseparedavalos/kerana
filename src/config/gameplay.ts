@@ -2059,8 +2059,8 @@ export const GAMEPLAY = {
     /** Separación entre las dos flechas, borde a borde. */
     moveGap: 10,
     /** Margen de toque alrededor de cada botón (el de pausa tiene menos para no comerse el nivel). */
-    slop: 18,
-    pauseSlop: 4,
+    slop: 28,
+    pauseSlop: 6,
   },
 } as const;
 
