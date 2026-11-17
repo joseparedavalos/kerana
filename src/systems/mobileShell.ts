@@ -223,6 +223,11 @@ export function installFullscreenButton(): void {
   btn.style.cssText =
     'position:fixed;top:8px;left:8px;z-index:900;width:40px;height:40px;border-radius:20px;border:2px solid #f2eee3;' +
     'background:rgba(27,26,46,0.6);color:#f2eee3;font-size:20px;line-height:1;touch-action:manipulation;';
-  btn.addEventListener('click', () => void enterFullscreen());
+  const go = (event: Event): void => {
+    event.stopPropagation();
+    void enterFullscreen();
+  };
+  btn.addEventListener('touchend', go);
+  btn.addEventListener('click', go);
   document.body.appendChild(btn);
 }
