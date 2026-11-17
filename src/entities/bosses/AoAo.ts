@@ -12,8 +12,9 @@ const RUN_TEXTURE = 'ao_ao_placeholder';
 const REAR_TEXTURE = 'ao_ao_rear_placeholder';
 const DUST_COLOR = 0xb5aa9c;
 const STAR_COLOR = 0xf2c14e;
-const CLAW_COLOR = 0xf2eee3;
 const STARS = 3;
+const SLASH_KEY = 'ao_ao_slash';
+const SLASH_MS = 250;
 
 /** Bestia lanuda de cabeza de oso (placeholder por código): en cuatro patas y erguida. Mira a la derecha. */
 function ensureTextures(scene: Phaser.Scene): void {
@@ -46,12 +47,54 @@ function ensureTextures(scene: Phaser.Scene): void {
   }
 }
 
+
+/** Tajo de tres garras (una sola textura): arcos que salen del cuerpo y se abren. */
+function ensureSlash(scene: Phaser.Scene): void {
+  if (scene.textures.exists(SLASH_KEY)) return;
+  const w = 48;
+  const h = 40;
+  const tex = scene.textures.createCanvas(SLASH_KEY, w, h);
+  if (!tex) return;
+  const ctx = tex.getContext();
+  const img = ctx.createImageData(w, h);
+  const stamp = (x: number, y: number, a: number): void => {
+    const xi = Math.round(x);
+    const yi = Math.round(y);
+    if (xi < 0 || yi < 0 || xi >= w || yi >= h) return;
+    const o = (yi * w + xi) * 4;
+    const k = Math.min(1, (img.data[o + 3] ?? 0) / 255 + a);
+    img.data[o] = 255;
+    img.data[o + 1] = Math.round(246 + 9 * k);
+    img.data[o + 2] = Math.round(232 + 12 * k);
+    img.data[o + 3] = Math.round(255 * k);
+  };
+  const bez = (p0: number, c: number, p1: number, u: number): number =>
+    (1 - u) * (1 - u) * p0 + 2 * (1 - u) * u * c + u * u * p1;
+  for (let i = 0; i < 3; i++) {
+    const y0 = 7 + i * 12;
+    const yc = 3 + i * 7;
+    const y1 = 12 + i * 7;
+    for (let s = 0; s <= 40; s++) {
+      const u = s / 40;
+      const x = bez(3, 24, 45, u);
+      const y = bez(y0, yc, y1, u);
+      const a = 0.55 + 0.45 * Math.sin(Math.PI * u);
+      stamp(x, y, a);
+      stamp(x, y - 1, a * 0.6);
+      stamp(x, y + 1, a * 0.6);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  tex.refresh();
+}
+
 // Ao Ao (GDD §6.6): señor de los cerros. Fase 1: embestida (aturdido si choca contra una roca).
 // Fase 2: zarpazo erguido y aullido que llama crías. Fase 3: furia, embestidas dobles y rocas que caen.
 // Si Kerana está en lo alto de un pindó no la puede alcanzar: da vueltas al pie y aúlla.
 export class AoAo extends Boss {
   private readonly body: Phaser.GameObjects.Image;
-  private readonly claw: Phaser.GameObjects.Rectangle;
+  private readonly slash: Phaser.GameObjects.Image;
+  private readonly slashTrail: Phaser.GameObjects.Image[] = [];
   private readonly stars: Phaser.GameObjects.Arc[] = [];
   private readonly dust: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly timers: Phaser.Time.TimerEvent[] = [];
@@ -61,6 +104,7 @@ export class AoAo extends Boss {
   private facing: 1 | -1 = -1;
   private harmful = false;
   private clawing = false;
+  private clawStart = 0;
   private reared = false;
   private stunned = false;
   /** La embestida en curso termina contra una roca en esta x (null = llega al borde). */
@@ -81,7 +125,9 @@ export class AoAo extends Boss {
       sourceFacesRight: true,
       idleTimeScale: GAMEPLAY.sprites.aoAo.idleTimeScale,
     });
-    this.claw = scene.add.rectangle(0, 0, CFG.clawReachPx, 6, CLAW_COLOR, 0.8).setDepth(6).setVisible(false);
+    ensureSlash(scene);
+    this.slash = scene.add.image(0, 0, SLASH_KEY).setDepth(7).setVisible(false);
+    for (let i = 0; i < 2; i++) this.slashTrail.push(scene.add.image(0, 0, SLASH_KEY).setDepth(6).setVisible(false));
     for (let i = 0; i < STARS; i++) this.stars.push(scene.add.circle(0, 0, 2, STAR_COLOR).setDepth(7).setVisible(false));
     this.dust = scene.add.particles(0, 0, 'fx_particle', {
       speedX: { min: -40, max: 40 },
@@ -177,7 +223,7 @@ export class AoAo extends Boss {
       case 'recover':
         this.harmful = false;
         this.clawing = false;
-        this.claw.setVisible(false);
+        this.hideSlash();
         if (id === 'charge' || id === 'double_charge') {
           // Solo queda aturdido si chocó contra una roca; si no, sigue sin ventana.
           if (!this.stunned && this.pendingStunX !== null) {
@@ -206,7 +252,7 @@ export class AoAo extends Boss {
     this.clawing = false;
     this.stunned = false;
     this.pendingStunX = null;
-    this.claw.setVisible(false);
+    this.hideSlash();
     this.rear(false);
     this.walkTowardKerana(this.brain.phaseDef.idleMs);
   }
@@ -255,8 +301,10 @@ export class AoAo extends Boss {
         break;
       case 'claw':
         this.clawing = true;
+        this.clawStart = this.scene.time.now;
         this.harmful = true;
         this.ctx.sfx('claw');
+        this.dust.emitParticleAt(this.body.x + this.facing * (CFG.width / 2), this.ctx.floorY - CFG.clawHeight * 0.6, 6);
         break;
       case 'howl': {
         this.rear(false);
@@ -365,7 +413,7 @@ export class AoAo extends Boss {
     this.pendingStunX = null;
     this.circling = false;
     this.stopMove();
-    this.claw.setVisible(false);
+    this.hideSlash();
     for (const s of this.stars) s.setVisible(false);
     this.scene.tweens.killTweensOf(this.body);
     this.body.setAlpha(1).setScale(1).clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
@@ -390,10 +438,8 @@ export class AoAo extends Boss {
 
   protected updateVisuals(_deltaMs: number): void {
     this.body.setFlipX(this.facing < 0);
-    if (this.clawing) {
-      const r = this.clawBounds();
-      this.claw.setPosition(r.centerX, r.centerY).setVisible(true);
-    }
+    if (this.clawing) this.drawSlash();
+    else this.hideSlash();
     // Estrellitas girando sobre la cabeza mientras está aturdido.
     const showStars = this.stunned && this.brain.state === 'recover';
     for (let i = 0; i < STARS; i++) {
@@ -418,7 +464,7 @@ export class AoAo extends Boss {
     this.facing = -1;
     this.reared = true;
     this.rear(false);
-    this.claw.setVisible(false);
+    this.hideSlash();
     for (const s of this.stars) s.setVisible(false);
     this.body.setPosition(this.tileX(CFG.startTile), this.ctx.floorY).setAlpha(0).setScale(1).clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
@@ -454,6 +500,37 @@ export class AoAo extends Boss {
     const w = this.body.displayWidth;
     const h = this.body.displayHeight;
     return out.setTo(this.body.x - w / 2, this.ctx.floorY - h, w, h);
+  }
+
+
+  /** Tajo: crece desde el cuerpo hacia afuera y se apaga. Los dos de atrás van retrasados (la estela). */
+  private drawSlash(): void {
+    const p = Math.min(1, (this.scene.time.now - this.clawStart) / SLASH_MS);
+    const r = this.clawBounds();
+    this.placeSlash(this.slash, r, p, 1);
+    this.slashTrail.forEach((ghost, i) => this.placeSlash(ghost, r, Math.max(0, p - 0.12 * (i + 1)), 0.35));
+  }
+
+  private placeSlash(img: Phaser.GameObjects.Image, r: Phaser.Geom.Rectangle, p: number, alphaScale: number): void {
+    if (p <= 0) {
+      img.setVisible(false);
+      return;
+    }
+    const grow = 0.2 + 0.9 * Math.min(1, p / 0.45);
+    const fade = p < 0.5 ? 1 : 1 - (p - 0.5) / 0.5;
+    const fromBody = this.facing > 0;
+    img
+      .setOrigin(fromBody ? 0 : 1, 0.5)
+      .setPosition(fromBody ? r.x : r.right, r.centerY)
+      .setFlipX(!fromBody)
+      .setDisplaySize(CFG.clawReachPx * grow, CFG.clawHeight * 0.9)
+      .setAlpha(Math.max(0, fade) * alphaScale)
+      .setVisible(true);
+  }
+
+  private hideSlash(): void {
+    this.slash.setVisible(false);
+    for (const ghost of this.slashTrail) ghost.setVisible(false);
   }
 
   private clawBounds(): Phaser.Geom.Rectangle {
