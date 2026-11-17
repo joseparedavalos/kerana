@@ -13,10 +13,18 @@ import {
   type TouchButtonPlace,
 } from './touchLayout';
 
-const ALPHA = 0.4;
-const ALPHA_DOWN = 0.88;
+const ALPHA = 0.55;
+const ALPHA_DOWN = 0.95;
 const INK = 0xf2eee3;
 const INK_DOWN = 0x1b1a2e;
+// Un color por acción: se distinguen con el dedo encima, que tapa el ícono.
+const ACCENT: Record<string, number> = {
+  move: 0xf2eee3,
+  jump: 0xf2c14e,
+  attack: 0xe07848,
+  dash: 0x7ec8e0,
+  pause: 0xf2eee3,
+};
 // Los punteros del ratón (con `?touch=1` en la PC) no comparten número con los dedos.
 const MOUSE_ID = 1000;
 
@@ -141,10 +149,10 @@ export class TouchControls {
     }
   }
 
-  private circle(x: number, y: number, size: number): Phaser.GameObjects.Arc {
+  private circle(x: number, y: number, size: number, accent: number): Phaser.GameObjects.Arc {
     return this.scene.add
       .circle(x, y, size / 2, 0x1b1a2e, ALPHA)
-      .setStrokeStyle(1.5, INK, 0.9)
+      .setStrokeStyle(3, accent, 1)
       .setDepth(1000);
   }
 
@@ -153,7 +161,7 @@ export class TouchControls {
     const arrows: MoveArrow[] = [];
     for (const dir of [-1, 1] as const) {
       const x = place.x + dir * moveArrowOffset(place.scale);
-      const bg = this.circle(x, place.y, size);
+      const bg = this.circle(x, place.y, size, ACCENT.move);
       const icon = this.scene.add.graphics().setDepth(1001);
       drawTouchIcon(icon, x, place.y, dir < 0 ? 'left' : 'right', INK, place.scale);
       arrows.push({ dir, x, bg, icon });
@@ -162,7 +170,7 @@ export class TouchControls {
   }
 
   private addButton(action: ButtonId, x: number, y: number, size: number, scale: number): void {
-    const bg = this.circle(x, y, size);
+    const bg = this.circle(x, y, size, ACCENT[action] ?? INK);
     const mark = this.scene.add.graphics().setDepth(1001);
     drawTouchIcon(mark, x, y, action, INK, scale);
     this.buttons.push({ action, x, y, radius: touchButtonRadius(action, scale), scale, bg, icon: mark, iconKind: action, held: false });
@@ -193,7 +201,9 @@ export class TouchControls {
         continue;
       }
       btn.held = held;
-      btn.bg.setFillStyle(held ? INK : 0x1b1a2e, held ? ALPHA_DOWN : ALPHA);
+      btn.bg.setFillStyle(held ? ACCENT[btn.action] ?? INK : 0x1b1a2e, held ? ALPHA_DOWN : ALPHA);
+      btn.bg.setStrokeStyle(held ? 5 : 3, ACCENT[btn.action] ?? INK, 1);
+      btn.bg.setScale(held ? 0.94 : 1);
       drawTouchIcon(btn.icon, btn.x, btn.y, btn.iconKind, held ? INK_DOWN : INK, btn.scale);
       this.input.setVirtual(btn.action, held);
     }
@@ -226,7 +236,9 @@ export class TouchControls {
     move.dir = dir;
     for (const arrow of move.arrows) {
       const on = arrow.dir === dir;
-      arrow.bg.setFillStyle(on ? INK : 0x1b1a2e, on ? ALPHA_DOWN : ALPHA);
+      arrow.bg.setFillStyle(on ? ACCENT.move : 0x1b1a2e, on ? ALPHA_DOWN : ALPHA);
+      arrow.bg.setStrokeStyle(on ? 5 : 3, ACCENT.move, 1);
+      arrow.bg.setScale(on ? 0.94 : 1);
       drawTouchIcon(arrow.icon, arrow.x, move.place.y, arrow.dir < 0 ? 'left' : 'right', on ? INK_DOWN : INK, move.place.scale);
     }
   }

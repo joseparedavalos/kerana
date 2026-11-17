@@ -154,18 +154,75 @@ export function armFullscreenOnTouch(): void {
 type FullscreenRoot = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
 type LockableOrientation = ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
 
-async function enterFullscreen(): Promise<void> {
-  try {
-    const doc = document as Document & { webkitFullscreenElement?: Element | null };
-    if (doc.fullscreenElement || doc.webkitFullscreenElement) return;
-    const root = document.documentElement as FullscreenRoot;
-    if (root.requestFullscreen) await root.requestFullscreen({ navigationUI: 'hide' });
-    else if (root.webkitRequestFullscreen) await root.webkitRequestFullscreen();
-    else return;
-    // Solo se puede fijar la orientación estando en pantalla completa, y no en todos los navegadores.
-    const orientation = window.screen?.orientation as LockableOrientation | undefined;
-    if (orientation?.lock) await orientation.lock('landscape');
-  } catch {
-    // El navegador no lo permite: se sigue jugando en la ventana.
+// iPhone Safari no tiene requestFullscreen para elementos que no son video: el pedido falla en silencio.
+// Ahí se usa una pantalla completa por CSS (posición fija a todo el viewport) que es lo más cerca que se puede.
+const PSEUDO_CLASS = 'kerana-pseudo-fullscreen';
+
+function supportsFullscreen(): boolean {
+  const doc = document as Document & { webkitFullscreenEnabled?: boolean };
+  return doc.fullscreenEnabled === true || doc.webkitFullscreenEnabled === true;
+}
+
+function isFullscreen(): boolean {
+  const doc = document as Document & { webkitFullscreenElement?: Element | null };
+  return Boolean(doc.fullscreenElement || doc.webkitFullscreenElement || document.documentElement.classList.contains(PSEUDO_CLASS));
+}
+
+function setPseudo(on: boolean): void {
+  document.documentElement.classList.toggle(PSEUDO_CLASS, on);
+  if (!document.getElementById('kerana-pseudo-style')) {
+    const style = document.createElement('style');
+    style.id = 'kerana-pseudo-style';
+    style.textContent =
+      `.${PSEUDO_CLASS}, .${PSEUDO_CLASS} body { position: fixed; inset: 0; width: 100%; height: 100dvh; overflow: hidden; }` +
+      `.${PSEUDO_CLASS} #game, .${PSEUDO_CLASS} canvas { width: 100%; height: 100%; }`;
+    document.head.appendChild(style);
   }
+  // Empuja la barra del navegador fuera de la vista en horizontal.
+  window.scrollTo(0, 1);
+}
+
+async function enterFullscreen(): Promise<void> {
+  if (isFullscreen()) {
+    exitFullscreen();
+    return;
+  }
+  const root = document.documentElement as FullscreenRoot;
+  try {
+    if (supportsFullscreen()) {
+      if (root.requestFullscreen) await root.requestFullscreen({ navigationUI: 'hide' });
+      else if (root.webkitRequestFullscreen) await root.webkitRequestFullscreen();
+      const orientation = window.screen?.orientation as LockableOrientation | undefined;
+      if (orientation?.lock) await orientation.lock('landscape');
+      return;
+    }
+  } catch {
+    // Sigue al respaldo.
+  }
+  setPseudo(true);
+}
+
+function exitFullscreen(): void {
+  const doc = document as Document & { webkitExitFullscreen?: () => Promise<void> | void };
+  if (doc.fullscreenElement && doc.exitFullscreen) void doc.exitFullscreen();
+  else if (doc.webkitExitFullscreen) void doc.webkitExitFullscreen();
+  setPseudo(false);
+}
+
+/**
+ * Botón visible de pantalla completa en táctil (S90 no alcanzaba: en iPhone el pedido automático falla y no había
+ * forma de reintentar). Toca para entrar, toca de nuevo para salir.
+ */
+export function installFullscreenButton(): void {
+  if (!isTouchScreen() || document.getElementById('kerana-fullscreen')) return;
+  const btn = document.createElement('button');
+  btn.id = 'kerana-fullscreen';
+  btn.type = 'button';
+  btn.textContent = '⛶';
+  btn.setAttribute('aria-label', 'Pantalla completa');
+  btn.style.cssText =
+    'position:fixed;top:8px;left:8px;z-index:900;width:40px;height:40px;border-radius:20px;border:2px solid #f2eee3;' +
+    'background:rgba(27,26,46,0.6);color:#f2eee3;font-size:20px;line-height:1;touch-action:manipulation;';
+  btn.addEventListener('click', () => void enterFullscreen());
+  document.body.appendChild(btn);
 }

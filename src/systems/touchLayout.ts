@@ -18,15 +18,15 @@ export type TouchLayout = Record<TouchButtonId, TouchButtonPlace>;
 
 // `move` es el diámetro de cada flecha.
 const BASE_SIZE: Record<TouchButtonId, number> = {
-  move: 44,
-  jump: 52,
-  attack: 42,
-  dash: 42,
-  pause: 22,
+  move: 64,
+  jump: 78,
+  attack: 62,
+  dash: 58,
+  pause: 26,
 };
 
 const MIN_SCALE = 0.7;
-const MAX_SCALE = 1.7;
+const MAX_SCALE = 2.2;
 
 export function touchButtonSize(id: TouchButtonId): number {
   return BASE_SIZE[id];
@@ -61,11 +61,11 @@ export function moveDirection(place: TouchButtonPlace, x: number): -1 | 0 | 1 {
 
 /** Posiciones de fábrica. La pausa queda chica, en la esquina, sin tapar el juego. */
 export function defaultTouchLayout(): TouchLayout {
-  const edge = 14;
+  const edge = 24;
   const move = BASE_SIZE.move;
   const jump = BASE_SIZE.jump;
   const action = BASE_SIZE.attack;
-  const gap = 10;
+  const gap = 18;
   const moveY = VIEW.height - edge - move / 2;
   const jumpX = VIEW.width - edge - jump / 2;
   const jumpY = VIEW.height - edge - jump / 2;
