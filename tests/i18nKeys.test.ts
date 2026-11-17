@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { en } from '../src/i18n/en';
+import { pt } from '../src/i18n/pt';
 import { es } from '../src/i18n/es';
 import { langFromBrowser, langFromUrl } from '../src/i18n/lang';
 
@@ -50,6 +51,12 @@ describe('i18n: inglés', () => {
     for (const [key, text] of Object.entries(es)) expect(markers(table[key] ?? ''), key).toEqual(markers(text));
   });
 
+  it('pt.ts tiene las mismas claves y marcadores que es.ts', () => {
+    expect(Object.keys(pt).sort()).toEqual(Object.keys(es).sort());
+    const table: Record<string, string> = pt;
+    for (const [key, text] of Object.entries(es)) expect(markers(table[key] ?? ''), key).toEqual(markers(text));
+  });
+
   it('elige el idioma por URL y por navegador', () => {
     expect(langFromUrl('?lang=en')).toBe('en');
     expect(langFromUrl('?debug=1&lang=ES')).toBe('es');
@@ -58,7 +65,8 @@ describe('i18n: inglés', () => {
     expect(langFromBrowser('es-PY')).toBe('es');
     expect(langFromBrowser('gn')).toBe('es');
     expect(langFromBrowser('en-US')).toBe('en');
-    expect(langFromBrowser('pt-BR')).toBe('en');
+    expect(langFromUrl('?lang=pt')).toBe('pt');
+    expect(langFromBrowser('pt-BR')).toBe('pt');
     expect(langFromBrowser(undefined)).toBe('en');
   });
 });
