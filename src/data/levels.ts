@@ -137,7 +137,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l6',
     mapSource: 'ascii',
     biome: 'montana',
-    backgrounds: { far: 'bg_l6_far', rain: true },
+    // Sombras de nubes que cruzan despacio (S98, el mismo sistema que l3) sobre la franja de nubes;
+    // pájaros altos y chicos. No mueve el dibujo: es una capa encima, se saca sacando skyLife.
+    backgrounds: { far: 'bg_l6_far', rain: true, skyLife: { birds: [60, 150], shadows: [120, 340] } },
     terrainShell: 3,
     // S78: dentro del cerro en zigzag, la baldosa de montana rodeada por los cuatro lados, al mismo tono que el
     // terreno (sin tinte ni degradado), en la grilla de 16 px: no se ve el cielo de tormenta adentro.
