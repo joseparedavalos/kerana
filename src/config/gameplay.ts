@@ -951,15 +951,25 @@ export const GAMEPLAY = {
    * Cascada (S31, el salto de l6): decoración por código delante de Kerana, sin choque. Detrás puede haber una cornisa.
    */
   waterfall: {
+    /** Color del cuerpo (las capas lo tiñen). */
     color: 0xcfe8f0,
-    alpha: 0.5,
-    /** Hilos de agua que caen (cantidad por tile de ancho, velocidad en px/s y largo en px). */
-    streaksPerTile: 3,
-    streakSpeed: 150,
-    streakLength: 22,
-    streakAlpha: 0.75,
-    /** Espuma al pie (partículas por segundo). */
-    foamPerSec: 14,
+    /** Capa de atrás: opacidad y velocidad de caída (px/s). Más lenta y más opaca: el grosor. */
+    backAlpha: 0.55,
+    backSpeed: 70,
+    /** Capa de adelante: más rápida y más clara, para que se lean dos velocidades. */
+    frontAlpha: 0.4,
+    frontSpeed: 130,
+    /** Bordes brillantes (px de ancho y opacidad): enmarcan el chorro. */
+    edgeWidth: 2,
+    edgeAlpha: 0.5,
+    /** Hilos que caen adelante (cantidad por tile de ancho, velocidad en px/s, largo en px). */
+    streaksPerTile: 6,
+    streakSpeed: 200,
+    streakLength: 16,
+    streakAlpha: 0.85,
+    /** Espuma al pie (partículas por segundo) y rocío que sube. */
+    foamPerSec: 22,
+    mistPerSec: 9,
   },
 
   /** Vacas sueltas de Capiatá (extra del nivel 4): caminan despacio, mugen y sirven de plataforma. */
