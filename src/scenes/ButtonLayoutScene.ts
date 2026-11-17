@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { FONT_FAMILY } from '../config/fonts';
 import { t } from '../i18n';
 import { SaveManager } from '../systems/SaveManager';
-import { drawTouchIcon } from '../systems/TouchControls';
 import {
   defaultTouchLayout,
   inMoveZone,
@@ -23,7 +22,7 @@ interface Drawn {
   id: TouchButtonId;
   side: -1 | 0 | 1;
   bg: Phaser.GameObjects.Arc;
-  icon: Phaser.GameObjects.Graphics;
+  icon: Phaser.GameObjects.Image;
 }
 
 // Se arrastran los botones y se les cambia el tamaño. Se guarda al tocar Listo.
@@ -59,7 +58,8 @@ export class ButtonLayoutScene extends Phaser.Scene {
     for (const id of TOUCH_IDS) {
       for (const side of id === 'move' ? ([-1, 1] as const) : ([0] as const)) {
         const bg = this.add.circle(0, 0, 8, 0x1b1a2e, 0.4).setStrokeStyle(1.5, 0xf2eee3, 0.9).setDepth(2);
-        const icon = this.add.graphics().setDepth(3);
+        const iconKey = id === 'move' ? 'ui_icon_left' : `ui_icon_${id}`;
+        const icon = this.add.image(0, 0, this.textures.exists(iconKey) ? iconKey : 'ui_icon_pause').setDepth(3).setTint(0xf2eee3);
         this.drawn.push({ id, side, bg, icon });
       }
     }
@@ -137,8 +137,9 @@ export class ButtonLayoutScene extends Phaser.Scene {
       const selected = item.id === this.selected;
       const x = place.x + item.side * moveArrowOffset(place.scale);
       item.bg.setPosition(x, place.y).setRadius(size / 2).setStrokeStyle(selected ? 2.5 : 1.5, selected ? 0xf2c14e : 0xf2eee3, 0.95);
-      const icon = item.id === 'move' ? (item.side < 0 ? 'left' : 'right') : item.id;
-      drawTouchIcon(item.icon, x, place.y, icon, 0xf2eee3, place.scale);
+      const iconKey = item.id === 'move' ? (item.side < 0 ? 'ui_icon_left' : 'ui_icon_right') : `ui_icon_${item.id}`;
+      if (this.textures.exists(iconKey)) item.icon.setTexture(iconKey);
+      item.icon.setPosition(x, place.y).setDisplaySize(size * 0.52, size * 0.52).setTint(0xf2eee3);
     }
   }
 
