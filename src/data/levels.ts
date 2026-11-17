@@ -137,7 +137,7 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapKey: 'map_l6',
     mapSource: 'ascii',
     biome: 'montana',
-    backgrounds: { far: 'bg_l6_far' },
+    backgrounds: { far: 'bg_l6_far', rain: true },
     terrainShell: 3,
     // S78: dentro del cerro en zigzag, la baldosa de montana rodeada por los cuatro lados, al mismo tono que el
     // terreno (sin tinte ni degradado), en la grilla de 16 px: no se ve el cielo de tormenta adentro.
