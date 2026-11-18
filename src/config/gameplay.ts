@@ -1234,6 +1234,62 @@ export const GAMEPLAY = {
     copyBlinkMs: 90,
     copyAlpha: 0.9,
   },
+  /**
+   * Kurupi corriendo rápido (S104): siluetas que quedan atrás y lo que levantan sus pies, en el 'active' de la
+   * embestida y de la carrera al revés. Solo el dibujo: tiempos, daño, hitbox, dirección y huellas siguen en `kurupi`
+   * y en bosses.ts. Sin Glow ni destellos (con «Destellos: no» se ve igual).
+   */
+  kurupiTrail: {
+    /** Siluetas, como `dashFx`: una cada `everyMs` (la primera al arrancar), a lo sumo `maxGhosts` vivas. */
+    everyMs: 70,
+    maxGhosts: 5,
+    /** Opacidad con la que nace cada silueta; baja a 0 en `fadeMs`. */
+    alpha: 0.45,
+    fadeMs: 280,
+    /**
+     * Degradé de la silueta [arriba, abajo], medido en su hoja (el 10 % más claro de cada familia): el musgo de la
+     * cabeza y la barba (#8c7c1d) y el marrón del pelaje (#7c4a24). Silueta plana (`tintFill`).
+     */
+    tint: [0x8c7c1d, 0x7c4a24],
+    tintFill: true,
+    /** Px que tiene que avanzar desde la silueta anterior para dejar otra: arranca despacio y no se amontonan. */
+    minGapPx: 12,
+    /** Lo que levanta: una patada cada `everyPx` de carrera, solo a más de `minSpeed` px/s; a lo sumo `maxPerFrame`. */
+    kick: {
+      everyPx: 20,
+      minSpeed: 140,
+      maxPerFrame: 2,
+      /** Cada patada levanta un terrón; cada `leafEvery` patadas, también una hoja. */
+      leafEvery: 2,
+      /** Salen de los pies: px detrás del centro (del lado contrario a la carrera) y px sobre el suelo. */
+      backPx: 5,
+      upPx: 3,
+      /** Abanico (± grados) alrededor de atrás y cuánto sube sobre el suelo (grados). */
+      spreadDeg: 14,
+      liftDeg: 62,
+    },
+    /** Al frenar: el último puñado, desde la punta del pie de adelante (`frontPx`) hacia donde corría, bajo y abierto. */
+    brake: { dirt: 6, leaves: 3, frontPx: 9, spreadDeg: 26, liftDeg: 30 },
+    /**
+     * Terrones: velocidad (px/s), gravedad, vida (ms) y cuántos vivos a la vez deja la carrera (`max`; el emisor
+     * admite además los de la frenada). Es `maxAliveParticles`: recicla los muertos (`maxParticles` cuenta también
+     * los muertos y, al llegar, el emisor no larga nunca más).
+     */
+    dirt: { speedMin: 120, speedMax: 200, gravityY: 640, lifespanMin: 360, lifespanMax: 520, max: 18 },
+    /** Hojas: caen más despacio y aletean (cuadros por segundo del aleteo, sin girar el pixel art); `max`, como en los terrones. */
+    leaf: { speedMin: 80, speedMax: 130, gravityY: 170, lifespanMin: 620, lifespanMax: 900, max: 10, flutterFps: 12 },
+    /**
+     * Colores medidos en la arena de l5: la tierra del tileset de selva (#474230, #3e3a2a), el pasto claro de su
+     * borde (#297743) y los helechos y matas del fondo junto al suelo (#688048, #6f7a40 y #586830, de los más claros:
+     * los oscuros no se ven contra la selva).
+     */
+    dirtColors: [0x474230, 0x474230, 0x3e3a2a],
+    leafColors: [0x688048, 0x6f7a40, 0x586830, 0x297743],
+    /** Píxeles de arte por unidad de las hojas y los terrones: los de Kurupi (igual de nítidos que él). */
+    detail: 2,
+    /** Lo que baja más de tantos px bajo el suelo de la arena se apaga (se mete en la tierra, no la atraviesa). */
+    sinkPx: 1,
+  },
   /** Ao Ao (GDD §6.6). Los tiempos de cada ataque están en src/data/bosses.ts. */
   aoAo: {
     width: 44,
