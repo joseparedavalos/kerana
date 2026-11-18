@@ -1036,7 +1036,6 @@ export const GAMEPLAY = {
     dust: [0xc49532, 0xfbd233, 0xfcfedb],
     /** Bocanadas: [ancho, alto] de cada tamaño y cuántas formas por tamaño. */
     puffSizes: [
-      [38, 22],
       [28, 16],
       [18, 11],
     ],
@@ -1044,13 +1043,16 @@ export const GAMEPLAY = {
     /** Escalones de alfa del tramado dentro de cada bocanada (0..1) y dónde empiezan (densidad 0..1). */
     puffAlphas: [0.3, 0.5, 0.72],
     puffSteps: [0.1, 0.32, 0.58],
-    /** Grilla de la capa de atrás y del velo (unidades entre bocanadas) y el sacudón de cada una. */
-    backGap: [15, 10],
-    frontGap: [24, 16],
+    /**
+     * Grilla de la capa de atrás y del velo (unidades entre bocanadas) y el sacudón de cada una. Lo que cuesta es cuánto
+     * se superponen (cada píxel translúcido se pinta una vez por bocanada): S103 la abrió para no bajar los FPS.
+     */
+    backGap: [30, 20],
+    frontGap: [40, 26],
     jitter: 3.5,
     /** Alfa máximo de cada capa (al centro de la zona) y lo que queda en el borde. */
-    backAlpha: 0.56,
-    frontAlpha: 0.2,
+    backAlpha: 0.5,
+    frontAlpha: 0.26,
     edgeAlpha: 0.08,
     /**
      * Borde: la densidad sube de 0 (`edgeOut` afuera de la zona) a 1 (`edgeIn` adentro); el centro suma `centerBoost`.
@@ -1059,6 +1061,19 @@ export const GAMEPLAY = {
     edgeOut: 4,
     edgeIn: 10,
     centerBoost: 0.3,
+    /**
+     * Masa: la capa continua de cada zona, pintada una vez (densidad de la zona cortada en jirones). `massCell`: tamaño
+     * de los jirones (unidades); `massWisps`: cuánto los corta el ruido (0 liso, 1 jirones sueltos); `massDensity`: su
+     * peso; `massAlpha`: su opacidad (respira con el resto).
+     */
+    massCell: 14,
+    massWisps: 0.65,
+    massDensity: 0.95,
+    massAlpha: 0.75,
+    /** La masa se mece de lado (unidades). */
+    massSway: 1.5,
+    /** Las bocanadas de atrás van solo donde la densidad pasa de esto (adentro: el borde lo hace la masa). */
+    backMinDensity: 0.4,
     /** Remolino: radio (unidades) y vuelta (ms) de cada bocanada; aplastado en vertical. */
     swirlRadius: [2, 5.5],
     swirlMs: [7000, 13000],
@@ -1152,7 +1167,7 @@ export const GAMEPLAY = {
       wobble: 1.2,
       wobbleMs: 260,
       /** Halo: radio (unidades), alfa y cuánto crece al destellar. */
-      haloRadius: 11,
+      haloRadius: 9,
       haloAlpha: 0.5,
       haloFlareScale: 1.3,
       /** Al salir: del extremo del bastón al camino que daña en este tiempo (ms). */
@@ -1166,9 +1181,9 @@ export const GAMEPLAY = {
      * Van por distancia y no por cuadros, así la cola mide lo mismo a cualquier FPS.
      */
     trail: {
-      gap: 3.5,
+      gap: 5,
       pattern: [2, 1, 1],
-      lifeMs: 320,
+      lifeMs: 300,
       drift: 4,
       fall: 14,
       ghosts: [
@@ -1179,9 +1194,9 @@ export const GAMEPLAY = {
     /** Estallido: motas, velocidad (u/s), vida, frenado por segundo, caída y el destello (vida y escala). */
     burst: { motes: 8, speed: [26, 62], lifeMs: 480, drag: 2.6, fall: 46, flashMs: 160, flashScale: [0.5, 1.4] },
     /** Aviso: anillos de motas que se cierran sobre la punta (motas por anillo, radio, viaje, uno cada) y el brillo que crece. */
-    gather: { motes: 8, radius: 26, travelMs: 300, everyMs: 110, glowScale: [0.2, 1.1], glowAlpha: [0.2, 0.9], starScale: [0.25, 0.8] },
+    gather: { motes: 6, radius: 26, travelMs: 300, everyMs: 130, glowScale: [0.2, 1.1], glowAlpha: [0.2, 0.9], starScale: [0.25, 0.8] },
     /** Motas en vuelo a la vez (pool). */
-    motePool: 140,
+    motePool: 96,
   },
   /** Kurupi (GDD §6.5, pies al revés). Los tiempos de cada ataque están en src/data/bosses.ts. */
   kurupi: {

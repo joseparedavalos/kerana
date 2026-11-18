@@ -23,7 +23,8 @@ export const STAR_ATLAS = 'jasy_star_fx';
 export { STAFF_FRAME };
 const INV_K = 1 / PAINT_K;
 const FRAME_DEG = 90 / STAR.frames;
-const DEPTH = { trail: 6.8, halo: 6.9, star: 7, gatherMote: 7.05, gatherGlow: 7.1, gatherStar: 7.15, flash: 7.2 };
+// Una profundidad fija por pool: cambiarla al vuelo obliga a Phaser a reordenar toda la escena en ese cuadro.
+const DEPTH = { mote: 6.8, ghost: 6.85, halo: 6.9, star: 7, gatherGlow: 7.1, gatherStar: 7.15, flash: 7.2 };
 
 interface StarView {
   star: Phaser.GameObjects.Image;
@@ -93,11 +94,11 @@ export class JasyStarFx {
     for (let i = 0; i < stars; i++) {
       const halo = scene.add.image(0, 0, STAR_ATLAS, HALO_FRAME).setDepth(DEPTH.halo).setTint(LOOK.halo).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
       const star = scene.add.image(0, 0, STAR_ATLAS, starFrame(0, false)).setDepth(DEPTH.star).setScale(INV_K).setVisible(false);
-      const ghosts = LOOK.trail.ghosts.map((g) => scene.add.image(0, 0, STAR_ATLAS, starFrame(0, false)).setDepth(DEPTH.trail + 0.05).setScale(INV_K * g.scale).setAlpha(g.alpha).setVisible(false));
+      const ghosts = LOOK.trail.ghosts.map((g) => scene.add.image(0, 0, STAR_ATLAS, starFrame(0, false)).setDepth(DEPTH.ghost).setScale(INV_K * g.scale).setAlpha(g.alpha).setVisible(false));
       this.views.push({ star, halo, ghosts, on: false, ageMs: 0, seed: i * 0.37, dist: 0, count: 0, offX: 0, offY: 0, x: 0, y: 0 });
     }
     for (let i = 0; i < LOOK.motePool; i++) {
-      const img = scene.add.image(0, 0, STAR_ATLAS, moteFrame('hot')).setScale(INV_K).setVisible(false);
+      const img = scene.add.image(0, 0, STAR_ATLAS, moteFrame('hot')).setDepth(DEPTH.mote).setScale(INV_K).setVisible(false);
       this.motes.push({ img, on: false, mode: 'trail', big: false, ageMs: 0, lifeMs: 1, x: 0, y: 0, vx: 0, vy: 0, angle: 0, r0: 0 });
     }
     for (let i = 0; i < 4; i++) {
@@ -262,7 +263,7 @@ export class JasyStarFx {
       m.y = y;
       m.vx = 0;
       m.vy = 0;
-      m.img.setDepth(mode === 'gather' ? DEPTH.gatherMote : DEPTH.trail).setPosition(x, y).setAlpha(1).setVisible(true);
+      m.img.setPosition(x, y).setAlpha(1).setVisible(true);
       return m;
     }
     return null;

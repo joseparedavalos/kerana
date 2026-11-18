@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GAMEPLAY } from '../src/config/gameplay';
-import { fogAtlasFrames, fogDensity, fogDust, fogPuffs, paintPuff, type Zone } from '../src/entities/hazards/sleepFogPaint';
+import { fogAtlasFrames, fogDensity, fogDust, fogPuffs, MASS_PAD, paintMass, paintPuff, type Zone } from '../src/entities/hazards/sleepFogPaint';
 import { alphaAt, colorAt } from '../src/systems/pixelArt';
 
 // S103: la bruma de la siesta (solo el dibujo de las zonas SleepFog; la zona y el sueño no cambian).
@@ -54,15 +54,35 @@ describe('bruma de la siesta', () => {
     }
   });
 
-  it('al centro de la zona las bocanadas pesan más que en el borde', () => {
+  it('al centro de la zona las bocanadas pesan más que en el borde; las de atrás, solo adentro', () => {
     const z = L4[0];
-    const puffs = fogPuffs(z).filter((p) => !p.front);
-    const mid = puffs.filter((p) => Math.abs(p.x - (z.x + z.width / 2)) < z.width / 4);
-    const edge = puffs.filter((p) => p.x < z.x + 6 || p.x > z.x + z.width - 6);
-    const mean = (list: typeof puffs) => list.reduce((s, p) => s + p.alpha, 0) / list.length;
+    const front = fogPuffs(z).filter((p) => p.front);
+    const mid = front.filter((p) => Math.abs(p.x - (z.x + z.width / 2)) < z.width / 4);
+    const edge = front.filter((p) => p.x < z.x + 8 || p.x > z.x + z.width - 8);
+    const mean = (list: typeof front) => list.reduce((s, p) => s + p.alpha, 0) / list.length;
     expect(mid.length).toBeGreaterThan(0);
     expect(edge.length).toBeGreaterThan(0);
-    expect(mean(mid)).toBeGreaterThan(mean(edge) * 1.5);
+    expect(mean(mid)).toBeGreaterThan(mean(edge) * 1.3);
+    for (const p of fogPuffs(z).filter((q) => !q.front)) expect(fogDensity(z, p.x, p.y)).toBeGreaterThanOrEqual(LOOK.backMinDensity);
+  });
+
+  it('la masa cubre la zona, densa al centro y transparente en las esquinas de arriba', () => {
+    for (const z of L4) {
+      const mass = paintMass(z);
+      const m = mass.px;
+      // Recortada a lo que se ve, dentro de la zona más su margen.
+      expect(mass.x).toBeGreaterThanOrEqual(z.x - MASS_PAD);
+      expect(mass.x + m.width).toBeLessThanOrEqual(z.x + z.width + MASS_PAD);
+      expect(mass.y + m.height).toBeLessThanOrEqual(z.y + z.height);
+      expect(alphaAt(m, 0, 0)).toBe(0);
+      expect(alphaAt(m, m.width - 1, 0)).toBe(0);
+      let inner = 0;
+      let n = 0;
+      for (let y = Math.floor(m.height * 0.55); y < m.height - 2; y++) {
+        for (let x = Math.floor(m.width * 0.35); x < m.width * 0.65; x++, n++) if (alphaAt(m, x, y)) inner++;
+      }
+      expect(inner / n).toBeGreaterThan(0.85);
+    }
   });
 
   it('cada bocanada es pixel art: escalones de alfa tramados y la paleta lavanda', () => {

@@ -2,10 +2,23 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { uploadAtlas } from '../../systems/pixelArt';
 import { SaveManager } from '../../systems/SaveManager';
-import { DUST_FRAMES, DUST_K, type FogDust, type FogPuff, fogAtlasFrames, fogDensity, fogDust, fogPuffs, puffFrame, type Zone } from './sleepFogPaint';
+import {
+  DUST_FRAMES,
+  DUST_K,
+  type FogDust,
+  type FogPuff,
+  fogAtlasFrames,
+  fogDensity,
+  fogDust,
+  fogPuffs,
+  paintMass,
+  puffFrame,
+  type Zone,
+} from './sleepFogPaint';
 
-// Cómo se ve una zona de niebla del sueño (S103): bocanadas que se arremolinan despacio y respiran, más densas al
-// centro, y polvo dorado lento adentro. Solo el dibujo: la zona y el sueño los maneja LevelScene. Se actualiza solo
+// Cómo se ve una zona de niebla del sueño (S103): una masa continua pintada una vez para la zona, bocanadas que se
+// arremolinan despacio encima y un velo tenue delante, todo respirando, más denso al centro, y polvo dorado lento
+// adentro. Lo que cuesta es cuánto se superponen las capas translúcidas: la masa es una sola. Solo el dibujo: la zona y el sueño los maneja LevelScene. Se actualiza solo
 // cuando la zona está en cámara; no crea nada por cuadro ni usa Math.random.
 const LOOK = GAMEPLAY.sleepFogLook;
 const ATLAS = 'siesta_fog';
@@ -18,6 +31,9 @@ export class SleepFogLook {
   private readonly puffImgs: Phaser.GameObjects.Image[] = [];
   private readonly dust: FogDust[];
   private readonly dustImgs: Phaser.GameObjects.Image[] = [];
+  private readonly mass: Phaser.GameObjects.Image;
+  private readonly massX: number;
+  private readonly massY: number;
   private readonly bounds: Phaser.Geom.Rectangle;
   private clockMs = 0;
   private shown = true;
@@ -28,8 +44,15 @@ export class SleepFogLook {
   ) {
     uploadAtlas(scene, ATLAS, fogAtlasFrames());
     this.bounds = new Phaser.Geom.Rectangle(zone.x - CULL_MARGIN, zone.y - CULL_MARGIN, zone.width + CULL_MARGIN * 2, zone.height + CULL_MARGIN * 2);
+    // La masa de esta zona (cada zona tiene la suya: el tamaño y los jirones cambian).
+    const massKey = `${ATLAS}_mass_${Math.round(zone.x)}_${Math.round(zone.y)}`;
+    const mass = paintMass(zone);
+    uploadAtlas(scene, massKey, [{ name: 'mass', px: mass.px }]);
+    this.massX = mass.x + mass.px.width / 2;
+    this.massY = mass.y + mass.px.height / 2;
+    this.mass = scene.add.image(this.massX, this.massY, massKey, 'mass').setDepth(LOOK.backDepth).setAlpha(LOOK.massAlpha);
     this.puffs = fogPuffs(zone);
-    // De atrás para adelante: primero la capa de atrás, después el velo.
+    // De atrás para adelante: la masa, las bocanadas de atrás y después el velo.
     for (const p of this.puffs) {
       const img = scene.add
         .image(p.x, p.y, ATLAS, puffFrame(p.size, p.shape))
@@ -51,11 +74,17 @@ export class SleepFogLook {
     const visible = !view || Phaser.Geom.Rectangle.Overlaps(view, this.bounds);
     if (visible !== this.shown) {
       this.shown = visible;
+      this.mass.setVisible(visible);
       for (const img of this.puffImgs) img.setVisible(visible);
       for (const img of this.dustImgs) img.setVisible(visible);
     }
     if (!visible) return;
     const t = this.clockMs;
+    // La masa respira con todo y se mece apenas de lado.
+    const mb = 0.5 + 0.5 * Math.sin((TAU * t) / LOOK.breathMs);
+    this.mass
+      .setPosition(this.massX + Math.sin((TAU * t) / (LOOK.breathMs * 2.7)) * LOOK.massSway, this.massY - LOOK.breathRise * mb * 0.5)
+      .setAlpha(LOOK.massAlpha * (1 - LOOK.breathAlpha * 0.6 * (1 - mb)));
     for (let i = 0; i < this.puffs.length; i++) {
       const p = this.puffs[i];
       const a = p.phase + (p.dir * TAU * t) / p.swirlMs;

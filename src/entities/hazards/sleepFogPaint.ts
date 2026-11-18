@@ -1,5 +1,5 @@
 import { GAMEPLAY } from '../../config/gameplay';
-import { type AtlasFrame, bayer, clamp, hash, makePixels, type Pixels, put, smoothstep } from '../../systems/pixelArt';
+import { type AtlasFrame, alphaAt, bayer, clamp, hash, makePixels, type Pixels, put, smoothstep } from '../../systems/pixelArt';
 
 // Bruma de la siesta (S103): pintor de las bocanadas y disposición dentro de cada zona `SleepFog`. Lógica pura, sin
 // Phaser: SleepFogLook.ts sube el atlas una vez y mueve las bocanadas. Las bocanadas van a 1 píxel por unidad (como
@@ -60,6 +60,7 @@ export function paintPuff(size: number, shape: number): Pixels {
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const d = dens(x + 0.5, y + 0.5);
+      if (d < 0.03) continue;
       const v = d + bayer(x, y) * 0.2;
       let level = -1;
       for (let i = 0; i < steps.length; i++) if (v >= steps[i]) level = i;
@@ -73,7 +74,32 @@ export function paintPuff(size: number, shape: number): Pixels {
       put(p, x, y, color, Math.round(alphas[level] * 255));
     }
   }
-  return p;
+  return trim(p);
+}
+
+/** Recorta el margen transparente (también se pinta, y cuesta): la caja justa de lo que se ve y dónde empezaba. */
+function trimBox(p: Pixels): { px: Pixels; x0: number; y0: number } {
+  let x0 = p.width;
+  let y0 = p.height;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < p.height; y++) {
+    for (let x = 0; x < p.width; x++) {
+      if (!alphaAt(p, x, y)) continue;
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      y0 = Math.min(y0, y);
+      y1 = Math.max(y1, y);
+    }
+  }
+  if (x1 < 0) return { px: p, x0: 0, y0: 0 };
+  const out = makePixels(x1 - x0 + 1, y1 - y0 + 1);
+  for (let y = 0; y < out.height; y++) out.data.set(p.data.subarray(((y + y0) * p.width + x0) * 4, ((y + y0) * p.width + x1 + 1) * 4), y * out.width * 4);
+  return { px: out, x0, y0 };
+}
+
+function trim(p: Pixels): Pixels {
+  return trimBox(p).px;
 }
 
 /** Motas de polvo con sol (a DUST_K px por unidad). */
@@ -118,6 +144,71 @@ export function fogDensity(zone: Zone, x: number, y: number): number {
   const ny = (y - (zone.y + zone.height / 2)) / (zone.height / 2);
   const center = 1 - Math.min(1, nx * nx + ny * ny);
   return c * (1 - LOOK.centerBoost + LOOK.centerBoost * center);
+}
+
+/** Ruido de valor suave (0..1) con celdas de `cell` unidades: jirones de la masa. */
+function valueNoise(x: number, y: number, cell: number, seed: number): number {
+  const gx = x / cell;
+  const gy = y / cell;
+  const ix = Math.floor(gx);
+  const iy = Math.floor(gy);
+  const fx = gx - ix;
+  const fy = gy - iy;
+  const sx = fx * fx * (3 - 2 * fx);
+  const sy = fy * fy * (3 - 2 * fy);
+  const a = hash(ix + seed, iy);
+  const b = hash(ix + 1 + seed, iy);
+  const c = hash(ix + seed, iy + 1);
+  const d = hash(ix + 1 + seed, iy + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+
+/** Margen (unidades) de la masa alrededor de la zona: hasta donde llega la densidad (`edgeOut`) y un poco más. */
+export const MASS_PAD = 6;
+
+/**
+ * Masa de la bruma de una zona, pintada una vez: la densidad de la zona (densa al centro, el borde tramado, apoyada
+ * en el piso) cortada en jirones por un ruido estirado en horizontal, con la luz del sol arriba a la izquierda. Es la
+ * capa continua: las bocanadas que se mueven van encima. Se pinta sobre la zona más `MASS_PAD` a los lados y arriba y
+ * se recorta a lo que se ve; `x` e `y`: dónde queda su esquina de arriba a la izquierda, en el mundo.
+ */
+export function paintMass(zone: Zone): { px: Pixels; x: number; y: number } {
+  const w = Math.ceil(zone.width + MASS_PAD * 2);
+  const h = Math.ceil(zone.height + MASS_PAD);
+  const p = makePixels(w, h);
+  const seed = zoneSeed(zone) * 10;
+  const steps = LOOK.puffSteps;
+  const alphas = LOOK.puffAlphas;
+  const pal = LOOK.palette;
+  const right = zone.x + zone.width;
+  const dens = (x: number, y: number): number => {
+    const wx = zone.x - MASS_PAD + x;
+    const wy = zone.y - MASS_PAD + y;
+    // Silueta: la cresta ondula y baja hacia los costados (un montículo); los costados se deshilachan.
+    const side = Math.min(wx - zone.x, right - wx);
+    const crest = zone.y + 3 + (valueNoise(wx, 0, 17, seed + 3) - 0.5) * 12 + (1 - smoothstep(0, zone.width * 0.45, side)) * 9;
+    const vert = smoothstep(crest - 3, crest + 9, wy);
+    const hor = smoothstep(-LOOK.edgeOut, LOOK.edgeIn, side + (valueNoise(0, wy, 9, seed + 7) - 0.5) * 9);
+    // Jirones adentro: dos octavas de ruido, un poco estiradas en horizontal.
+    const n = 0.6 * valueNoise(wx, wy * 1.7, LOOK.massCell, seed) + 0.4 * valueNoise(wx, wy * 1.7, LOOK.massCell / 2.3, seed + 31);
+    return vert * hor * (1 - LOOK.massWisps + LOOK.massWisps * n * 1.5);
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const d = dens(x + 0.5, y + 0.5) * LOOK.massDensity;
+      if (d < 0.03) continue; // sin densidad no hay tramado (si no, un punteado cubre todo el rectángulo)
+      const v = d + bayer(x, y) * 0.22;
+      let level = -1;
+      for (let i = 0; i < steps.length; i++) if (v >= steps[i]) level = i;
+      if (level < 0) continue;
+      const toward = dens(x + 2.5, y + 2.5) - dens(x - 1.5, y - 1.5);
+      const lit = 0.55 + toward * 1.2 + (0.5 - y / h) * 0.25 + bayer(x + 1, y + 2) * 0.16;
+      const color = lit > 0.98 && level <= 1 ? LOOK.rim : pal[clamp(Math.floor(lit * pal.length), 0, pal.length - 1)];
+      put(p, x, y, color, Math.round(alphas[level] * 255));
+    }
+  }
+  const t = trimBox(p);
+  return { px: t.px, x: zone.x - MASS_PAD + t.x0, y: zone.y - MASS_PAD + t.y0 };
 }
 
 export interface FogPuff {
@@ -170,14 +261,15 @@ export function fogPuffs(zone: Zone): FogPuff[] {
         const jy = (hash(seed + k, 4) - 0.5) * 2 * LOOK.jitter * (1 + 1.6 * crest);
         const px = x + jx;
         // El velo no baja sobre la calle (va delante de los tiles); la capa de atrás sí, la tapa el piso.
-        const py = Math.min(y + jy, front ? bottom - LOOK.puffSizes[1][1] * 0.35 : bottom - 2);
+        const py = Math.min(y + jy, front ? bottom - LOOK.puffSizes[0][1] * 0.35 : bottom - 2);
         const d = fogDensity(zone, px, py);
-        if (d < 0.04) continue;
-        const size = d > 0.7 ? (hash(seed + k, 5) < 0.6 ? 0 : 1) : d > 0.35 ? 1 : 2;
+        if (d < (front ? 0.04 : LOOK.backMinDensity)) continue;
+        // Encima de la masa alcanzan bocanadas medianas y chicas (las grandes pintaban mucho y se separaban).
+        const size = front || d > 0.7 ? 0 : 1;
         out.push({
           x: px,
           y: py,
-          size: front ? Math.max(1, size) : size,
+          size,
           shape: Math.floor(hash(seed + k, 6) * LOOK.shapesPerSize),
           front,
           alpha: LOOK.edgeAlpha + (maxA - LOOK.edgeAlpha) * d,
