@@ -70,7 +70,12 @@ export function patternCenters(): number[] {
   return out;
 }
 
-export type SkinVariant = 'front' | 'back' | 'glow' | 'mask';
+/**
+ * Variantes de la tira. De perfil (`front`, `back`, `glow`): el lomo arriba y el vientre abajo, para el cuello, el vuelo
+ * y el suelo. De lomo (`dorsal`, `dorsalBack`, `dorsalGlow`): los rombos al centro y sin vientre, para las vueltas del
+ * enroscado (se ve el lomo; el vientre abraza la corteza). `mask`: la silueta.
+ */
+export type SkinVariant = 'front' | 'back' | 'glow' | 'mask' | 'dorsal' | 'dorsalBack' | 'dorsalGlow';
 
 /** Tamaño de la tira del cuerpo en píxeles (todas las variantes miden lo mismo: comparten los UV). */
 export function skinSize(): { width: number; height: number } {
@@ -105,6 +110,11 @@ export function paintSkin(variant: SkinVariant): Pixels {
   const cream = PAL.cream;
   const radius = new Float32Array(width);
   for (let x = 0; x < width; x++) radius[x] = bodyRadius((x + 0.5) / K / L);
+  const dorsal = variant === 'dorsal' || variant === 'dorsalBack' || variant === 'dorsalGlow';
+  const dark = variant === 'back' || variant === 'dorsalBack';
+  const glow = variant === 'glow' || variant === 'dorsalGlow';
+  const pCenter = dorsal ? 0 : P.center;
+  const pHalf = dorsal ? P.dorsalHalf : P.halfHeight;
   const inside = (x: number, y: number): boolean => {
     if (x < 0 || x >= width) return false;
     const r = radius[x];
@@ -135,34 +145,39 @@ export function paintSkin(variant: SkinVariant): Pixels {
         const c = centers[near];
         const rc = bodyRadius(c / L);
         const a = P.lengthK * rc + P.lengthAdd;
-        m = Math.abs(s - c) / a + Math.abs(d - P.center) / P.halfHeight;
+        m = Math.abs(s - c) / a + Math.abs(d - pCenter) / pHalf;
         // Mancha del flanco entre dos rombos.
         const next = s >= c ? centers[near + 1] : centers[near - 1];
         if (next !== undefined) {
           const mid = (c + next) / 2;
           const ab = (P.lengthK * rc + P.lengthAdd) * P.blotch.size;
-          blotch = Math.abs(s - mid) / ab + Math.abs(d - P.blotch.center) / (P.halfHeight * P.blotch.size);
+          // De lomo, una mancha a cada flanco.
+          const bd = dorsal ? Math.abs(Math.abs(d) - P.blotch.dorsal) : Math.abs(d - P.blotch.center);
+          blotch = Math.abs(s - mid) / ab + bd / (P.halfHeight * P.blotch.size);
         }
       }
-      if (variant === 'glow') {
+      if (glow) {
+        // El centro de cada rombo brilla como una gema; el borde oscuro no (así el brillo no lava el dibujo).
         let a = 0;
-        if (m <= 0.8) a = 255;
-        else if (m <= 1) a = 150;
-        else if (blotch <= 1) a = 110;
-        else if (d < -0.1) a = 70;
+        if (m <= 0.42) a = 255;
+        else if (m <= 0.7) a = bayer(x, y) > -0.2 ? 200 : 120;
+        else if (m <= 0.86) a = 60;
+        else if (m <= 1) a = 0;
+        else if (blotch <= 0.7) a = 120;
+        else if (dorsal ? Math.abs(d) < 0.4 : d < -0.3 && d > -0.75) a = 30;
         if (edgeUp || edgeDown || edgeEnd) a = 0;
         if (a > 0) put(p, x, y, 0xffffff, a);
         continue;
       }
       let li = lightIndex(d, bayer(x, y));
-      if (variant === 'back') li = Math.round(li * LOOK.back.light);
+      if (dark) li = Math.round(li * LOOK.back.light);
       let color: number;
       if (edgeDown || edgeEnd) {
         color = PAL.outline;
       } else if (edgeUp) {
         // Contorno selectivo: arriba, donde da la luz, el borde es rojo oscuro y no negro.
         color = li >= 3 ? skin[1] : PAL.outline;
-      } else if (d >= bellyStart) {
+      } else if (!dorsal && d >= bellyStart) {
         // Vientre: placas claras con la junta oscura; justo en el borde con el flanco, una línea oscura (como la cabeza).
         const top = d < bellyStart + 1.5 / (K * r);
         const plate = ((s / LOOK.belly.plate) % 1 + 1) % 1;
@@ -176,15 +191,17 @@ export function paintSkin(variant: SkinVariant): Pixels {
         if (d < LOOK.light.rim && li >= 3 && bayer(x + 1, y) > -0.25) si = Math.min(6, si + 1);
         // Escamas del flanco: la junta de abajo de cada fila y la de atrás de cada escama, un tono más oscuras.
         const rows = LOOK.scales.rows;
-        const q = ((d + 1) / (bellyStart + 1)) * rows;
+        const span = dorsal ? 2 : bellyStart + 1;
+        const q = ((d + 1) / span) * (dorsal ? rows * 1.5 : rows);
         const row = Math.floor(q);
         const v = q - row;
         const len = LOOK.scales.length * (0.55 + 0.45 * (r / 7));
         const u = ((s / len + (row % 2) * 0.5) % 1 + 1) % 1;
         // Escamas: una mota oscura al pie de cada escama y una clara arriba (como el moteado de la cabeza).
         const px = Math.floor(u * len * K);
-        const py = Math.floor(v * (((bellyStart + 1) * r * K) / rows));
-        if (li >= 2 && py === Math.floor(((bellyStart + 1) * r * K) / rows) - 1 && px === Math.floor(len * K * 0.5)) si -= 1;
+        const rowPx = (span * r * K) / (dorsal ? rows * 1.5 : rows);
+        const py = Math.floor(v * rowPx);
+        if (li >= 2 && py === Math.floor(rowPx) - 1 && px === Math.floor(len * K * 0.5)) si -= 1;
         else if (li >= 3 && py === 0 && px === 1) si = Math.min(6, si + 1);
         if (m <= 1) {
           // Rombo: rojo hondo con el borde de un píxel más oscuro y el centro un poco más claro.
@@ -195,7 +212,7 @@ export function paintSkin(variant: SkinVariant): Pixels {
         }
         color = skin[clamp(si, 0, 6)];
       }
-      if (variant === 'back') color = mix(color, PAL.shadow, LOOK.back.mix);
+      if (dark) color = mix(color, PAL.shadow, LOOK.back.mix);
       put(p, x, y, color);
     }
   }

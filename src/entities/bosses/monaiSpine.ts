@@ -132,6 +132,24 @@ export class Spine {
     this.frame();
   }
 
+  /** Suaviza la curva (promedio con los vecinos, los extremos quedan): redondea los codos entre segmentos. */
+  smooth(iterations: number, weight: number): void {
+    const n = this.n;
+    for (let it = 0; it < iterations; it++) {
+      let px = this.x[0];
+      let py = this.y[0];
+      for (let i = 1; i < n - 1; i++) {
+        const cx = this.x[i];
+        const cy = this.y[i];
+        this.x[i] = cx + weight * ((px + this.x[i + 1]) / 2 - cx);
+        this.y[i] = cy + weight * ((py + this.y[i + 1]) / 2 - cy);
+        px = cx;
+        py = cy;
+      }
+    }
+    this.frame();
+  }
+
   /** Desplaza cada punto a lo largo de su normal (`off[i]` unidades) y recalcula tangentes y normales. */
   offset(off: ArrayLike<number>): void {
     for (let i = 0; i < this.n; i++) {
@@ -178,11 +196,18 @@ export class Spine {
  * Lado del lomo en cada punto (+1: hacia +normal; -1: hacia -normal). Empieza con el de la nuca y se da vuelta solo
  * cuando el lomo apuntaría hacia abajo más que `threshold` (0..1): las vueltas muestran el vientre abajo.
  */
-export function dorsalSides(ny: ArrayLike<number>, n: number, startSide: number, threshold: number, out: Int8Array): void {
+export function dorsalSides(ny: ArrayLike<number>, n: number, startSide: number, threshold: number, out: Int8Array, reach = 0): void {
   let side = startSide >= 0 ? 1 : -1;
   for (let i = 0; i < n; i++) {
-    // "Arriba" es y negativa: el lomo (side · normal) mira hacia arriba si side · ny < 0.
-    const up = -side * ny[i];
+    // "Arriba" es y negativa: el lomo (side · normal) mira hacia arriba si side · ny < 0. Con `reach`, la normal se
+    // promedia con sus vecinos: un temblor de la curva no da vuelta el lomo.
+    let v = 0;
+    let c = 0;
+    for (let k = Math.max(0, i - reach); k <= Math.min(n - 1, i + reach); k++) {
+      v += ny[k];
+      c++;
+    }
+    const up = (-side * v) / c;
     if (up < -threshold) side = -side;
     out[i] = side;
   }

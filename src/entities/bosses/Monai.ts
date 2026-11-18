@@ -35,7 +35,7 @@ import {
   TONGUE_FRAMES,
   TONGUE_PREFIX,
 } from './monaiArt';
-import { LAYER_BACK, LAYER_FRONT, LAYER_HIGH, SnakeRig } from './monaiBody';
+import { LAYER_BACK, LAYER_FRONT, LAYER_HIGH, type RigFrame, SnakeRig } from './monaiBody';
 import { bodyRadius } from './monaiPaint';
 import { SaveManager } from '../../systems/SaveManager';
 import {
@@ -78,6 +78,12 @@ function iridescent(f: number): number {
   const t = x - i;
   const a = PULSE_COLORS[i % n];
   const b = PULSE_COLORS[(i + 1) % n];
+  const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+
+/** Mezcla de dos colores (0 = a, 1 = b). */
+function mixColor(a: number, b: number, t: number): number {
   const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }
@@ -165,6 +171,7 @@ export class Monai extends Boss {
   private readonly stars: Phaser.GameObjects.Image[] = [];
   private readonly heart: Phaser.GameObjects.Image;
   private readonly heartGlow: Phaser.GameObjects.Image;
+  private readonly heartSparks: Phaser.GameObjects.Image[] = [];
   private readonly shadowArt: Phaser.GameObjects.Image;
   private readonly ring: Phaser.GameObjects.Image;
   private readonly leaves: Leaf[] = [];
@@ -185,13 +192,14 @@ export class Monai extends Boss {
   private nextTongueMs = 0;
   private tongueMs = -1;
   private streakMs = 0;
-  /** Peso de la sombra del cuerpo en la corteza (enroscada = 1). */
+  /** Peso de la sombra del cuerpo en la corteza y de la vista de lomo de las vueltas (enroscada = 1). */
   private trunkShade = 0;
+  private coilBlend = 0;
   /** Puntas de los cuernos (para los destellos) e índices del cambio de capa por tramo de la columna. */
   private readonly tips = hornTips();
   private readonly turnAt = new Int16Array(CONTROLS);
   private readonly barkRect = { x: 0, halfWidth: 0, topY: 0, bottomY: 0 };
-  private readonly rigFrame = { alpha: 1, startSide: -1, trunk: null as null | { x: number; halfWidth: number; topY: number; bottomY: number }, trunkShadow: 0, floorY: 0, groundLean: 0.15 };
+  private readonly rigFrame: RigFrame = { alpha: 1, trunk: null, trunkShadow: 0, floorY: 0, groundLean: 0.15 };
   private readonly segments: Segment[] = [];
   private readonly trunks: Trunk[];
   private readonly spots: TreeSpot[];
@@ -302,6 +310,7 @@ export class Monai extends Boss {
     for (let i = 0; i < 3; i++) this.stars.push(scene.add.image(0, 0, STAR_TEXTURE).setScale(1 / ART_K).setDepth(6).setVisible(false));
     this.heartGlow = scene.add.image(0, 0, GLOW_TEXTURE).setScale(0.6 / ART_K).setTint(HEART_COLOR).setBlendMode(Phaser.BlendModes.ADD).setDepth(6).setVisible(false);
     this.heart = scene.add.image(0, 0, HEART_TEXTURE).setScale(1 / ART_K).setDepth(6).setVisible(false);
+    for (let i = 0; i < 2; i++) this.heartSparks.push(scene.add.image(0, 0, SPARKLE_TEXTURE).setScale(1 / ART_K).setTint(0xffd0d0).setBlendMode(Phaser.BlendModes.ADD).setDepth(6).setVisible(false));
     for (let i = 0; i < LOOK.descentWarn.leaves; i++) {
       this.leaves.push({ img: scene.add.image(0, 0, `${LEAF_PREFIX}${i % 2}`).setScale(1 / ART_K).setDepth(6).setVisible(false), vx: 0, vy: 0, life: 0, phase: 0 });
     }
@@ -756,10 +765,27 @@ export class Monai extends Boss {
       dy = 0;
       l = 1;
     }
-    this.ctrlX[n + 1] = a.x + (dx / l) * LOOK.tailTip;
-    this.ctrlY[n + 1] = a.y + (dy / l) * LOOK.tailTip;
-    this.ctrlBack[n + 1] = this.ctrlBack[n];
+    let tipX = a.x + (dx / l) * LOOK.tailTip;
+    let tipY = a.y + (dy / l) * LOOK.tailTip;
+    let tipBack = this.ctrlBack[n];
+    if (perched && this.coilBlend > 0) {
+      // Enroscada, la punta sigue la vuelta (queda detrás del tronco y no asoma como una rama).
+      const trunk = this.trunks[this.perch];
+      const plan = this.spots[this.perch].coil;
+      const start = trunk.x >= this.neckX() ? -Math.PI / 2 : Math.PI / 2;
+      const k = n - 1 - plan.neck + LOOK.tailTip / CFG.segmentGap;
+      const ang = start - Math.sign(start) * k * plan.step;
+      const f = this.coilBlend;
+      tipX += (trunk.x + plan.radius * Math.sin(ang) - tipX) * f;
+      tipY += (plan.top + k * plan.pitch - tipY) * f;
+      if (f > 0.5) tipBack = Math.cos(ang) < 0 ? 1 : 0;
+    }
+    this.ctrlX[n + 1] = tipX;
+    this.ctrlY[n + 1] = tipY;
+    this.ctrlBack[n + 1] = tipBack;
     rig.spine.build(this.ctrlX, this.ctrlY, n + 2);
+    rig.spine.smooth(LOOK.smooth.iterations, LOOK.smooth.weight);
+    rig.decideSides(head.flipX ? 1 : -1);
     this.fillOffsets(deltaMs, perched);
     rig.spine.offset(rig.off);
     this.fillLayers();
@@ -771,7 +797,6 @@ export class Monai extends Boss {
     this.barkRect.topY = this.spots[this.perch].barkTopY;
     this.barkRect.bottomY = this.floorY;
     this.rigFrame.alpha = head.alpha;
-    this.rigFrame.startSide = head.flipX ? 1 : -1;
     this.rigFrame.trunk = this.barkRect;
     this.rigFrame.trunkShadow = this.trunkShade;
     this.rigFrame.floorY = this.floorY;
@@ -786,16 +811,22 @@ export class Monai extends Boss {
     const len = Math.max(1, sp.length);
     const dazed = this.grounded && this.headDazed();
     const target = dazed ? 0 : this.grounded ? W.ground : perched ? W.perched : W.fly;
+    this.coilBlend += ((perched ? 1 : 0) - this.coilBlend) * Math.min(1, deltaMs / 160);
     this.waveAmp += (target - this.waveAmp) * Math.min(1, deltaMs / W.settleMs);
     // Mareada, la onda se detiene; en cada fase corre más rápido (furia).
     const speed = W.phaseSpeed[Math.min(this.brain.phase, W.phaseSpeed.length - 1)];
     if (!dazed) this.wavePhase += (deltaMs / W.periodMs) * speed;
     const B = LOOK.breath;
     const breath = B.amount * Math.sin((TAU * this.clockMs) / (dazed ? B.dazedPeriodMs : B.periodMs));
-    const coilFrom = perched ? this.spots[this.perch].coil.neck + 1 : 1e9;
+    const plan = this.spots[this.perch].coil;
+    const coilFrom = perched ? plan.neck + 1 : 1e9;
+    // Ángulo de cada vuelta alrededor del tronco (el mismo de updateSegments) para sombrearla como un cilindro.
+    const startAngle = this.trunks[this.perch].x >= this.neckX() ? -Math.PI / 2 : Math.PI / 2;
+    const CS = LOOK.coilShade;
     const swellAmp = W.perched > 0 ? (W.swell * this.waveAmp) / W.perched : 0;
     // Recogida del cuello en S (aviso de la caída al final; el del robo, entero) y cascabeleo de la cola en el robo.
     const stealWarn = this.stealWarning();
+    const holding = this.thief.holding;
     const recoil = stealWarn ? 1 : this.descentRecoil();
     const rattle = stealWarn ? LOOK.stealWarn.tailRattle : 0;
     const H = LOOK.hit;
@@ -810,8 +841,10 @@ export class Monai extends Boss {
       const wave = Math.sin(ph);
       let off = this.waveAmp * smoothstep(s / W.rampIn) * (1 - coil) * wave;
       let half = 1 + coil * swellAmp * wave + breath * Math.exp(-(((s - 24) / 18) ** 2));
-      if (recoil > 0) off += recoil * 3 * Math.sin((TAU * s) / 22) * smoothstep(s / 6) * (1 - smoothstep((s - 26) / 14));
+      if (recoil > 0) off += recoil * 3 * Math.sin((TAU * (s - 8)) / 22) * smoothstep((s - 8) / 6) * (1 - smoothstep((s - 30) / 14));
       if (rattle > 0) off += rattle * Math.sin(this.clockMs / 16 + s * 0.6) * smoothstep((s - (len - 22)) / 18);
+      // Con el corazón robado, la punta de la cola se levanta para sostenerlo (hacia arriba, sea cual sea la normal).
+      if (holding) off -= Math.sign(sp.ny[i] || 1) * LOOK.heart.curl * smoothstep((s - (len - LOOK.heart.curlLength)) / LOOK.heart.curlLength);
       let flash = 0;
       if (hitOn) {
         const env = Math.exp(-(((s - hitFront) / H.width) ** 2)) * hitFade;
@@ -822,6 +855,12 @@ export class Monai extends Boss {
       rig.off[i] = off;
       rig.half[i] = half;
       rig.flashA[i] = flash;
+      // De perfil a de lomo al entrar al enroscado (un tramo de fundido); de frente brilla, hacia los costados se apaga.
+      const cw = perched ? Math.max(0, Math.min(1, sp.c[i] - coilFrom + 1)) : 0;
+      rig.coilW[i] = this.coilBlend * cw;
+      const ang = startAngle - Math.sign(startAngle) * (sp.c[i] - 1 - plan.neck) * plan.step;
+      const lit = Math.pow(Math.max(0, Math.cos(ang)), CS.power);
+      rig.coilTint[i] = mixColor(CS.side, 0xffffff, lit);
     }
   }
 
@@ -934,7 +973,9 @@ export class Monai extends Boss {
     // Lengua bífida: sale cada tanto en reposo; mareada, cuelga.
     const T = LOOK.tongue;
     const dazed = this.headMood === 'daze';
-    const idle = this.headMood === 'idle' && !this.harmful && !this.stealWarning();
+    // Solo entre ataques (y en la presentación): en los avisos la boca queda quieta.
+    const calm = this.brain.state === 'idle' || this.brain.state === 'waiting';
+    const idle = this.headMood === 'idle' && !this.harmful && calm;
     if (this.tongueMs < 0 && idle && this.clockMs >= this.nextTongueMs) this.tongueMs = 0;
     if (this.tongueMs >= 0) {
       this.tongueMs += deltaMs;
@@ -990,9 +1031,16 @@ export class Monai extends Boss {
         .setPosition(tx, ty - LOOK.heart.rise)
         .setAlpha(LOOK.heart.glowAlpha * (flashes ? 0.6 + 0.4 * beat : 0.8) * alpha)
         .setVisible(true);
+      // Dos destellos que giran alrededor (con «Destellos: no», quietos).
+      this.heartSparks.forEach((sp, i) => {
+        const ang = (flashes ? this.clockMs / LOOK.heart.sparkMs : 0) * TAU + i * Math.PI;
+        const tw = flashes ? 0.45 + 0.4 * Math.abs(Math.sin(this.clockMs / 110 + i)) : 0.6;
+        sp.setPosition(tx + Math.cos(ang) * 7, ty - LOOK.heart.rise + Math.sin(ang) * 4).setScale(tw / ART_K).setAlpha(alpha).setVisible(true);
+      });
     } else {
       this.heart.setVisible(false);
       this.heartGlow.setVisible(false);
+      for (const sp of this.heartSparks) sp.setVisible(false);
     }
     this.drawDescentWarn(deltaMs);
     this.drawStreaks(shown);
@@ -1121,7 +1169,7 @@ export class Monai extends Boss {
     this.pulseActive = false;
     this.pulse.setVisible(false);
     this.shadow.setVisible(false);
-    for (const img of [this.heart, this.heartGlow, this.ring, this.shadowArt, this.hornGlow, this.eyeGlint, ...this.tipSparks, ...this.stars, ...this.streaks]) img.setVisible(false);
+    for (const img of [this.heart, this.heartGlow, this.ring, this.shadowArt, this.hornGlow, this.eyeGlint, ...this.tipSparks, ...this.heartSparks, ...this.stars, ...this.streaks]) img.setVisible(false);
   }
 
   private placeAll(x: number, y: number): void {

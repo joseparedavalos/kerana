@@ -905,10 +905,11 @@ export const GAMEPLAY = {
     /** Escamas del flanco: filas entre el lomo y el vientre y largo de cada escama (unidades, a radio 7). */
     scales: { rows: 4, length: 2.4 },
     /**
-     * Rombos del lomo: centro y medio alto (fracción del radio, < 0 = hacia el lomo), largo y separación según el
-     * radio, y la primera a esta distancia de la nuca (unidades). Manchas chicas en el flanco, entre rombos.
+     * Rombos del lomo: centro y medio alto (fracción del radio, < 0 = hacia el lomo; `dorsalHalf` en la vista de lomo),
+     * largo y separación según el radio, y la primera a esta distancia de la nuca (unidades). Manchas chicas en el flanco,
+     * entre rombos (de lomo, una a cada lado, a `blotch.dorsal` del centro).
      */
-    pattern: { center: -0.4, halfHeight: 0.5, lengthK: 0.6, lengthAdd: 1.4, periodK: 1.4, periodAdd: 3.2, start: 12, blotch: { center: 0.16, size: 0.42 } },
+    pattern: { center: -0.4, halfHeight: 0.5, dorsalHalf: 0.62, lengthK: 0.6, lengthAdd: 1.4, periodK: 1.4, periodAdd: 3.2, start: 12, blotch: { center: 0.16, dorsal: 0.66, size: 0.42 } },
     /** Vueltas de atrás del tronco: luz que les llega y mezcla con la sombra. */
     back: { light: 0.45, mix: 0.3 },
     /** Puntos de la tira dibujada (más = curvas más suaves). */
@@ -918,8 +919,19 @@ export const GAMEPLAY = {
      * abajo más que esto (0 = siempre arriba; 1 = nunca se da vuelta).
      */
     flipThreshold: 0.35,
-    /** En las curvas cerradas el lado de adentro se aprieta hasta esta fracción del radio de la curva. */
+    /** La normal se promedia con estos vecinos para decidir el lado del lomo. */
+    flipReach: 3,
+    /**
+     * En las curvas cerradas el lado de adentro se aprieta hasta esta fracción del radio de la curva (si no, la tira se
+     * dobla y asoma una punta hacia afuera), nunca a menos de `innerMin` del grosor. La columna suavizada deja los codos
+     * del cuello con radio de sobra: solo se aprietan las vueltas cerradas de la cola.
+     */
     innerLimit: 0.85,
+    innerMin: 0.15,
+    /** Suavizado de la columna (vueltas y peso): redondea los codos entre segmentos. */
+    smooth: { iterations: 3, weight: 0.45 },
+    /** Vueltas del enroscado: el cuerpo se oscurece hacia los costados del tronco (tinte en el borde de la vuelta). */
+    coilShade: { side: 0xa07a70, power: 0.8 },
     /**
      * Nuca: dónde arranca la tira bajo la cabeza (unidades desde el centro de la zona de daño, mirando a la izquierda),
      * reposo y mareo / fauces abiertas.
@@ -936,18 +948,18 @@ export const GAMEPLAY = {
     /** Respiración: período (ms) y cuánto engorda el pecho (fracción del grosor); mareada, más lenta. */
     breath: { periodMs: 2600, amount: 0.04, dazedPeriodMs: 4200 },
     /** Brillo del dibujo del lomo en cada fase (furia): alfa del tinte dorado sobre los rombos. */
-    furyGlow: { color: 0xffc860, alpha: [0, 0.22, 0.42] as readonly number[], shimmerMs: 2200 },
+    furyGlow: { color: 0xffe08a, alpha: [0, 0.45, 0.8] as readonly number[], shimmerMs: 2200 },
     /**
      * Pulso de hipnosis: la iridiscencia corre por el lomo de la nuca a la cola (largo de la ola, unidades, y
      * velocidad, unidades por segundo; alfa del tinte). En el aviso, más lenta y suave; al lanzarse, rápida.
      */
-    hypnoWave: { width: 22, speedWarn: 70, speedFire: 260, alphaWarn: 0.55, alphaFire: 0.85, cycleMs: 700 },
+    hypnoWave: { width: 22, speedWarn: 70, speedFire: 260, alphaWarn: 0.8, alphaFire: 1, cycleMs: 700 },
     /** Golpe: la sacudida baja por el cuerpo (ms en llegar a la cola, amplitud y largo de la onda, unidades). */
-    hit: { travelMs: 360, amplitude: 3.2, width: 14, wobble: 7, flashAlpha: 0.85 },
+    hit: { travelMs: 360, amplitude: 3.2, width: 7, wobble: 7, flashAlpha: 1, flashColor: 0xfff4e0 },
     /** Mareo: la cabeza cuelga (grados) y la onda se apaga. */
     daze: { droopDeg: 9 },
     /** Cuernos: ciclo del color iridiscente (ms) en reposo y brillando, alfa del brillo, cuadros del reflejo que corre. */
-    horns: { cycleMs: 2400, glowCycleMs: 520, sheenAlpha: 0.45, glowSheenAlpha: 0.9, sheenFrames: 8, sheenMs: 90, glowRadius: 11, glowAlpha: 0.55 },
+    horns: { cycleMs: 2400, glowCycleMs: 520, sheenAlpha: 0.5, glowSheenAlpha: 0.95, sheenFrames: 8, sheenMs: 90, glowRadius: 11, glowAlpha: 0.75 },
     /** Lengua bífida: cada cuánto sale (ms, entre mín. y máx.) y cuánto dura cada salida. */
     tongue: { minMs: 2200, maxMs: 4800, flickMs: 420, at: [-14, 3.6] as readonly [number, number] },
     /** Sombras: en el tronco (desplazamiento y alfa) y en el piso (alfa, alto en que se apaga, grosor). */
@@ -959,8 +971,11 @@ export const GAMEPLAY = {
     descentWarn: { ringFrom: 1.9, ringTo: 1, ringAlpha: 0.8, leavesAt: 0.45, leaves: 6, peekDeg: 14 },
     /** Aviso del robo: brillo del ojo, sacudida de la cola; al embestir, rayas de velocidad. */
     stealWarn: { eyeAt: [-7, -3.8] as readonly [number, number], eyeColor: 0xff5a7a, tailRattle: 2.2, streaks: 4 },
-    /** Corazón robado en la cola: latido (ms) y brillo. */
-    heart: { beatMs: 520, glowAlpha: 0.55, rise: 5 },
+    /**
+     * Corazón robado en la cola: latido (ms), brillo y cuánto sube sobre la punta; la punta de la cola se levanta
+     * `curl` unidades para sostenerlo (en sus últimas `curlLength`).
+     */
+    heart: { beatMs: 520, glowAlpha: 0.7, rise: 5, curl: 5, curlLength: 16, sparkMs: 700 },
   },
   /**
    * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de

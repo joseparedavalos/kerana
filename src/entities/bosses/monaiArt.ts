@@ -52,7 +52,14 @@ export function headOrigin(): [number, number] {
 }
 
 /** Texturas del cuerpo pintado (S102): la piel, las vueltas de atrás, la máscara del brillo y la silueta. */
-export const SKIN_KEYS = { front: 'monai_skin', back: 'monai_skin_back', glow: 'monai_skin_glow', mask: 'monai_skin_mask' } as const;
+export const SKIN_KEYS = {
+  front: 'monai_skin',
+  glow: 'monai_skin_glow',
+  mask: 'monai_skin_mask',
+  dorsal: 'monai_skin_dorsal',
+  dorsalBack: 'monai_skin_dorsal_back',
+  dorsalGlow: 'monai_skin_dorsal_glow',
+} as const;
 export const HORN_SHEEN_PREFIX = 'monai_horn_sheen_';
 export const GLOW_TEXTURE = 'monai_glow';
 export const SPARKLE_TEXTURE = 'monai_sparkle';
@@ -80,9 +87,11 @@ export function ensureMonaiArt(scene: Phaser.Scene): void {
   once(HORNS_TEXTURE, () => paintHorns(horns, HEAD_W, HEAD_H));
   for (let i = 0; i < look.horns.sheenFrames; i++) once(`${HORN_SHEEN_PREFIX}${i}`, () => paintHornSheen(horns, HEAD_W, HEAD_H, i, look.horns.sheenFrames));
   once(SKIN_KEYS.front, () => paintSkin('front'));
-  once(SKIN_KEYS.back, () => paintSkin('back'));
   once(SKIN_KEYS.glow, () => paintSkin('glow'));
   once(SKIN_KEYS.mask, () => paintSkin('mask'));
+  once(SKIN_KEYS.dorsal, () => paintSkin('dorsal'));
+  once(SKIN_KEYS.dorsalBack, () => paintSkin('dorsalBack'));
+  once(SKIN_KEYS.dorsalGlow, () => paintSkin('dorsalGlow'));
   once(GLOW_TEXTURE, () => paintGlow(look.horns.glowRadius));
   once(SPARKLE_TEXTURE, () => paintSparkle(3.5));
   once(STAR_TEXTURE, () => paintStar());
