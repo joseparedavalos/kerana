@@ -6,7 +6,9 @@ import { t } from '../../i18n';
 import { skinIfAvailable } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
+import { JasyStarFx, STAFF_FRAME, STAR_ATLAS } from './jasyFx';
 import { lethalClamp, Reveal, StaffRace } from './jasyLogic';
+import { PAINT_K } from './jasyPaint';
 
 const CFG = GAMEPLAY.jasyJatere;
 const TILE = 16;
@@ -22,8 +24,10 @@ const SPARK_POOL = CFG.sparks * 2;
 const KERANA_W = GAMEPLAY.player.bodyWidth;
 const KERANA_H = GAMEPLAY.player.bodyHeight;
 
+/** Chispa que daña: un punto con velocidad y vida (el dibujo, en jasyFx.ts). */
 interface Spark {
-  arc: Phaser.GameObjects.Arc;
+  x: number;
+  y: number;
   vx: number;
   vy: number;
   lifeMs: number;
@@ -67,6 +71,10 @@ export class JasyJatere extends Boss {
   private readonly staff: Phaser.GameObjects.Image;
   private readonly notes: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly sparks: Spark[] = [];
+  /** Estrellas de siesta: el dibujo de las chispas y el aviso en la punta del bastón (S103). */
+  private readonly fx: JasyStarFx;
+  /** Duración del aviso en curso (ms, ya con el modo asistido). */
+  private telegraphMs = 1;
   private readonly footprints: Phaser.GameObjects.Ellipse[] = [];
   private readonly timers: Phaser.Time.TimerEvent[] = [];
   private readonly race = new StaffRace();
@@ -74,6 +82,7 @@ export class JasyJatere extends Boss {
   private readonly bodyRect = new Phaser.Geom.Rectangle();
   private readonly staffRect = new Phaser.Geom.Rectangle();
   private readonly keranaRect = new Phaser.Geom.Rectangle();
+  private readonly tipVec = { x: 0, y: 0 };
   private readonly hop = { p: 0, x0: 0, y0: 0, x1: 0, y1: 0, arc: 0 };
   private spot = 2;
   private facing: 1 | -1 = -1;
@@ -99,7 +108,11 @@ export class JasyJatere extends Boss {
       this.footprints.push(scene.add.ellipse(0, ctx.floorY - 1, 5, 2, FOOTPRINT_COLOR, 0.8).setDepth(3).setVisible(false));
     }
     this.body = scene.add.image(0, 0, BODY_TEXTURE).setOrigin(0.5, 1).setDepth(5);
-    this.staff = scene.add.image(0, 0, STAFF_TEXTURE).setDepth(6);
+    this.fx = new JasyStarFx(scene, SPARK_POOL);
+    // El bastón en alto y suelto, pintado como el de la hoja (el de código queda si no hay atlas).
+    this.staff = scene.textures.exists(STAR_ATLAS)
+      ? scene.add.image(0, 0, STAR_ATLAS, STAFF_FRAME).setScale(1 / PAINT_K).setDepth(6)
+      : scene.add.image(0, 0, STAFF_TEXTURE).setDepth(6);
     // Sprite real (siempre con bastón): el de la mano se recorta cuando el bastón de código se ve aparte.
     const look = GAMEPLAY.sprites.jasyJatere;
     this.skinned = !!skinIfAvailable(scene, this.body, 'jasy_jatere', {
@@ -110,10 +123,7 @@ export class JasyJatere extends Boss {
       .setOrigin(0.5, 1)
       .setDepth(8)
       .setVisible(false);
-    for (let i = 0; i < SPARK_POOL; i++) {
-      const arc = scene.add.circle(0, 0, CFG.sparkRadius, SPARK_COLOR).setDepth(7).setVisible(false);
-      this.sparks.push({ arc, vx: 0, vy: 0, lifeMs: 0 });
-    }
+    for (let i = 0; i < SPARK_POOL; i++) this.sparks.push({ x: 0, y: 0, vx: 0, vy: 0, lifeMs: 0 });
     this.notes = scene.add.particles(0, 0, NOTE_TEXTURE, {
       speedY: { min: -30, max: -15 },
       speedX: { min: -12, max: 12 },
@@ -158,6 +168,7 @@ export class JasyJatere extends Boss {
     switch (t.state) {
       case 'telegraph':
         this.faceKerana();
+        this.telegraphMs = Math.max(1, t.ms);
         if (id === 'sparks') this.staffRaised = true;
         else if (id === 'ambush') {
           this.staffFlashMs = t.ms;
@@ -172,11 +183,13 @@ export class JasyJatere extends Boss {
       case 'recover':
         this.harmful = false;
         this.staffRaised = false;
+        this.fx.stopGather(false);
         if (t.attack?.punishable ?? true) this.taunt();
         break;
       case 'idle':
         this.harmful = false;
         this.staffRaised = false;
+        this.fx.stopGather(false);
         this.move(this.brain.phaseDef.idleMs);
         break;
       default:
@@ -186,6 +199,8 @@ export class JasyJatere extends Boss {
 
   /** Tres chispas doradas en abanico hacia Kerana. */
   private fireSparks(): void {
+    const tip = this.staffTip();
+    this.fx.stopGather(true);
     this.staffRaised = false;
     this.ctx.sfxAt('sparks', this.body.x);
     const sx = this.body.x + this.facing * 6;
@@ -193,13 +208,17 @@ export class JasyJatere extends Boss {
     const base = Math.atan2(this.ctx.playerY() - KERANA_H / 2 - sy, this.ctx.playerX() - sx);
     const spread = Phaser.Math.DegToRad(CFG.sparkSpreadDeg);
     for (let i = 0; i < CFG.sparks; i++) {
-      const spark = this.sparks.find((s) => s.lifeMs <= 0);
-      if (!spark) break;
+      const k = this.sparks.findIndex((s) => s.lifeMs <= 0);
+      if (k < 0) break;
+      const spark = this.sparks[k];
       const a = base + (i - (CFG.sparks - 1) / 2) * spread;
       spark.vx = Math.cos(a) * CFG.sparkSpeed;
       spark.vy = Math.sin(a) * CFG.sparkSpeed;
       spark.lifeMs = CFG.sparkLifeMs;
-      spark.arc.setPosition(sx, sy).setVisible(true);
+      spark.x = sx;
+      spark.y = sy;
+      // Se dibujan desde la punta del bastón y se funden con su camino en unos pocos cuadros.
+      this.fx.launch(k, sx, sy, tip.x, tip.y);
     }
   }
 
@@ -244,7 +263,8 @@ export class JasyJatere extends Boss {
   private startRace(): void {
     this.harmful = false;
     this.staffRaised = false;
-    this.hideSparks();
+    this.fx.stopGather(false);
+    this.hideSparks(true);
     this.reveal.show(CFG.raceMs + CFG.staffFlyMs);
     this.staffLoose = true;
     const px = this.ctx.playerX();
@@ -309,15 +329,17 @@ export class JasyJatere extends Boss {
     this.race.reset();
     this.harmful = false;
     this.hideSparks();
+    this.fx.reset();
     this.reveal.show(60000);
     this.body.setAlpha(1).clearTint();
   }
 
   hurtsPlayer(playerRect: Phaser.Geom.Rectangle): boolean {
-    for (const s of this.sparks) {
-      if (s.lifeMs <= 0 || !playerRect.contains(s.arc.x, s.arc.y)) continue;
+    for (let k = 0; k < this.sparks.length; k++) {
+      const s = this.sparks[k];
+      if (s.lifeMs <= 0 || !playerRect.contains(s.x, s.y)) continue;
       s.lifeMs = 0;
-      s.arc.setVisible(false);
+      this.fx.burst(k);
       return true;
     }
     return this.harmful && Phaser.Geom.Rectangle.Overlaps(this.bounds(), playerRect);
@@ -349,6 +371,12 @@ export class JasyJatere extends Boss {
     } else {
       this.staff.angle += deltaMs * 0.9;
     }
+    // Aviso de las chispas: la punta del bastón en alto junta luz.
+    if (this.staffRaised && this.brain.state === 'telegraph' && this.brain.attack?.id === 'sparks') {
+      const tip = this.staffTip();
+      this.fx.gather(tip.x, tip.y, 1 - this.brain.msLeft / this.telegraphMs, deltaMs);
+    } else this.fx.stopGather(false);
+    this.fx.update(deltaMs);
     // Destello del bastón: se ve aunque él sea invisible (es el aviso de la emboscada).
     if (this.staffFlashMs > 0) {
       this.staffFlashMs -= deltaMs;
@@ -390,15 +418,16 @@ export class JasyJatere extends Boss {
 
   private updateSparks(deltaMs: number): void {
     const dt = deltaMs / 1000;
-    for (const s of this.sparks) {
+    for (let k = 0; k < this.sparks.length; k++) {
+      const s = this.sparks[k];
       if (s.lifeMs <= 0) continue;
       s.lifeMs -= deltaMs;
-      s.arc.x += s.vx * dt;
-      s.arc.y += s.vy * dt;
-      if (s.lifeMs <= 0 || s.arc.y >= this.ctx.floorY) {
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      if (s.lifeMs <= 0 || s.y >= this.ctx.floorY) {
         s.lifeMs = 0;
-        s.arc.setVisible(false);
-      }
+        this.fx.burst(k);
+      } else this.fx.place(k, s.x, s.y, s.vx, s.vy, s.lifeMs, deltaMs);
     }
   }
 
@@ -419,6 +448,7 @@ export class JasyJatere extends Boss {
     this.body.setAlpha(0).setScale(1).clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     this.staff.setAlpha(0).setAngle(0);
     this.hideSparks();
+    this.fx.reset();
     for (const f of this.footprints) f.setVisible(false);
   }
 
@@ -427,11 +457,22 @@ export class JasyJatere extends Boss {
     return this.brain.phase > 0 && !this.reveal.visible && !this.race.active && this.brain.state !== 'waiting';
   }
 
-  private hideSparks(): void {
-    for (const s of this.sparks) {
-      s.lifeMs = 0;
-      s.arc.setVisible(false);
+  /** Apaga las chispas; `burst`: revientan donde están (al soltar el bastón). */
+  private hideSparks(burst = false): void {
+    for (let k = 0; k < this.sparks.length; k++) {
+      if (this.sparks[k].lifeMs > 0 && burst) this.fx.burst(k);
+      else this.fx.hide(k);
+      this.sparks[k].lifeMs = 0;
     }
+  }
+
+  /** Punta del bastón de código (en alto o suelto), donde junta la luz del aviso. */
+  private staffTip(): { x: number; y: number } {
+    const a = this.staff.rotation;
+    const r = GAMEPLAY.jasyJatereLook.staffTip;
+    this.tipVec.x = this.staff.x + Math.sin(a) * r;
+    this.tipVec.y = this.staff.y - Math.cos(a) * r;
+    return this.tipVec;
   }
 
   private faceKerana(): void {

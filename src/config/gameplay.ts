@@ -1020,10 +1020,79 @@ export const GAMEPLAY = {
     sleepMs: 1500,
     /** Cada botón pulsado dormida acorta el sueño en esto (ms). */
     pressCutMs: 250,
-    /** "Zzz" sobre Kerana (px) y niebla: opacidad y deriva (ms por vaivén). */
+    /** "Zzz" sobre Kerana (px). Cómo se ve la niebla: `sleepFogLook`. */
     iconOffsetY: 50,
-    fogAlpha: 0.28,
-    fogDriftMs: 2600,
+  },
+  /**
+   * Bruma de la siesta (S103): solo el dibujo de las zonas `SleepFog` (la zona, el sueño y sus tiempos están en `sleep`).
+   * Bocanadas pintadas una vez (tramado de Bayer, luz del sol arriba a la izquierda) en dos capas: la de atrás, detrás
+   * de Kerana y de los enemigos; el velo, delante y tenue. Unidades del mundo; los tiempos en ms.
+   */
+  sleepFogLook: {
+    /** Lavanda cálida, de la sombra a la luz (lejos del rosa del lapacho, #a36e74–#d7b0b3), y el borde con sol. */
+    palette: [0xa39cc2, 0xbab3d8, 0xcfc9e8, 0xe0dcf1, 0xedeaf6],
+    rim: 0xfdf6e8,
+    /** Polvo con sol: del oro del bastón al blanco caliente. */
+    dust: [0xc49532, 0xfbd233, 0xfcfedb],
+    /** Bocanadas: [ancho, alto] de cada tamaño y cuántas formas por tamaño. */
+    puffSizes: [
+      [28, 16],
+      [18, 11],
+    ],
+    shapesPerSize: 3,
+    /** Escalones de alfa del tramado dentro de cada bocanada (0..1) y dónde empiezan (densidad 0..1). */
+    puffAlphas: [0.3, 0.5, 0.72],
+    puffSteps: [0.1, 0.32, 0.58],
+    /**
+     * Grilla de la capa de atrás y del velo (unidades entre bocanadas) y el sacudón de cada una. Lo que cuesta es cuánto
+     * se superponen (cada píxel translúcido se pinta una vez por bocanada): S103 la abrió para no bajar los FPS.
+     */
+    backGap: [30, 20],
+    frontGap: [40, 26],
+    jitter: 3.5,
+    /** Alfa máximo de cada capa (al centro de la zona) y lo que queda en el borde. */
+    backAlpha: 0.5,
+    frontAlpha: 0.26,
+    edgeAlpha: 0.08,
+    /**
+     * Borde: la densidad sube de 0 (`edgeOut` afuera de la zona) a 1 (`edgeIn` adentro); el centro suma `centerBoost`.
+     * El piso de la zona no se desvanece: la bruma se apoya en la calle.
+     */
+    edgeOut: 4,
+    edgeIn: 10,
+    centerBoost: 0.3,
+    /**
+     * Masa: la capa continua de cada zona, pintada una vez (densidad de la zona cortada en jirones). `massCell`: tamaño
+     * de los jirones (unidades); `massWisps`: cuánto los corta el ruido (0 liso, 1 jirones sueltos); `massDensity`: su
+     * peso; `massAlpha`: su opacidad (respira con el resto).
+     */
+    massCell: 14,
+    massWisps: 0.65,
+    massDensity: 0.95,
+    massAlpha: 0.75,
+    /** La masa se mece de lado (unidades). */
+    massSway: 1.5,
+    /** Las bocanadas de atrás van solo donde la densidad pasa de esto (adentro: el borde lo hace la masa). */
+    backMinDensity: 0.4,
+    /** Remolino: radio (unidades) y vuelta (ms) de cada bocanada; aplastado en vertical. */
+    swirlRadius: [2, 5.5],
+    swirlMs: [7000, 13000],
+    swirlFlatten: 0.45,
+    /** Respiración de toda la bruma: período (ms), cuánto baja el alfa y cuánto sube (unidades). */
+    breathMs: 4200,
+    breathAlpha: 0.22,
+    breathRise: 1.2,
+    /** Polvo dorado: uno cada tantas unidades² (entre `dustMin` y `dustMax` por zona), subida (u/s), vaivén (u) y titileo (ms). */
+    dustPerArea: 520,
+    dustMin: 7,
+    dustMax: 16,
+    dustRise: [2.5, 6],
+    dustSway: 4,
+    dustTwinkleMs: [900, 1900],
+    /** Profundidades: atrás de Kerana (0), velo y polvo delante (Foreground es 10). */
+    backDepth: -0.5,
+    frontDepth: 11,
+    dustDepth: 11.1,
   },
   /** Jasy Jatere (GDD §6.4). Los tiempos de cada ataque están en src/data/bosses.ts. */
   jasyJatere: {
@@ -1065,6 +1134,69 @@ export const GAMEPLAY = {
     raceMs: 3000,
     staffWidth: 6,
     staffHeight: 24,
+  },
+  /**
+   * Dibujo de las chispas de Jasy Jatere (S103): estrellas de siesta. Solo cómo se ven: daño, cantidad, abanico,
+   * velocidad, vida y el camino que daña siguen en `jasyJatere` y en bosses.ts. Unidades del mundo; tiempos en ms.
+   */
+  jasyJatereLook: {
+    /** Oro del bastón medido en la hoja (de la sombra a la luz) y el núcleo blanco caliente. */
+    gold: [0x5a3002, 0x945400, 0xc49532, 0xfbd233, 0xfcfedb],
+    core: 0xffffff,
+    /** Halo aditivo: se suma al fondo, así que es un oro tibio y no blanco. */
+    halo: 0xc8a060,
+    /** Bastón en alto y suelto, pintado como el de la hoja: madera, enredadera y cabeza de oro. */
+    wood: [0x2a1704, 0x4c2a04, 0x7b5325, 0xc08b3e],
+    vine: [0x0e2a00, 0x2f5a12],
+    /** Punta del bastón (donde junta la luz): unidades desde el centro hacia arriba. */
+    staffTip: 10.5,
+    star: {
+      /** Radios en múltiplos de `jasyJatere.sparkRadius`: puntas, puntas al destellar, cuerpo y núcleo. */
+      spike: 1.6,
+      flareSpike: 2.3,
+      body: 0.55,
+      core: 0.22,
+      /** Forma de astroide (|x|^q + |y|^q ≤ 1: más chico, puntas más finas) y cuadros de giro (cubren 90°). */
+      sharpness: 0.55,
+      frames: 8,
+      /** Giro (grados por segundo): destella cada vez que las puntas pasan por los ejes. */
+      spinDegPerS: 330,
+      /** Con «Destellos: no», gira más lento y no destella. */
+      calmSpinDegPerS: 120,
+      /** Vaivén a cada lado del camino que daña (unidades) y su período (ms). */
+      wobble: 1.2,
+      wobbleMs: 260,
+      /** Halo: radio (unidades), alfa y cuánto crece al destellar. */
+      haloRadius: 9,
+      haloAlpha: 0.5,
+      haloFlareScale: 1.3,
+      /** Al salir: del extremo del bastón al camino que daña en este tiempo (ms). */
+      launchBlendMs: 90,
+      /** Al final de la vida se achica en estos ms antes de reventar. */
+      fadeMs: 180,
+    },
+    /**
+     * Estela: una mota cada `gap` unidades con el ritmo de tamaños `pattern` (2 grande, 1 chica); vida y caída (u/s).
+     * `ghosts`: copias de la estrella que la siguen pegadas (a cuántas unidades, escala y alfa): la cola del cometa.
+     * Van por distancia y no por cuadros, así la cola mide lo mismo a cualquier FPS.
+     */
+    trail: {
+      gap: 5,
+      pattern: [2, 1, 1],
+      lifeMs: 300,
+      drift: 4,
+      fall: 14,
+      ghosts: [
+        { back: 3.5, scale: 0.68, alpha: 0.6 },
+        { back: 7, scale: 0.42, alpha: 0.34 },
+      ],
+    },
+    /** Estallido: motas, velocidad (u/s), vida, frenado por segundo, caída y el destello (vida y escala). */
+    burst: { motes: 8, speed: [26, 62], lifeMs: 480, drag: 2.6, fall: 46, flashMs: 160, flashScale: [0.5, 1.4] },
+    /** Aviso: anillos de motas que se cierran sobre la punta (motas por anillo, radio, viaje, uno cada) y el brillo que crece. */
+    gather: { motes: 6, radius: 26, travelMs: 300, everyMs: 130, glowScale: [0.2, 1.1], glowAlpha: [0.2, 0.9], starScale: [0.25, 0.8] },
+    /** Motas en vuelo a la vez (pool). */
+    motePool: 96,
   },
   /** Kurupi (GDD §6.5, pies al revés). Los tiempos de cada ataque están en src/data/bosses.ts. */
   kurupi: {
