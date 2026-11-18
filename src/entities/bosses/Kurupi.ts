@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
-import { skinIfAvailable } from '../../systems/SpriteSkin';
+import { skinIfAvailable, type SpriteSkin } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
+import { KurupiFx } from './kurupiFx';
+import { isFastRun } from './kurupiFxLogic';
 import { callPlan, pickRealSlot, runDirection, runTargetX, toeSide, type CallPlan } from './kurupiLogic';
 
 const CFG = GAMEPLAY.kurupi;
@@ -58,6 +60,10 @@ function ensureTexture(scene: Phaser.Scene): void {
 // Fase 3: se divide en tres; solo el verdadero deja huellas invertidas.
 export class Kurupi extends Boss {
   private readonly body: Phaser.GameObjects.Image;
+  /** El sprite real (si está la hoja): de él copian las siluetas el cuadro de animación. */
+  private readonly skin?: SpriteSkin;
+  /** Estela y lo que levanta al correr rápido (S104). Solo dibujo. */
+  private readonly fx: KurupiFx;
   private readonly copies: Copy[] = [];
   private readonly waves: Wave[] = [];
   private readonly footprints: Footprint[] = [];
@@ -94,7 +100,8 @@ export class Kurupi extends Boss {
       this.copies.push({ image, alive: false, facing: -1 });
     }
     this.body = scene.add.image(0, ctx.floorY, BODY_TEXTURE).setOrigin(0.5, 1).setDepth(5);
-    skinIfAvailable(scene, this.body, 'kurupi', { sourceFacesRight: true });
+    this.skin = skinIfAvailable(scene, this.body, 'kurupi', { sourceFacesRight: true });
+    this.fx = new KurupiFx(scene, this.skin?.sprite ?? this.body, ctx.arena, ctx.floorY);
     for (let i = 0; i < WAVE_POOL; i++) {
       const rect = scene.add.rectangle(0, ctx.floorY, CFG.waveWidth, CFG.waveHeight, WAVE_COLOR).setOrigin(0.5, 1).setDepth(6).setVisible(false);
       this.waves.push({ rect, vx: 0, lifeMs: 0 });
@@ -372,6 +379,7 @@ export class Kurupi extends Boss {
     this.dissolveCopies(false);
     this.hideWaves();
     this.stopMove();
+    this.fx.clear();
     this.scene.tweens.killTweensOf(this.body);
     this.body.setAlpha(1).setScale(1).clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
@@ -400,6 +408,7 @@ export class Kurupi extends Boss {
 
   protected updateVisuals(deltaMs: number): void {
     this.body.setFlipX(this.facing < 0);
+    this.fx.update(deltaMs, isFastRun(this.brain.state, this.brain.attack?.id), this.body.x, this.ctx.floorY, this.runDir);
     this.updateWaves(deltaMs);
     // Las copias parpadean al aparecer (aviso del engaño).
     if (this.blinkMs > 0) {
@@ -466,6 +475,7 @@ export class Kurupi extends Boss {
       c.image.setVisible(false);
     }
     this.hideWaves();
+    this.fx.clear();
     for (const f of this.footprints) {
       this.scene.tweens.killTweensOf([f.sole, f.toe]);
       f.sole.setVisible(false);
