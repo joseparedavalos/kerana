@@ -4,6 +4,22 @@ import { propAtlasKey } from '../../assets/manifest';
 import { addProp, propLook } from '../../assets/propArt';
 import { parsePropId } from '../../assets/propLayout';
 import { artTreeLayout, type ArtTreeLayout } from './monaiLogic';
+import {
+  type HornCurve,
+  paintGlow,
+  paintHeart,
+  paintHorns,
+  paintHornSheen,
+  paintLeaf,
+  paintRing,
+  paintShadowOval,
+  paintSkin,
+  paintSparkle,
+  paintStar,
+  paintStreak,
+  paintTongue,
+  type Pixels,
+} from './monaiPaint';
 
 // Dibujo por código de Moñái y de los árboles de su arena (S26), con el criterio de Teju Jagua (tejuJaguaArt.ts):
 // texturas generadas una vez al doble de detalle (ART_K) y dibujadas a escala 1/ART_K; el cuerpo, cada frame.
@@ -35,11 +51,63 @@ export function headOrigin(): [number, number] {
   return [HEAD_CX / HEAD_W, HEAD_CY / HEAD_H];
 }
 
+/** Texturas del cuerpo pintado (S102): la piel, las vueltas de atrás, la máscara del brillo y la silueta. */
+export const SKIN_KEYS = { front: 'monai_skin', back: 'monai_skin_back', glow: 'monai_skin_glow', mask: 'monai_skin_mask' } as const;
+export const HORN_SHEEN_PREFIX = 'monai_horn_sheen_';
+export const GLOW_TEXTURE = 'monai_glow';
+export const SPARKLE_TEXTURE = 'monai_sparkle';
+export const STAR_TEXTURE = 'monai_star';
+export const HEART_TEXTURE = 'monai_heart';
+export const SHADOW_OVAL_TEXTURE = 'monai_shadow_oval';
+export const RING_TEXTURE = 'monai_ring';
+export const TONGUE_PREFIX = 'monai_tongue_';
+export const TONGUE_FRAMES = 4;
+export const LEAF_PREFIX = 'monai_leaf_';
+export const STREAK_TEXTURE = 'monai_streak';
+/** Medidas de la sombra y el anillo de la caída (unidades): la sombra de juego es la elipse de `shadowWidth` × 8. */
+export const SHADOW_OVAL = { w: CFG.shadowWidth, h: 8 };
+export const RING_SIZE = { w: CFG.shadowWidth + 4, h: 11 };
+
 export function ensureMonaiArt(scene: Phaser.Scene): void {
   if (!scene.textures.exists(HEAD_TEXTURE)) makeHead(scene, HEAD_TEXTURE, 'closed');
   if (!scene.textures.exists(HEAD_OPEN_TEXTURE)) makeHead(scene, HEAD_OPEN_TEXTURE, 'open');
   if (!scene.textures.exists(HEAD_DAZE_TEXTURE)) makeHead(scene, HEAD_DAZE_TEXTURE, 'daze');
-  if (!scene.textures.exists(HORNS_TEXTURE)) makeHorns(scene);
+  const look = GAMEPLAY.monaiLook;
+  const once = (key: string, paint: () => Pixels) => {
+    if (!scene.textures.exists(key)) upload(scene, key, paint());
+  };
+  const horns = hornCurves();
+  once(HORNS_TEXTURE, () => paintHorns(horns, HEAD_W, HEAD_H));
+  for (let i = 0; i < look.horns.sheenFrames; i++) once(`${HORN_SHEEN_PREFIX}${i}`, () => paintHornSheen(horns, HEAD_W, HEAD_H, i, look.horns.sheenFrames));
+  once(SKIN_KEYS.front, () => paintSkin('front'));
+  once(SKIN_KEYS.back, () => paintSkin('back'));
+  once(SKIN_KEYS.glow, () => paintSkin('glow'));
+  once(SKIN_KEYS.mask, () => paintSkin('mask'));
+  once(GLOW_TEXTURE, () => paintGlow(look.horns.glowRadius));
+  once(SPARKLE_TEXTURE, () => paintSparkle(3.5));
+  once(STAR_TEXTURE, () => paintStar());
+  once(HEART_TEXTURE, () => paintHeart(9));
+  once(SHADOW_OVAL_TEXTURE, () => paintShadowOval(SHADOW_OVAL.w, SHADOW_OVAL.h));
+  once(RING_TEXTURE, () => paintRing(RING_SIZE.w, RING_SIZE.h));
+  const lengths = [2.5, 4.5, 6.5, 6.5];
+  for (let i = 0; i < TONGUE_FRAMES; i++) once(`${TONGUE_PREFIX}${i}`, () => paintTongue(lengths[i], i === 3 ? 1.5 : i === 2 ? 1 : 0.5));
+  for (let i = 0; i < 2; i++) once(`${LEAF_PREFIX}${i}`, () => paintLeaf(i));
+  once(STREAK_TEXTURE, () => paintStreak(16));
+}
+
+/** Puntas de los cuernos respecto del centro de la zona de daño (unidades, mirando a la izquierda). */
+export function hornTips(): [number, number][] {
+  return hornCurves().map((h) => [h.tx - HEAD_CX, h.ty - HEAD_CY]);
+}
+
+/** Sube píxeles pintados como textura (una vez por partida). */
+function upload(scene: Phaser.Scene, key: string, px: Pixels): void {
+  const tex = scene.textures.createCanvas(key, px.width, px.height);
+  if (!tex) return;
+  const img = tex.context.createImageData(px.width, px.height);
+  img.data.set(px.data);
+  tex.context.putImageData(img, 0, 0);
+  tex.refresh();
 }
 
 /** Ruido estable (0..1) para variar sin Math.random. */
@@ -118,12 +186,11 @@ function makeHead(scene: Phaser.Scene, key: string, mood: 'closed' | 'open' | 'd
 }
 
 /**
- * Cuernos que salen de la nuca hacia arriba y atrás, grises con anillos (el tinte los vuelve iridiscentes). Cortos (S43):
- * la curva se acorta hacia su base en `hornLength` y el grosor no cambia.
+ * Cuernos que salen de la nuca hacia arriba y atrás (unidades, dentro de la textura de la cabeza). Cortos (S43): la
+ * curva se acorta hacia su base en `hornLength`. Desde S102 se pintan con luz y anillos (monaiPaint.ts) y el brillo
+ * iridiscente va encima.
  */
-function makeHorns(scene: Phaser.Scene): void {
-  const k = ART_K;
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+function hornCurves(): HornCurve[] {
   const left = HEAD_CX - CFG.headWidth / 2;
   const top = HEAD_CY - CFG.headHeight / 2;
   const w = CFG.headWidth;
@@ -133,30 +200,13 @@ function makeHorns(scene: Phaser.Scene): void {
     { bx: left + w * 0.78, by: top + 3, cx: left + w * 0.84, cy: top - 6, tx: HEAD_W - 1.5, ty: 4, r: 1.7 },
   ];
   const f = CFG.hornLength;
-  const horns = long.map((hn) => ({
+  return long.map((hn) => ({
     ...hn,
     cx: hn.bx + (hn.cx - hn.bx) * f,
     cy: hn.by + (hn.cy - hn.by) * f,
     tx: hn.bx + (hn.tx - hn.bx) * f,
     ty: hn.by + (hn.ty - hn.by) * f,
   }));
-  const steps = 22;
-  for (const pass of [0, 1, 2]) {
-    for (const hn of horns) {
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        const u = 1 - t;
-        const x = u * u * hn.bx + 2 * u * t * hn.cx + t * t * hn.tx;
-        const y = u * u * hn.by + 2 * u * t * hn.cy + t * t * hn.ty;
-        const r = hn.r * (1 - t * 0.7);
-        if (pass === 0) g.fillStyle(SNAKE.outline).fillCircle(x * k, y * k, (r + 0.8) * k);
-        else if (pass === 1) g.fillStyle(i % 5 === 2 && t < 0.8 ? SNAKE.hornBand : SNAKE.horn).fillCircle(x * k, y * k, r * k);
-        else if (t < 0.85) g.fillStyle(0xffffff, 0.7).fillCircle((x - r * 0.35) * k, (y - r * 0.2) * k, r * 0.35 * k);
-      }
-    }
-  }
-  g.generateTexture(HORNS_TEXTURE, HEAD_W * k, HEAD_H * k);
-  g.destroy();
 }
 
 // ── Cuerpo ────────────────────────────────────────────────────────────────

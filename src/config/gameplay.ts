@@ -857,6 +857,112 @@ export const GAMEPLAY = {
     headInTailWindow: true, // antes false
   },
   /**
+   * Moñái, solo el dibujo (S102; monaiPaint.ts, monaiBody.ts y la parte visual de Monai.ts). Nada de esto toca la
+   * pelea: hitboxes, tiempos, ventanas, la cuerda de segmentos y el enroscado siguen en `monai` y en monaiLogic.ts.
+   * La paleta se midió en la hoja de la cabeza (raw/monai/head) y en el fondo de l3 (cielo, campo, copas, tierra).
+   */
+  monaiLook: {
+    /** Rampas de la sombra a la luz. `skin` y `cream` salen de la cabeza (#d74212 es su naranja de base). */
+    palette: {
+      outline: 0x180a06,
+      skin: [0x2a0b04, 0x4f0d02, 0x7d2108, 0xad310c, 0xd74212, 0xf2662d, 0xfb9450],
+      cream: [0x4a1e0e, 0x7a4424, 0xad7241, 0xd29b65, 0xe7a459, 0xf8c286, 0xfcc88e],
+      /** Cuernos: nácar del gris al marfil (el tinte iridiscente va encima). */
+      horn: [0x1c1418, 0x3e3438, 0x6a5e62, 0x9a8f8e, 0xc8bfb6, 0xe9e2d4, 0xfbf7ee],
+      tongue: [0x3a0a14, 0x8e1a34, 0xc42a4a, 0xf06080],
+      heart: [0x3a0a0a, 0x8a1a20, 0xc82a30, 0xe85048, 0xff9a8a],
+      star: [0x7a5a10, 0xffe27a, 0xfffbe0],
+      /** Sombra del cuerpo en el tronco y en el piso (el violeta oscuro de la sombra de la caída). */
+      shadow: 0x1b1a2e,
+      /** Hojas que caen de la copa (los verdes de las copas de l3). */
+      leaf: [0x15290f, 0x2f5f22, 0x4f8a35],
+    },
+    /**
+     * Cuerpo (una tira pintada una vez, de la nuca a la punta de la cola). `length` y `halfHeight` en unidades;
+     * `profile`: radio a cada fracción del largo (de la nuca, escondida bajo la cabeza, a la punta); el último tramo
+     * se cierra en punta con `tipPower`. El radio de la cuerda de segmentos (`monai.segmentRadius`) no cambia.
+     */
+    body: {
+      length: 108,
+      halfHeight: 8,
+      profile: [
+        [0, 5.4],
+        [0.08, 6.2],
+        [0.24, 7],
+        [0.42, 6.6],
+        [0.86, 3.1],
+        [1, 0],
+      ] as readonly (readonly [number, number])[],
+      tipPower: 0.75,
+    },
+    /**
+     * Luz de la piel: dirección en el corte del cuerpo (`across` < 0 = desde el lomo) y hacia el frente; umbrales de
+     * cada tono (de 0 a 1) y cuánto tramado hay en los bordes de los tonos. `rim`: el brillo del borde del lomo.
+     */
+    light: { across: -0.55, out: 0.85, thresholds: [0.12, 0.34, 0.6, 0.95, 1.1] as readonly number[], dither: 0.08, rim: -0.8 },
+    /** Vientre: dónde empieza (fracción del radio, 1 = el borde de abajo), placas cada `plate` unidades. */
+    belly: { start: 0.3, plate: 2.2 },
+    /** Escamas del flanco: filas entre el lomo y el vientre y largo de cada escama (unidades, a radio 7). */
+    scales: { rows: 4, length: 2.4 },
+    /**
+     * Rombos del lomo: centro y medio alto (fracción del radio, < 0 = hacia el lomo), largo y separación según el
+     * radio, y la primera a esta distancia de la nuca (unidades). Manchas chicas en el flanco, entre rombos.
+     */
+    pattern: { center: -0.4, halfHeight: 0.5, lengthK: 0.6, lengthAdd: 1.4, periodK: 1.4, periodAdd: 3.2, start: 12, blotch: { center: 0.16, size: 0.42 } },
+    /** Vueltas de atrás del tronco: luz que les llega y mezcla con la sombra. */
+    back: { light: 0.45, mix: 0.3 },
+    /** Puntos de la tira dibujada (más = curvas más suaves). */
+    points: 48,
+    /**
+     * Lomo arriba: el lado del lomo se elige desde la nuca (el de la cabeza) y se da vuelta solo cuando apunta hacia
+     * abajo más que esto (0 = siempre arriba; 1 = nunca se da vuelta).
+     */
+    flipThreshold: 0.35,
+    /** En las curvas cerradas el lado de adentro se aprieta hasta esta fracción del radio de la curva. */
+    innerLimit: 0.85,
+    /**
+     * Nuca: dónde arranca la tira bajo la cabeza (unidades desde el centro de la zona de daño, mirando a la izquierda),
+     * reposo y mareo / fauces abiertas.
+     */
+    nape: { idle: [10, 3] as readonly [number, number], attack: [6, 3] as readonly [number, number] },
+    /** La punta de la cola sigue de largo detrás del último segmento (unidades). */
+    tailTip: 6,
+    /**
+     * Onda que recorre el cuerpo de la cabeza a la cola: largo (unidades), período (ms) y amplitud (unidades) volando,
+     * colgando de la copa y en el suelo; crece desde la nuca en `rampIn` unidades. En el enroscado, en vez de moverse, el
+     * cuerpo se hincha (`swell`, fracción del grosor). Por fase (furia), el período se divide por `phaseSpeed`.
+     */
+    wave: { length: 46, periodMs: 1500, fly: 2.6, perched: 1.6, ground: 0.6, rampIn: 16, swell: 0.07, phaseSpeed: [1, 1.3, 1.65] as readonly number[], settleMs: 220 },
+    /** Respiración: período (ms) y cuánto engorda el pecho (fracción del grosor); mareada, más lenta. */
+    breath: { periodMs: 2600, amount: 0.04, dazedPeriodMs: 4200 },
+    /** Brillo del dibujo del lomo en cada fase (furia): alfa del tinte dorado sobre los rombos. */
+    furyGlow: { color: 0xffc860, alpha: [0, 0.22, 0.42] as readonly number[], shimmerMs: 2200 },
+    /**
+     * Pulso de hipnosis: la iridiscencia corre por el lomo de la nuca a la cola (largo de la ola, unidades, y
+     * velocidad, unidades por segundo; alfa del tinte). En el aviso, más lenta y suave; al lanzarse, rápida.
+     */
+    hypnoWave: { width: 22, speedWarn: 70, speedFire: 260, alphaWarn: 0.55, alphaFire: 0.85, cycleMs: 700 },
+    /** Golpe: la sacudida baja por el cuerpo (ms en llegar a la cola, amplitud y largo de la onda, unidades). */
+    hit: { travelMs: 360, amplitude: 3.2, width: 14, wobble: 7, flashAlpha: 0.85 },
+    /** Mareo: la cabeza cuelga (grados) y la onda se apaga. */
+    daze: { droopDeg: 9 },
+    /** Cuernos: ciclo del color iridiscente (ms) en reposo y brillando, alfa del brillo, cuadros del reflejo que corre. */
+    horns: { cycleMs: 2400, glowCycleMs: 520, sheenAlpha: 0.45, glowSheenAlpha: 0.9, sheenFrames: 8, sheenMs: 90, glowRadius: 11, glowAlpha: 0.55 },
+    /** Lengua bífida: cada cuánto sale (ms, entre mín. y máx.) y cuánto dura cada salida. */
+    tongue: { minMs: 2200, maxMs: 4800, flickMs: 420, at: [-14, 3.6] as readonly [number, number] },
+    /** Sombras: en el tronco (desplazamiento y alfa) y en el piso (alfa, alto en que se apaga, grosor). */
+    shadow: { trunkDx: 1.5, trunkDy: 3, trunkAlpha: 0.42, groundAlpha: 0.34, groundFade: 30, groundHalf: 2.2 },
+    /**
+     * Aviso de la caída: anillo que se cierra sobre la sombra (escala de inicio y fin) y que destella al quedar fija;
+     * hojas que caen de la copa a esta fracción del aviso; el hocico se inclina hacia abajo hasta `peekDeg` grados.
+     */
+    descentWarn: { ringFrom: 1.9, ringTo: 1, ringAlpha: 0.8, leavesAt: 0.45, leaves: 6, peekDeg: 14 },
+    /** Aviso del robo: brillo del ojo, sacudida de la cola; al embestir, rayas de velocidad. */
+    stealWarn: { eyeAt: [-7, -3.8] as readonly [number, number], eyeColor: 0xff5a7a, tailRattle: 2.2, streaks: 4 },
+    /** Corazón robado en la cola: latido (ms) y brillo. */
+    heart: { beatMs: 520, glowAlpha: 0.55, rise: 5 },
+  },
+  /**
    * Ñandú (S26): tamaño del dibujo y del cuerpo respecto de la hoja (64 × 64 a detalle 2). Con 1, el ave medía 32 de
    * alto y se leía como un pollito al lado de Kerana (42). Con 1,6 el cuerpo de 16 × 26 queda en 26 × 42: tan alto
    * como Kerana, y el salto (63 px) lo sigue pasando con margen.
