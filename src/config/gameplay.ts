@@ -433,46 +433,184 @@ export const GAMEPLAY = {
     exposedStarOrbit: 15,
     exposedStarSpinMs: 900,
     /**
-     * Cuellos (S13d, solo dibujo): cadena de escamas redondas sobre una Bézier cuadrática del lomo a la cabeza.
-     * Grosor `neckWidth` en la base y `neckTipScale` × eso junto a la cabeza; una escama cada `neckScaleSpacing`
-     * diámetros (tope `neckMaxScales`). Punto de control: `neckCurveLean` del camino en x hacia la cabeza y
-     * `neckCurveRise` unidades por encima del extremo más alto (más = cuello más arqueado).
-     * `neckScaleShade`: gris del cuerpo de la escama (el tinte es el color de la cabeza; el brillo de arriba, el color pleno).
+     * Forma de los cuellos (solo dibujo; S101 los dibuja como tubos en tejuJaguaArt.ts): Bézier del lomo a la cabeza
+     * con grosor `neckWidth` en la base y `neckTipScale` × eso junto a la cabeza. Punto de control: `neckCurveLean` del
+     * camino en x hacia la cabeza y `neckCurveRise` unidades por encima del extremo más alto (más = más arqueado).
      */
-    neckTipScale: 0.6,
-    neckScaleSpacing: 0.5,
-    neckMaxScales: 56,
+    neckTipScale: 0.55,
     neckCurveLean: 0.2,
     neckCurveRise: 28,
-    neckScaleShade: 0.55,
     /**
-     * Cuerpo (lomo de lagarto por código): montículo de `bodyWidth` de ancho cuya cima queda `bodyTop` unidades sobre
-     * el centro del cuerpo; `bodyDepth` es el semieje vertical del óvalo (con la cima, decide dónde salen los cuellos).
-     * Filas de escamas en arco cada `bodyRowStep`, escamas de `bodyScaleSize`. Colores: gris pardo oscuro, borde y
-     * reflejos dorados (`bodyGoldAlpha`). Respira escalando `breathScale` (fracción) cada `breathMs`.
+     * Lomo: montículo de `bodyWidth` de ancho cuya cima queda `bodyTop` unidades sobre el centro del cuerpo; `bodyDepth`
+     * es el semieje vertical del óvalo. Es el anclaje de los cuellos y de las cabezas dormidas: el dibujo (S101) sigue
+     * ese óvalo por arriba y debajo arma el lagarto agazapado.
      */
     bodyWidth: 320,
     bodyTop: 55,
     bodyDepth: 95,
-    bodyRowStep: 9,
-    bodyScaleSize: 12,
-    bodyColor: 0x3d362e,
     /**
-     * Tinte de las cabezas y los cuellos. El dibujo es gris: multiplicar por `bodyColor` lo deja casi negro.
-     * Este valor, sobre ese gris, cae en el marrón del lomo.
+     * Tinte de las cabezas: el dibujo es gris y este valor lo deja en el marrón del lomo. S101: la paleta del cuerpo
+     * sale de la cabeza así teñida.
      */
     headColor: 0x7b6d5d,
-    bodyDarkColor: 0x1b1713,
-    bodyGoldColor: 0xc9a24a,
-    bodyGoldAlpha: 0.55,
-    clawColor: 0xd8cfb8,
-    breathScale: 0.015,
-    breathMs: 2400,
-    /** Cola gruesa curvada hacia un costado: largo, alto y grosor en la base y en la punta (unidades). */
-    tailLength: 120,
-    tailRise: 70,
-    tailBaseWidth: 26,
-    tailTipWidth: 4,
+  },
+
+  /**
+   * Teju Jagua, solo el dibujo (S101; tejuJaguaArt.ts y la parte visual de TejuJagua.ts). Nada de esto toca la pelea:
+   * hitboxes, tiempos, ventanas y anclajes siguen en `tejuJagua` y en bosses.ts. La paleta se midió en la cabeza teñida
+   * (pelo y hocico) y en el fondo de la caverna (roca azul violeta, cristales cian y el oro del fondo).
+   */
+  tejuJaguaLook: {
+    /** Rampas por material, de la sombra a la luz. `skin[0]` y `outline` son el contorno. */
+    palette: {
+      outline: 0x090807,
+      skin: [0x0d0b0a, 0x1a1611, 0x28221a, 0x372f25, 0x483e31, 0x5c5040, 0x736553],
+      belly: [0x1e1912, 0x372e22, 0x524633, 0x6e6046, 0x8b7a5b, 0xa69472],
+      bone: [0x1a1714, 0x3a332a, 0x5a5145, 0x7e7463, 0xa59a86, 0xc6bba4],
+      moss: [0x141a12, 0x1f2a19, 0x2c3a22, 0x3e4e2c, 0x55663a],
+      /** Borde frío de los cristales (arriba y atrás) y rebote cálido del oro (desde el centro del fondo, bajo). */
+      cold: [0x1f2d35, 0x2f4a55, 0x45707b, 0x6a9fa8, 0x9fd0d6],
+      warm: [0x352818, 0x56432a, 0x7c6537, 0xa58b4c, 0xcfb26a],
+      scar: [0x3b2e2a, 0x5c4840, 0x7a645a, 0x957f74],
+      /** Pelo de la crin: el gris de la cabeza multiplicado por `tejuJagua.headColor`. */
+      fur: [0x110f0d, 0x221e1a, 0x332c25, 0x4c4239, 0x5c5145, 0x6b5f50, 0x796a5a],
+      /** Ojos: brasa, núcleo y el rojo de la furia (el resplandor se suma a la escena). */
+      eye: 0xff6a24,
+      eyeHot: 0xffe08a,
+      eyeFury: 0xff3a14,
+      mouth: 0xff8a2a,
+    },
+    /**
+     * Luz del cuerpo pintado: relleno tenue desde adelante (dirección x, y hacia arriba, z hacia la cámara), borde frío
+     * de los cristales (arriba, a cada costado: el x va del lado de cada punto) y rebote cálido del oro (arriba y detrás
+     * del centro: el x apunta al centro, y manda en el medio del lomo). `from`/`to`: dónde empieza y satura cada luz.
+     * `floorShade`: alto (unidades) de la sombra propia contra el suelo. `dither`: cuánto se mezclan los tonos vecinos.
+     */
+    light: {
+      fill: [-0.45, 0.65, 0.6],
+      ambient: 0.08,
+      diffuse: 1.05,
+      cold: [0.45, 0.75, -0.5],
+      coldFrom: 0.32,
+      coldTo: 0.8,
+      coldStrength: 3.4,
+      warm: [0.5, 0.55, -0.7],
+      warmFrom: 0.25,
+      warmTo: 0.75,
+      warmStrength: 3.4,
+      /** Hasta dónde le pega el oro a los cuellos (fracción del semiancho del lomo, desde el centro). */
+      warmReach: 0.45,
+      floorShade: 34,
+      dither: 0.75,
+      /** Tonos de la rampa que recorre la luz de relleno (menos = cuerpo más oscuro). */
+      toneSpan: 4.6,
+    },
+    /**
+     * Escamas (celdas de Voronoi, no un sello repetido): tamaño en el lomo y en los flancos bajos, en las patas,
+     * cuánto abomban y el ancho de la grieta entre escamas (unidades).
+     */
+    scales: { large: 6.4, small: 2.5, leg: 2.3, bulge: 0.6, crevice: 0.45 },
+    /** Musgo en lo que mira hacia arriba: umbral del ruido (más alto = menos musgo) y escala del ruido (unidades). */
+    moss: { threshold: 0.66, scale: 7 },
+    /**
+     * Respiración: cuadros pintados del cuerpo (sube `scale` de su alto al inspirar; las patas quedan clavadas),
+     * período y cuánto se acelera con la furia (fracción a seis cabezas dormidas).
+     */
+    breath: { frames: 3, scale: 0.014, periodMs: 2600, furyFaster: 0.45 },
+    /**
+     * Cuellos: tramos del tubo, ensanche en el collar, paso de las placas (fracción del grosor) y de las del vientre
+     * (unidades), hasta dónde llega la cresta y desde dónde empieza la crin (fracción del cuello, 0 = lomo), largo
+     * de las púas y de la crin (unidades). Ondulación: amplitud (unidades) y período (ms) despierta y dormida; la onda
+     * viaja de la base a la cabeza. `lagMs`: cuánto tarda la curva en seguir a la cabeza.
+     * Aviso de la mordida (sin cambiar su tiempo): el cuello se recoge (`gatherRise` más alto, `gatherCoil` de S,
+     * `gatherPull` hacia el lomo) y la cabeza se echa atrás `recoil` unidades. Dormida: el cuello cuelga `droopSag`.
+     */
+    neck: {
+      segments: 11,
+      flare: 0.4,
+      plateStep: 0.75,
+      ventralStep: 10,
+      spikeTo: 0.58,
+      spikeLen: [4.5, 2],
+      maneFrom: 0.6,
+      maneLen: [3, 12],
+      waveAmp: 1.6,
+      waveMs: 2300,
+      sleepWaveAmp: 0.5,
+      sleepWaveMs: 4200,
+      lagMs: 140,
+      gatherRise: 26,
+      gatherCoil: 5,
+      gatherPull: 0.35,
+      recoil: 4,
+      droopSag: 10,
+    },
+    /**
+     * Collar de placas donde cada cuello nace del lomo: medidas de la textura (unidades) y cuánto sube sobre la raíz.
+     */
+    collar: { width: 34, height: 24, lift: 1.5 },
+    /**
+     * Cabezas (solo el dibujo; la hitbox no se mueve): se mecen (unidades y ms), parpadean (cada tanto, ms) y gruñen
+     * (cada tanto, cuánto dura y temblor). Dormidas: se inclinan `sleepDroopDeg`, respiran lento y cierran la boca
+     * (cuadro `sleepFrame` de la hoja); en el rugido la abren (`roarFrame`). `furyFaster`: la furia acelera el gruñido.
+     */
+    head: {
+      swayX: 1.2,
+      swayY: 1.6,
+      swayMsX: 1900,
+      swayMsY: 1500,
+      blinkEvery: [1800, 4800],
+      blinkMs: 110,
+      growlEvery: [3200, 7000],
+      growlMs: 520,
+      growlJitter: 0.6,
+      furyFaster: 0.55,
+      sleepDroopDeg: 10,
+      sleepBreathAmp: 0.8,
+      sleepBreathMs: 3600,
+      sleepFrame: 4,
+      roarFrame: 1,
+    },
+    /**
+     * Ojos: intensidad en reposo y cuánto sube con la furia; en un aviso, al máximo. Resplandor: lado (unidades), escala
+     * mínima y máxima y alfa máximo. Latido del aviso (ms; con «Destellos: no» no late, queda fijo).
+     */
+    eyes: { base: 0.35, fury: 0.5, glowSize: 10, glowScale: [0.7, 1.7], glowAlpha: 0.85, glarePulseMs: 160 },
+    /**
+     * Brasas en el hocico: en el aviso del fuego (cada tanto, ms, al principio y al final del aviso) y con la furia,
+     * desde `furyFrom` (fracción de cabezas dormidas). Resplandor de la boca: escala máxima (× el lado del de los ojos).
+     */
+    embers: { warnEvery: [140, 35], furyFrom: 0.3, furyEvery: [700, 160], mouthScale: 2.4 },
+    /**
+     * Cola: tubo de `baseWidth` a `tipWidth` (unidades). Poses (base, control 1, control 2, punta; unidades desde el
+     * centro del cuerpo en el suelo, y hacia arriba): en reposo, tensa (aviso del coletazo) y dando el golpe. Se mece
+     * (`swayAmp` x e y, período en ms), tiembla tensa (unidades, Hz) y sigue su pose en `follow` ms (reposo, tensa, golpe).
+     * `slamHoldMs`: cuánto queda pegada al suelo antes de volver.
+     */
+    tail: {
+      baseWidth: 24,
+      tipWidth: 1.6,
+      rest: [30, 34, 130, 26, 166, 4, 198, 24],
+      tense: [30, 36, 140, 62, 178, 104, 136, 112],
+      slam: [30, 32, 136, 10, 182, 1, 216, 2],
+      swayAmp: [5, 4],
+      swayMs: 1800,
+      tremble: 0.9,
+      trembleHz: 22,
+      follow: [160, 70, 25],
+      slamHoldMs: 500,
+    },
+    /** Golpe: el cuerpo entero se sacude (ms, unidades, Hz) y la cabeza golpeada se echa atrás (unidades). */
+    hit: { shakeMs: 280, shakeAmp: 1.6, shakeHz: 18, recoil: 4 },
+    /**
+     * Presentación (mismo tiempo que antes): antes de la pelea el cuerpo es una silueta (`darkMul` multiplica sus
+     * colores; el borde frío se ve con alfa `rimStart`), los ojos se encienden de a pares y al final la luz lo revela en
+     * `revealMs` con un resplandor del oro (alfa `glowAlpha`; con «Destellos: no» no sale) y un rugido (sacudida, ms e
+     * intensidad, y las cabezas se alzan `roarLift` unidades).
+     */
+    intro: { darkMul: 0x1a1c26, rimStart: 0.3, revealMs: 500, glowAlpha: 0.45, roarShakeMs: 450, roarShake: 0.01, roarLift: 3, roarMs: 700 },
+    /** Sombras en el suelo: la del cuerpo (ancho, alto en unidades, alfa) y la de cada cabeza cerca del suelo. */
+    shadow: { width: 300, height: 16, alpha: 0.6, headWidth: 44, headRange: 40, headAlpha: 0.5 },
   },
 
   /** Mbói Tu'i (GDD §6.2). Los tiempos de cada ataque están en src/data/bosses.ts. */
