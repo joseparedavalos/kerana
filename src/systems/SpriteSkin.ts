@@ -58,6 +58,8 @@ export class SpriteSkin {
   private released = false;
   /** Desplazamiento horizontal pasajero en unidades del mundo (temblor del aviso de los enemigos). */
   shakeX = 0;
+  /** Desplazamiento vertical pasajero (S101: las cabezas de Teju Jagua se mecen y respiran sin mover su hitbox). */
+  shakeY = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -87,7 +89,7 @@ export class SpriteSkin {
     const s = this.sprite;
     const faceRight = (src.flipX ?? false) !== (this.opts.sourceFacesRight ?? false);
     const [dx, dy] = this.opts.offset ?? [0, 0];
-    s.setPosition(src.x + (faceRight ? -dx : dx) + this.shakeX, src.y + dy);
+    s.setPosition(src.x + (faceRight ? -dx : dx) + this.shakeX, src.y + dy + this.shakeY);
     // flipX refleja la textura dentro del cuadro, no el origen: el origen se refleja a mano.
     const [ox, oy] = this.opts.origin ?? [0.5, 1];
     s.setFlipX(faceRight).setOrigin(faceRight ? 1 - ox : ox, oy);
