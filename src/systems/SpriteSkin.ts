@@ -129,10 +129,12 @@ export class SpriteSkin {
     if (clipBelowY) y1 = Phaser.Math.Clamp((clipBelowY() - top) / scaleY, 0, fh);
     let x0 = 0;
     let x1 = fw;
-    // La franja va en coordenadas del frame (mirando a la izquierda); setCrop también, y Phaser la refleja con flipX.
+    // La franja va en coordenadas del frame (mirando a la izquierda). Con flipX, Phaser toma el recorte en el lado
+    // reflejado (S103: se veían dos bastones mirando a la derecha), así que la franja se refleja acá.
     // setCrop deja un solo rectángulo: se conserva el lado más ancho.
-    const cols = hideColumns?.();
-    if (cols) {
+    const raw = hideColumns?.();
+    if (raw) {
+      const cols = s.flipX ? [1 - raw[1], 1 - raw[0]] : raw;
       if (cols[0] <= 1 - cols[1]) x0 = cols[1] * fw;
       else x1 = cols[0] * fw;
     }

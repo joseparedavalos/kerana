@@ -28,6 +28,7 @@ import { parseBouncerKind } from '../entities/hazards/BouncerMotor';
 import { Crumble } from '../entities/hazards/Crumble';
 import { FallingHazard, type FallingKind } from '../entities/hazards/FallingHazard';
 import { Sinking } from '../entities/hazards/Sinking';
+import { SleepFogLook } from '../entities/hazards/SleepFogLook';
 import { WindZone } from '../entities/hazards/WindZone';
 import { Lantern, type LanternMount } from '../entities/Lantern';
 import { LightWaveMotor } from '../entities/LightWaveMotor';
@@ -113,7 +114,6 @@ interface Breakable {
 
 const FX_PARTICLE = 'fx_particle';
 const SHALLOW_COLOR = 0x5aa6b8;
-const FOG_COLOR = 0xc8b8e6;
 const LIANA_COLOR = 0x3f7a3a;
 const PINDO_TRUNK_COLOR = 0x7a6248;
 const PINDO_LEAF_COLOR = 0x4f8a3a;
@@ -209,6 +209,8 @@ export class LevelScene extends Phaser.Scene {
   private confusionSpiral?: Phaser.GameObjects.Graphics;
   /** Niebla del sueño (GDD §4.8, §6.4). */
   private fogZones: Phaser.Geom.Rectangle[] = [];
+  /** Dibujo de cada zona de niebla (S103). */
+  private fogLooks: SleepFogLook[] = [];
   /** "Zzz" sobre Kerana: bostezo (tenue) y dormida. */
   private sleepIcon?: Phaser.GameObjects.Text;
   /** Enemigos que llamó el jefe: enjambres, kuati, ka'i (se limpian al reiniciar la pelea). */
@@ -304,6 +306,7 @@ export class LevelScene extends Phaser.Scene {
     this.hypnosisIcon = undefined;
     this.confusionSpiral = undefined;
     this.fogZones = [];
+    this.fogLooks = [];
     this.sleepIcon = undefined;
     this.bossMinions = [];
     this.bouncers = [];
@@ -596,6 +599,11 @@ export class LevelScene extends Phaser.Scene {
     if (!this.dialogueBox?.active && !this.cutscene) this.tryAutoAttack();
     this.inputs.update();
     this.backdrop.update(this.darkness?.ambientColor);
+    // La bruma se mueve también durante los diálogos y las escenas (es solo dibujo).
+    if (this.fogLooks.length) {
+      const view = this.cameras.main.worldView;
+      for (const fog of this.fogLooks) fog.update(delta, view);
+    }
     SaveManager.addPlayTime(delta);
     if (!this.runStopped) this.runMs += delta;
 
@@ -1423,24 +1431,10 @@ export class LevelScene extends Phaser.Scene {
     icon.setPosition(this.player.x + 6, this.player.y - GAMEPLAY.sleep.iconOffsetY + bob).setAlpha(status.asleep ? 1 : 0.45);
   }
 
-  /** Nubes lilas que van y vienen dentro de la zona (placeholder de la niebla). */
+  /** Zona de niebla del sueño y su bruma de siesta (GAMEPLAY.sleepFogLook, S103). */
   private addFog(zone: Phaser.Geom.Rectangle): void {
     this.fogZones.push(zone);
-    const tile = this.map.tileWidth;
-    for (let x = zone.left; x < zone.right; x += tile * 2) {
-      for (let y = zone.top + tile / 2; y < zone.bottom; y += tile * 1.5) {
-        const puff = this.add.ellipse(x + tile, y, tile * 3, tile * 1.6, FOG_COLOR, GAMEPLAY.sleep.fogAlpha).setDepth(11);
-        this.tweens.add({
-          targets: puff,
-          x: x + tile + Phaser.Math.Between(-6, 6),
-          alpha: GAMEPLAY.sleep.fogAlpha * 0.5,
-          duration: GAMEPLAY.sleep.fogDriftMs + Phaser.Math.Between(0, 800),
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut',
-        });
-      }
-    }
+    this.fogLooks.push(new SleepFogLook(this, zone));
   }
 
   /**
