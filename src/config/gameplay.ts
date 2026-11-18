@@ -2499,6 +2499,147 @@ export const GAMEPLAY = {
     cacheTracks: 4,
   },
 
+  /**
+   * Portada (S105): solo el dibujo. Logo y subtítulo en pixel art (1 píxel por unidad, 2 del lienzo), el ñandutí, el
+   * titilar de Eichu sobre las estrellas pintadas en `bg_yvaga_far`, la bruma, la estrella fugaz, Kerana con Mainumby,
+   * la entrada y el menú. Unidades del mundo (640 × 360); tiempos en ms; colores 0xrrggbb.
+   */
+  titleLook: {
+    /** Velo oscuro sobre el fondo (alfa) y el degradé de abajo que sostiene el menú (desde `vignetteTop` hasta el pie). */
+    skyDim: 0.32,
+    vignetteTop: 262,
+    vignetteColor: 0x0b0818,
+    vignetteAlpha: 0.72,
+    logo: {
+      /** Esquina de arriba a la izquierda se calcula para centrar en `centerX`; `top` es la fila de arriba de las letras. */
+      centerX: 320,
+      top: 164,
+      /** Alto de las mayúsculas (píxeles = unidades): el tamaño del logo. Las letras se arman para cualquier alto. */
+      cap: 38,
+      /** Cinco tonos de arriba (oro claro) a abajo (ámbar); el brillo de 1 píxel de los bordes de arriba. */
+      gradient: [0xfff1b5, 0xffd66b, 0xf6b540, 0xe48e2a, 0xbe661d],
+      highlight: 0xfffbea,
+      /** Fila de abajo de cada trazo, un tono más honda (da cuerpo a la letra). */
+      underside: 0x9c4f1a,
+      outline: 0x2b1030,
+      shadow: 0x14071c,
+      shadowAlpha: 0.85,
+      /** Sombra desplazada (píxeles) de las letras grandes y del subtítulo. */
+      shadowOffset: [2, 3],
+      subShadowOffset: [1, 2],
+      /** Del pie del logo al tope del subtítulo. */
+      subtitleGap: 4,
+    },
+    /** Destello que cruza las letras en diagonal: cada `shineEveryMs` (al azar entre los dos), en `shineMs`. */
+    shine: {
+      everyMs: [5000, 7000],
+      durationMs: 650,
+      /** Inclinación (píxeles de corrimiento por fila), ancho del núcleo y del borde, y el segundo hilo detrás. */
+      slant: 0.55,
+      core: 1.6,
+      edge: 3.4,
+      trailGap: 6.5,
+      trail: 0.9,
+      /** Paso (píxeles) entre cuadros pintados. */
+      step: 5,
+      coreColor: 0xfffef4,
+      edgeColor: 0xfff1c2,
+      /** Chispazo de cuatro puntas en la punta de arriba de la última letra cuando el destello sale (ms) y su corrimiento. */
+      sparkleMs: 420,
+      sparkleAt: [-1, 0],
+    },
+    /** Ñandutí: roseta al centro y franja a los costados, en hilo dorado (2 píxeles por unidad). */
+    nanduti: {
+      gapBelow: 6,
+      radius: 26,
+      spokes: 24,
+      rings: [6, 12, 18, 25],
+      wing: 150,
+      thread: 0xe2b452,
+      knot: 0xfff0b4,
+      deep: 0xa8772e,
+      alpha: 0.92,
+    },
+    /** Titilar de Eichu: estrellita de cuatro puntas encima de cada estrella pintada (centros medidos en la imagen). */
+    eichu: {
+      /** [x, y] en unidades: las siete del fondo (la octava la tapa el parche de S13, `tools/backgrounds.mjs`). */
+      stars: [
+        [268.4, 140.9],
+        [281.8, 105.9],
+        [303.2, 130.6],
+        [315.3, 91.7],
+        [335.3, 115.7],
+        [350.9, 144.1],
+        [365.2, 107.5],
+      ],
+      /** Largo de las puntas (píxeles a 2 por unidad) del cuadro más chico al más grande. */
+      arms: [2, 4, 6, 8, 10, 13],
+      periodMs: [2300, 3700],
+      alpha: 0.9,
+      /** Halo suave que acompaña al encenderse (radio en unidades y alfa máximo) y lo que queda al titilar. */
+      haloRadius: 9,
+      haloAlpha: 0.38,
+      haloRest: 0.08,
+      haloColor: 0xffd76a,
+      /** Con los destellos apagados, el titilar no pasa de este cuadro. */
+      calmMaxFrame: 2,
+    },
+    /** Bruma: dos capas que se deslizan sobre el mar de nubes, de ancho 640 y repetibles. */
+    fog: {
+      layers: [
+        { top: 238, height: 72, speed: 3.2, alpha: 0.6, seed: 3, depth: -4 },
+        { top: 292, height: 68, speed: 7.5, alpha: 0.75, seed: 11, depth: 2.5 },
+      ],
+      palette: [0x6f5f99, 0x8f7fba, 0xb3a3d6, 0xd4c8ec],
+      alphas: [0.18, 0.34, 0.52],
+      steps: [0.14, 0.38, 0.66],
+      /** Alto (píxeles) del borde de arriba: de nada a la masa llena. */
+      edge: 24,
+    },
+    /** Estrella fugaz: cada `everyMs` (al azar entre los dos), lejos del logo, en una de las dos cajas [x, y, ancho, alto]. */
+    shootingStar: {
+      everyMs: [8000, 15000],
+      durationMs: 700,
+      travel: 130,
+      boxes: [
+        [24, 14, 170, 60],
+        [440, 14, 170, 60],
+      ],
+      length: 46,
+      head: 0xffffff,
+      tail: [0xfff4d4, 0xbfd0ff, 0x7f8fd8],
+    },
+    /** Kerana (escala entera: 2 píxeles de arte por píxel del lienzo) y Mainumby, que revolotea a su lado. */
+    kerana: { x: 104, feetY: 352, artPx: 2 },
+    mainumby: { offsetX: 44, offsetY: -96, radiusX: 8, radiusY: 5, periodMs: 3400, bobMs: 900, bob: 2 },
+    /** Entrada (desde negro): cada estrella se enciende a `starStartMs + i * starStepMs`; todo listo a `totalMs`. */
+    intro: {
+      starStartMs: 120,
+      starStepMs: 75,
+      starPopMs: 360,
+      blackFade: [600, 1150],
+      logoIn: [820, 1120],
+      shineAtMs: 980,
+      subIn: [1000, 1300],
+      menuIn: [1200, 1500],
+      totalMs: 1500,
+    },
+    /** Menú: dos filas centradas; la estrellita del elegido pulsa (ms). */
+    menu: {
+      rows: [292, 322],
+      columnGap: 74,
+      fontPx: 12,
+      color: '#F2EEE3',
+      selected: '#F2C14E',
+      stroke: '#1a0c22',
+      strokePx: 3,
+      starGap: 6,
+      /** Radio de la estrellita en sus dos cuadros (late entre los dos). */
+      starArms: [3.5, 4.5],
+      pulseMs: 1100,
+    },
+  },
+
   /** Botones del celular (S90). Unidades del mundo, sobre el tamaño de fábrica (se multiplican por la escala del botón). */
   touch: {
     /** Media zona muerta de la zona de moverse: a menos de esto del medio entre las dos flechas, Kerana no camina. */
