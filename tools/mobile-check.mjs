@@ -138,7 +138,10 @@ async function main() {
     const fit0 = await canvasRatio(title);
     check(Math.abs(fit0.ratio - 16 / 9) < 0.01 && fit0.h <= fit0.vh + 1, `en horizontal el lienzo es 16:9 y entra (${fit0.w.toFixed(0)} × ${fit0.h.toFixed(0)} en ${fit0.vw} × ${fit0.vh})`);
 
-    // 2) Pantalla completa con el primer toque del título.
+    // 2) Pantalla completa con el primer toque del título. S105: la portada entra desde negro y un toque durante la
+    // entrada solo la saltea; se espera al menú, como en el smoke, para que el toque también empiece la partida
+    // (la partida nueva es la que guarda el idioma que usan las pruebas de abajo).
+    await waitFor(title, () => window.__KERANA_GAME__.scene.getScene('Title')?.menuReady === true);
     await tap(title, titleCdp, 320, 150);
     await sleep(800);
     const full = await title.evaluate(() => ({ on: !!document.fullscreenElement, root: document.fullscreenElement === document.documentElement, lock: screen.orientation?.type ?? '' }));
