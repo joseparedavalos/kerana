@@ -3,7 +3,7 @@ import { artOrPlaceholder, hasArt } from '../assets/art';
 import { addProp, propLook, propNames } from '../assets/propArt';
 import { layoutShowcase } from '../assets/propLayout';
 import { addPindoArt } from '../assets/pindoArt';
-import { ART_DETAIL, PROP_ATLASES, tilesetKey } from '../assets/manifest';
+import { ART_DETAIL, PLAYER_KEY, PROP_ATLASES, tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -46,6 +46,8 @@ import type { PlayerStateName } from '../entities/PlayerMotor';
 import { ChargeSound } from '../entities/chargeSoundLogic';
 import { t } from '../i18n';
 import { AudioManager } from '../systems/AudioManager';
+import { BIOME_FOOTSTEPS, type Surface } from '../data/sfxSamples';
+import { stepContact } from '../systems/sfxLogic';
 import { BossArena } from '../systems/BossArena';
 import { arenaEntry, insideArena } from '../systems/arenaGround';
 import { breakableGroups, restsOn } from '../systems/breakableLogic';
@@ -162,6 +164,9 @@ export class LevelScene extends Phaser.Scene {
   private arenaLuzUsed = false;
   private lastPlayerState: PlayerStateName = 'idle';
   private lastAirJumped = false;
+  /** Pasos (S106): el último cuadro de la animación de correr y, sin hoja, el tiempo desde el último paso. */
+  private lastRunFrame = -1;
+  private stepClockMs = 0;
   /** El sonido de la carga del tajo (S95). */
   private chargeSound = new ChargeSound(AudioManager);
   private wasImmune = false;
@@ -293,6 +298,8 @@ export class LevelScene extends Phaser.Scene {
     this.arenaLuzUsed = false;
     this.lastPlayerState = 'idle';
     this.lastAirJumped = false;
+    this.lastRunFrame = -1;
+    this.stepClockMs = 0;
     this.chargeSound = new ChargeSound(AudioManager);
     this.levelExitZone = undefined;
     this.completing = false;
@@ -620,6 +627,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.player.tick(delta, this.inputs);
     this.reportPlayerStateSfx();
+    this.updateFootsteps(delta);
     this.updateSlashFx();
     this.dashTrail.update(delta);
     // S92: con la arena trabada la pelea se encuadra como siempre (sin la mirada hacia arriba del nivel).
@@ -2507,6 +2515,7 @@ export class LevelScene extends Phaser.Scene {
     else if (state === 'dash') AudioManager.play('dash');
     else if ((state === 'idle' || state === 'run') && this.lastPlayerState === 'fall') {
       AudioManager.play('land');
+      AudioManager.step(this.footSurface(), GAMEPLAY.audio.footsteps.landDb);
       const body = this.player.body;
       this.dust.emitParticleAt(body.center.x, body.bottom, GAMEPLAY.juice.landDust);
     } else if (state === 'attack') {
@@ -2515,6 +2524,41 @@ export class LevelScene extends Phaser.Scene {
       else AudioManager.play('slash');
     }
     this.lastPlayerState = state;
+  }
+
+  /**
+   * Pasos de Kerana (S106): uno cada vez que la animación de correr entra en un cuadro de apoyo
+   * (`footsteps.contactFrames`). Sin la hoja (el rectángulo provisorio), uno cada `fallbackStepMs`.
+   */
+  private updateFootsteps(deltaMs: number): void {
+    const body = this.player.body;
+    const f = GAMEPLAY.audio.footsteps;
+    if (this.player.motor.state !== 'run' || !(body.blocked.down || body.touching.down)) {
+      this.lastRunFrame = -1;
+      this.stepClockMs = 0;
+      return;
+    }
+    const anims = this.player.anims;
+    const frame = anims.currentAnim?.key === `${PLAYER_KEY}_run` ? anims.currentFrame?.index : undefined;
+    if (frame === undefined) {
+      this.stepClockMs += deltaMs;
+      if (this.stepClockMs < f.fallbackStepMs) return;
+      this.stepClockMs -= f.fallbackStepMs;
+      AudioManager.step(this.footSurface());
+      return;
+    }
+    const contact = stepContact(this.lastRunFrame, frame, f.contactFrames);
+    this.lastRunFrame = frame;
+    if (contact >= 0) AudioManager.step(this.footSurface());
+  }
+
+  /** El suelo bajo los pies: la capa `Ground` (bajo el centro o un borde) o, si no, lo de un solo sentido y lo que se mueve. */
+  private footSurface(): Surface {
+    const b = this.player.body;
+    const y = b.bottom + 1;
+    const surfaces = BIOME_FOOTSTEPS[this.def.biome];
+    const onGround = this.tileAt('Ground', b.center.x, y) || this.tileAt('Ground', b.left + 1, y) || this.tileAt('Ground', b.right - 1, y);
+    return onGround ? surfaces.ground : surfaces.platforms;
   }
 
   /** Chispas del sable en el tajo normal; el cargado se dibuja con la media luna de la onda (S80). */
