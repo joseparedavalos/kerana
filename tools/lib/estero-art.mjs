@@ -378,7 +378,7 @@ export const PLANK = {
   /** Astillas que cuelgan del canto de abajo (1: una fila más). */
   chips: [0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0],
   /** Brillo mojado del atardecer en el filo. */
-  wet: [2, 13],
+  wet: [13],
 };
 
 export function plankCell(kind /* 'left' | 'center' | 'right' */, variant = {}) {
@@ -536,11 +536,10 @@ export function waterCell(kind /* 'surface' | 'body' | 'deep' */, seed = 1100) {
       g.set(x, c + 1, gold > 0 ? 'glow' : 'water', gold > 0 ? 1 : 5, a);
       if (gold > 0) gold--;
     }
-    streaks(g, rng, [4, 6, 9, 11], 1, 'glow', [0, 1], a, [], 3, 6);
-    streaks(g, rng, [5, 13], 1, 'water', [6, 6], a, [], 3, 5);
+    streaks(g, rng, [4, 6, 9, 11], 1, 'glow', [0, 0], a, [], 3, 6);
   } else if (kind === 'body') {
     mix(15, 1, 0.15);
-    streaks(g, rng, [3, 7, 12], 1, 'water', [5, 5], a, [], 3, 5);
+    streaks(g, rng, [3, 7, 12], 1, 'water', [4, 4], a, [], 3, 5);
   } else {
     mix(0, 3, 0.05);
     for (let y = 0; y < T; y++) mix(y, 1, 0.05);
@@ -832,8 +831,8 @@ export function edgeVariants(seed = 1103) {
   ];
   // El tablón (17): otra veta, la atadura y el pasto en otro lugar; los extremos, como la base.
   const plankAlt = [
-    { grain: [[2, 2, 7], [4, 9, 13], [3, 12, 15]], ties: [10], pegs: [[3, 3]], grass: [], chips: [0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0], wet: [6] },
-    { grain: [[3, 0, 4], [2, 6, 10], [4, 11, 15]], ties: [], pegs: [[7, 2], [12, 4]], grass: [[2, 4]], chips: [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1], wet: [9, 14] },
+    { grain: [[2, 2, 7], [4, 9, 13], [3, 12, 15]], ties: [10], pegs: [[3, 3]], grass: [], chips: [0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0], wet: [] },
+    { grain: [[3, 0, 4], [2, 6, 10], [4, 11, 15]], ties: [], pegs: [[7, 2], [12, 4]], grass: [[2, 4]], chips: [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1], wet: [9] },
     { grain: [[4, 1, 5], [2, 7, 12]], ties: [12], pegs: [], grass: [[5, 3]], chips: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0], wet: [3] },
   ];
   out[17] = plankAlt.map((v) => restoreSolidBands(plankCell('center', v), plankCell('center'), LEFT | RIGHT));
