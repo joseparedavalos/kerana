@@ -529,9 +529,24 @@ export class DuskGlow {
    * rectángulo entero por valle era casi todo transparente y costaba cuadros. Las de un valle se dibujan solo bajo un
    * jirón.
    */
-  private readonly covers: { img: Phaser.GameObjects.Image; group: number; x0: number; y0: number; x1: number; y1: number }[] = [];
-  /** Por valle, qué columnas de su tapa tienen un jirón encima en este cuadro. */
-  private readonly under: Uint8Array[] = [];
+  private readonly covers: {
+    img: Phaser.GameObjects.Image;
+    group: number;
+    /** Columna dentro de su valle; para la sierra, si algún rayo pasa por ella debajo del cielo. */
+    column: number;
+    rays: boolean;
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+    /** Hasta dónde está recortada ahora (px de arte). */
+    foot: number;
+  }[] = [];
+  /**
+   * Por valle y columna de su tapa, hasta dónde baja el jirón más bajo que tiene encima en este cuadro (px de arte; 0 si
+   * ninguno): la columna se recorta a eso, no al peor caso.
+   */
+  private readonly under: Float32Array[] = [];
   /** Para medir (S108): cada parte se puede apagar desde la consola de depuración. */
   readonly parts = { rays: true, mist: true, covers: true };
   /** Si en el cuadro anterior se dibujó algo (si no, apagado no hay nada que esconder). */
@@ -600,7 +615,7 @@ export class DuskGlow {
       };
       rects.push([vx0, 0, vx1, 0]);
       reach.push(span);
-      this.under.push(new Uint8Array(Math.ceil((vx1 - vx0 + 1) / COVER_COLUMN)));
+      this.under.push(new Float32Array(Math.ceil((vx1 - vx0 + 1) / COVER_COLUMN)));
     }
     // Cada tapa, en columnas de `COVER_COLUMN` px con el alto justo de lo que tapa en esa columna.
     const columns = rects.map((r, g) => {
@@ -627,7 +642,9 @@ export class DuskGlow {
     });
     if (!ok) return;
     const addCovers = (g: number, d: number) => {
-      for (const r of columns[g]!) this.covers.push({ img: this.coverImage(scene, coverKey, r, d), group: g, x0: r[0], y0: r[1], x1: r[2], y1: r[3] });
+      columns[g]!.forEach((r, column) =>
+        this.covers.push({ img: this.coverImage(scene, coverKey, r, d), group: g, column, rays: g > 0 || this.rayCrosses(r), x0: r[0], y0: r[1], x1: r[2], y1: r[3], foot: r[3] }),
+      );
     };
     // Orden de atrás hacia adelante: rayos, sierra; y por valle (del más lejano al más cercano), jirones y su loma.
     const order = place.valleys.map((v, i) => ({ v, i })).sort((a, b) => a.v.layer - b.v.layer || a.i - b.i);
@@ -655,6 +672,26 @@ export class DuskGlow {
     });
     const tint = Phaser.Display.Color.HexStringToColor(mc.color).color;
     for (const w of this.wisps) w.img.setTint(tint);
+  }
+
+  /** ¿Pasa algún rayo (con su ancho más grande) por este rectángulo, debajo del cielo? */
+  private rayCrosses(r: readonly [number, number, number, number]): boolean {
+    const [fx, fy] = this.place.rays;
+    const rc = DUSK.rays;
+    for (let y = r[1]; y <= r[3]; y += 2) {
+      for (let x = r[0]; x <= r[2]; x += 2) {
+        if (y < this.skyline[x]!) continue;
+        for (const d of rc.list) {
+          const a = (d.angle * Math.PI) / 180;
+          const dx = x - fx;
+          const dy = fy - y;
+          const t = (dx * Math.sin(a) + dy * Math.cos(a)) / d.length;
+          const across = Math.abs(dx * Math.cos(a) - dy * Math.sin(a));
+          if (t >= -0.02 && t <= 1 && across <= (d.width * rc.widthMax * (rc.base + (1 - rc.base) * Math.max(0, t))) / 2 + 2) return true;
+        }
+      }
+    }
+    return false;
   }
 
   private coverImage(scene: Phaser.Scene, key: string, r: readonly [number, number, number, number], depth: number): Phaser.GameObjects.Image {
@@ -727,16 +764,22 @@ export class DuskGlow {
       const u = this.under[w.valley]!;
       const c0 = Math.max(0, Math.floor((x - w.x0) / COVER_COLUMN));
       const c1 = Math.min(u.length - 1, Math.floor((x + w.width - w.x0) / COVER_COLUMN));
-      for (let c = c0; c <= c1; c++) u[c] = 1;
+      const foot = w.top + w.height;
+      for (let c = c0; c <= c1; c++) if (foot > u[c]!) u[c] = foot;
     }
     // En la misma esquina y escala que la imagen: el recorte cae justo sobre sus píxeles. La sierra, si hay rayos; cada
     // columna de un valle, si tiene un jirón encima.
     let covers = 0;
     for (const c of this.covers) {
-      const need = c.group === 0 ? parts.rays : this.under[c.group - 1]![Math.floor((c.x0 - this.place.valleys[c.group - 1]!.line[0]!) / COVER_COLUMN)] === 1;
-      const show = on && parts.covers && need && !hidden(left + c.x0 * sx, top + c.y0 * sy, left + (c.x1 + 1) * sx, top + (c.y1 + 1) * sy);
+      // Hasta dónde hace falta tapar: la sierra, entera donde pasa un rayo; la loma, hasta el pie del jirón de encima.
+      const foot = c.group === 0 ? (parts.rays && c.rays ? c.y1 : 0) : Math.min(c.y1, Math.ceil(this.under[c.group - 1]![c.column]!));
+      const show = on && parts.covers && foot > c.y0 && !hidden(left + c.x0 * sx, top + c.y0 * sy, left + (c.x1 + 1) * sx, top + (foot + 1) * sy);
       c.img.setVisible(show);
       if (show) {
+        if (foot !== c.foot) {
+          c.foot = foot;
+          c.img.setCrop(c.x0, c.y0, c.x1 - c.x0 + 1, foot - c.y0 + 1);
+        }
         c.img.setPosition(left, top).setScale(sx, sy);
         covers++;
       }

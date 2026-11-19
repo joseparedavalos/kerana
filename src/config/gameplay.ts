@@ -2422,9 +2422,9 @@ export const GAMEPLAY = {
         alphaVary: 0.35,
         layers: [
           /** Al pie de las sierras: lo que más se ve en el primer tramo. `speed`: px de arte por segundo. */
-          { width: 120, height: 30, gap: 108, speed: 2.2, alpha: 1 },
-          { width: 140, height: 34, gap: 130, speed: 3, alpha: 0.9 },
-          { width: 150, height: 36, gap: 150, speed: 3.8, alpha: 0.8 },
+          { width: 120, height: 30, gap: 124, speed: 2.2, alpha: 1 },
+          { width: 140, height: 34, gap: 160, speed: 3, alpha: 0.9 },
+          { width: 150, height: 36, gap: 190, speed: 3.8, alpha: 0.8 },
         ],
         seed: 11,
       },
@@ -2471,7 +2471,7 @@ export const GAMEPLAY = {
         periodMinMs: 3400,
         periodMaxMs: 5600,
         /** Halo suave alrededor: tamaño (múltiplo del grupo) y opacidad en el mínimo y en el máximo. */
-        haloScale: 1.9,
+        haloScale: 1.6,
         haloMin: 0.05,
         haloMax: 0.14,
         violet: '#a88cff',
