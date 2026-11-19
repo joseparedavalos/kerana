@@ -183,7 +183,31 @@ export interface RenderOptions {
 }
 
 /** Sintetiza el bucle entero en una sola pista mono. Las colas que pasan el final vuelven al principio. */
-export async function renderTrack(def: TrackDef, instruments: Record<string, InstrumentDef>, synth: Synth, opts: RenderOptions): Promise<Float32Array> {
+export function renderTrack(def: TrackDef, instruments: Record<string, InstrumentDef>, synth: Synth, opts: RenderOptions): Promise<Float32Array> {
+  return renderVoices(def, instruments, synth, opts, true);
+}
+
+/**
+ * Una pieza que suena una sola vez (S107: el jingle de la liberación). Como una pista, pero sin bucle: lo que pasa del
+ * final no vuelve al principio, el eco tampoco, y los últimos `fadeMs` se apagan hasta el silencio.
+ */
+export interface JingleDef extends TrackDef {
+  fadeMs: number;
+}
+
+export async function renderJingle(def: JingleDef, instruments: Record<string, InstrumentDef>, synth: Synth, opts: RenderOptions): Promise<Float32Array> {
+  const out = await renderVoices(def, instruments, synth, opts, false);
+  fadeTail(out, Math.round((def.fadeMs / 1000) * opts.sampleRate));
+  return out;
+}
+
+async function renderVoices(
+  def: TrackDef,
+  instruments: Record<string, InstrumentDef>,
+  synth: Synth,
+  opts: RenderOptions,
+  loop: boolean,
+): Promise<Float32Array> {
   const rate = opts.sampleRate;
   const steps = trackSteps(def);
   const stepSec = stepSeconds(def);
@@ -212,12 +236,12 @@ export async function renderTrack(def: TrackDef, instruments: Record<string, Ins
           }
           // Rasgueo: las notas de un acorde salen apenas corridas.
           const strum = note.semis.length > 1 ? Math.round(note.semis.indexOf(semi) * STRUM_SEC * rate) : 0;
-          mixInto(out, samples, start + strum, gain);
+          mixInto(out, samples, start + strum, gain, loop);
         }
       }
     }
   }
-  if (def.echo) applyEcho(out, Math.round((def.echo.ms / 1000) * rate), def.echo.feedback);
+  if (def.echo) applyEcho(out, Math.round((def.echo.ms / 1000) * rate), def.echo.feedback, loop);
   return out;
 }
 
@@ -236,20 +260,36 @@ export function noteParams(inst: InstrumentDef, root: number, semis: number, sec
   return p;
 }
 
-function mixInto(out: Float32Array, samples: ArrayLike<number>, start: number, gain: number): void {
+/** `loop`: lo que pasa del final vuelve al principio; si no, se pierde. */
+function mixInto(out: Float32Array, samples: ArrayLike<number>, start: number, gain: number, loop: boolean): void {
   const n = out.length;
-  for (let i = 0; i < samples.length; i++) out[(start + i) % n] += samples[i] * gain;
+  const len = loop ? samples.length : Math.min(samples.length, n - start);
+  for (let i = 0; i < len; i++) out[(start + i) % n] += samples[i] * gain;
 }
 
-/** Eco con realimentación que da la vuelta al bucle: dos vueltas para que el principio también lo tenga. */
-export function applyEcho(buf: Float32Array, delay: number, feedback: number): void {
+/**
+ * Eco con realimentación que da la vuelta al bucle: dos vueltas para que el principio también lo tenga. Con
+ * `loop = false` (una pieza que suena una vez), una sola pasada: el final no vuelve al principio.
+ */
+export function applyEcho(buf: Float32Array, delay: number, feedback: number, loop = true): void {
   const n = buf.length;
   if (delay <= 0 || delay >= n || feedback <= 0) return;
+  if (!loop) {
+    for (let i = delay; i < n; i++) buf[i] += feedback * buf[i - delay];
+    return;
+  }
   const dry = Float32Array.from(buf);
   for (let k = 0; k < n * 2; k++) {
     const i = k % n;
     buf[i] = dry[i] + feedback * buf[(i - delay + n) % n];
   }
+}
+
+/** Apaga los últimos `samples` hasta el silencio (medio coseno: sin quiebre al empezar ni clic al terminar). */
+export function fadeTail(buf: Float32Array, samples: number): void {
+  const n = buf.length;
+  const len = Math.min(n, Math.max(0, samples));
+  for (let i = 0; i < len; i++) buf[n - len + i] *= 0.5 + 0.5 * Math.cos((Math.PI * (i + 1)) / len);
 }
 
 export function rms(buf: ArrayLike<number>): number {
