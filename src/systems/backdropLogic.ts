@@ -1,4 +1,5 @@
 // Lógica pura del fondo del nivel (sin Phaser): desplazamiento según el avance, encuadre, brillo y tramo de cueva.
+import { bayer } from './pixelArt';
 
 /**
  * Desfase horizontal (≤ 0) del fondo fijo a la cámara: 0 al principio del nivel y `-extra * range`
@@ -214,4 +215,306 @@ export function shadowLeft(now: number, speed: number, imageWidth: number, shado
   if (lap <= 0) return 0;
   const x = (((now / 1000) * speed + offset * lap) % lap + lap) % lap;
   return x - shadowWidth;
+}
+
+// S108: el atardecer y la cueva de l1.
+
+/**
+ * Fila de la línea del cielo por columna (S108): subiendo desde `fromY`, la primera fila que tiene arriba `run` filas
+ * de cielo (rojo sobre azul ≥ `redOverBlue` y brillo ≥ `minLum`). Suavizada con una mediana de 7 columnas.
+ */
+export function skylineRows(
+  data: ArrayLike<number>,
+  width: number,
+  height: number,
+  fromY: number,
+  redOverBlue: number,
+  minLum: number,
+  run = 4,
+): Int16Array {
+  const sky = (x: number, y: number): boolean => {
+    const i = (y * width + x) * 4;
+    const r = data[i]!;
+    const g = data[i + 1]!;
+    const b = data[i + 2]!;
+    return r - b >= redOverBlue && 0.299 * r + 0.587 * g + 0.114 * b >= minLum;
+  };
+  const raw = new Int16Array(width);
+  for (let x = 0; x < width; x++) {
+    let y = Math.min(height - 1, fromY);
+    const clear = (yy: number) => {
+      for (let k = 1; k <= run; k++) if (!sky(x, yy - k)) return false;
+      return true;
+    };
+    while (y > run && !clear(y)) y--;
+    raw[x] = y;
+  }
+  const out = new Int16Array(width);
+  const win: number[] = [];
+  for (let x = 0; x < width; x++) {
+    win.length = 0;
+    for (let k = Math.max(0, x - 3); k <= Math.min(width - 1, x + 3); k++) win.push(raw[k]!);
+    win.sort((a, b) => a - b);
+    out[x] = win[Math.floor(win.length / 2)]!;
+  }
+  return out;
+}
+
+/** Alto de una polilínea plana (x, y, x, y… con x creciente) en `x`; NaN fuera de ella. */
+export function polylineY(line: ArrayLike<number>, x: number): number {
+  const n = line.length;
+  if (n < 2 || x < line[0]! || x > line[n - 2]!) return Number.NaN;
+  for (let i = 0; i + 2 < n; i += 2) {
+    const x0 = line[i]!;
+    const x1 = line[i + 2]!;
+    if (x <= x1) return x1 === x0 ? line[i + 1]! : line[i + 1]! + ((line[i + 3]! - line[i + 1]!) * (x - x0)) / (x1 - x0);
+  }
+  return line[n - 1]!;
+}
+
+/** Lo más bajo (la y más grande) de la polilínea entre `x0` y `x1`, recortado a su tramo; NaN si no se tocan. */
+export function polylineMax(line: ArrayLike<number>, x0: number, x1: number): number {
+  const n = line.length;
+  const a = Math.max(x0, line[0]!);
+  const b = Math.min(x1, line[n - 2]!);
+  if (n < 2 || a > b) return Number.NaN;
+  let m = Math.max(polylineY(line, a), polylineY(line, b));
+  for (let i = 0; i < n; i += 2) if (line[i]! > a && line[i]! < b) m = Math.max(m, line[i + 1]!);
+  return m;
+}
+
+/** Lo más grande de `values` entre los índices `x0` y `x1` (recortados al arreglo). */
+export function rangeMax(values: ArrayLike<number>, x0: number, x1: number): number {
+  let m = Number.NEGATIVE_INFINITY;
+  for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(values.length - 1, Math.ceil(x1)); x++) m = Math.max(m, values[x]!);
+  return m;
+}
+
+/**
+ * Borde izquierdo de un jirón de bruma (px de arte) que se desliza a `speed` px/s por un valle de `x0` a `x1` y vuelve a
+ * entrar por la izquierda: sale entero antes de volver. `offset` (0 a 1) los reparte.
+ */
+export function wispLeft(now: number, speed: number, x0: number, x1: number, width: number, offset: number): number {
+  const lap = x1 - x0 + width;
+  if (lap <= 0) return x0;
+  const x = (((now / 1000) * speed + offset * lap) % lap + lap) % lap;
+  return x0 - width + x;
+}
+
+/** Cuánto se ve un jirón según dónde está su centro en el valle: 1 adentro, 0 en las puntas (fundido de `fade` px). */
+export function wispFade(left: number, width: number, x0: number, x1: number, fade: number): number {
+  const c = left + width / 2;
+  const d = Math.min(c - x0, x1 - c);
+  if (fade <= 0) return d >= 0 ? 1 : 0;
+  return Math.min(1, Math.max(0, d / fade));
+}
+
+/**
+ * Borde de arriba de un jirón (px de arte): su pie queda `pad` px debajo de lo más bajo de la cresta que tiene abajo (lo
+ * tapa la loma) y su borde de arriba nunca sube a menos de `skyMargin` px del cielo (`skyline`, por columna).
+ */
+export function wispTop(
+  line: ArrayLike<number>,
+  skyline: ArrayLike<number>,
+  left: number,
+  width: number,
+  height: number,
+  pad: number,
+  skyMargin: number,
+): number {
+  const bottom = polylineMax(line, left, left + width);
+  const sky = rangeMax(skyline, left, left + width) + skyMargin;
+  if (Number.isNaN(bottom)) return sky;
+  return Math.max(Math.round(bottom + pad - height), sky);
+}
+
+/** Onda triangular de -1 a 1 (zigzag) con período 1: 0 en t = 0, 1 en t = 0,25. */
+export function zigzag(t: number): number {
+  const f = (((t + 0.25) % 1) + 1) % 1;
+  return 1 - 4 * Math.abs(f - 0.5);
+}
+
+/** Cuánto bajó una gota (px de arte) a los `ms` de soltarse, con aceleración `gravity` (px/s²). */
+export function dropFall(ms: number, gravity: number): number {
+  const t = Math.max(0, ms) / 1000;
+  return 0.5 * gravity * t * t;
+}
+
+/** Cuánto tarda en caer `distance` px de arte (ms). */
+export function dropFallMs(distance: number, gravity: number): number {
+  return gravity > 0 ? Math.sqrt((2 * Math.max(0, distance)) / gravity) * 1000 : 0;
+}
+
+/**
+ * Cuánto se ve algo chico del fondo de cueva en `x` (misma escala que `left` y `right`, el tramo de la cueva a la
+ * vista): 1 adentro, 0 afuera, con un fundido de `fade` en cada borde.
+ */
+export function spanAlpha(x: number, left: number, right: number, fade: number): number {
+  const d = Math.min(x - left, right - x);
+  if (fade <= 0) return d >= 0 ? 1 : 0;
+  return Math.min(1, Math.max(0, d / fade));
+}
+
+/** Qué cristal es un píxel (S108): 1 violeta, 2 cian, 0 ninguno. */
+export function crystalKind(
+  r: number,
+  g: number,
+  b: number,
+  c: { violetBlueOver: number; violetMinBlue: number; cyanOver: number; cyanMinGreen: number },
+): 0 | 1 | 2 {
+  if (b - Math.max(r, g) > c.violetBlueOver && b > c.violetMinBlue) return 1;
+  if (g - r > c.cyanOver && b - r > c.cyanOver && g > c.cyanMinGreen) return 2;
+  return 0;
+}
+
+/** Píxeles de oro (rojo + verde − 2 × azul > `minYellow`) dentro de `rect` (x0, y0, x1, y1; el fin adentro). Plano: x, y. */
+export function goldPixels(data: ArrayLike<number>, width: number, rect: readonly [number, number, number, number], minYellow: number): number[] {
+  const height = data.length / 4 / width;
+  const out: number[] = [];
+  for (let y = Math.max(0, rect[1]); y <= Math.min(height - 1, rect[3]); y++) {
+    for (let x = Math.max(0, rect[0]); x <= Math.min(width - 1, rect[2]); x++) {
+      const i = (y * width + x) * 4;
+      if (data[i]! + data[i + 1]! - 2 * data[i + 2]! > minYellow) out.push(x, y);
+    }
+  }
+  return out;
+}
+
+/**
+ * Alfa de un rayo de luz (S108) en una textura de `w` × `h`: angosto abajo (`base` del ancho) y abierto arriba. Sube
+ * desde la fuente (abajo, tapada por la sierra) hasta su brillo más fuerte en `peakAt` del largo y se apaga hacia arriba.
+ * Fila 0 arriba.
+ */
+export function rayAlphaAt(x: number, y: number, w: number, h: number, base: number, peakAt = 0.06): number {
+  const t = (h - 1 - y + 0.5) / h;
+  const half = base + (1 - base) * t;
+  const u = Math.abs(x + 0.5 - w / 2) / (w / 2);
+  if (u >= half) return 0;
+  const across = Math.cos((Math.PI / 2) * (u / half)) ** 2;
+  const p = Math.max(0.01, Math.min(0.9, peakAt));
+  const along = t < p ? t / p : ((1 - t) / (1 - p)) ** 1.4;
+  return across * along;
+}
+
+/**
+ * Un jirón de bruma (S108) de `w` × `h` px, tramado como la niebla de la siesta: dos o tres lomos de nube con el borde
+ * de arriba deshilachado, denso abajo (se apoya en el valle), con huecos y las puntas afinadas. Alfa 0-255 por píxel en
+ * `out` (w × h); `rand`, azar de 0 a 1.
+ */
+export function paintWisp(
+  w: number,
+  h: number,
+  rand: () => number,
+  look: { alphas: readonly number[]; steps: readonly number[]; dither: number },
+  out: Uint8ClampedArray,
+): void {
+  // Los lomos: centro, ancho y alto de cada uno (fracciones del jirón).
+  const lobes = 2 + Math.floor(rand() * 2);
+  const lobe: number[] = [];
+  for (let k = 0; k < lobes; k++) lobe.push(0.18 + 0.64 * rand(), 0.16 + 0.18 * rand(), 0.55 + 0.45 * rand());
+  const seedA = Math.floor(rand() * 1e6);
+  // Ruido de valor suave (celdas de 6 × 3 px): los huecos y las hebras de la bruma.
+  const cell = (i: number, j: number) => {
+    let n = (i * 374761393 + j * 668265263 + seedA * 1442695041) | 0;
+    n = Math.imul(n ^ (n >>> 13), 1274126177);
+    return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+  };
+  const noise = (x: number, y: number) => {
+    const fx = x / 6;
+    const fy = y / 3;
+    const i = Math.floor(fx);
+    const j = Math.floor(fy);
+    const sx = (fx - i) * (fx - i) * (3 - 2 * (fx - i));
+    const sy = (fy - j) * (fy - j) * (3 - 2 * (fy - j));
+    const a = cell(i, j) + (cell(i + 1, j) - cell(i, j)) * sx;
+    const b = cell(i, j + 1) + (cell(i + 1, j + 1) - cell(i, j + 1)) * sx;
+    return a + (b - a) * sy;
+  };
+  for (let x = 0; x < w; x++) {
+    const u = (x + 0.5) / w;
+    const env = Math.sin(Math.PI * u) ** 0.6;
+    let crest = 0;
+    for (let k = 0; k < lobes; k++) {
+      const d = (u - lobe[3 * k]!) / lobe[3 * k + 1]!;
+      crest = Math.max(crest, lobe[3 * k + 2]! * Math.exp(-d * d));
+    }
+    // Deshilachado: el borde sube y baja un poco de columna en columna.
+    crest = env * Math.min(1, crest * (0.85 + 0.3 * noise(x * 2, 7)));
+    for (let y = 0; y < h; y++) {
+      const b = (h - 1 - y + 0.5) / h;
+      let d = crest > 0.04 ? Math.max(0, 1 - b / crest) ** 0.8 : 0;
+      d *= 0.55 + 0.6 * noise(x, y);
+      const v = d + bayer(x, y) * look.dither;
+      let a = 0;
+      for (let k = 0; k < look.steps.length; k++) if (v >= look.steps[k]!) a = look.alphas[k]!;
+      out[y * w + x] = Math.round(a * 255);
+    }
+  }
+}
+
+/**
+ * Acomoda rectángulos (`[ancho, alto]`) en estantes de hasta `maxWidth` px, con 1 px de aire, para juntarlos en una
+ * sola textura. Devuelve dónde va cada uno (en el orden recibido) y el tamaño total.
+ */
+export function shelfPack(sizes: ReadonlyArray<readonly [number, number]>, maxWidth: number): { at: { x: number; y: number }[]; width: number; height: number } {
+  const order = sizes.map((_, i) => i).sort((a, b) => sizes[b]![1] - sizes[a]![1]);
+  const at: { x: number; y: number }[] = sizes.map(() => ({ x: 0, y: 0 }));
+  let x = 0;
+  let y = 0;
+  let shelf = 0;
+  let width = 0;
+  for (const i of order) {
+    const [w, h] = sizes[i]!;
+    if (x > 0 && x + w > maxWidth) {
+      y += shelf + 1;
+      x = 0;
+      shelf = 0;
+    }
+    at[i] = { x, y };
+    x += w + 1;
+    shelf = Math.max(shelf, h);
+    width = Math.max(width, x - 1);
+  }
+  return { at, width: Math.max(1, width), height: Math.max(1, y + shelf) };
+}
+
+/**
+ * Qué tiles tapan del todo lo que va detrás (S108): el fondo de tierra (`earth`) y la roca dibujada entera (`full`: visible
+ * y sin transparencia) rodeada de roca por sus ocho vecinos (los bordes del autotile traen partes transparentes). Fuera
+ * del mapa cuenta como roca. 1 si tapa.
+ */
+export function opaqueMask(
+  width: number,
+  height: number,
+  earth: (x: number, y: number) => boolean,
+  ground: (x: number, y: number) => boolean,
+  full: (x: number, y: number) => boolean,
+): Uint8Array {
+  const out = new Uint8Array(width * height);
+  const rock = (x: number, y: number) => x < 0 || y < 0 || x >= width || y >= height || ground(x, y);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (earth(x, y)) {
+        out[y * width + x] = 1;
+        continue;
+      }
+      if (!full(x, y)) continue;
+      let inner = true;
+      for (let dy = -1; dy <= 1 && inner; dy++) for (let dx = -1; dx <= 1 && inner; dx++) inner = rock(x + dx, y + dy);
+      if (inner) out[y * width + x] = 1;
+    }
+  }
+  return out;
+}
+
+/** ¿Los tiles opacos (`mask`) tapan entero el rectángulo del mundo (x0, y0)-(x1, y1)? Fuera del mapa no tapa. */
+export function rectHidden(mask: Uint8Array, width: number, height: number, tile: number, x0: number, y0: number, x1: number, y1: number): boolean {
+  if (x1 <= x0 || y1 <= y0) return false;
+  const tx0 = Math.floor(x0 / tile);
+  const ty0 = Math.floor(y0 / tile);
+  const tx1 = Math.ceil(x1 / tile) - 1;
+  const ty1 = Math.ceil(y1 / tile) - 1;
+  if (tx0 < 0 || ty0 < 0 || tx1 >= width || ty1 >= height) return false;
+  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (mask[ty * width + tx] !== 1) return false;
+  return true;
 }

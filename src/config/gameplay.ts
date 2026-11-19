@@ -2331,6 +2331,195 @@ export const GAMEPLAY = {
       /** Color de las sombras y su opacidad en el centro (los bordes se desvanecen a 0). */
       shadowColor: '#14200c',
       shadowAlpha: 0.12,
+      /**
+       * Loros que van a dormir (S108, l1; `skyLife.flock: 'parrots'` en levels.ts): la misma bandada con otra silueta
+       * (cola larga), más chica, más rápida y aleteando ligero. Mismas claves que `birds`. La primera sale poco después
+       * de que la vista sale de la cueva inicial (no desde que empieza el nivel).
+       */
+      parrots: {
+        gapMinMs: 20000,
+        gapMaxMs: 40000,
+        firstMinMs: 1500,
+        firstMaxMs: 3000,
+        countMin: 3,
+        countMax: 6,
+        crossMinMs: 13000,
+        crossMaxMs: 17000,
+        /** Silueta (px de arte de ancho; hay dibujo para 7 y 9). */
+        sizeMin: 7,
+        sizeMax: 9,
+        /** De a pares más que en V: poca separación por fila y mucho azar. */
+        spacingX: 9,
+        spacingY: 2,
+        jitter: 3,
+        flapMs: 150,
+        bob: 1.6,
+        bobMs: 1300,
+        margin: 40,
+        color: '#2a2030',
+        alpha: 0.9,
+      },
+    },
+    /**
+     * El atardecer de l1 (S108; `dusk` en levels.ts, px de arte medidos en `bg_l1_far`): rayos que salen de detrás de
+     * las sierras y bruma en los valles del bosque. Pegado a la imagen, detrás de todo lo jugable y tapado por el fondo
+     * de cueva donde se ve la cueva. Lo que tapa la base de los rayos y el pie de la bruma es la misma imagen recortada.
+     */
+    dusk: {
+      /** Qué es cielo en la imagen (para que nada se dibuje sobre él): rojo sobre azul y brillo mínimos (0-255). */
+      skyRedOverBlue: 18,
+      skyMinLum: 175,
+      /** Rayos: el sol ya se puso detrás de las sierras. Se suman a lo de atrás (ADD). */
+      rays: {
+        color: '#ffc68c',
+        /** Opacidad en su mínimo y en su máximo (sutiles: el cielo no se aclara). */
+        alphaMin: 0.06,
+        alphaMax: 0.15,
+        /** Ancho en su mínimo y en su máximo (fracción del ancho de cada rayo). */
+        widthMin: 0.8,
+        widthMax: 1.15,
+        /** Ancho de la base (fracción del ancho de arriba): salen angostos de detrás de la sierra y se abren. */
+        base: 0.07,
+        /** Dónde brilla más cada rayo (fracción del largo desde la fuente): justo arriba de la sierra. */
+        peakAt: 0.14,
+        /**
+         * Cada rayo: ángulo (grados desde la vertical; negativo, a la izquierda), largo y ancho arriba (px de arte),
+         * ciclo de respirar (ms) y su desfase (0-1).
+         */
+        list: [
+          { angle: -38, length: 320, width: 74, periodMs: 7400, phase: 0.1 },
+          { angle: -6, length: 350, width: 86, periodMs: 9200, phase: 0.55 },
+          { angle: 27, length: 330, width: 80, periodMs: 8000, phase: 0.3 },
+        ],
+        /** La sierra recortada que tapa la base: cuánto a cada lado de la fuente y cuánto debajo (px de arte). */
+        coverHalfWidth: 150,
+        coverBelow: 8,
+      },
+      /**
+       * Bruma en los valles: jirones tramados (Bayer, como la niebla de la siesta) que se deslizan por cada valle, con el
+       * pie tapado por la loma de adelante (la imagen recortada). `layers`: de la más lejana a la más cercana.
+       */
+      mist: {
+        color: '#e8d8ea',
+        /**
+         * Un píxel del tramado, en px de la imagen: el arte de l1_far tiene píxeles de ≈ 2,5 px (período de su grilla).
+         * Con 1 el tramado sale más fino que el dibujo y parece una malla.
+         */
+        texel: 2.5,
+        /** Escalones de opacidad del tramado y desde qué densidad (0-1) empieza cada uno. */
+        alphas: [0.18, 0.34, 0.54] as readonly number[],
+        steps: [0.14, 0.38, 0.64] as readonly number[],
+        /** Cuánto mezcla el tramado los escalones (0 = bordes lisos). */
+        dither: 0.22,
+        /** Formas de jirón distintas por capa (se eligen al azar). */
+        shapes: 5,
+        /** Cuánto queda debajo de la cresta (tapado) y cuánto deja libre bajo el cielo (px de arte). */
+        pad: 3,
+        skyMargin: 6,
+        /** Fundido en las puntas de cada valle (px de arte). */
+        fade: 48,
+        /** Cuánto varía la opacidad de un jirón a otro (fracción). */
+        alphaVary: 0.35,
+        layers: [
+          /** Al pie de las sierras: lo que más se ve en el primer tramo. `speed`: px de arte por segundo. */
+          { width: 120, height: 30, gap: 124, speed: 2.2, alpha: 1 },
+          { width: 140, height: 34, gap: 160, speed: 3, alpha: 0.9 },
+          { width: 150, height: 36, gap: 190, speed: 3.8, alpha: 0.8 },
+        ],
+        seed: 11,
+      },
+    },
+    /**
+     * La cueva de l1 con vida (S108; `caveLife` en levels.ts, px de arte medidos en `bg_l1_cave`): murciélagos lejos,
+     * cristales que laten, chispas sobre el oro, gotas y polvo. Solo donde se ve el fondo de cueva (zonas `Cave`).
+     */
+    caveLife: {
+      /** Murciélagos de fondo: más chicos y más oscuros que los mbopi, y detrás de todo. */
+      bats: {
+        gapMinMs: 15000,
+        gapMaxMs: 30000,
+        firstMinMs: 2500,
+        firstMaxMs: 5000,
+        countMin: 3,
+        countMax: 6,
+        /** Cuánto tarda el grupo en cruzar la imagen (ms). */
+        crossMinMs: 9000,
+        crossMaxMs: 13000,
+        /** Zigzag: alto (px de arte) y ciclo (ms) de cada uno; aleteo (ms por cuadro, tres cuadros). */
+        zigAmp: 7,
+        zigMinMs: 520,
+        zigMaxMs: 900,
+        flapMs: 70,
+        /** Desorden del grupo (px de arte, adelante-atrás y arriba-abajo) y cuánto sale de la imagen. */
+        spreadX: 70,
+        spreadY: 26,
+        margin: 30,
+        /** Px de la imagen por píxel del dibujo: 9 × 4 a 1,5 son ≈ 18 × 8 px de pantalla (un mbopi mide ≈ 50). */
+        scale: 1.5,
+        color: '#06050b',
+        alpha: 0.92,
+      },
+      crystals: {
+        /** Qué píxel es cristal: violeta (azul sobre rojo y verde) o cian (verde y azul sobre rojo). */
+        violetBlueOver: 42,
+        violetMinBlue: 120,
+        cyanOver: 40,
+        cyanMinGreen: 110,
+        /** El cristal mismo, sumado sobre sí (su color): opacidad en el mínimo y en el máximo, y su ciclo (ms). */
+        alphaMin: 0.08,
+        alphaMax: 0.34,
+        periodMinMs: 3400,
+        periodMaxMs: 5600,
+        /** Halo suave alrededor: tamaño (múltiplo del grupo) y opacidad en el mínimo y en el máximo. */
+        haloScale: 1.6,
+        haloMin: 0.05,
+        haloMax: 0.14,
+        violet: '#a88cff',
+        cyan: '#7ff0ff',
+        /** Destello de vez en cuando: espera entre destellos (ms, uno a la vez), vida (ms) y cuánto sube el cristal. */
+        flashGapMinMs: 1600,
+        flashGapMaxMs: 3800,
+        flashMs: 380,
+        flashBoost: 0.4,
+      },
+      gold: {
+        /** Píxel de oro: rojo + verde − 2 × azul por encima de esto. */
+        minYellow: 70,
+        count: 4,
+        /** Cuántas salen con la estrella grande (5 px) en vez de la chica (3 px). */
+        bigShare: 0.35,
+        lifeMinMs: 260,
+        lifeMaxMs: 620,
+        gapMinMs: 180,
+        gapMaxMs: 1200,
+        color: '#fff2bf',
+        alpha: 0.95,
+      },
+      drops: {
+        /** Aceleración (px de arte/s²), lo que tarda en formarse en la punta y la espera hasta la siguiente (ms). */
+        gravity: 900,
+        formMs: 900,
+        gapMinMs: 2200,
+        gapMaxMs: 6500,
+        color: '#cfe4ff',
+        alpha: 0.75,
+        /** Brillo al llegar abajo (ms y opacidad). */
+        splashMs: 220,
+        splashAlpha: 0.8,
+      },
+      dust: {
+        count: 14,
+        lifeMinMs: 7000,
+        lifeMaxMs: 13000,
+        /** Deriva (px de arte/s) y vaivén (px de arte y ms). */
+        speed: 2.4,
+        sway: 3,
+        swayMs: 7000,
+        alphaMax: 0.38,
+        color: '#b4c2de',
+      },
+      /** Fundido de lo chico en el borde del recorte de la cueva (unidades). */
+      edgeFade: 12,
     },
     /** Borde de la cueva (l1): ancho del degradado oscuro donde se juntan el cielo y la cueva (unidades; ≈ 2 tiles). */
     caveEdgeWidth: 32,

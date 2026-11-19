@@ -420,7 +420,12 @@ async function main() {
     // Fondos (S12e, S13a): l1_cave solo dentro de las zonas Cave y l1_far solo fuera; en la boca, los dos con un degradado.
     const backdropState = (page) => page.evaluate(() => window.__KERANA_DEBUG__.scene.backdrop.debugState);
     const bgStart = await backdropState(title);
-    check(bgStart.images === 2 && bgStart.cave && !bgStart.far, `nivel 1: la cueva inicial usa solo el fondo de cueva (${JSON.stringify(bgStart)})`);
+    check(bgStart.images === 2 && bgStart.cave && !bgStart.far, `nivel 1: la cueva inicial usa solo el fondo de cueva (${JSON.stringify({ ...bgStart, dusk: undefined, caveLife: undefined })})`);
+    // S108: en la cueva inicial laten los cristales y no hay nada del atardecer (ni rayos, ni bruma, ni loros).
+    check(
+      bgStart.caveLife?.crystals > 0 && bgStart.dusk?.rays === 0 && bgStart.dusk?.wisps === 0 && (bgStart.skyLife?.birds.length ?? 0) === 0,
+      `nivel 1: la cueva inicial tiene su vida y nada de afuera (${JSON.stringify({ cave: bgStart.caveLife, rays: bgStart.dusk?.rays, wisps: bgStart.dusk?.wisps })})`,
+    );
     // Boca de la cueva inicial (x ≈ 45) y de la cueva de C (x ≈ 230; S19, corrida 40 tiles por la quebrada en S85): cielo y cueva a la vez, con el borde oscuro.
     for (const [tx, ty] of [
       [45, 11],
@@ -429,13 +434,18 @@ async function main() {
       await title.evaluate(([x, y]) => window.__KERANA_DEBUG__.player.body.reset(x * 16, y * 16), [tx, ty]);
       await sleep(1200);
       const bgMouth = await backdropState(title);
-      check(bgMouth.cave && bgMouth.far && bgMouth.edges === 1, `nivel 1: en la boca x ${tx} se ven cielo y cueva con el borde (${JSON.stringify(bgMouth)})`);
+      check(bgMouth.cave && bgMouth.far && bgMouth.edges === 1, `nivel 1: en la boca x ${tx} se ven cielo y cueva con el borde (${JSON.stringify({ ...bgMouth, dusk: undefined, caveLife: undefined })})`);
       await title.screenshot({ path: join(SHOTS, `bg-l1-boca-${tx}.png`) });
     }
     await title.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(72 * 16, 8 * 16));
     await sleep(1200);
     const bgSlope = await backdropState(title);
-    check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify(bgSlope)})`);
+    check(!bgSlope.cave && bgSlope.far, `nivel 1: en la ladera solo el cielo (${JSON.stringify({ ...bgSlope, dusk: undefined, caveLife: undefined })})`);
+    // S108: en la ladera, los rayos y la bruma; la vida de la cueva, apagada.
+    check(
+      bgSlope.dusk?.rays >= 3 && bgSlope.dusk?.wisps > 0 && bgSlope.caveLife?.crystals === 0 && bgSlope.caveLife?.bats.length === 0,
+      `nivel 1: en la ladera, rayos y bruma, y nada de la cueva (${JSON.stringify({ dusk: bgSlope.dusk && { ...bgSlope.dusk, skyline: undefined }, cave: bgSlope.caveLife })})`,
+    );
     // S87: el cerro va relleno, salvo bajo las zonas Cave (ahí sigue el fondo de cueva).
     const l1Earth = await title.evaluate(() => {
       const e = window.__KERANA_DEBUG__.scene.earth;

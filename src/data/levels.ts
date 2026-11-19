@@ -43,7 +43,83 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     mapSource: 'ascii',
     biome: 'cerro',
     // Subido: con el suelo tan arriba de la vista, centrado quedaban tapados los cerros.
-    backgrounds: { far: 'bg_l1_far', cave: 'bg_l1_cave', shiftY: 110 },
+    backgrounds: {
+      far: 'bg_l1_far',
+      cave: 'bg_l1_cave',
+      shiftY: 110,
+      // S108: loros que van a dormir, en el cielo arriba de las sierras (la cima más alta, x 478, llega a y 307).
+      skyLife: { birds: [185, 265], flock: 'parrots' },
+      // S108, medido en l1_far.jpg: los rayos salen de detrás de la cima más alta; cada valle, la cresta de la loma de
+      // adelante (bordes de lejanía, rastreados y simplificados a 2 px). A: el pie de las sierras; B: las lomas del medio;
+      // C, D y E: las de adelante.
+      dusk: {
+        rays: [478, 352],
+        valleys: [
+          {
+            layer: 0,
+            line: [
+              96, 383, 112, 392, 128, 395, 160, 413, 176, 410, 192, 416, 208, 416, 272, 401, 304, 403, 336, 413, 368, 404,
+              384, 403, 416, 413, 464, 420, 480, 422, 512, 418, 544, 423, 576, 418, 592, 411, 640, 401, 672, 403, 720, 415,
+              736, 413, 768, 416, 832, 433, 848, 420, 864, 424, 880, 423, 896, 417, 912, 420, 1024, 411, 1072, 424,
+              1104, 423, 1120, 415, 1136, 394, 1152, 404, 1168, 408, 1200, 408, 1216, 394, 1232, 395, 1279, 406,
+            ],
+          },
+          {
+            layer: 1,
+            line: [
+              380, 456, 428, 436, 492, 460, 524, 463, 556, 477, 620, 493, 636, 504, 668, 499, 684, 506, 716, 500, 748, 499,
+              764, 488, 780, 486, 812, 475, 828, 474, 860, 460, 876, 462, 924, 452, 956, 438, 988, 438, 1068, 458,
+              1084, 458, 1116, 449, 1164, 428, 1279, 456,
+            ],
+          },
+          {
+            layer: 2,
+            line: [
+              0, 465, 32, 463, 48, 458, 64, 471, 96, 485, 112, 484, 128, 494, 160, 482, 176, 486, 208, 504, 256, 520, 288, 523,
+              304, 532, 320, 532, 352, 540, 384, 554, 400, 568,
+            ],
+          },
+          { layer: 2, line: [470, 565, 518, 545, 534, 545, 566, 533, 582, 532, 598, 521, 630, 521, 640, 507] },
+          {
+            layer: 2,
+            line: [
+              1000, 550, 1048, 539, 1080, 525, 1128, 518, 1144, 511, 1160, 519, 1176, 512, 1192, 512, 1208, 522, 1224, 515,
+              1240, 516, 1256, 522, 1272, 522, 1279, 526,
+            ],
+          },
+        ],
+      },
+      // S108, medido en l1_cave.jpg (por color: violeta, cian y oro): trece grupos de cristales, el montón de oro, seis
+      // estalactitas con la punta a la vista y dónde cae cada gota (cinco sobre un cristal), y el aire del medio.
+      caveLife: {
+        bats: [205, 320],
+        crystals: [
+          [69, 333, 91, 359],
+          [110, 360, 145, 395],
+          [123, 469, 165, 501],
+          [171, 320, 185, 348],
+          [190, 332, 213, 370],
+          [446, 422, 472, 444],
+          [573, 427, 612, 449],
+          [624, 403, 643, 421],
+          [817, 376, 840, 398],
+          [1134, 282, 1185, 335],
+          [52, 462, 98, 498],
+          [822, 414, 862, 439],
+          [1016, 330, 1060, 368],
+        ],
+        gold: [662, 350, 815, 410],
+        drops: [
+          [114, 222, 362],
+          [174, 171, 320],
+          [500, 157, 431],
+          [827, 202, 389],
+          [1036, 171, 330],
+          [1163, 159, 285],
+        ],
+        dust: [240, 170, 1080, 420],
+      },
+    },
     terrainShell: 3,
     solidFloor: false,
     // S87: el cerro macizo entre las dos cuevas va relleno; bajo las zonas `Cave` sigue el fondo de cueva.
