@@ -440,7 +440,35 @@ En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) 
 - **Música, más adelante:** si llegan grabaciones (`public/assets/audio/music/*.mp3`, 128 kbps), el `AudioManager` las puede tomar en lugar de la pista generada sin tocar las escenas; las escenas piden una clave (`title`, `map`, `l1`…, `l1_boss`…). Falta todavía el tema del final y los créditos (hoy, el del título).
   - Dirección musical en GDD §10.1.
 - **De dónde sacar grabaciones:** bibliotecas libres de derechos (revisa uso comercial y atribución), generadores de música con IA (revisa la licencia del plan que uses), o un músico local: un arpa paraguaya real le daría mucha identidad.
-- **Efectos:** al principio, generados por código con ZzFX (sin archivos). Para reemplazarlos: Kenney (packs de audio CC0) o freesound.org (revisa la licencia de cada sonido).
+- **Efectos:** criaturas y lo mágico, generados por código con ZzFX (`src/systems/sfxPresets.ts`); los físicos, desde S106, grabaciones de Kenney (§9.1).
+
+### 9.1 Efectos grabados (S106)
+
+- **Origen:** cinco paquetes de Kenney.nl, CC0, tal como los bajó Jose, en `raw/audio/kenney/*.zip` (no se descomprimen ni se tocan): Impact Sounds, RPG Audio, Interface Sounds, UI Audio y Music Jingles.
+- **`npm run sfx`** (`tools/sfx.mjs`; necesita **ffmpeg** con libmp3lame en el PATH y Node 22.18 o más): lee los zip, toma solo lo que lista `src/data/sfxSamples.ts`, pasa cada uno a mono 44,1 kHz, recorta el silencio del principio (deja 2 ms) y del final (con 12 ms de fundido), los lleva a todos a −18 LUFS sin pasar −1 dBFS de pico y los codifica en **MP3 de 96 kbps** en `public/assets/audio/sfx/<efecto>_<n>.mp3`. Borra los que ya no están en la lista y falla si todo pasa de 1,5 MB (hoy, 49 archivos y 215 KB). MP3 porque es el único formato que decodifican Chrome, Firefox y el Safari del iPhone sin excepciones (Ogg Vorbis no anda en los Safari de iPhone de hace pocos años; el AAC de Firefox depende del sistema).
+- **El volumen:** la sonoridad se mide como el «momentáneo» de un medidor LUFS (ponderación K de BS.1770, la ventana de 300 ms más fuerte; `src/systems/sfxLogic.ts`). En el juego, al cargar, cada grabación se mide otra vez y se lleva a la sonoridad del ZzFX que reemplaza (`db` en la lista la corre); si se reafina un preset, la grabación lo sigue sola. Los pasos van a la del aterrizaje de ZzFX más `GAMEPLAY.audio.footsteps.db`. Mientras cargan, o si un archivo falta (`[ASSET FALTANTE]` en la consola), suena el ZzFX de siempre.
+- **Qué se eligió y por qué** (por nombre, por medición y por la forma del sonido; Claude no puede escuchar: Jose decide si alguno suena peor que su ZzFX y lo saca de la lista):
+
+| Efecto | Archivos (paquete) | Por qué |
+|---|---|---|
+| `hit` | `impactPunch_medium_000`–`002` (Impact) | golpe seco y corto (0,3 s), tres variantes |
+| `bossHit` | `impactPunch_heavy_000`–`002` (Impact) | el mismo golpe, más grande (0,4 a 0,5 s) |
+| `rockBreak` | `impactMining_000`–`002` (Impact) | piedra contra piedra: la roca y la teja que se rompen |
+| `land` | `impactSoft_medium_000`–`002` (Impact) | golpe sordo y corto (0,12 s); encima, un paso del suelo |
+| `stomp` | `impactSoft_heavy_000`–`002` (Impact), a 0,85 | el golpe sordo grande, un poco más grave |
+| `slash` | `drawKnife2`, `drawKnife1` (RPG) | el «shing» del metal, que arranca enseguida; `knifeSlice` tarda 77 ms en sonar |
+| `chargedSlash` | `knifeSlice2` (RPG), a 0,85, + el brillo de ZzFX (`SFX_LAYERS`) | más largo y con cuerpo; el brillo agudo dice que es el cargado |
+| `creak` | `creak3`, `creak1` (RPG) | un solo crujido cada uno (`creak2` trae dos) |
+| `gateOpen` / `gateClose` | `doorOpen_1` / `doorClose_4` (RPG) | la reja que corre y el golpe grave al cerrar |
+| `switchOn` | `metalLatch` (RPG) | el clic metálico más seco |
+| `lantern` | `impactMetal_light_000`–`001` (Impact) + el «ding» de ZzFX a −6 dB | el golpe al farol y la luz que se enciende |
+| `uiMove` / `uiConfirm` / `uiBack` | `select_001` / `confirmation_001` / `back_002` (Interface) | una sola familia; Interface Sounds es más limpio que UI Audio, que es todo clics |
+| `liberation` | `jingles_PIZZI10` (Jingles) | pizzicato que sube por grados (re, mi, fa♯, sol) y se queda arriba, 0,8 s; lo más parecido al arpa de los cinco paquetes. Alternativa: `PIZZI02` |
+| pasos | `footstep_<suelo>_000`–`004` (Impact): `grass`, `concrete`, `wood`, `carpet` | cinco por suelo; `BIOME_FOOTSTEPS` dice cuál va en cada bioma |
+
+- **Quedan en ZzFX:** las criaturas (`growl`, `squawk`, `bark`, `moo`, `mooGuasu`, `howl`, `luisonHowl`, `hoot`, `laugh`, `buzz`, `jungleCall`), lo mágico (`luzArasy`, `hypnosis`, `hornGlow`, `sparks`, `staffFlash`, `lightWave`, `chargeUp`, `chargeReady`) y **`bounce`**: el hongo se lee por el «boing» que sube, y ninguna grabación de los paquetes sube de tono. UI Audio no se usa.
+- **Pasos:** en los cuadros 3 y 7 de `kerana_run` (`GAMEPLAY.audio.footsteps.contactFrames`, medidos en la hoja), una variante al azar que no repite la anterior, con ±8 % de velocidad y ±2,5 dB. El suelo: la capa `Ground` usa `ground` del bioma y lo demás (un solo sentido, lo que se mueve), `platforms`. Cerro, pueblo, montaña y ciudad pisan piedra (`concrete`); estero, campo y selva, pasto; las plataformas, madera; Yvága, nubes (`carpet`, lo más apagado). Si cambia la hoja de correr, hay que volver a medir los cuadros.
+- **Para cambiar uno:** editar `src/data/sfxSamples.ts` (`sources`, `db`, `rate`, `pitchJitter`, `zzfx`) y correr `npm run sfx`. Para devolverle un efecto a ZzFX, borrarlo de la lista y correr `npm run sfx`.
 
 ---
 
