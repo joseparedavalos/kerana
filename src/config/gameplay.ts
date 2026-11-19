@@ -2578,6 +2578,12 @@ export const GAMEPLAY = {
        * multiplica en Ground, en el fondo de tierra y en las calcomanías, en pasos chicos para que no se lea una caja.
        */
       depthShade: [1, 1, 0.98, 0.96, 0.94, 0.92, 0.9],
+      /**
+       * Textura del terreno con detalle: columnas y lugar para casillas horneadas (roca + calcomanía; l1 usa ≈ 530).
+       * 16 × (28 + 84 + 960) casillas de 16 px: 256 × 1072 px, bajo el tope de 2048 de los celulares viejos.
+       */
+      bakeColumns: 16,
+      bakeCapacity: 960,
     },
   },
 

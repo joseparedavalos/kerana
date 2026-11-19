@@ -79,8 +79,21 @@ import { queueBackgrounds } from '../assets/backgrounds';
 
 type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap' | 'chase';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
-/** S109: la hoja de detalle del terreno, pegada al tileset del bioma (`first`: el gid de su casilla 0). */
-type TerrainDetailSheet = { first: number; layout: DetailLayout; seed: number };
+/**
+ * S109: la hoja de detalle del terreno, pegada al tileset del bioma en una textura de `columns` columnas (`first`: el
+ * gid de su casilla 0) y las casillas horneadas (roca + calcomanía): `baked` por par, de `nextBake` hasta `bakeEnd`.
+ */
+type TerrainDetailSheet = {
+  first: number;
+  layout: DetailLayout;
+  seed: number;
+  texture: Phaser.Textures.CanvasTexture;
+  firstgid: number;
+  columns: number;
+  nextBake: number;
+  bakeEnd: number;
+  baked: Map<string, number>;
+};
 type TileLayerName = (typeof TILE_LAYERS)[number];
 
 interface Checkpoint {
@@ -1749,11 +1762,12 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /**
-   * S109: la hoja de detalle del terreno del nivel (`terrainDetail`) con su JSON. Va pegada debajo de las 28 casillas
-   * del tileset del bioma en una sola textura (4 columnas), que pasa a ser la del tileset del mapa: así Ground, el fondo
-   * de tierra, las lajas y las calcomanías se dibujan con una textura (con dos, mezcladas en una capa, costaba un 3 %
-   * de FPS en el celular emulado). La casilla `d` de la hoja es el gid `first + d`. Sin la hoja o sin el JSON (asset
-   * faltante), nada: el nivel se ve con el tileset solo.
+   * S109: la hoja de detalle del terreno del nivel (`terrainDetail`) con su JSON, en una sola textura con el tileset del
+   * bioma, que pasa a ser la del tileset del mapa: así Ground, el fondo de tierra, las lajas y las calcomanías se dibujan
+   * con una textura (con dos, mezcladas en una capa, costaba un 3 % de FPS en el celular emulado). La textura tiene
+   * `bakeColumns` columnas: las 28 casillas van en su índice, la hoja después (la casilla `d` es el gid `first + d`) y
+   * queda lugar (`bakeCapacity`) para las casillas horneadas (roca + calcomanía, ver `bakeDecal`). Sin la hoja o sin el
+   * JSON (asset faltante), nada: el nivel se ve con el tileset solo.
    */
   private terrainDetailSheet(tileset: Phaser.Tilemaps.Tileset): TerrainDetailSheet | null {
     const opt = this.def.terrainDetail;
@@ -1762,28 +1776,63 @@ export class LevelScene extends Phaser.Scene {
     const layout = this.cache.json.get(terrainDetailLayoutKey(opt.sheet)) as DetailLayout | undefined;
     const baseKey = tilesetKey(this.def.biome);
     if (!layout || !this.textures.exists(key) || !this.textures.exists(baseKey)) return null;
-    const combined = `${baseKey}_${key}`;
+    const { bakeColumns: cols, bakeCapacity } = GAMEPLAY.backdrop.terrainDetail;
+    const baseCount = TILESET_COLUMNS * TILESET_ROWS;
     const t = layout.tile;
+    const combined = `${baseKey}_${key}`;
     if (!this.textures.exists(combined)) {
-      const rows = TILESET_ROWS + Math.ceil(layout.count / TILESET_COLUMNS);
-      const tex = this.textures.createCanvas(combined, TILESET_COLUMNS * t, rows * t);
+      const rows = Math.ceil((baseCount + layout.count + bakeCapacity) / cols);
+      const tex = this.textures.createCanvas(combined, cols * t, rows * t);
       if (!tex) return null;
-      const ctx = tex.context;
-      ctx.drawImage(this.textures.get(baseKey).getSourceImage() as CanvasImageSource, 0, 0);
+      const put = (src: CanvasImageSource, srcCols: number, i: number, at: number) =>
+        tex.context.drawImage(src, (i % srcCols) * t, Math.floor(i / srcCols) * t, t, t, (at % cols) * t, Math.floor(at / cols) * t, t, t);
+      const base = this.textures.get(baseKey).getSourceImage() as CanvasImageSource;
+      for (let i = 0; i < baseCount; i++) put(base, TILESET_COLUMNS, i, i);
       const sheet = this.textures.get(key).getSourceImage() as CanvasImageSource;
-      for (let i = 0; i < layout.count; i++) {
-        const sx = (i % layout.columns) * t;
-        const sy = Math.floor(i / layout.columns) * t;
-        const dx = (i % TILESET_COLUMNS) * t;
-        const dy = (TILESET_ROWS + Math.floor(i / TILESET_COLUMNS)) * t;
-        ctx.drawImage(sheet, sx, sy, t, t, dx, dy, t, t);
-      }
+      for (let i = 0; i < layout.count; i++) put(sheet, layout.columns, i, baseCount + i);
       tex.refresh();
     }
-    tileset.setImage(this.textures.get(combined));
+    const texture = this.textures.get(combined) as Phaser.Textures.CanvasTexture;
+    tileset.setImage(texture);
     // `putTileAt` busca el tileset de cada índice en este índice del mapa: se rehace con las casillas nuevas.
     this.map.tiles = Phaser.Tilemaps.Parsers.Tiled.BuildTilesetIndex(this.map);
-    return { first: tileset.firstgid + TILESET_COLUMNS * TILESET_ROWS, layout, seed: opt.seed };
+    const first = tileset.firstgid + baseCount;
+    return { first, layout, seed: opt.seed, texture, firstgid: tileset.firstgid, columns: cols, nextBake: baseCount + layout.count, bakeEnd: baseCount + layout.count + bakeCapacity, baked: new Map() };
+  }
+
+  /**
+   * S109: la casilla horneada «roca `under` (gid) + calcomanía `id` (espejada o no)», dibujada una vez en la textura
+   * combinada. Devuelve su gid, o -1 si no queda lugar (la calcomanía va entonces en la capa aparte). Una calcomanía
+   * horneada no agrega un cuadro encima: es la misma casilla de roca.
+   */
+  private bakeDecal(sheet: TerrainDetailSheet, under: number, id: number, flip: boolean): number {
+    const key = `${under}:${id}:${flip ? 1 : 0}`;
+    const known = sheet.baked.get(key);
+    if (known !== undefined) return known;
+    if (sheet.nextBake >= sheet.bakeEnd) return -1;
+    const t = sheet.layout.tile;
+    const cols = sheet.columns;
+    const at = sheet.nextBake++;
+    const ctx = sheet.texture.context;
+    const src = sheet.texture.getSourceImage() as CanvasImageSource;
+    const cell = (i: number): [number, number] => [(i % cols) * t, Math.floor(i / cols) * t];
+    const [dx, dy] = cell(at);
+    const [ux, uy] = cell(under - sheet.firstgid);
+    const [sx, sy] = cell(sheet.first - sheet.firstgid + id);
+    ctx.clearRect(dx, dy, t, t);
+    ctx.drawImage(src, ux, uy, t, t, dx, dy, t, t);
+    ctx.save();
+    if (flip) {
+      ctx.translate(dx + t, dy);
+      ctx.scale(-1, 1);
+      ctx.drawImage(src, sx, sy, t, t, 0, 0, t, t);
+    } else {
+      ctx.drawImage(src, sx, sy, t, t, dx, dy, t, t);
+    }
+    ctx.restore();
+    const gid = sheet.firstgid + at;
+    sheet.baked.set(key, gid);
+    return gid;
   }
 
   /** S109: cada celda de Ground con variante pasa a la casilla de la hoja. Devuelve las casillas de antes y el plan. */
@@ -1862,10 +1911,31 @@ export class LevelScene extends Phaser.Scene {
     this.earth?.forEachTile((tile) => {
       if (tile.index !== -1) tile.tint = tintAt(tile.x, tile.y);
     });
-    if (plan.decals.length === 0) return;
+    // Las calcomanías sobre roca se hornean en la casilla de roca de abajo (Ground, si se dibuja, y el fondo de tierra,
+    // si hay: en la fila tenue de la repisa, las dos, que llevan la misma variante). Cuesta relleno: como cuadro aparte
+    // encima bajaba hasta un 7 % los FPS del primer tramo en el celular emulado. Van aparte solo el pasto de las
+    // esquinas (en el aire) y los cristales (sin el tinte de la roca de la cueva), y lo que no entre en la textura.
+    const apart: typeof plan.decals = [];
+    for (const d of plan.decals) {
+      const targets = [ground.getTileAt(d.x, d.y), this.earth?.getTileAt(d.x, d.y)].filter(
+        (t): t is Phaser.Tilemaps.Tile => !!t && t.index !== -1 && t.visible,
+      );
+      if (d.kind === 'crystal' || targets.length === 0) {
+        apart.push(d);
+        continue;
+      }
+      const gids = targets.map((t) => this.bakeDecal(detail, t.index, d.id, d.flip));
+      if (gids.some((g) => g < 0)) {
+        apart.push(d);
+        continue;
+      }
+      targets.forEach((t, i) => (t.index = gids[i]));
+    }
+    detail.texture.refresh();
+    if (apart.length === 0) return;
     const layer = this.map.createBlankLayer('TerrainDetail', this.map.tilesets[0]);
     if (!layer) return;
-    for (const d of plan.decals) {
+    for (const d of apart) {
       const tile = layer.putTileAt(detail.first + d.id, d.x, d.y, false);
       tile.tint = base[d.y * width + d.x] === -1 ? 0xffffff : tintAt(d.x, d.y);
       tile.flipX = d.flip;
