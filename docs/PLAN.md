@@ -257,6 +257,7 @@ Se sigue llenando: fecha, modelo y, desde S13d, "plan Pro" como costo. Las colum
 | S106 | 2026-11-19 | — | — | — | plan Pro | 100 | — |
 | S107 | 2026-11-19 | — | — | — | plan Pro | 100 | — |
 | S108 | 2026-11-19 | — | — | — | plan Pro | 100 | — |
+| S109 | 2026-11-19 | — | — | — | plan Pro | 100 | — |
 | S13 | | | | | | | |
 | S14 | | | | | | | |
 | S15 | | | | | | | |
