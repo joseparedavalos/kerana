@@ -2497,6 +2497,26 @@ export const GAMEPLAY = {
     duckMs: 250,
     /** Pistas generadas que se guardan en memoria (unos 2 MB cada una). */
     cacheTracks: 4,
+    /**
+     * Pasos de Kerana (S106): grabaciones de Impact Sounds según el suelo (`BIOME_FOOTSTEPS` en `src/data/sfxSamples.ts`).
+     * Suenan al apoyar un pie en la animación de correr.
+     */
+    footsteps: {
+      /** Sonoridad respecto del aterrizaje de ZzFX (`land`), en dB: los pasos van por debajo de todo lo demás. */
+      db: -9,
+      /** Al aterrizar suena también un paso del suelo, a esto respecto de `db` (los dos pies a la vez). */
+      landDb: 2,
+      /** Variación al azar en cada paso: velocidad (± fracción) y volumen (± dB). */
+      pitchJitter: 0.08,
+      volumeJitterDb: 2.5,
+      /**
+       * Cuadros de `kerana_run` (1 a 9, como los cuenta Phaser) en que un pie toca el suelo. Medido en
+       * `raw/kerana/run_10x1.png`: en el 3 vuelve a pisar después del cuadro en el aire y en el 7 entra el otro pie.
+       */
+      contactFrames: [3, 7],
+      /** Sin la hoja de Kerana (el rectángulo provisorio), un paso cada tanto mientras corre (ms). */
+      fallbackStepMs: 330,
+    },
   },
 
   /**

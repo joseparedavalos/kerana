@@ -364,6 +364,15 @@ async function main() {
     // Al menos 3 dB por debajo del efecto más suave de los que avisan.
     const belowDb = 20 * Math.log10(quietestSfx / musicLevel);
     check(belowDb >= 3, `música por debajo de los efectos: ${belowDb.toFixed(1)} dB bajo el más suave (música ${musicLevel.toFixed(4)} RMS, efecto ${quietestSfx.toFixed(4)})`);
+    // S106: las grabaciones de Kenney cargan todas, suenan a la sonoridad del ZzFX que reemplazan y sin silencio al principio.
+    const samples = await title.evaluate(() => window.__KERANA_AUDIO__.samples());
+    const sampleCount = samples.banks.reduce((n, bk) => n + bk.count, 0);
+    const worstDb = Math.max(...samples.banks.flatMap((bk) => bk.lufs.map((l) => Math.abs(l - bk.refLufs))));
+    const worstLead = Math.max(...samples.banks.flatMap((bk) => bk.leadMs));
+    check(
+      samples.missing.length === 0 && samples.banks.length === 20 && sampleCount === 49 && worstDb < 0.5 && worstLead < 25,
+      `efectos grabados: ${samples.banks.length} grupos, ${sampleCount} archivos, a ${worstDb.toFixed(2)} dB de su ZzFX, ${worstLead.toFixed(0)} ms de silencio al principio como mucho (faltan: ${samples.missing.join(', ') || 'ninguno'})`,
+    );
     const inStory = () => title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false);
     // "Nueva partida" (primer ítem del menú); se repite si el menú todavía no escuchaba.
     for (let t = 0; t < 10000 && !(await inStory()); t += 1000) {
@@ -529,6 +538,9 @@ async function main() {
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
     const bossMusic = await waitMusic(bossPage, 'l1_boss');
     check(bossMusic?.playing === 'l1_boss', `música: la pelea cambia a la variante tensa (${JSON.stringify(bossMusic?.started)})`);
+    // S106: caminando hasta la arena de l1 (el cerro) suenan pasos de piedra, y nada más que de piedra.
+    const steps1 = bossMusic?.steps ?? {};
+    check((steps1.concrete ?? 0) >= 2 && Object.keys(steps1).every((k) => k === 'concrete'), `pasos: caminando hasta la arena de l1 suenan en piedra (${JSON.stringify(steps1)})`);
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
     await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
     await bossPage.screenshot({ path: join(SHOTS, 'bg-l1-caverna.png') });

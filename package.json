@@ -14,6 +14,7 @@
     "tileset": "node tools/build-tileset.mjs",
     "pieces": "node tools/build-pieces.mjs",
     "sprites": "node tools/sprites.mjs",
+    "sfx": "node tools/sfx.mjs",
     "smoke": "node tools/smoke.mjs",
     "monai": "node tools/monai-run.mjs",
     "luison": "node tools/luison-run.mjs",
