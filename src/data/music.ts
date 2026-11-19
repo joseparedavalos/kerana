@@ -1,5 +1,6 @@
 import type { LevelId } from './types';
-import type { BossLayer, InstrumentDef, TrackDef } from '../systems/musicLogic';
+import type { BossLayer, InstrumentDef, JingleDef, TrackDef } from '../systems/musicLogic';
+import type { SfxKey } from '../systems/sfxPresets';
 
 // Música de Kerana (S37, GDD §10.1 y §10.2): piezas generadas con ZzFX, sin archivos. S61 sumó la pelea con Tau,
 // la liberación y el sellado, y rehízo la variante de jefe de cada nivel.
@@ -198,7 +199,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
         pattern:
           '7 - - - 9 - 11 - | 12 - - - 9 - - - | 7 - - - 4 - 7 - | 2 - - - - - . . | 4 - - - 7 - 9 - | 12 - - - 14 - 12 - | 11 - - - 9 - 7 - | 5 - - - 2 - - -',
       },
-      { inst: 'bajo', octave: -12, gain: 0.6, pattern: '0 . . . 7 . . . | 5 . . . 0 . . . | 0 . . . 7 . . . | -5 . . . 2 . . . | -3 . . . 4 . . . | 5 . . . 0 . . . | -5 . . . 2 . . . | -5 . . . 2 . . .' },
+      { inst: 'bajo', octave: -12, gain: 0.45, pattern: '0 . . . . . . . | 5 . . . 0 . . . | 0 . . . 7 . . . | -5 . . . 2 . . . | -3 . . . 4 . . . | 5 . . . 0 . . . | -5 . . . 2 . . . | -5 . . . 2 . . .' },
       { inst: 'takuapu', gain: 0.55, pattern: 'x . . . x . x .' },
       { inst: 'mbaraka', gain: 0.4, pattern: '. x . x . x . x' },
     ],
@@ -462,6 +463,40 @@ export const TRACKS: Record<TrackId, TrackDef> = {
       { inst: 'bajo', octave: -12, gain: 0.5, pattern: '0 . . . . . . . | -3 . . . . . . . | -7 . . . . . . . | -5 . . . . . . .' },
       { inst: 'voz', gain: 0.28, pattern: '0+7 - - - - - - - - - - - - - - -' },
       { inst: 'campana', octave: 24, gain: 0.18, pattern: '12 . . . . . . . | . . . . . . . . | 7 . . . . . . . | . . . . . . . .' },
+    ],
+  },
+};
+
+/**
+ * Piezas que suenan una sola vez (S107), con los mismos instrumentos: el AudioManager las genera al arrancar y las toca
+ * como el efecto de su clave, al volumen de efectos de Opciones y a la sonoridad de su preset de ZzFX (más `db`).
+ */
+export const JINGLES: Partial<Record<SfxKey, JingleDef & { db?: number }>> = {
+  // El jingle de la estrella (S107): cada hijo liberado se vuelve una estrella de Eichu. Suena al estallar la marca,
+  // justo cuando entra con su fundido la pista 'liberation', y por eso va en su tonalidad (sol mayor), su tempo (63) y
+  // su compás de 3/4: el jingle dura su primer compás, el de sol mayor, y se apaga cuando la pista pasa a mi menor.
+  // El arpa sube en sol (el arpegio del título) y pasa a do; encima, las siete campanas que suben de 'yvaga'
+  // (0 3 5 7 10 12 15) en mi, el relativo menor: mi sol la si re mi sol, una por estrella, y la séptima cae en la
+  // tónica con el acorde final. Cadencia plagal (do → sol, el «amén»): sin fa♯, para no chocar con el fa del sellado
+  // de Tau, que también entra encima. El acorde final, rasgueado de abajo arriba, resuelve el do del arpa en si; el coro
+  // se abre debajo y todo se apaga. 24 pasos de fusa (1/8 de pulso, 0,119 s): 2,86 s.
+  liberation: {
+    id: 'liberation_jingle',
+    bpm: 63,
+    stepsPerBeat: 8,
+    beatsPerBar: 3,
+    root: G3,
+    echo: { ms: 380, feedback: 0.35 },
+    fadeMs: 600,
+    voices: [
+      // El arpegio: sol (sol2 → si4) y do (do5 → do6); el do de arriba queda para que el acorde lo resuelva.
+      { inst: 'arpa', gain: 0.55, pattern: '-12 -8 -5 0 4 7 12 16 | 17 21 24 29 . . . . | . . . . . . . .' },
+      // El acorde final: sol de sol2 a si5, rasgueado hacia arriba.
+      { inst: 'arpa', gain: 0.32, pattern: '. . . . . . . . | . . . . -12+-5+0+4+7+12+16+19+28! . . . | . . . . . . . .' },
+      // Las siete estrellas.
+      { inst: 'campana', octave: 24, gain: 0.85, pattern: '-3 . 0 . 2 . 4 . | 7 . 9 . 12 . . . | . . . . . . . .' },
+      { inst: 'bajo', octave: -12, gain: 0.45, pattern: '0 . . . . . . . | 5 . . . 0! . . . | . . . . . . . .' },
+      { inst: 'voz', gain: 0.3, pattern: '. . . . . . . . | . . . . 0+4+7 - - - | - - - - . . . .' },
     ],
   },
 };
