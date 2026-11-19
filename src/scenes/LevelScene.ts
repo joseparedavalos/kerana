@@ -3,7 +3,7 @@ import { artOrPlaceholder, hasArt } from '../assets/art';
 import { addProp, propLook, propNames } from '../assets/propArt';
 import { layoutShowcase } from '../assets/propLayout';
 import { addPindoArt } from '../assets/pindoArt';
-import { ART_DETAIL, PLAYER_KEY, PROP_ATLASES, terrainDetailKey, terrainDetailLayoutKey, tilesetKey } from '../assets/manifest';
+import { ART_DETAIL, PLAYER_KEY, PROP_ATLASES, terrainDetailKey, terrainDetailLayoutKey, TILESET_COLUMNS, TILESET_ROWS, tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -79,6 +79,8 @@ import { queueBackgrounds } from '../assets/backgrounds';
 
 type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap' | 'chase';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
+/** S109: la hoja de detalle del terreno, pegada al tileset del bioma (`first`: el gid de su casilla 0). */
+type TerrainDetailSheet = { first: number; layout: DetailLayout; seed: number };
 type TileLayerName = (typeof TILE_LAYERS)[number];
 
 interface Checkpoint {
@@ -1701,8 +1703,7 @@ export class LevelScene extends Phaser.Scene {
     const detail = this.terrainDetailSheet(tileset);
     for (const name of TILE_LAYERS) {
       if (this.map.getLayerIndex(name) === null) continue;
-      const sets = (name === 'Ground' || name === 'Platforms') && detail ? [tileset, detail.tileset] : tileset;
-      const layer = this.map.createLayer(name, sets, 0, 0) as Phaser.Tilemaps.TilemapLayer | null;
+      const layer = this.map.createLayer(name, tileset, 0, 0) as Phaser.Tilemaps.TilemapLayer | null;
       if (layer) this.layers[name] = layer;
     }
     // S109: las variantes cambian solo el índice de la casilla, antes de las colisiones (que valen para todo no vacío).
@@ -1748,28 +1749,47 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /**
-   * S109: la hoja de detalle del terreno del nivel (`terrainDetail`), como un tileset más del mapa, con su JSON. Sin la
-   * hoja o sin el JSON (asset faltante), nada: el nivel se ve con el tileset solo.
+   * S109: la hoja de detalle del terreno del nivel (`terrainDetail`) con su JSON. Va pegada debajo de las 28 casillas
+   * del tileset del bioma en una sola textura (4 columnas), que pasa a ser la del tileset del mapa: así Ground, el fondo
+   * de tierra, las lajas y las calcomanías se dibujan con una textura (con dos, mezcladas en una capa, costaba un 3 %
+   * de FPS en el celular emulado). La casilla `d` de la hoja es el gid `first + d`. Sin la hoja o sin el JSON (asset
+   * faltante), nada: el nivel se ve con el tileset solo.
    */
-  private terrainDetailSheet(tileset: Phaser.Tilemaps.Tileset): { tileset: Phaser.Tilemaps.Tileset; layout: DetailLayout; seed: number } | null {
+  private terrainDetailSheet(tileset: Phaser.Tilemaps.Tileset): TerrainDetailSheet | null {
     const opt = this.def.terrainDetail;
     if (!opt) return null;
     const key = terrainDetailKey(opt.sheet);
     const layout = this.cache.json.get(terrainDetailLayoutKey(opt.sheet)) as DetailLayout | undefined;
-    if (!layout || !this.textures.exists(key)) return null;
-    const firstgid = Math.max(...this.map.tilesets.map((t) => t.firstgid + t.total), tileset.firstgid + tileset.total);
-    const sheet = new Phaser.Tilemaps.Tileset(`detail_${opt.sheet}`, firstgid, layout.tile, layout.tile, 0, 0);
-    sheet.setImage(this.textures.get(key));
-    this.map.tilesets.push(sheet);
-    // `putTileAt` busca el tileset de cada índice en este índice del mapa: se rehace con la hoja nueva.
+    const baseKey = tilesetKey(this.def.biome);
+    if (!layout || !this.textures.exists(key) || !this.textures.exists(baseKey)) return null;
+    const combined = `${baseKey}_${key}`;
+    const t = layout.tile;
+    if (!this.textures.exists(combined)) {
+      const rows = TILESET_ROWS + Math.ceil(layout.count / TILESET_COLUMNS);
+      const tex = this.textures.createCanvas(combined, TILESET_COLUMNS * t, rows * t);
+      if (!tex) return null;
+      const ctx = tex.context;
+      ctx.drawImage(this.textures.get(baseKey).getSourceImage() as CanvasImageSource, 0, 0);
+      const sheet = this.textures.get(key).getSourceImage() as CanvasImageSource;
+      for (let i = 0; i < layout.count; i++) {
+        const sx = (i % layout.columns) * t;
+        const sy = Math.floor(i / layout.columns) * t;
+        const dx = (i % TILESET_COLUMNS) * t;
+        const dy = (TILESET_ROWS + Math.floor(i / TILESET_COLUMNS)) * t;
+        ctx.drawImage(sheet, sx, sy, t, t, dx, dy, t, t);
+      }
+      tex.refresh();
+    }
+    tileset.setImage(this.textures.get(combined));
+    // `putTileAt` busca el tileset de cada índice en este índice del mapa: se rehace con las casillas nuevas.
     this.map.tiles = Phaser.Tilemaps.Parsers.Tiled.BuildTilesetIndex(this.map);
-    return { tileset: sheet, layout, seed: opt.seed };
+    return { first: tileset.firstgid + TILESET_COLUMNS * TILESET_ROWS, layout, seed: opt.seed };
   }
 
   /** S109: cada celda de Ground con variante pasa a la casilla de la hoja. Devuelve las casillas de antes y el plan. */
   private applyTerrainVariants(
     tileset: Phaser.Tilemaps.Tileset,
-    detail: { tileset: Phaser.Tilemaps.Tileset; layout: DetailLayout; seed: number },
+    detail: TerrainDetailSheet,
   ): { base: Int16Array; variant: Int16Array } | null {
     const ground = this.layers.Ground;
     if (!ground) return null;
@@ -1781,7 +1801,7 @@ export class LevelScene extends Phaser.Scene {
     const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, GAMEPLAY.backdrop.terrainDetail, detail.seed);
     ground.forEachTile((tile) => {
       const v = variant[tile.y * width + tile.x];
-      if (v >= 0) tile.index = detail.tileset.firstgid + v;
+      if (v >= 0) tile.index = detail.first + v;
     });
     // El medio de las lajas (17) también, con otra sal de semilla.
     const platforms = this.layers.Platforms;
@@ -1793,7 +1813,7 @@ export class LevelScene extends Phaser.Scene {
       const pv = planTerrainVariants(width, height, (x, y) => slab[y * width + x], detail.layout, GAMEPLAY.backdrop.terrainDetail, detail.seed + 1);
       platforms.forEachTile((tile) => {
         const v = pv[tile.y * width + tile.x];
-        if (v >= 0) tile.index = detail.tileset.firstgid + v;
+        if (v >= 0) tile.index = detail.first + v;
       });
     }
     return { base, variant };
@@ -1805,7 +1825,7 @@ export class LevelScene extends Phaser.Scene {
    * Solo donde la roca se ve entera (Ground opaco o el fondo de tierra debajo). Solo dibujo.
    */
   private addTerrainDetail(
-    detail: { tileset: Phaser.Tilemaps.Tileset; layout: DetailLayout; seed: number },
+    detail: TerrainDetailSheet,
     base: Int16Array,
   ): void {
     const ground = this.layers.Ground;
@@ -1843,10 +1863,10 @@ export class LevelScene extends Phaser.Scene {
       if (tile.index !== -1) tile.tint = tintAt(tile.x, tile.y);
     });
     if (plan.decals.length === 0) return;
-    const layer = this.map.createBlankLayer('TerrainDetail', detail.tileset);
+    const layer = this.map.createBlankLayer('TerrainDetail', this.map.tilesets[0]);
     if (!layer) return;
     for (const d of plan.decals) {
-      const tile = layer.putTileAt(detail.tileset.firstgid + d.id, d.x, d.y, false);
+      const tile = layer.putTileAt(detail.first + d.id, d.x, d.y, false);
       tile.tint = base[d.y * width + d.x] === -1 ? 0xffffff : tintAt(d.x, d.y);
       tile.flipX = d.flip;
       if (d.kind === 'crystal') this.terrainCrystals.push({ x: d.x, y: d.y });
@@ -1860,7 +1880,7 @@ export class LevelScene extends Phaser.Scene {
   private drawTerrainAsLedges(
     tileset: Phaser.Tilemaps.Tileset,
     tiles: number,
-    detail: { detail: { tileset: Phaser.Tilemaps.Tileset; layout: DetailLayout }; variants: { variant: Int16Array } } | null = null,
+    detail: { detail: TerrainDetailSheet; variants: { variant: Int16Array } } | null = null,
   ): void {
     const ground = this.layers.Ground;
     if (!ground) return;
@@ -1886,13 +1906,10 @@ export class LevelScene extends Phaser.Scene {
       this.map.tileWidth,
     );
     // S109: con detalle, cada celda del fondo de tierra lleva la misma variante que Ground ahí.
-    const extra = detail
-      ? {
-          tileset: detail.detail.tileset,
-          fillAt: (x: number, y: number) => {
-            const v = detail.variants.variant[y * width + x];
-            return v >= 0 ? detail.detail.tileset.firstgid + v : tileset.firstgid + GAMEPLAY.backdrop.earth.fillTile;
-          },
+    const fillAt = detail
+      ? (x: number, y: number) => {
+          const v = detail.variants.variant[y * width + x];
+          return v >= 0 ? detail.detail.first + v : tileset.firstgid + GAMEPLAY.backdrop.earth.fillTile;
         }
       : undefined;
     this.earth = addEarthBackdrop(
@@ -1901,7 +1918,7 @@ export class LevelScene extends Phaser.Scene {
       depth,
       tiles,
       (i) => caves[i % width] === 1 || (keepFloor && isFloorTile(floor, i % width, Math.floor(i / width))),
-      extra,
+      fillAt,
     );
   }
 
