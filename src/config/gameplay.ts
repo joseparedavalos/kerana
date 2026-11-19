@@ -2556,8 +2556,8 @@ export const GAMEPLAY = {
       /** Hasta dónde se cuenta la profundidad (más hondo da igual). */
       maxDepth: 8,
       /** Piso: raíces largas bajo el pasto (solo en el llano, dos casillas hacia abajo) y raicillas. */
-      rootsChance: 0.16,
-      rootletChance: 0.14,
+      rootsChance: 0.12,
+      rootletChance: 0.1,
       /** El pasto de una esquina de arriba que sale hacia el aire de al lado. */
       overhangChance: 0.85,
       /** Las de más de una casilla (canto rodado, capa) solo con todas sus celdas a esta profundidad o más. */
@@ -2568,10 +2568,10 @@ export const GAMEPLAY = {
       crystalCaveTint: 0x9c9cc4,
       /** Por franja de profundidad: probabilidad de que la celda lleve algo y peso de cada tipo. */
       bands: [
-        { minDepth: 1, maxDepth: 1, chance: 0.08, kinds: { lichen: 3, crack: 1, pebble: 1 } },
-        { minDepth: 2, maxDepth: 2, chance: 0.08, kinds: { pebble: 2, lichen: 2, stone: 1 } },
-        { minDepth: 3, maxDepth: 4, chance: 0.08, kinds: { boulder: 2, strata: 2, stone: 1, pebble: 1 } },
-        { minDepth: 5, maxDepth: 99, chance: 0.08, kinds: { boulder: 2, strata: 3, stone: 1 } },
+        { minDepth: 1, maxDepth: 1, chance: 0.06, kinds: { lichen: 3, crack: 1, pebble: 1 } },
+        { minDepth: 2, maxDepth: 2, chance: 0.06, kinds: { pebble: 2, lichen: 2, stone: 1 } },
+        { minDepth: 3, maxDepth: 4, chance: 0.06, kinds: { boulder: 2, strata: 2, stone: 1, pebble: 1 } },
+        { minDepth: 5, maxDepth: 99, chance: 0.06, kinds: { boulder: 2, strata: 3, stone: 1 } },
       ],
       /**
        * Volumen: cuánto se oscurece la roca según la profundidad (índice = profundidad; más hondo usa el último). Se
