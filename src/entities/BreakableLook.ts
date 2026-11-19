@@ -6,6 +6,8 @@ const CFG = GAMEPLAY.breakable;
 /**
  * Clases de rompible (S22). Cada una se ve distinta del terreno y de la otra, sin cartel:
  * - `rock`: roca agrietada ("B"), pide el tajo cargado. Piedra gris azulada con grietas que laten con la luz del tajo.
+ *   S110: en un bioma con la luz de las grietas en su hoja de detalle (l2), la casilla del tileset (barro seco agrietado)
+ *   y la luz que late por sus grietas.
  * - `brittle`: bloque frágil ("%"), cede al tajo normal. Fardo de totora seca: paja clara con hebras y atadura.
  * - `liana`: cortina de liana (rect con `kind=liana`), cede al tajo normal. Hojas claras y las mismas ataduras que el fardo.
  */
@@ -25,10 +27,23 @@ const T = 16;
 const hash = (x: number, y: number): number => ((x * 73856093) ^ (y * 19349663)) >>> 0;
 
 /**
+ * S110: la roca dibujada con el tileset del bioma (l2: barro seco agrietado, casilla 22). `glowAt(x, y)` da, para el
+ * tile de la esquina (x, y) en px, la textura y el cuadro con la luz de sus grietas, o null.
+ */
+export interface TileRockLook {
+  glowAt(x: number, y: number): { key: string; frame: string } | null;
+}
+
+/**
  * Dibuja un bloque de rompibles de una misma clase (todas sus cajas, en px) y devuelve lo creado,
  * para borrarlo al romperse. Los bordes se marcan solo hacia afuera del bloque.
  */
-export function drawBreakables(scene: Phaser.Scene, kind: BreakableKind, zones: readonly Phaser.Geom.Rectangle[]): Phaser.GameObjects.GameObject[] {
+export function drawBreakables(
+  scene: Phaser.Scene,
+  kind: BreakableKind,
+  zones: readonly Phaser.Geom.Rectangle[],
+  tileRock: TileRockLook | null = null,
+): Phaser.GameObjects.GameObject[] {
   if (kind === 'liana') return zones.map((z) => drawLiana(scene, z));
   // Tiles del bloque, para saber qué bordes dan afuera.
   const tiles = new Set<string>();
@@ -46,6 +61,22 @@ export function drawBreakables(scene: Phaser.Scene, kind: BreakableKind, zones: 
   if (kind === 'brittle') {
     for (const [x, y] of cells) drawBrittleTile(base, x, y, open);
     return [base];
+  }
+  // S110: con el tileset, la roca es la casilla del mapa (el barro seco) y solo se dibuja la luz de sus grietas.
+  const tiled = tileRock ? cells.map(([x, y]) => tileRock.glowAt(x, y)) : [];
+  if (tileRock && tiled.every((g) => g !== null)) {
+    base.destroy();
+    const color = CFG.rockGlowColor;
+    const glows = cells.map(([x, y], i) => scene.add.image(x, y, tiled[i]!.key, tiled[i]!.frame).setOrigin(0).setDepth(1.1).setTint(color));
+    scene.tweens.add({
+      targets: glows,
+      alpha: { from: CFG.rockGlowAlphaMin, to: CFG.rockGlowAlphaMax },
+      duration: CFG.rockGlowPulseMs,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    return glows;
   }
   const glow = scene.add.graphics().setDepth(1.1);
   for (const [x, y] of cells) drawRockTile(base, glow, x, y, open);

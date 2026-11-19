@@ -22,7 +22,7 @@ import { Lurker } from '../entities/enemies/Lurker';
 import { Swarm } from '../entities/enemies/Swarm';
 import { rhythmFromMovers } from '../entities/enemies/LurkerMotor';
 import type { EnemyBase } from '../entities/enemies/EnemyBase';
-import { drawBreakables, needsChargedSlash, parseBreakableKind, type BreakableKind } from '../entities/BreakableLook';
+import { drawBreakables, needsChargedSlash, parseBreakableKind, type BreakableKind, type TileRockLook } from '../entities/BreakableLook';
 import { Bouncer } from '../entities/hazards/Bouncer';
 import { parseBouncerKind } from '../entities/hazards/BouncerMotor';
 import { Crumble } from '../entities/hazards/Crumble';
@@ -71,7 +71,9 @@ import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
 import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
-import { depthTint, planTerrainDecals, planTerrainVariants, type DetailLayout } from '../systems/terrainDetailLogic';
+import { depthTint, detailConfigFor, glowTileFor, planTerrainDecals, planTerrainVariants, planWaterTiles, type DetailConfig, type DetailLayout } from '../systems/terrainDetailLogic';
+import { WaterGlints } from '../systems/WaterGlints';
+import { surfaceRuns } from '../systems/waterGlintLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { opaqueMask } from '../systems/backdropLogic';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
@@ -80,7 +82,7 @@ import { queueBackgrounds } from '../assets/backgrounds';
 type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap' | 'chase';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
 /** S109: la hoja de detalle del terreno, pegada al tileset del bioma (`first`: el gid de su casilla 0). */
-type TerrainDetailSheet = { first: number; layout: DetailLayout; seed: number };
+type TerrainDetailSheet = { first: number; layout: DetailLayout; seed: number; cfg: DetailConfig; key: string };
 type TileLayerName = (typeof TILE_LAYERS)[number];
 
 interface Checkpoint {
@@ -264,6 +266,10 @@ export class LevelScene extends Phaser.Scene {
   /** S109: la capa de calcomanías del terreno (`terrainDetail` en levels.ts) y dónde van los cristales (sin tinte de cueva). */
   terrainDetailLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private terrainCrystals: { x: number; y: number }[] = [];
+  /** S110: la hoja de detalle del nivel (null sin `terrainDetail`), para la roca que se rompe. */
+  private terrainDetail: TerrainDetailSheet | null = null;
+  /** S110: el brillo que corre por el agua (`waterGlints` en levels.ts). */
+  waterGlints: WaterGlints | null = null;
   /** Faroles que se encienden al tocarlos (GDD §6.7). */
   private lanterns: Lantern[] = [];
   /** Onda de luz del tajo cargado (una sola en pantalla). */
@@ -614,6 +620,7 @@ export class LevelScene extends Phaser.Scene {
     if (!this.dialogueBox?.active && !this.cutscene) this.tryAutoAttack();
     this.inputs.update();
     this.backdrop.update(this.darkness?.ambientColor);
+    this.waterGlints?.update(this.cameras.main.worldView, this.time.now, delta, SaveManager.current.settings.flashes);
     // La bruma se mueve también durante los diálogos y las escenas (es solo dibujo).
     if (this.fogLooks.length) {
       const view = this.cameras.main.worldView;
@@ -1579,12 +1586,48 @@ export class LevelScene extends Phaser.Scene {
       groups.set(ids[i], g);
     });
     for (const g of groups.values()) {
-      const look = drawBreakables(this, g[0].kind, g.map((b) => b.zone));
+      const look = drawBreakables(this, g[0].kind, g.map((b) => b.zone), this.tileRockLook());
       for (const b of g) {
         b.group = g;
         b.look = look;
       }
     }
+  }
+
+  /**
+   * S110: la roca que se rompe con el tileset (l2): la casilla de Ground (el barro seco o su variante) se ve y encima late
+   * la luz de sus grietas, de la hoja de detalle. Null si el nivel no la tiene (l1 y los demás: la roca de BreakableLook).
+   */
+  private tileRockLook(): TileRockLook | null {
+    const detail = this.terrainDetail;
+    const ground = this.layers.Ground;
+    if (!detail?.layout.glow || !ground) return null;
+    const firstgid = this.map.tilesets[0]?.firstgid ?? 1;
+    return {
+      glowAt: (x, y) => {
+        const tile = ground.getTileAtWorldXY(x + 1, y + 1);
+        if (!tile || tile.index === -1) return null;
+        const variant = tile.index >= detail.first ? tile.index - detail.first : -1;
+        const id = glowTileFor(detail.layout, tile.index - firstgid, variant);
+        return id < 0 ? null : { key: detail.key, frame: `d${id}` };
+      },
+    };
+  }
+
+  /** S110: el brillo que corre por la superficie del agua: los tramos de la casilla 20 (con o sin variante). */
+  private addWaterGlints(tileset: Phaser.Tilemaps.Tileset): void {
+    const water = this.layers.Water;
+    if (!water) return;
+    const { width, height } = this.map;
+    const surface = new Uint8Array(width * height);
+    const variants = new Set(this.terrainDetail?.layout.edges['20'] ?? []);
+    water.forEachTile((tile) => {
+      const t = tile.index - tileset.firstgid;
+      const v = this.terrainDetail ? tile.index - this.terrainDetail.first : -1;
+      if (t === 20 || variants.has(v)) surface[tile.y * width + tile.x] = 1;
+    });
+    const runs = surfaceRuns(width, height, (x, y) => surface[y * width + x] === 1);
+    if (runs.length) this.waterGlints = new WaterGlints(this, runs, this.map.tileWidth);
   }
 
   /** ¿Hay un rompible sin romper en (x, y)? */
@@ -1701,6 +1744,7 @@ export class LevelScene extends Phaser.Scene {
     const tileset = this.map.addTilesetImage(tsName, tilesetKey(this.def.biome));
     if (!tileset) throw new Error(`Tileset no encontrado: ${tsName}`);
     const detail = this.terrainDetailSheet(tileset);
+    this.terrainDetail = detail;
     for (const name of TILE_LAYERS) {
       if (this.map.getLayerIndex(name) === null) continue;
       const layer = this.map.createLayer(name, tileset, 0, 0) as Phaser.Tilemaps.TilemapLayer | null;
@@ -1722,6 +1766,8 @@ export class LevelScene extends Phaser.Scene {
     this.terrainCrystals = [];
     if (this.def.terrainShell) this.drawTerrainAsLedges(tileset, this.def.terrainShell, detail && variants ? { detail, variants } : null);
     if (detail && variants) this.addTerrainDetail(detail, variants.base);
+    this.waterGlints = null;
+    if (this.def.waterGlints) this.addWaterGlints(tileset);
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.physics.world.setBoundsCollision(true, true, false, false);
@@ -1778,12 +1824,17 @@ export class LevelScene extends Phaser.Scene {
         const dy = (TILESET_ROWS + Math.floor(i / TILESET_COLUMNS)) * t;
         ctx.drawImage(sheet, sx, sy, t, t, dx, dy, t, t);
       }
+      // S110: la luz de las grietas del barro seco, como cuadros sueltos (la dibuja BreakableLook encima de la casilla).
+      for (const id of new Set(Object.values(layout.glow ?? {}))) {
+        tex.add(`d${id}`, 0, (id % TILESET_COLUMNS) * t, (TILESET_ROWS + Math.floor(id / TILESET_COLUMNS)) * t, t, t);
+      }
       tex.refresh();
     }
     tileset.setImage(this.textures.get(combined));
     // `putTileAt` busca el tileset de cada índice en este índice del mapa: se rehace con las casillas nuevas.
     this.map.tiles = Phaser.Tilemaps.Parsers.Tiled.BuildTilesetIndex(this.map);
-    return { first: tileset.firstgid + TILESET_COLUMNS * TILESET_ROWS, layout, seed: opt.seed };
+    const cfg = detailConfigFor(GAMEPLAY.backdrop.terrainDetail, opt.sheet);
+    return { first: tileset.firstgid + TILESET_COLUMNS * TILESET_ROWS, layout, seed: opt.seed, cfg, key: combined };
   }
 
   /** S109: cada celda de Ground con variante pasa a la casilla de la hoja. Devuelve las casillas de antes y el plan. */
@@ -1798,7 +1849,9 @@ export class LevelScene extends Phaser.Scene {
     ground.forEachTile((tile) => {
       if (tile.index !== -1) base[tile.y * width + tile.x] = tile.index - tileset.firstgid;
     });
-    const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, GAMEPLAY.backdrop.terrainDetail, detail.seed);
+    const water = this.layers.Water;
+    const underWater = (x: number, y: number) => y > 0 && (water?.getTileAt(x, y - 1)?.index ?? -1) !== -1;
+    const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, detail.cfg, detail.seed, underWater);
     ground.forEachTile((tile) => {
       const v = variant[tile.y * width + tile.x];
       if (v >= 0) tile.index = detail.first + v;
@@ -1810,9 +1863,21 @@ export class LevelScene extends Phaser.Scene {
       platforms.forEachTile((tile) => {
         if (tile.index !== -1) slab[tile.y * width + tile.x] = tile.index - tileset.firstgid;
       });
-      const pv = planTerrainVariants(width, height, (x, y) => slab[y * width + x], detail.layout, GAMEPLAY.backdrop.terrainDetail, detail.seed + 1);
+      const pv = planTerrainVariants(width, height, (x, y) => slab[y * width + x], detail.layout, detail.cfg, detail.seed + 1);
       platforms.forEachTile((tile) => {
         const v = pv[tile.y * width + tile.x];
+        if (v >= 0) tile.index = detail.first + v;
+      });
+    }
+    // S110: el agua (superficie, cuerpo y, más abajo, el fondo de la hoja), con otra sal de semilla.
+    if (water && detail.layout.water) {
+      const w = new Int16Array(width * height).fill(-1);
+      water.forEachTile((tile) => {
+        if (tile.index !== -1) w[tile.y * width + tile.x] = tile.index - tileset.firstgid;
+      });
+      const wv = planWaterTiles(width, height, (x, y) => (x < 0 || y < 0 || x >= width || y >= height ? -1 : w[y * width + x]), detail.layout, detail.cfg.waterChance, detail.seed + 2);
+      water.forEachTile((tile) => {
+        const v = wv[tile.y * width + tile.x];
         if (v >= 0) tile.index = detail.first + v;
       });
     }
@@ -1831,7 +1896,7 @@ export class LevelScene extends Phaser.Scene {
     const ground = this.layers.Ground;
     if (!ground) return;
     const { width, height, tileWidth } = this.map;
-    const cfg = GAMEPLAY.backdrop.terrainDetail;
+    const cfg = detail.cfg;
     const caves = (this.map.getObjectLayer('Objects')?.objects ?? [])
       .filter((o) => objectClass(o) === 'Cave')
       .map((o) => new Phaser.Geom.Rectangle(o.x ?? 0, o.y ?? 0, Number(o.width ?? tileWidth), Number(o.height ?? tileWidth)));

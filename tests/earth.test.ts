@@ -34,9 +34,9 @@ describe('fondo de tierra (S68, S69, S71)', () => {
     expect(earthCells(depth, w, 3, () => true)).toEqual([]);
   });
 
-  it('l1 (S87), l3, l4 (S75), l5 (S100) y l6 (S78) lo tienen encendido; l1 conserva su fondo de cueva y todo el que lo tenga usa la repisa', () => {
+  it('l1 (S87), l2 (S110), l3, l4 (S75), l5 (S100) y l6 (S78) lo tienen encendido; l1 conserva su fondo de cueva y todo el que lo tenga usa la repisa', () => {
     const on = Object.values(LEVELS).filter((l) => l?.earthBackdrop);
-    expect(on.map((l) => l!.id)).toEqual(['l1', 'l3', 'l4', 'l5', 'l6']);
+    expect(on.map((l) => l!.id)).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6']);
     for (const l of on) expect(l!.terrainShell).toBeGreaterThanOrEqual(2);
     expect(LEVELS.l1?.backgrounds.cave).toBe('bg_l1_cave');
   });

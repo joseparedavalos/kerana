@@ -47,10 +47,12 @@ describe('detalle del terreno (S109)', () => {
   const map = l1Map();
   const seed = LEVELS.l1!.terrainDetail!.seed;
 
-  it('solo l1 lo usa, con la hoja de cerro', () => {
+  it('l1 lo usa con la hoja de cerro (y, desde S110, l2 con la del estero: tests/terrainDetailEstero.test.ts)', () => {
     const using = Object.values(LEVELS).filter((l) => l?.terrainDetail);
-    expect(using.map((l) => l!.id)).toEqual(['l1']);
-    expect(LEVELS.l1!.terrainDetail!.sheet).toBe('cerro');
+    expect(using.map((l) => [l!.id, l!.terrainDetail!.sheet])).toEqual([
+      ['l1', 'cerro'],
+      ['l2', 'estero'],
+    ]);
   });
 
   it('el azar de cada celda es fijo y distinto entre celdas', () => {

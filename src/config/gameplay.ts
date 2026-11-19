@@ -2545,7 +2545,7 @@ export const GAMEPLAY = {
       depth: -19,
     },
     /**
-     * Detalle del terreno (S109; `terrainDetail` en levels.ts, hoy solo l1): variantes del relleno y de los bordes
+     * Detalle del terreno (S109; `terrainDetail` en levels.ts: l1 y, desde S110, l2): variantes del relleno y de los bordes
      * elegidas por celda con la semilla del nivel, y una capa de calcomanías sobre Ground según la profundidad de la
      * celda (a cuántos tiles está el aire, en las 8 direcciones). Las probabilidades son por celda (0-1).
      */
@@ -2578,6 +2578,55 @@ export const GAMEPLAY = {
        * multiplica en Ground, en el fondo de tierra y en las calcomanías, en pasos chicos para que no se lea una caja.
        */
       depthShade: [1, 1, 0.98, 0.96, 0.94, 0.92, 0.9],
+      /** S110: el agua del estero, superficie (20) y cuerpo (21), con otra casilla de la hoja en esta fracción. */
+      waterChance: 0.6,
+      /**
+       * S110: lo que cambia en cada hoja (`terrainDetail.sheet` en levels.ts); lo que no se nombra es lo de arriba (cerro).
+       * Estero (l2): sin cristales (no hay cuevas); en el barro, caracoles, palitos, piedritas, lentes de arcilla y raíces.
+       */
+      sheets: {
+        estero: {
+          rootsChance: 0.14,
+          rootletChance: 0.12,
+          bands: [
+            { minDepth: 1, maxDepth: 1, chance: 0.06, kinds: { shell: 2, twig: 1, pebble: 1 } },
+            { minDepth: 2, maxDepth: 2, chance: 0.06, kinds: { shell: 2, twig: 2, pebble: 1 } },
+            { minDepth: 3, maxDepth: 4, chance: 0.06, kinds: { clay: 3, root: 2, shell: 1, twig: 1 } },
+            { minDepth: 5, maxDepth: 99, chance: 0.06, kinds: { clay: 3, root: 2, shell: 1 } },
+          ],
+          /** El barro se oscurece más hacia adentro que la roca (las masas del estero son anchas), en pasos de 3 %. */
+          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
+        },
+      },
+    },
+    /**
+     * S110: el brillo que corre por la superficie del agua (`waterGlints` en levels.ts, l2): trazos de luz de 1 px que
+     * aparecen sobre la línea de luz del agua a la vista, corren despacio y se apagan, como el reflejo del sol en el
+     * fondo (S96). Un pool fijo; con «Destellos» apagado no se dibujan.
+     */
+    waterGlints: {
+      /** Cuántos a la vez como máximo (el pool). */
+      count: 14,
+      /** Largo (px; 1 de alto). */
+      widthMin: 3,
+      widthMax: 8,
+      /** Cuánto dura encendido cada uno (ms; sube y baja). */
+      lifeMinMs: 900,
+      lifeMaxMs: 2200,
+      /** Pausa apagado antes de aparecer en otro lugar (ms). */
+      gapMinMs: 200,
+      gapMaxMs: 1600,
+      /** Cuánto corre a lo largo de la superficie (px/s; a un lado o al otro). */
+      speedMin: 2,
+      speedMax: 7,
+      /** Opacidad en el pico. */
+      alpha: 0.9,
+      /** Color (dorado claro del sol). */
+      color: '#ffd9a0',
+      /** Filas (px desde el borde de arriba de la casilla de superficie) donde puede caer: la línea de luz y el reflejo. */
+      rows: [1, 2, 4, 6],
+      /** Profundidad de dibujo: encima de las capas de tiles (0) y debajo de las piezas y los personajes. */
+      depth: 0.5,
     },
   },
 
