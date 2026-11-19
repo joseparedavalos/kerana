@@ -40,7 +40,8 @@ export interface SampleDef {
 }
 
 /**
- * Qué grabación reemplaza a cada ZzFX. Lo que no está acá (criaturas, lo mágico, `bounce`) sigue en ZzFX.
+ * Qué grabación reemplaza a cada ZzFX. Lo que no está acá (criaturas, lo mágico, `bounce`) sigue en ZzFX; la
+ * liberación tiene jingle propio (S107, `JINGLES` en src/data/music.ts).
  * Por qué cada una: `docs/ASSETS.md` §10.
  */
 export const SFX_SAMPLES: Partial<Record<SfxKey, SampleDef>> = {
@@ -64,8 +65,8 @@ export const SFX_SAMPLES: Partial<Record<SfxKey, SampleDef>> = {
   uiMove: { sources: ['interface:select_001'] },
   uiConfirm: { sources: ['interface:confirmation_001'] },
   uiBack: { sources: ['interface:back_002'] },
-  // La liberación: pizzicato que sube por grados y se queda arriba (lo más cerca del arpa de los cinco paquetes).
-  liberation: { sources: ['jingles:jingles_PIZZI10'] },
+  // La liberación ya no es grabada (S107): es el jingle de la estrella, generado con los instrumentos de la música
+  // (`JINGLES` en src/data/music.ts). El pizzicato de Kenney (`jingles:jingles_PIZZI10`) queda en su zip, sin usar.
 };
 
 /** Suelos con pasos grabados (Impact Sounds trae cinco por suelo). */

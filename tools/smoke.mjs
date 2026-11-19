@@ -370,8 +370,14 @@ async function main() {
     const worstDb = Math.max(...samples.banks.flatMap((bk) => bk.lufs.map((l) => Math.abs(l - bk.refLufs))));
     const worstLead = Math.max(...samples.banks.flatMap((bk) => bk.leadMs));
     check(
-      samples.missing.length === 0 && samples.banks.length === 20 && sampleCount === 49 && worstDb < 0.5 && worstLead < 25,
+      samples.missing.length === 0 && samples.banks.length === 19 && sampleCount === 48 && worstDb < 0.5 && worstLead < 25,
       `efectos grabados: ${samples.banks.length} grupos, ${sampleCount} archivos, a ${worstDb.toFixed(2)} dB de su ZzFX, ${worstLead.toFixed(0)} ms de silencio al principio como mucho (faltan: ${samples.missing.join(', ') || 'ninguno'})`,
+    );
+    // S107: la liberación es un jingle propio, generado con los instrumentos de la música, a la sonoridad de su ZzFX.
+    const jingle = samples.jingles.find((j) => j.key === 'liberation');
+    check(
+      samples.jingles.length === 1 && !!jingle && jingle.seconds > 2.5 && jingle.seconds < 3.5 && Math.abs(jingle.lufs - jingle.refLufs) < 0.5 && jingle.leadMs < 10,
+      `jingle de la liberación: ${jingle?.seconds.toFixed(2)} s, a ${jingle ? Math.abs(jingle.lufs - jingle.refLufs).toFixed(2) : '?'} dB de su ZzFX, ${jingle?.leadMs.toFixed(0)} ms de silencio al principio`,
     );
     const inStory = () => title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false);
     // "Nueva partida" (primer ítem del menú); se repite si el menú todavía no escuchaba.
@@ -553,6 +559,8 @@ async function main() {
     const freedMusic = await waitMusic(bossPage, 'liberation');
     const order = freedMusic?.started.slice(-2).join(' → ');
     check(freedMusic?.playing === 'liberation' && order === 'l1_boss → liberation', `música: al liberar al hijo cambia otra vez (${order})`);
+    // S107: al estallar la marca suena el jingle de la estrella, y la pista entra igual que antes.
+    check(freedMusic?.jingles?.join() === 'liberation' && freedMusic.failures.length === 0, `jingle: suena una vez al estallar la marca (${JSON.stringify(freedMusic?.jingles)}, fallas ${freedMusic?.failures.length})`);
     await bossPage.close();
 
     // 1b2) l1 de punta a punta (S19): el piloto (tools/lib/pilot.mjs, plan en pilot-plans.mjs) maneja a Kerana con las teclas en cada

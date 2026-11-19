@@ -1,6 +1,6 @@
 import { GAMEPLAY } from '../config/gameplay';
-import { BOSS_LAYER, BOSS_LEVEL_TRACKS, INSTRUMENTS, TRACKS, type MusicKey, type TrackId } from '../data/music';
-import { bossVariant, normalize, peak, renderTrack, rms, type TrackDef } from './musicLogic';
+import { BOSS_LAYER, BOSS_LEVEL_TRACKS, INSTRUMENTS, JINGLES, TRACKS, type MusicKey, type TrackId } from '../data/music';
+import { bossVariant, normalize, peak, renderJingle, renderTrack, rms, type JingleDef, type TrackDef } from './musicLogic';
 import { SaveManager } from './SaveManager';
 import type { MusicJob, MusicResult } from './musicWorker';
 import { SFX_LAYERS, SFX_PRESETS, SFX_STOP_FADE_MS, type SfxKey } from './sfxPresets';
@@ -12,6 +12,8 @@ import { gainFor, jitter, loudness, pickVariant, soundSpan } from './sfxLogic';
 // desbloqueo con el primer toque o tecla y volúmenes de Opciones. Si algo falla, el juego sigue en silencio.
 // S106: los efectos físicos son grabaciones (`src/data/sfxSamples.ts`), llevadas a la sonoridad del ZzFX que reemplazan.
 // Mientras cargan, o si faltan, suena el ZzFX. Los pasos de Kerana solo existen grabados.
+// S107: los jingles (`JINGLES` en src/data/music.ts) se generan al arrancar con los instrumentos de la música y suenan
+// como el efecto de su clave (la liberación), a la sonoridad de su ZzFX. Mientras se generan, suena el ZzFX.
 
 type ZzfxModule = typeof import('zzfx');
 type Playing = { key: MusicKey; source: AudioBufferSourceNode; gain: GainNode };
@@ -52,6 +54,10 @@ export class AudioManager {
   private static readonly banks = new Map<BankKey, Bank>();
   private static samplesLoading: Promise<void> | null = null;
   private static readonly missingSamples: string[] = [];
+  /** Jingles ya generados (S107), por efecto: un solo buffer cada uno, a la sonoridad de su ZzFX. */
+  private static readonly jingles = new Map<SfxKey, Bank>();
+  /** Para la prueba de humo: jingles que sonaron, en orden. */
+  private static readonly jinglesPlayed: SfxKey[] = [];
   /** Para la prueba de humo: pasos que sonaron, por suelo. */
   private static readonly stepsPlayed: Partial<Record<Surface, number>> = {};
 
@@ -79,6 +85,12 @@ export class AudioManager {
     const volume = SaveManager.current.settings.sfx;
     if (this.muted || volume <= 0) return;
     const p = Math.max(-1, Math.min(1, pan));
+    const jingle = this.jingles.get(key);
+    if (jingle && this.zz) {
+      this.jinglesPlayed.push(key);
+      this.playBank(this.zz.ZZFX.audioContext, jingle, volume, p, 1, 0, 0);
+      return;
+    }
     const bank = this.banks.get(key);
     const def = SFX_SAMPLES[key];
     if (bank && def && this.zz) {
@@ -140,6 +152,7 @@ export class AudioManager {
   /**
    * Las grabaciones (S106): se bajan y decodifican una vez al arrancar, sin esperar el gesto (decodificar no suena).
    * Cada una se lleva a la sonoridad del ZzFX que reemplaza (los pasos, a la del aterrizaje más `footsteps.db`).
+   * Los jingles (S107) se generan a la vez y se llevan igual a la sonoridad de su ZzFX.
    */
   private static loadSamples(): Promise<void> {
     if (this.samplesLoading) return this.samplesLoading;
@@ -155,6 +168,9 @@ export class AudioManager {
         for (const [surface, sources] of Object.entries(FOOTSTEP_SOURCES) as [Surface, unknown[]][]) {
           const key = `step_${surface}` as const;
           jobs.push(this.loadBank(ctx, key, sources.map((_, i) => sampleName(key, i)), stepRef));
+        }
+        for (const [key, def] of Object.entries(JINGLES) as [SfxKey, JingleDef & { db?: number }][]) {
+          jobs.push(this.loadJingle(ctx, key, def, zzfxLufs(ZZFX, key) + (def.db ?? 0)));
         }
         await Promise.all(jobs);
       })
@@ -180,6 +196,19 @@ export class AudioManager {
     const ok = loaded.filter((x): x is { buffer: AudioBuffer; gain: number } => x !== null);
     if (ok.length === 0) return;
     this.banks.set(key, { buffers: ok.map((x) => x.buffer), gains: ok.map((x) => x.gain), last: -1, refLufs });
+  }
+
+  /** Un jingle (S107): se genera fuera del hilo del juego, sin normalizar, y se lleva a `refLufs`. */
+  private static async loadJingle(ctx: AudioContext, key: SfxKey, def: JingleDef, refLufs: number): Promise<void> {
+    try {
+      const samples = await this.renderSamples(def, true);
+      const rate = CFG.musicSampleRate;
+      const buffer = ctx.createBuffer(1, samples.length, rate);
+      buffer.getChannelData(0).set(samples);
+      this.jingles.set(key, { buffers: [buffer], gains: [gainFor(loudness(samples, rate), refLufs)], last: -1, refLufs });
+    } catch (e) {
+      this.fail(`jingle ${key}: ${String(e)}`);
+    }
   }
 
   /**
@@ -415,16 +444,16 @@ export class AudioManager {
   private static nextJob = 0;
   private static readonly jobs = new Map<number, { resolve: (s: Float32Array) => void; reject: (e: Error) => void }>();
 
-  /** Genera en el worker; si el navegador no lo deja, en el hilo principal (en pedazos). */
-  private static renderSamples(def: TrackDef): Promise<Float32Array> {
+  /** Genera en el worker; si el navegador no lo deja, en el hilo principal (en pedazos). `jingle`: sin bucle ni normalizar. */
+  private static renderSamples(def: TrackDef, jingle = false): Promise<Float32Array> {
     const worker = this.musicWorker();
-    if (!worker) return this.renderHere(def);
+    if (!worker) return this.renderHere(def, jingle);
     const id = ++this.nextJob;
-    const job: MusicJob = { id, def, sampleRate: CFG.musicSampleRate, rms: CFG.musicRms, ceiling: CFG.musicCeiling };
+    const job: MusicJob = { id, def, sampleRate: CFG.musicSampleRate, rms: CFG.musicRms, ceiling: CFG.musicCeiling, jingle };
     return new Promise<Float32Array>((resolve, reject) => {
       this.jobs.set(id, { resolve, reject });
       worker.postMessage(job);
-    }).catch(() => this.renderHere(def));
+    }).catch(() => this.renderHere(def, jingle));
   }
 
   private static musicWorker(): Worker | null {
@@ -453,7 +482,7 @@ export class AudioManager {
     return this.worker;
   }
 
-  private static async renderHere(def: TrackDef): Promise<Float32Array> {
+  private static async renderHere(def: TrackDef, jingle = false): Promise<Float32Array> {
     const { ZZFX } = await this.zzfxModule();
     const synth = (params: number[]) => {
       // ZzFX genera a su `sampleRate`; se cambia solo mientras dura esta nota (los efectos siguen a 44,1 kHz).
@@ -465,10 +494,9 @@ export class AudioManager {
         ZZFX.sampleRate = rate;
       }
     };
-    const samples = await renderTrack(def, INSTRUMENTS, synth, {
-      sampleRate: CFG.musicSampleRate,
-      yieldEvery: () => new Promise<void>((r) => setTimeout(r, 0)),
-    });
+    const opts = { sampleRate: CFG.musicSampleRate, yieldEvery: () => new Promise<void>((r) => setTimeout(r, 0)) };
+    if (jingle) return renderJingle(def as JingleDef, INSTRUMENTS, synth, opts);
+    const samples = await renderTrack(def, INSTRUMENTS, synth, opts);
     normalize(samples, CFG.musicRms, CFG.musicCeiling);
     return samples;
   }
@@ -503,6 +531,7 @@ export class AudioManager {
       busGain: this.musicBus?.gain.value ?? 0,
       voices: [...this.voices.keys()],
       steps: { ...this.stepsPlayed },
+      jingles: [...this.jinglesPlayed],
       renderer: this.worker ? 'worker' : this.worker === null ? 'hilo principal' : 'sin usar',
     };
   }
@@ -528,7 +557,19 @@ export class AudioManager {
       lufs: b.buffers.map((buf, i) => loudness(buf.getChannelData(0).map((v) => v * b.gains[i]), buf.sampleRate)),
       leadMs: b.buffers.map((buf) => (soundSpan(buf.getChannelData(0), buf.sampleRate)[0] / buf.sampleRate) * 1000),
     }));
-    return { banks, missing: [...this.missingSamples] };
+    // S107: los jingles, aparte (no son archivos): duración, sonoridad con su ganancia y silencio al principio.
+    const jingles = [...this.jingles.entries()].map(([key, b]) => {
+      const buf = b.buffers[0];
+      const data = buf.getChannelData(0);
+      return {
+        key,
+        seconds: buf.duration,
+        refLufs: b.refLufs,
+        lufs: loudness(data.map((v) => v * b.gains[0]), buf.sampleRate),
+        leadMs: (soundSpan(data, buf.sampleRate)[0] / buf.sampleRate) * 1000,
+      };
+    });
+    return { banks, jingles, missing: [...this.missingSamples] };
   }
 
   /** Intensidad de unos efectos tal como suenan (con el volumen de ZzFX aplicado dos veces, como en `playSamples`). */
