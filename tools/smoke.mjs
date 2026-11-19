@@ -538,6 +538,9 @@ async function main() {
     check(await bossPage.evaluate(() => window.__KERANA_DEBUG__.scene.fighting === true), 'entrar a la arena cierra la entrada y empieza la pelea');
     const bossMusic = await waitMusic(bossPage, 'l1_boss');
     check(bossMusic?.playing === 'l1_boss', `música: la pelea cambia a la variante tensa (${JSON.stringify(bossMusic?.started)})`);
+    // S106: caminando hasta la arena de l1 (el cerro) suenan pasos de piedra, y nada más que de piedra.
+    const steps1 = bossMusic?.steps ?? {};
+    check((steps1.concrete ?? 0) >= 2 && Object.keys(steps1).every((k) => k === 'concrete'), `pasos: caminando hasta la arena de l1 suenan en piedra (${JSON.stringify(steps1)})`);
     await sleep(6000); // presentación y un par de ataques (god=1: Kerana no recibe daño)
     await bossPage.screenshot({ path: join(SHOTS, 'boss.png') });
     await bossPage.screenshot({ path: join(SHOTS, 'bg-l1-caverna.png') });
