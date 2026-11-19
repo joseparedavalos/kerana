@@ -3,7 +3,7 @@ import { artOrPlaceholder, hasArt } from '../assets/art';
 import { addProp, propLook, propNames } from '../assets/propArt';
 import { layoutShowcase } from '../assets/propLayout';
 import { addPindoArt } from '../assets/pindoArt';
-import { ART_DETAIL, PLAYER_KEY, PROP_ATLASES, tilesetKey } from '../assets/manifest';
+import { ART_DETAIL, PLAYER_KEY, PROP_ATLASES, terrainDetailKey, terrainDetailLayoutKey, TILESET_COLUMNS, TILESET_ROWS, tilesetKey } from '../assets/manifest';
 import { DEBUG } from '../config/debug';
 import { FONT_FAMILY } from '../config/fonts';
 import { GAMEPLAY } from '../config/gameplay';
@@ -71,6 +71,7 @@ import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
 import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
+import { depthTint, planTerrainDecals, planTerrainVariants, type DetailLayout } from '../systems/terrainDetailLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
 import { opaqueMask } from '../systems/backdropLogic';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
@@ -78,6 +79,8 @@ import { queueBackgrounds } from '../assets/backgrounds';
 
 type RespawnReason = 'pit' | 'water' | 'hazard' | 'trap' | 'chase';
 const TILE_LAYERS = ['Background', 'Ground', 'Platforms', 'Hazards', 'Water', 'Foreground'] as const;
+/** S109: la hoja de detalle del terreno, pegada al tileset del bioma (`first`: el gid de su casilla 0). */
+type TerrainDetailSheet = { first: number; layout: DetailLayout; seed: number };
 type TileLayerName = (typeof TILE_LAYERS)[number];
 
 interface Checkpoint {
@@ -258,6 +261,9 @@ export class LevelScene extends Phaser.Scene {
   private backdrop!: LevelBackdrop;
   /** Fondo de tierra (S68) detrás de la repisa, en trozos; vacío si el nivel no lo tiene. */
   earth: Phaser.Tilemaps.TilemapLayer | null = null;
+  /** S109: la capa de calcomanías del terreno (`terrainDetail` en levels.ts) y dónde van los cristales (sin tinte de cueva). */
+  terrainDetailLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private terrainCrystals: { x: number; y: number }[] = [];
   /** Faroles que se encienden al tocarlos (GDD §6.7). */
   private lanterns: Lantern[] = [];
   /** Onda de luz del tajo cargado (una sola en pantalla). */
@@ -1694,11 +1700,14 @@ export class LevelScene extends Phaser.Scene {
     const tsName = this.map.tilesets[0]?.name ?? this.def.biome;
     const tileset = this.map.addTilesetImage(tsName, tilesetKey(this.def.biome));
     if (!tileset) throw new Error(`Tileset no encontrado: ${tsName}`);
+    const detail = this.terrainDetailSheet(tileset);
     for (const name of TILE_LAYERS) {
       if (this.map.getLayerIndex(name) === null) continue;
       const layer = this.map.createLayer(name, tileset, 0, 0) as Phaser.Tilemaps.TilemapLayer | null;
       if (layer) this.layers[name] = layer;
     }
+    // S109: las variantes cambian solo el índice de la casilla, antes de las colisiones (que valen para todo no vacío).
+    const variants = detail ? this.applyTerrainVariants(tileset, detail) : null;
     this.layers.Ground?.setCollisionByExclusion([-1]);
     const platforms = this.layers.Platforms;
     if (platforms) {
@@ -1709,7 +1718,10 @@ export class LevelScene extends Phaser.Scene {
       });
     }
     this.earth = null;
-    if (this.def.terrainShell) this.drawTerrainAsLedges(tileset, this.def.terrainShell);
+    this.terrainDetailLayer = null;
+    this.terrainCrystals = [];
+    if (this.def.terrainShell) this.drawTerrainAsLedges(tileset, this.def.terrainShell, detail && variants ? { detail, variants } : null);
+    if (detail && variants) this.addTerrainDetail(detail, variants.base);
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.physics.world.setBoundsCollision(true, true, false, false);
@@ -1736,8 +1748,140 @@ export class LevelScene extends Phaser.Scene {
     return { mask, width, height, tile: tileWidth };
   }
 
+  /**
+   * S109: la hoja de detalle del terreno del nivel (`terrainDetail`) con su JSON. Va pegada debajo de las 28 casillas
+   * del tileset del bioma en una sola textura (4 columnas), que pasa a ser la del tileset del mapa: así Ground, el fondo
+   * de tierra, las lajas y las calcomanías se dibujan con una textura (con dos, mezcladas en una capa, costaba un 3 %
+   * de FPS en el celular emulado). La casilla `d` de la hoja es el gid `first + d`. Sin la hoja o sin el JSON (asset
+   * faltante), nada: el nivel se ve con el tileset solo.
+   */
+  private terrainDetailSheet(tileset: Phaser.Tilemaps.Tileset): TerrainDetailSheet | null {
+    const opt = this.def.terrainDetail;
+    if (!opt) return null;
+    const key = terrainDetailKey(opt.sheet);
+    const layout = this.cache.json.get(terrainDetailLayoutKey(opt.sheet)) as DetailLayout | undefined;
+    const baseKey = tilesetKey(this.def.biome);
+    if (!layout || !this.textures.exists(key) || !this.textures.exists(baseKey)) return null;
+    const combined = `${baseKey}_${key}`;
+    const t = layout.tile;
+    if (!this.textures.exists(combined)) {
+      const rows = TILESET_ROWS + Math.ceil(layout.count / TILESET_COLUMNS);
+      const tex = this.textures.createCanvas(combined, TILESET_COLUMNS * t, rows * t);
+      if (!tex) return null;
+      const ctx = tex.context;
+      ctx.drawImage(this.textures.get(baseKey).getSourceImage() as CanvasImageSource, 0, 0);
+      const sheet = this.textures.get(key).getSourceImage() as CanvasImageSource;
+      for (let i = 0; i < layout.count; i++) {
+        const sx = (i % layout.columns) * t;
+        const sy = Math.floor(i / layout.columns) * t;
+        const dx = (i % TILESET_COLUMNS) * t;
+        const dy = (TILESET_ROWS + Math.floor(i / TILESET_COLUMNS)) * t;
+        ctx.drawImage(sheet, sx, sy, t, t, dx, dy, t, t);
+      }
+      tex.refresh();
+    }
+    tileset.setImage(this.textures.get(combined));
+    // `putTileAt` busca el tileset de cada índice en este índice del mapa: se rehace con las casillas nuevas.
+    this.map.tiles = Phaser.Tilemaps.Parsers.Tiled.BuildTilesetIndex(this.map);
+    return { first: tileset.firstgid + TILESET_COLUMNS * TILESET_ROWS, layout, seed: opt.seed };
+  }
+
+  /** S109: cada celda de Ground con variante pasa a la casilla de la hoja. Devuelve las casillas de antes y el plan. */
+  private applyTerrainVariants(
+    tileset: Phaser.Tilemaps.Tileset,
+    detail: TerrainDetailSheet,
+  ): { base: Int16Array; variant: Int16Array } | null {
+    const ground = this.layers.Ground;
+    if (!ground) return null;
+    const { width, height } = this.map;
+    const base = new Int16Array(width * height).fill(-1);
+    ground.forEachTile((tile) => {
+      if (tile.index !== -1) base[tile.y * width + tile.x] = tile.index - tileset.firstgid;
+    });
+    const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, GAMEPLAY.backdrop.terrainDetail, detail.seed);
+    ground.forEachTile((tile) => {
+      const v = variant[tile.y * width + tile.x];
+      if (v >= 0) tile.index = detail.first + v;
+    });
+    // El medio de las lajas (17) también, con otra sal de semilla.
+    const platforms = this.layers.Platforms;
+    if (platforms) {
+      const slab = new Int16Array(width * height).fill(-1);
+      platforms.forEachTile((tile) => {
+        if (tile.index !== -1) slab[tile.y * width + tile.x] = tile.index - tileset.firstgid;
+      });
+      const pv = planTerrainVariants(width, height, (x, y) => slab[y * width + x], detail.layout, GAMEPLAY.backdrop.terrainDetail, detail.seed + 1);
+      platforms.forEachTile((tile) => {
+        const v = pv[tile.y * width + tile.x];
+        if (v >= 0) tile.index = detail.first + v;
+      });
+    }
+    return { base, variant };
+  }
+
+  /**
+   * S109: las calcomanías del terreno (piedras, capas, raíces, liquen, grietas, cristal cerca de las cuevas, el pasto
+   * de las esquinas) en una capa justo encima de Ground, y el volumen: la roca se oscurece un poco según la profundidad.
+   * Solo donde la roca se ve entera (Ground opaco o el fondo de tierra debajo). Solo dibujo.
+   */
+  private addTerrainDetail(
+    detail: TerrainDetailSheet,
+    base: Int16Array,
+  ): void {
+    const ground = this.layers.Ground;
+    if (!ground) return;
+    const { width, height, tileWidth } = this.map;
+    const cfg = GAMEPLAY.backdrop.terrainDetail;
+    const caves = (this.map.getObjectLayer('Objects')?.objects ?? [])
+      .filter((o) => objectClass(o) === 'Cave')
+      .map((o) => new Phaser.Geom.Rectangle(o.x ?? 0, o.y ?? 0, Number(o.width ?? tileWidth), Number(o.height ?? tileWidth)));
+    const inCave = (x: number, y: number) => caves.some((r) => r.contains((x + 0.5) * tileWidth, (y + 0.5) * tileWidth));
+    const layers = Object.values(this.layers);
+    const plan = planTerrainDecals(
+      {
+        width,
+        height,
+        ground: (x, y) => base[y * width + x],
+        opaque: (x, y) => {
+          const t = ground.getTileAt(x, y);
+          if (t && t.visible && t.alpha >= 1) return true;
+          return (this.earth?.getTileAt(x, y)?.index ?? -1) !== -1;
+        },
+        caveAir: (x, y) => base[y * width + x] === -1 && inCave(x, y),
+        emptyAir: (x, y) => layers.every((l) => (l.getTileAt(x, y)?.index ?? -1) === -1),
+      },
+      detail.layout,
+      cfg,
+      detail.seed,
+    );
+    // Volumen: Ground y el fondo de tierra, según la profundidad.
+    const tintAt = (x: number, y: number) => depthTint(plan.depth[y * width + x], cfg.depthShade);
+    ground.forEachTile((tile) => {
+      if (tile.index !== -1) tile.tint = tintAt(tile.x, tile.y);
+    });
+    this.earth?.forEachTile((tile) => {
+      if (tile.index !== -1) tile.tint = tintAt(tile.x, tile.y);
+    });
+    if (plan.decals.length === 0) return;
+    const layer = this.map.createBlankLayer('TerrainDetail', this.map.tilesets[0]);
+    if (!layer) return;
+    for (const d of plan.decals) {
+      const tile = layer.putTileAt(detail.first + d.id, d.x, d.y, false);
+      tile.tint = base[d.y * width + d.x] === -1 ? 0xffffff : tintAt(d.x, d.y);
+      tile.flipX = d.flip;
+      if (d.kind === 'crystal') this.terrainCrystals.push({ x: d.x, y: d.y });
+    }
+    // Justo encima de Ground (misma profundidad, después en la lista).
+    this.children.moveAbove(layer as unknown as Phaser.GameObjects.GameObject, ground as unknown as Phaser.GameObjects.GameObject);
+    this.terrainDetailLayer = layer;
+  }
+
   /** Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo. Solo dibujo. */
-  private drawTerrainAsLedges(tileset: Phaser.Tilemaps.Tileset, tiles: number): void {
+  private drawTerrainAsLedges(
+    tileset: Phaser.Tilemaps.Tileset,
+    tiles: number,
+    detail: { detail: TerrainDetailSheet; variants: { variant: Int16Array } } | null = null,
+  ): void {
     const ground = this.layers.Ground;
     if (!ground) return;
     const { width, height } = this.map;
@@ -1761,12 +1905,20 @@ export class LevelScene extends Phaser.Scene {
       width,
       this.map.tileWidth,
     );
+    // S109: con detalle, cada celda del fondo de tierra lleva la misma variante que Ground ahí.
+    const fillAt = detail
+      ? (x: number, y: number) => {
+          const v = detail.variants.variant[y * width + x];
+          return v >= 0 ? detail.detail.first + v : tileset.firstgid + GAMEPLAY.backdrop.earth.fillTile;
+        }
+      : undefined;
     this.earth = addEarthBackdrop(
       this.map,
       tileset,
       depth,
       tiles,
       (i) => caves[i % width] === 1 || (keepFloor && isFloorTile(floor, i % width, Math.floor(i / width))),
+      fillAt,
     );
   }
 
@@ -2459,6 +2611,14 @@ export class LevelScene extends Phaser.Scene {
     const tx = Math.floor(x / tile);
     const ty = Math.floor(y / tile);
     this.layers.Ground?.setTint(GAMEPLAY.backdrop.caveRockTint, tx, ty, Math.ceil(width / tile), Math.ceil(height / tile));
+    // S109: el detalle del terreno se oscurece igual, menos las vetas de cristal (brillan como los de la cueva).
+    const detail = this.terrainDetailLayer;
+    if (!detail) return;
+    detail.setTint(GAMEPLAY.backdrop.caveRockTint, tx, ty, Math.ceil(width / tile), Math.ceil(height / tile));
+    for (const c of this.terrainCrystals) {
+      const t = detail.getTileAt(c.x, c.y);
+      if (t) t.tint = GAMEPLAY.backdrop.terrainDetail.crystalCaveTint;
+    }
   }
 
   private updateSigns(): void {

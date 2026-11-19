@@ -124,6 +124,8 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     solidFloor: false,
     // S87: el cerro macizo entre las dos cuevas va relleno; bajo las zonas `Cave` sigue el fondo de cueva.
     earthBackdrop: true,
+    // S109: la roca del cerro sin repetirse (variantes por celda) y con detalle según la profundidad.
+    terrainDetail: { sheet: 'cerro', seed: 109 },
     musicKey: '',
     boss: 'teju_jagua',
     gift: 'charged_slash',

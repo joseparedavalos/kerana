@@ -51,6 +51,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `npm run maps`: `tools/levels/*.txt` → `public/assets/maps/*.json`
 - `npm run sprites`: `raw/` → `public/assets/sprites/` (ver `docs/ASSETS.md`)
 - `npm run tileset -- <bioma>`: `raw/tiles/<bioma>/` → `public/assets/tiles/<bioma>.png` (ver `docs/RECETA-TILESET.md`)
+- `npm run cerro-tiles`: dibuja por código `public/assets/tiles/cerro.png` y la hoja de detalle de l1 (RECETA-TILESET §6)
 - `npm run smoke`: prueba de humo con navegador headless (si está disponible)
 - `npm run preview`: sirve `dist/`
 

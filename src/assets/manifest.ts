@@ -143,6 +143,10 @@ export const PROP_ATLASES = [
 export const propAtlasKey = (folder: string): string => `props_${folder}`;
 
 export const tilesetKey = (biome: string): string => `tiles_${biome}`;
+/** Hoja de detalle del terreno (S109) y su JSON: `tiles/detalle/<hoja>.png` y `.json` (tools/make-cerro-tiles.mjs). */
+export const terrainDetailKey = (sheet: string): string => `tiles_detail_${sheet}`;
+export const terrainDetailLayoutKey = (sheet: string): string => `tiles_detail_${sheet}_layout`;
+const TERRAIN_DETAIL_SHEETS = { cerro: [128, 176] } as const;
 
 export const MANIFEST: AssetEntry[] = [
   ...BIOMES.map(
@@ -154,6 +158,10 @@ export const MANIFEST: AssetEntry[] = [
       height: TILE_SIZE * TILESET_ROWS,
     }),
   ),
+  ...Object.entries(TERRAIN_DETAIL_SHEETS).flatMap(([sheet, [width, height]]): AssetEntry[] => [
+    { type: 'image', key: terrainDetailKey(sheet), path: `tiles/detalle/${sheet}.png`, width, height },
+    { type: 'json', key: terrainDetailLayoutKey(sheet), path: `tiles/detalle/${sheet}.json` },
+  ]),
   { type: 'tilemap', key: 'map_test', path: 'maps/test.json' },
   { type: 'tilemap', key: 'map_vitrina', path: 'maps/vitrina.json' },
   { type: 'tilemap', key: 'map_l1', path: 'maps/l1.json' },
