@@ -2585,14 +2585,15 @@ export const GAMEPLAY = {
        * Estero (l2): sin cristales (no hay cuevas); en el barro, caracoles, palitos, piedritas, lentes de arcilla y raíces.
        */
       sheets: {
+        // S110: con 6 % por celda (355 calcomanías) l2 bajaba ≈ 5 % de FPS en el celular emulado; con esto, ≈ 270.
         estero: {
-          rootsChance: 0.14,
-          rootletChance: 0.12,
+          rootsChance: 0.11,
+          rootletChance: 0.09,
           bands: [
-            { minDepth: 1, maxDepth: 1, chance: 0.06, kinds: { shell: 2, twig: 1, pebble: 1 } },
-            { minDepth: 2, maxDepth: 2, chance: 0.06, kinds: { shell: 2, twig: 2, pebble: 1 } },
-            { minDepth: 3, maxDepth: 4, chance: 0.06, kinds: { clay: 3, root: 2, shell: 1, twig: 1 } },
-            { minDepth: 5, maxDepth: 99, chance: 0.06, kinds: { clay: 3, root: 2, shell: 1 } },
+            { minDepth: 1, maxDepth: 1, chance: 0.045, kinds: { shell: 2, twig: 1, pebble: 1 } },
+            { minDepth: 2, maxDepth: 2, chance: 0.045, kinds: { shell: 2, twig: 2, pebble: 1 } },
+            { minDepth: 3, maxDepth: 4, chance: 0.045, kinds: { clay: 3, root: 2, shell: 1, twig: 1 } },
+            { minDepth: 5, maxDepth: 99, chance: 0.045, kinds: { clay: 3, root: 2, shell: 1 } },
           ],
           /** El barro se oscurece más hacia adentro que la roca (las masas del estero son anchas), en pasos de 3 %. */
           depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
