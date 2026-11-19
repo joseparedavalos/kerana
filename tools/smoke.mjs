@@ -364,6 +364,15 @@ async function main() {
     // Al menos 3 dB por debajo del efecto más suave de los que avisan.
     const belowDb = 20 * Math.log10(quietestSfx / musicLevel);
     check(belowDb >= 3, `música por debajo de los efectos: ${belowDb.toFixed(1)} dB bajo el más suave (música ${musicLevel.toFixed(4)} RMS, efecto ${quietestSfx.toFixed(4)})`);
+    // S106: las grabaciones de Kenney cargan todas, suenan a la sonoridad del ZzFX que reemplazan y sin silencio al principio.
+    const samples = await title.evaluate(() => window.__KERANA_AUDIO__.samples());
+    const sampleCount = samples.banks.reduce((n, bk) => n + bk.count, 0);
+    const worstDb = Math.max(...samples.banks.flatMap((bk) => bk.lufs.map((l) => Math.abs(l - bk.refLufs))));
+    const worstLead = Math.max(...samples.banks.flatMap((bk) => bk.leadMs));
+    check(
+      samples.missing.length === 0 && samples.banks.length === 20 && sampleCount === 49 && worstDb < 0.5 && worstLead < 25,
+      `efectos grabados: ${samples.banks.length} grupos, ${sampleCount} archivos, a ${worstDb.toFixed(2)} dB de su ZzFX, ${worstLead.toFixed(0)} ms de silencio al principio como mucho (faltan: ${samples.missing.join(', ') || 'ninguno'})`,
+    );
     const inStory = () => title.evaluate(() => window.__KERANA_GAME__?.scene.isActive('Story') ?? false);
     // "Nueva partida" (primer ítem del menú); se repite si el menú todavía no escuchaba.
     for (let t = 0; t < 10000 && !(await inStory()); t += 1000) {

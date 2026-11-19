@@ -4,15 +4,22 @@ import { bossVariant, normalize, peak, renderTrack, rms, type TrackDef } from '.
 import { SaveManager } from './SaveManager';
 import type { MusicJob, MusicResult } from './musicWorker';
 import { SFX_LAYERS, SFX_PRESETS, SFX_STOP_FADE_MS, type SfxKey } from './sfxPresets';
+import { FOOTSTEP_SOURCES, SAMPLE_DIR, SAMPLE_EXT, SFX_SAMPLES, sampleName, type SampleDef, type Surface } from '../data/sfxSamples';
+import { gainFor, jitter, loudness, pickVariant, soundSpan } from './sfxLogic';
 
 // AudioManager (GDD §10.4): efectos y música, los dos generados por código con ZzFX.
 // S37: una pista por escena con fundidos, música más baja durante los diálogos, pausa al perder el foco,
 // desbloqueo con el primer toque o tecla y volúmenes de Opciones. Si algo falla, el juego sigue en silencio.
+// S106: los efectos físicos son grabaciones (`src/data/sfxSamples.ts`), llevadas a la sonoridad del ZzFX que reemplazan.
+// Mientras cargan, o si faltan, suena el ZzFX. Los pasos de Kerana solo existen grabados.
 
 type ZzfxModule = typeof import('zzfx');
 type Playing = { key: MusicKey; source: AudioBufferSourceNode; gain: GainNode };
 /** Un efecto que se puede cortar; sin `source` todavía mientras carga ZzFX. */
 type Voice = { source?: AudioBufferSourceNode; gain?: GainNode };
+/** Las variantes grabadas de un efecto: cada una con la ganancia que la lleva a la sonoridad pedida. */
+type Bank = { buffers: AudioBuffer[]; gains: number[]; last: number; refLufs: number };
+type BankKey = SfxKey | `step_${Surface}`;
 
 const CFG = GAMEPLAY.audio;
 /** Gestos que cuentan para los navegadores (en iOS, el de soltar el dedo). */
@@ -41,6 +48,12 @@ export class AudioManager {
   private static readonly failures: string[] = [];
   /** Efectos cortables sonando (S95): uno por clave. Van directo a la salida, como ZzFX; la música no pasa por acá. */
   private static readonly voices = new Map<SfxKey, Voice>();
+  /** Grabaciones ya decodificadas (S106), por efecto y por suelo. */
+  private static readonly banks = new Map<BankKey, Bank>();
+  private static samplesLoading: Promise<void> | null = null;
+  private static readonly missingSamples: string[] = [];
+  /** Para la prueba de humo: pasos que sonaron, por suelo. */
+  private static readonly stepsPlayed: Partial<Record<Surface, number>> = {};
 
   /** Una vez, al arrancar el juego: escucha el primer gesto y el foco de la ventana. */
   static install(): void {
@@ -56,20 +69,117 @@ export class AudioManager {
       state: () => this.debugState(),
       renderAll: () => this.debugRenderAll(),
       sfxRms: (keys: SfxKey[]) => this.debugSfxRms(keys),
+      samples: () => this.debugSamples(),
     };
+    void this.loadSamples();
   }
 
   /** `pan`: -1 (izquierda) a 1 (derecha); el silbido de Jasy Jatere lo usa como pista (GDD §6.4). */
   static play(key: SfxKey, pan = 0): void {
     const volume = SaveManager.current.settings.sfx;
     if (this.muted || volume <= 0) return;
+    const p = Math.max(-1, Math.min(1, pan));
+    const bank = this.banks.get(key);
+    const def = SFX_SAMPLES[key];
+    if (bank && def && this.zz) {
+      const { ZZFX } = this.zz;
+      this.playBank(ZZFX.audioContext, bank, volume, p, def.rate ?? 1, def.pitchJitter ?? 0, 0);
+      // Lo mágico que acompaña al golpe grabado (el brillo del tajo cargado, el «ding» del farol).
+      const extra = def.zzfx === 'preset' ? sfxSamples(ZZFX, key) : def.zzfx === 'layers' ? layerSamples(ZZFX, key) : null;
+      if (extra) ZZFX.playSamples([extra], volume * dbToGain(def.zzfxDb ?? 0), 1, p);
+      return;
+    }
     void this.zzfxModule()
       .then(({ ZZFX }) => {
-        ZZFX.playSamples([sfxSamples(ZZFX, key)], volume, 1, Math.max(-1, Math.min(1, pan)));
+        ZZFX.playSamples([sfxSamples(ZZFX, key)], volume, 1, p);
       })
       .catch(() => {
         /* sin audio disponible: se ignora */
       });
+  }
+
+  /** Un paso de Kerana en `surface` (S106). `db`: más fuerte o más suave que un paso común. Sin grabación, nada. */
+  static step(surface: Surface, db = 0): void {
+    const volume = SaveManager.current.settings.sfx;
+    const bank = this.banks.get(`step_${surface}`);
+    if (this.muted || volume <= 0 || !bank || !this.zz) return;
+    const f = CFG.footsteps;
+    this.stepsPlayed[surface] = (this.stepsPlayed[surface] ?? 0) + 1;
+    const vary = jitter(db, f.volumeJitterDb, Math.random());
+    this.playBank(this.zz.ZZFX.audioContext, bank, volume, 0, 1, f.pitchJitter, vary);
+  }
+
+  /** Una variante al azar del banco (nunca la misma dos veces seguidas), con su ganancia y un poco de variación. */
+  private static playBank(ctx: AudioContext, bank: Bank, volume: number, pan: number, rate: number, pitchJitter: number, db: number): void {
+    try {
+      const i = pickVariant(bank.buffers.length, bank.last, Math.random());
+      bank.last = i;
+      const source = ctx.createBufferSource();
+      source.buffer = bank.buffers[i];
+      source.playbackRate.value = jitter(rate, rate * pitchJitter, Math.random());
+      const gain = ctx.createGain();
+      gain.gain.value = bank.gains[i] * volume * dbToGain(db);
+      source.connect(gain);
+      let out: AudioNode = gain;
+      if (pan !== 0) {
+        const panner = ctx.createStereoPanner();
+        panner.pan.value = pan;
+        out = gain.connect(panner);
+      }
+      out.connect(ctx.destination);
+      source.onended = () => {
+        gain.disconnect();
+        if (out !== gain) out.disconnect();
+      };
+      source.start();
+    } catch (e) {
+      this.fail(`sample: ${String(e)}`);
+    }
+  }
+
+  /**
+   * Las grabaciones (S106): se bajan y decodifican una vez al arrancar, sin esperar el gesto (decodificar no suena).
+   * Cada una se lleva a la sonoridad del ZzFX que reemplaza (los pasos, a la del aterrizaje más `footsteps.db`).
+   */
+  private static loadSamples(): Promise<void> {
+    if (this.samplesLoading) return this.samplesLoading;
+    this.samplesLoading = this.zzfxModule()
+      .then(async ({ ZZFX }) => {
+        const ctx = ZZFX.audioContext;
+        const jobs: Promise<void>[] = [];
+        for (const [key, def] of Object.entries(SFX_SAMPLES) as [SfxKey, SampleDef][]) {
+          const ref = zzfxLufs(ZZFX, key) + (def.db ?? 0);
+          jobs.push(this.loadBank(ctx, key, def.sources.map((_, i) => sampleName(key, i)), ref));
+        }
+        const stepRef = zzfxLufs(ZZFX, 'land') + CFG.footsteps.db;
+        for (const [surface, sources] of Object.entries(FOOTSTEP_SOURCES) as [Surface, unknown[]][]) {
+          const key = `step_${surface}` as const;
+          jobs.push(this.loadBank(ctx, key, sources.map((_, i) => sampleName(key, i)), stepRef));
+        }
+        await Promise.all(jobs);
+      })
+      .catch((e: unknown) => this.fail(`samples: ${String(e)}`));
+    return this.samplesLoading;
+  }
+
+  private static async loadBank(ctx: AudioContext, key: BankKey, names: string[], refLufs: number): Promise<void> {
+    const loaded = await Promise.all(
+      names.map(async (name) => {
+        try {
+          const res = await fetch(SAMPLE_DIR + name + SAMPLE_EXT);
+          if (!res.ok) throw new Error(String(res.status));
+          const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
+          return { buffer, gain: gainFor(loudness(buffer.getChannelData(0), buffer.sampleRate), refLufs) };
+        } catch {
+          this.missingSamples.push(name);
+          console.warn(`[ASSET FALTANTE] ${SAMPLE_DIR}${name}${SAMPLE_EXT}: suena el ZzFX.`);
+          return null;
+        }
+      }),
+    );
+    const ok = loaded.filter((x): x is { buffer: AudioBuffer; gain: number } => x !== null);
+    if (ok.length === 0) return;
+    this.banks.set(key, { buffers: ok.map((x) => x.buffer), gains: ok.map((x) => x.gain), last: -1, refLufs });
   }
 
   /**
@@ -392,6 +502,7 @@ export class AudioManager {
       failures: [...this.failures],
       busGain: this.musicBus?.gain.value ?? 0,
       voices: [...this.voices.keys()],
+      steps: { ...this.stepsPlayed },
       renderer: this.worker ? 'worker' : this.worker === null ? 'hilo principal' : 'sin usar',
     };
   }
@@ -405,6 +516,19 @@ export class AudioManager {
       out.push({ key, seconds: samples.length / CFG.musicSampleRate, rms: rms(samples), peak: peak(samples) });
     }
     return { tracks: out, musicGain: CFG.musicGain };
+  }
+
+  /** Las grabaciones cargadas: cuántas, qué sonoridad tienen ya con su ganancia y cuánto silencio traen al principio. */
+  private static async debugSamples() {
+    await this.loadSamples();
+    const banks = [...this.banks.entries()].map(([key, b]) => ({
+      key,
+      count: b.buffers.length,
+      refLufs: b.refLufs,
+      lufs: b.buffers.map((buf, i) => loudness(buf.getChannelData(0).map((v) => v * b.gains[i]), buf.sampleRate)),
+      leadMs: b.buffers.map((buf) => (soundSpan(buf.getChannelData(0), buf.sampleRate)[0] / buf.sampleRate) * 1000),
+    }));
+    return { banks, missing: [...this.missingSamples] };
   }
 
   /** Intensidad de unos efectos tal como suenan (con el volumen de ZzFX aplicado dos veces, como en `playSamples`). */
@@ -427,6 +551,32 @@ function sfxSamples(ZZFX: ZzfxModule['ZZFX'], key: SfxKey): number[] {
     for (let i = 0; i < layer.length; i++) base[i] = (base[i] ?? 0) + layer[i];
   }
   return base;
+}
+
+/** Solo las capas de un efecto (sin el preset), o `null` si no tiene. */
+function layerSamples(ZZFX: ZzfxModule['ZZFX'], key: SfxKey): number[] | null {
+  const layers = SFX_LAYERS[key];
+  if (!layers) return null;
+  let out: number[] = [];
+  for (const params of layers) {
+    const layer = ZZFX.buildSamples(...params);
+    if (layer.length > out.length) out = out.concat(new Array<number>(layer.length - out.length).fill(0));
+    for (let i = 0; i < layer.length; i++) out[i] += layer[i];
+  }
+  return out;
+}
+
+/** Sonoridad (LUFS) de un preset tal como suena: sin azar y con el volumen de ZzFX dos veces, como en `playSamples`. */
+function zzfxLufs(ZZFX: ZzfxModule['ZZFX'], key: SfxKey): number {
+  const s = ZZFX.buildSamples(...SFX_PRESETS[key].map((v, i) => (i === 1 ? 0 : v)));
+  return loudness(
+    s.map((v) => v * ZZFX.volume),
+    ZZFX.sampleRate,
+  );
+}
+
+function dbToGain(db: number): number {
+  return 10 ** (db / 20);
 }
 
 function trackDef(key: MusicKey): TrackDef | null {
