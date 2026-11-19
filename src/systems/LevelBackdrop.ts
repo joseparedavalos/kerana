@@ -17,7 +17,7 @@ import {
   seeded,
   splitRain,
 } from './ambientLogic';
-import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
+import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan, rectHidden } from './backdropLogic';
 import { CaveLife, DuskGlow, SkyLife, SunShimmer } from './Backdrops';
 import { fixedOffset, VIEW } from './View';
 
@@ -74,6 +74,22 @@ export class LevelBackdrop {
   private readonly caveClip = { left: 0, right: 0 };
   /** El mismo tramo, en la escala en que se ponen las imágenes fijas a la cámara (con el desfase de la vista). */
   private readonly caveScreen = { left: 0, right: 0 };
+  /** Dónde estaba la vista en este cuadro (mundo) y el desfase de lo fijo a la cámara: para `hidden`. */
+  private readonly viewNow = { x: 0, y: 0, offX: 0, offY: 0, cave: false };
+  /**
+   * S108: ¿no se ve este rectángulo (en la escala de lo fijo a la cámara)? Fuera de la pantalla, o tapado entero por el
+   * fondo de cueva donde se ve o por el cerro macizo. Lo que no se ve no se dibuja (en el primer tramo, casi toda la bruma
+   * de los valles de abajo).
+   */
+  private readonly hidden = (x0: number, y0: number, x1: number, y1: number): boolean => {
+    const v = this.viewNow;
+    // Fuera de la pantalla (el GPU lo recortaría, pero cada objeto dibujado cuesta igual).
+    if (x1 <= v.offX || x0 >= v.offX + VIEW.width || y1 <= v.offY || y0 >= v.offY + VIEW.height) return true;
+    if (v.cave && x0 >= this.caveScreen.left && x1 <= this.caveScreen.right) return true;
+    const o = this.opaque;
+    if (!o) return false;
+    return rectHidden(o.mask, o.width, o.height, o.tile, v.x + x0 - v.offX, v.y + y0 - v.offY, v.x + x1 - v.offX, v.y + y1 - v.offY);
+  };
   /** Para las capturas (S108): con false, los rayos, la bruma, las bandadas y la vida de la cueva no se dibujan. */
   private lifeOn = true;
   private readonly cave?: Phaser.GameObjects.Image;
@@ -95,6 +111,8 @@ export class LevelBackdrop {
     private readonly mapHeight: number,
     /** «Destellos» de Opciones (S96): apagado, el sol no respira ni titila el reflejo. */
     private readonly flashes: () => boolean = () => true,
+    /** S108: qué tiles tapan del todo lo que va detrás (`opaqueMask`), con su ancho, alto y lado; sin él, nada tapa. */
+    private readonly opaque?: { mask: Uint8Array; width: number; height: number; tile: number },
   ) {
     this.brightness = defs.brightness ?? 1;
     this.climbTravel = defs.climb ? Math.max(0, this.climbHeight(defs.far) - VIEW.height) : 0;
@@ -195,7 +213,14 @@ export class LevelBackdrop {
     }
     this.updateCanopy(show, left, imageTop - this.maxUncovered);
     if (this.cave) this.updateCave(cam.worldView.x, off, panX);
-    this.updateAmbient(left, imageTop, off.x);
+    this.viewNow.x = cam.worldView.x;
+    this.viewNow.y = cam.worldView.y;
+    this.viewNow.offX = off.x;
+    this.viewNow.offY = off.y;
+    this.viewNow.cave = this.cave?.visible === true;
+    this.caveScreen.left = off.x + this.caveClip.left;
+    this.caveScreen.right = off.x + this.caveClip.right;
+    this.updateAmbient(left, imageTop);
     if (ambient !== undefined) this.applyTint(ambient);
   }
 
@@ -224,7 +249,7 @@ export class LevelBackdrop {
   }
 
   /** Lluvia y niebla (S59): siguen a la imagen y corren con el tiempo de juego (se paran con la pausa). */
-  private updateAmbient(left: number, imageTop: number, viewLeft: number): void {
+  private updateAmbient(left: number, imageTop: number): void {
     const visible = this.far?.visible === true;
     const now = this.scene.time.now;
     if (this.rainFrames.length > 0 && visible) {
@@ -248,10 +273,8 @@ export class LevelBackdrop {
     // S98: igual que el sol, en px de arte de la imagen; no titila, así que no depende de «Destellos».
     this.skyLife?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && life, outside);
     // S108: el atardecer y la cueva, en px de arte de su imagen (las dos quedan en el mismo lugar).
-    this.dusk?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && life, !this.flashes());
+    this.dusk?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && life, !this.flashes(), this.hidden);
     if (this.caveLife && this.cave) {
-      this.caveScreen.left = viewLeft + this.caveClip.left;
-      this.caveScreen.right = viewLeft + this.caveClip.right;
       this.caveLife.update(left, imageTop, this.cave.scaleX, this.cave.scaleY, now, caveOn && life, this.caveScreen, this.flashes());
     }
   }

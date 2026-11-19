@@ -2387,22 +2387,13 @@ export const GAMEPLAY = {
          * ciclo de respirar (ms) y su desfase (0-1).
          */
         list: [
-          { angle: -52, length: 300, width: 78, periodMs: 7400, phase: 0.1 },
-          { angle: -27, length: 340, width: 104, periodMs: 9200, phase: 0.55 },
-          { angle: -3, length: 360, width: 82, periodMs: 6400, phase: 0.3 },
-          { angle: 22, length: 340, width: 110, periodMs: 8600, phase: 0.8 },
-          { angle: 48, length: 300, width: 84, periodMs: 7000, phase: 0.42 },
+          { angle: -38, length: 320, width: 74, periodMs: 7400, phase: 0.1 },
+          { angle: -6, length: 350, width: 86, periodMs: 9200, phase: 0.55 },
+          { angle: 27, length: 330, width: 80, periodMs: 8000, phase: 0.3 },
         ],
-        /** Resplandor del sol escondido, detrás de la cima: tamaño (px de arte), opacidad y ciclo. */
-        glowColor: '#ffb48a',
-        glowWidth: 400,
-        glowHeight: 150,
-        glowMin: 0.05,
-        glowMax: 0.09,
-        glowMs: 9000,
         /** La sierra recortada que tapa la base: cuánto a cada lado de la fuente y cuánto debajo (px de arte). */
-        coverHalfWidth: 210,
-        coverBelow: 72,
+        coverHalfWidth: 150,
+        coverBelow: 8,
       },
       /**
        * Bruma en los valles: jirones tramados (Bayer, como la niebla de la siesta) que se deslizan por cada valle, con el
@@ -2431,9 +2422,9 @@ export const GAMEPLAY = {
         alphaVary: 0.35,
         layers: [
           /** Al pie de las sierras: lo que más se ve en el primer tramo. `speed`: px de arte por segundo. */
-          { width: 120, height: 30, gap: 84, speed: 2.2, alpha: 1 },
-          { width: 140, height: 34, gap: 100, speed: 3, alpha: 0.9 },
-          { width: 150, height: 36, gap: 112, speed: 3.8, alpha: 0.8 },
+          { width: 120, height: 30, gap: 108, speed: 2.2, alpha: 1 },
+          { width: 140, height: 34, gap: 130, speed: 3, alpha: 0.9 },
+          { width: 150, height: 36, gap: 150, speed: 3.8, alpha: 0.8 },
         ],
         seed: 11,
       },

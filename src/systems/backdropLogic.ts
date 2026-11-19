@@ -477,3 +477,44 @@ export function shelfPack(sizes: ReadonlyArray<readonly [number, number]>, maxWi
   }
   return { at, width: Math.max(1, width), height: Math.max(1, y + shelf) };
 }
+
+/**
+ * Qué tiles tapan del todo lo que va detrás (S108): el fondo de tierra (`earth`) y la roca dibujada entera (`full`: visible
+ * y sin transparencia) rodeada de roca por sus ocho vecinos (los bordes del autotile traen partes transparentes). Fuera
+ * del mapa cuenta como roca. 1 si tapa.
+ */
+export function opaqueMask(
+  width: number,
+  height: number,
+  earth: (x: number, y: number) => boolean,
+  ground: (x: number, y: number) => boolean,
+  full: (x: number, y: number) => boolean,
+): Uint8Array {
+  const out = new Uint8Array(width * height);
+  const rock = (x: number, y: number) => x < 0 || y < 0 || x >= width || y >= height || ground(x, y);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (earth(x, y)) {
+        out[y * width + x] = 1;
+        continue;
+      }
+      if (!full(x, y)) continue;
+      let inner = true;
+      for (let dy = -1; dy <= 1 && inner; dy++) for (let dx = -1; dx <= 1 && inner; dx++) inner = rock(x + dx, y + dy);
+      if (inner) out[y * width + x] = 1;
+    }
+  }
+  return out;
+}
+
+/** ¿Los tiles opacos (`mask`) tapan entero el rectángulo del mundo (x0, y0)-(x1, y1)? Fuera del mapa no tapa. */
+export function rectHidden(mask: Uint8Array, width: number, height: number, tile: number, x0: number, y0: number, x1: number, y1: number): boolean {
+  if (x1 <= x0 || y1 <= y0) return false;
+  const tx0 = Math.floor(x0 / tile);
+  const ty0 = Math.floor(y0 / tile);
+  const tx1 = Math.ceil(x1 / tile) - 1;
+  const ty1 = Math.ceil(y1 / tile) - 1;
+  if (tx0 < 0 || ty0 < 0 || tx1 >= width || ty1 >= height) return false;
+  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (mask[ty * width + tx] !== 1) return false;
+  return true;
+}

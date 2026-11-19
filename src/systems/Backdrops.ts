@@ -529,13 +529,13 @@ export class DuskGlow {
    * rectángulo entero por valle era casi todo transparente y costaba cuadros. Las de un valle se dibujan solo bajo un
    * jirón.
    */
-  private readonly covers: { img: Phaser.GameObjects.Image; group: number; x0: number; x1: number }[] = [];
+  private readonly covers: { img: Phaser.GameObjects.Image; group: number; x0: number; y0: number; x1: number; y1: number }[] = [];
   /** Por valle, qué columnas de su tapa tienen un jirón encima en este cuadro. */
   private readonly under: Uint8Array[] = [];
   /** Para medir (S108): cada parte se puede apagar desde la consola de depuración. */
-  readonly parts = { rays: true, glow: true, mist: true, covers: true };
-  /** El resplandor del sol escondido detrás de la cima (lo tapa la sierra recortada). */
-  private readonly glow: Phaser.GameObjects.Image;
+  readonly parts = { rays: true, mist: true, covers: true };
+  /** Si en el cuadro anterior se dibujó algo (si no, apagado no hay nada que esconder). */
+  private drawn = true;
   private readonly wisps: {
     img: Phaser.GameObjects.Image;
     line: readonly number[];
@@ -567,14 +567,6 @@ export class DuskGlow {
     this.skyline = pixels ? skylineRows(pixels.data, pixels.width, pixels.height, 460, DUSK.skyRedOverBlue, DUSK.skyMinLum) : new Int16Array(0);
     makeDuskTextures(scene);
     const rc = DUSK.rays;
-    this.glow = scene.add
-      .image(0, 0, GLOW_KEY)
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setTint(Phaser.Display.Color.HexStringToColor(rc.glowColor).color)
-      .setDepth(depth - 0.002)
-      .setVisible(false);
     const rayColor = Phaser.Display.Color.HexStringToColor(rc.color).color;
     for (const def of rc.list) {
       const img = scene.add
@@ -635,7 +627,7 @@ export class DuskGlow {
     });
     if (!ok) return;
     const addCovers = (g: number, d: number) => {
-      for (const r of columns[g]!) this.covers.push({ img: this.coverImage(scene, coverKey, r, d), group: g, x0: r[0], x1: r[2] });
+      for (const r of columns[g]!) this.covers.push({ img: this.coverImage(scene, coverKey, r, d), group: g, x0: r[0], y0: r[1], x1: r[2], y1: r[3] });
     };
     // Orden de atrás hacia adelante: rayos, sierra; y por valle (del más lejano al más cercano), jirones y su loma.
     const order = place.valleys.map((v, i) => ({ v, i })).sort((a, b) => a.v.layer - b.v.layer || a.i - b.i);
@@ -676,7 +668,7 @@ export class DuskGlow {
   }
 
   get layers(): Phaser.GameObjects.GameObject[] {
-    return [this.glow, ...this.rays.map((r) => r.img), ...this.covers.map((c) => c.img), ...this.wisps.map((w) => w.img)];
+    return [...this.rays.map((r) => r.img), ...this.covers.map((c) => c.img), ...this.wisps.map((w) => w.img)];
   }
 
   /** Lo recortado de la imagen va con su mismo tinte (S108): si no, se notaría la costura. */
@@ -686,20 +678,15 @@ export class DuskGlow {
 
   /**
    * `left`, `top`: esquina de la imagen en la vista; `sx`, `sy`: unidades por px de arte. `on`: la imagen a la vista.
-   * `calm`: «Destellos» apagado; los rayos quedan quietos en su medio, sin respirar.
+   * `calm`: «Destellos» apagado; los rayos quedan quietos en su medio, sin respirar. `hidden(x0, y0, x1, y1)`: ese
+   * rectángulo (misma escala que `left`) lo tapa entero algo opaco (el cerro, el fondo de cueva): ahí no se dibuja.
    */
-  update(left: number, top: number, sx: number, sy: number, now: number, on: boolean, calm: boolean): void {
+  update(left: number, top: number, sx: number, sy: number, now: number, on: boolean, calm: boolean, hidden: Hidden = NEVER_HIDDEN): void {
+    if (!on && !this.drawn) return;
+    this.drawn = on;
     const rc = DUSK.rays;
     const [fx, fy] = this.place.rays;
     const parts = this.parts;
-    this.glow.setVisible(on && parts.glow);
-    if (on && parts.glow) {
-      const kg = calm ? 0.5 : sunPulse(now, rc.glowMs);
-      this.glow
-        .setPosition(left + fx * sx, top + fy * sy)
-        .setDisplaySize(rc.glowWidth * sx, rc.glowHeight * sy)
-        .setAlpha(rc.glowMin + (rc.glowMax - rc.glowMin) * kg);
-    }
     let alphaSum = 0;
     for (const r of this.rays) {
       r.img.setVisible(on && parts.rays);
@@ -721,16 +708,20 @@ export class DuskGlow {
     for (const w of this.wisps) {
       const x = wispLeft(now, w.layer.speed, w.x0, w.x1, w.width, w.offset);
       const fade = wispFade(x, w.width, w.x0, w.x1, mc.fade);
-      const show = on && parts.mist && fade > 0;
+      let show = on && parts.mist && fade > 0;
+      if (show) {
+        // La altura cambia con la cresta de abajo: se recalcula solo al pasar a otro px de arte.
+        const cell = Math.floor(x);
+        if (cell !== w.cell) {
+          w.cell = cell;
+          w.top = wispTop(w.line, this.skyline, cell, w.width, w.height, mc.pad, mc.skyMargin);
+        }
+        // Lo que tapa entero el cerro o la cueva no se dibuja: en el primer tramo, casi todos los valles de abajo.
+        show = !hidden(left + x * sx, top + w.top * sy, left + (x + w.width) * sx, top + (w.top + w.height) * sy);
+      }
       w.img.setVisible(show);
       if (!show) continue;
       shown++;
-      // La altura cambia con la cresta de abajo: se recalcula solo al pasar a otro px de arte.
-      const cell = Math.floor(x);
-      if (cell !== w.cell) {
-        w.cell = cell;
-        w.top = wispTop(w.line, this.skyline, cell, w.width, w.height, mc.pad, mc.skyMargin);
-      }
       w.img.setPosition(left + x * sx, top + w.top * sy).setDisplaySize(w.width * sx, w.height * sy).setAlpha(w.alpha * fade);
       // Las columnas de la tapa que quedan debajo de este jirón.
       const u = this.under[w.valley]!;
@@ -742,8 +733,8 @@ export class DuskGlow {
     // columna de un valle, si tiene un jirón encima.
     let covers = 0;
     for (const c of this.covers) {
-      const need = c.group === 0 ? parts.rays || parts.glow : this.under[c.group - 1]![Math.floor((c.x0 - this.place.valleys[c.group - 1]!.line[0]!) / COVER_COLUMN)] === 1;
-      const show = on && parts.covers && need;
+      const need = c.group === 0 ? parts.rays : this.under[c.group - 1]![Math.floor((c.x0 - this.place.valleys[c.group - 1]!.line[0]!) / COVER_COLUMN)] === 1;
+      const show = on && parts.covers && need && !hidden(left + c.x0 * sx, top + c.y0 * sy, left + (c.x1 + 1) * sx, top + (c.y1 + 1) * sy);
       c.img.setVisible(show);
       if (show) {
         c.img.setPosition(left, top).setScale(sx, sy);
@@ -771,9 +762,11 @@ export class DuskGlow {
 
 /** Ancho (px de arte) de cada columna de lo que tapa. */
 const COVER_COLUMN = 32;
+/** ¿Algo opaco tapa entero este rectángulo de la vista? */
+export type Hidden = (x0: number, y0: number, x1: number, y1: number) => boolean;
+const NEVER_HIDDEN: Hidden = () => false;
 
 const WISP_KEY = 'bg_dusk_wisps';
-const GLOW_KEY = 'bg_dusk_glow';
 
 /** El rayo (degradado, filtro lineal) y los jirones de bruma de cada capa (tramados, sin filtro). */
 function makeDuskTextures(scene: Phaser.Scene): void {
@@ -786,20 +779,6 @@ function makeDuskTextures(scene: Phaser.Scene): void {
         for (let x = 0; x < w; x++) img.data.set([255, 255, 255, Math.round(255 * rayAlphaAt(x, y, w, h, DUSK.rays.base, DUSK.rays.peakAt))], (y * w + x) * 4);
       }
       tex.getContext().putImageData(img, 0, 0);
-      tex.refresh();
-      tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
-    }
-  }
-  if (!scene.textures.exists(GLOW_KEY)) {
-    const tex = scene.textures.createCanvas(GLOW_KEY, 64, 64);
-    if (tex) {
-      const ctx = tex.getContext();
-      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-      grad.addColorStop(0, 'rgba(255,255,255,1)');
-      grad.addColorStop(0.4, 'rgba(255,255,255,0.5)');
-      grad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 64, 64);
       tex.refresh();
       tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
     }
@@ -901,6 +880,7 @@ export class CaveLife {
   /** El tramo de la cueva a la vista y si se ve, del cuadro en curso (para `put`). */
   private readonly clip: Clip = { left: 0, right: 0 };
   private on = false;
+  private wasHidden = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -1011,6 +991,9 @@ export class CaveLife {
    * vista; `clip`: el tramo de la vista donde se ve (misma escala que `left`). `flashes`: «Destellos» encendido.
    */
   update(left: number, top: number, sx: number, sy: number, now: number, on: boolean, clip: Clip, flashes: boolean): void {
+    // Afuera de la cueva, una vez escondido todo, no hay nada que hacer (los tiempos se ponen al día al volver).
+    if (!on && !this.on && this.wasHidden) return;
+    this.wasHidden = !on;
     this.frame[0] = left;
     this.frame[1] = top;
     this.frame[2] = sx;

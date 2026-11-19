@@ -72,6 +72,7 @@ import { cowPatrol } from '../systems/cowLogic';
 import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
+import { opaqueMask } from '../systems/backdropLogic';
 import { hasSprite, spriteDetail } from '../systems/SpriteSkin';
 import { queueBackgrounds } from '../assets/backgrounds';
 
@@ -420,6 +421,7 @@ export class LevelScene extends Phaser.Scene {
       this.map.widthInPixels,
       this.map.heightInPixels,
       () => SaveManager.current.settings.flashes,
+      this.def.backgrounds.dusk ? this.opaqueTiles() : undefined,
     );
     // El fondo no recibe la luz del nivel oscuro: se tiñe con el ambiente (la oscuridad sigue por encima).
     for (const layer of this.backdrop.layers) this.darkness?.glow(layer);
@@ -1711,6 +1713,27 @@ export class LevelScene extends Phaser.Scene {
     // Sin borde inferior: se puede caer al pozo.
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.physics.world.setBoundsCollision(true, true, false, false);
+  }
+
+  /**
+   * S108: los tiles que tapan del todo lo que va detrás (el fondo de tierra y la roca entera rodeada de roca), para que el
+   * fondo no dibuje lo que nadie ve.
+   */
+  private opaqueTiles(): { mask: Uint8Array; width: number; height: number; tile: number } {
+    const { width, height, tileWidth } = this.map;
+    const ground = this.layers.Ground;
+    const at = (x: number, y: number) => ground?.getTileAt(x, y) ?? null;
+    const mask = opaqueMask(
+      width,
+      height,
+      (x, y) => (this.earth?.getTileAt(x, y)?.index ?? -1) !== -1,
+      (x, y) => (at(x, y)?.index ?? -1) !== -1,
+      (x, y) => {
+        const t = at(x, y);
+        return !!t && t.index !== -1 && t.visible && t.alpha >= 1;
+      },
+    );
+    return { mask, width, height, tile: tileWidth };
   }
 
   /** Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo. Solo dibujo. */
