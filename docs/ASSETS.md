@@ -253,6 +253,8 @@ Lista (en `raw/portraits/`): `kerana_neutral`, `kerana_sad`, `kerana_determined`
 
 **Yvága, la subida (S92):** `raw/backgrounds/yvaga_subida.jpg` (1008 × 1792, vertical): un solo cielo, del mar de nubes (abajo) a la noche con estrellas (arriba). Es el único fondo vertical. `npm run backgrounds` no lo aplasta a 1280 × 720: le recorta el borde de la exportación (3 px arriba y 6 abajo; tabla `TALL` de `tools/backgrounds.mjs`) y lo saca a 1280 de ancho en su proporción (1280 × 2264, 294 KB), por vecino más cercano: el muestreo por moda de los demás fondos es para achicar y, agrandando, deja una rejilla de píxeles vacíos. En `levels.ts`, `backgrounds: { far: 'bg_yvaga_subida', climb: true }`: con `climb`, una imagen más alta que la vista va al ancho de la vista sin deformarse (640 × 1132 unidades, sin el agrandado de 1,12, sin `shiftY` y sin relleno) y se recorre entera con el avance vertical de la cámara: abajo del nivel, el pie de la imagen pegado al borde de abajo de la vista; arriba (la arena), el tope. Avanza a pasos de medio (un píxel del lienzo). Ningún otro nivel usa `climb`. La textura mide 2264 de alto: un teléfono cuyo WebGL no pase de 2048 no la cargaría (no se probó). `yvaga_far` y su parche quedan para el título.
 
+**Portada (S105), todo por código sobre `yvaga_far`:** el logo «KERANA» y el subtítulo en pixel art, con letras diseñadas en una grilla (no una fuente): las grandes, gruesas y con remates, se arman para cualquier alto (`GAMEPLAY.titleLook.logo.cap`, hoy 38) con diagonales de pendiente fija; las chicas, en ASCII, con õ y ñ. Degradé de cinco oros por fila, brillo de 1 píxel en los bordes de arriba, la fila de abajo de cada trazo más honda, contorno ciruela y sombra corrida; cada 5 a 7 s una franja de luz las cruza en diagonal y la punta de la última «A» destella. Debajo, un ñandutí de hilo dorado (roseta y franja, a 2 píxeles por unidad). Eichu es solo la pintada en el fondo: las siete estrellas doradas se midieron en la imagen (`titleLook.eichu.stars`) y encima titila una estrellita de cuatro puntas; la octava sigue tapada por el parche. Dos capas de bruma tramada se deslizan sobre el mar de nubes, una estrella fugaz cruza el cielo cada 8 a 15 s lejos del logo, Kerana va a escala entera (2 píxeles del lienzo por píxel de la hoja) y Mainumby revolotea a su lado. Un solo atlas (`title_art:…`) pintado una vez. Sin arte de Grok nuevo.
+
 **Final (GDD §6.8, §7):** `backgrounds/final.png` (640 × 360): `dawn of the new year in Paraguay, a young Guarani woman with long dark hair sitting peacefully beside a small spring among green hills, a hummingbird near her shoulder, the seven stars of the Pleiades fading in the pink sky, 16-bit pixel art, no text`. Se muestra detrás de las dos últimas diapositivas del final. Si falta, `systems/Backdrops.ts` dibuja un amanecer por código (igual con `yvaga_far`).
 
 **Desde S13a:** `final_asuncion.jpg` (Asunción sanada) va en `story.final.healed`; `final.jpg` (sin estrellas) en `story.final.spring` y en la de las plumas. Eichu (las siete estrellas, con la forma de las Pléyades) se dibuja por código encima de `final` y sobre el cielo de noche de `story.ending.1` y `story.ending.2` (`addEichu`, posición en `data/story.ts`).
@@ -416,7 +418,7 @@ En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) 
 | Marca de Tau (efecto) | `ui/tau_mark.png` | 16 × 16 |
 | Marco de diálogo (9-slice) y barra de jefe | `ui/dialog_frame.png`, `ui/boss_bar.png` | — |
 | Botones táctiles (saltar, atacar, dash, pausa) y cruceta | `ui/touch_*.png` | 32 × 32 · 64 × 64 |
-| Logo "KERANA" + subtítulo | `ui/logo.png` | ≈ 320 × 96 |
+| Logo "KERANA" + subtítulo | **por código (S105)**: `src/scenes/title/logoFont.ts` y `titlePaint.ts`, ya no hace falta `ui/logo.png` | 222 × 38 las letras grandes (1 píxel por unidad) |
 | Mapa del mundo | `ui/world_map.png` | 640 × 360 |
 
 **Mapa del mundo:** el contorno del Paraguay puede salir de datos de **Natural Earth** (dominio público; su repositorio está en GitHub) y los nodos se ubican con las coordenadas del GDD §8.4. Encima puedes pintar o generar un estilo "pergamino".
@@ -468,7 +470,7 @@ En `raw/piezas/` también están `rama.jpg` (la rama que se quiebra, `Crumble`) 
 | Fondos: capa lejana (7) | MVP | S13 | ☐ |
 | Fondos: capas media y cercana (14) | Núcleo | S13 | ☐ |
 | Retratos (13) | Núcleo | S13 | ☐ (hoy la cara de Kerana sale de su sprite; estos retratos pintados no están) |
-| Logo y mapa del mundo | Núcleo | S13 | ☐ |
+| Logo y mapa del mundo | Núcleo | S13 | ◐ (S105: el logo y la portada, por código; falta el mapa ilustrado) |
 | Iconos y props de interfaz | Núcleo | S13 | ◐ (corazones, chipa, tereré, cartel, fogata y faroles; faltan yvoty, marco de diálogo, barra del jefe y marca de Tau) |
 | Teju Jagua: cuerpo y cuellos | MVP | S13d | ☑ (por código: lomo de lagarto, cola y cuellos de escamas; S20: cuerpo más chico, onda del coletazo y señal de cabeza expuesta; S101: lagarto agazapado pintado con luz, cuellos y cola en tubos, animación y avisos) |
 | Música de niveles (7), liberación y final | Núcleo | S13 | ◐ (S37: los siete niveles y Yvága, por código; S61: la liberación, el sellado y la pelea con Tau; falta el tema del final) |

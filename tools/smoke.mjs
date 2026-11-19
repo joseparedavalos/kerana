@@ -252,6 +252,15 @@ async function main() {
   async function mouseTour() {
     const page = await open('/');
     await page.waitForFunction(() => window.__KERANA_GAME__?.scene.isActive('Title') ?? false, { timeout: 20000 });
+    // S105: la portada entra desde negro (1,5 s) y el primer toque solo la saltea; se espera al menú, como a «Saltar» (S39).
+    // Si la entrada sigue, un toque la saltea, deja el menú listo y no empieza la partida.
+    if (!(await page.evaluate(() => window.__KERANA_GAME__.scene.getScene('Title').menuReady))) {
+      await clickOn(page, 'Title', { center: true });
+      await sleep(300);
+      const st = await page.evaluate(() => ({ ready: window.__KERANA_GAME__.scene.getScene('Title').menuReady, title: window.__KERANA_GAME__.scene.isActive('Title') }));
+      check(st.ready && st.title, `portada: un toque saltea la entrada y deja el menú listo, sin empezar (${JSON.stringify(st)})`);
+    }
+    await page.waitForFunction(() => window.__KERANA_GAME__.scene.getScene('Title')?.menuReady === true, { timeout: 10000 });
     await sleep(500);
     // `click`: clic y espera la escena; `to` puede ser una función (estado más fino que la escena activa).
     const click = async (from, pick, to, msg) => {
