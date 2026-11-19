@@ -38,7 +38,25 @@ export interface LevelBackgrounds {
    * El cielo y la llanura con vida (S98; px de arte, filas y0 y1 de la imagen): `birds`, la franja del cielo por donde
    * cruzan las bandadas; `shadows`, la franja de la llanura por donde corren las sombras de nubes (GAMEPLAY.backdrop.skyLife).
    */
-  skyLife?: { birds: readonly [number, number]; shadows: readonly [number, number] };
+  skyLife?: { birds: readonly [number, number]; shadows?: readonly [number, number]; flock?: 'birds' | 'parrots' };
+  /**
+   * El atardecer de l1 (S108; px de arte de `far`): `rays`, de dónde salen los rayos (detrás de las sierras); `valleys`,
+   * cada cresta del bosque como polilínea (x, y, x, y…) y su capa (0 la más lejana): la bruma va arriba de la cresta,
+   * con el pie tapado por la loma (GAMEPLAY.backdrop.dusk).
+   */
+  dusk?: { rays: readonly [number, number]; valleys: ReadonlyArray<{ line: readonly number[]; layer: number }> };
+  /**
+   * La cueva con vida (S108; px de arte de `cave`): `bats`, la franja (y0, y1) por donde cruzan los murciélagos;
+   * `crystals`, el rectángulo (x0, y0, x1, y1) de cada grupo; `gold`, el del montón de oro; `drops`, cada gota (x y
+   * de la punta de la estalactita, y donde cae); `dust`, el rectángulo del polvo (GAMEPLAY.backdrop.caveLife).
+   */
+  caveLife?: {
+    bats: readonly [number, number];
+    crystals: ReadonlyArray<readonly [number, number, number, number]>;
+    gold: readonly [number, number, number, number];
+    drops: ReadonlyArray<readonly [number, number, number]>;
+    dust: readonly [number, number, number, number];
+  };
 }
 
 export interface LevelDef {

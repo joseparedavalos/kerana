@@ -18,10 +18,12 @@ import {
   splitRain,
 } from './ambientLogic';
 import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan } from './backdropLogic';
-import { SkyLife, SunShimmer } from './Backdrops';
+import { CaveLife, DuskGlow, SkyLife, SunShimmer } from './Backdrops';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
+/** Sobre el fondo lejano (S108): el fondo de cueva tapa lo que va pegado al cielo; su vida va encima. */
+const CAVE_DEPTH = 0.4;
 const EDGE_KEY = 'bg_cave_edge';
 const FILL_KEY = 'bg_fill_';
 /** Cuánto es dosel cada columna del borde (S60), por textura de relleno: las texturas duran toda la partida. */
@@ -64,6 +66,16 @@ export class LevelBackdrop {
   private sun?: SunShimmer;
   /** Bandadas y sombras de nubes (S98); solo si el nivel define `skyLife`. */
   private skyLife?: SkyLife;
+  /** El atardecer (S108): rayos y bruma en los valles; solo si el nivel define `dusk`. */
+  private dusk?: DuskGlow;
+  /** La cueva con vida (S108); solo si el nivel define `caveLife`. */
+  private caveLife?: CaveLife;
+  /** Tramo de la vista donde se ve la cueva (unidades desde el borde izquierdo de la vista), del último cuadro. */
+  private readonly caveClip = { left: 0, right: 0 };
+  /** El mismo tramo, en la escala en que se ponen las imágenes fijas a la cámara (con el desfase de la vista). */
+  private readonly caveScreen = { left: 0, right: 0 };
+  /** Para las capturas (S108): con false, los rayos, la bruma, las bandadas y la vida de la cueva no se dibujan. */
+  private lifeOn = true;
   private readonly cave?: Phaser.GameObjects.Image;
   private readonly edges: Phaser.GameObjects.Image[] = [];
   private readonly caves: Area[] = [];
@@ -95,12 +107,19 @@ export class LevelBackdrop {
       if (this.maxUncovered > 0) this.makeFill(defs.far, defs.fillTop, defs.canopy === true);
       if (defs.rain) this.makeRain(defs.far);
       if (defs.mist) this.makeMist(defs.far, defs.mist.region);
-      if (defs.sun) this.sun = new SunShimmer(scene, defs.sun, this.pixels(defs.far), CFG.depth + 0.3);
+      const farPixels = defs.sun || defs.dusk ? this.pixels(defs.far) : undefined;
+      if (defs.sun) this.sun = new SunShimmer(scene, defs.sun, farPixels, CFG.depth + 0.3);
       if (defs.skyLife) this.skyLife = new SkyLife(scene, defs.skyLife, this.far.frame.width, CFG.depth + 0.3);
+      // S108: detrás de las bandadas; el fondo de cueva (encima) lo tapa donde se ve la cueva.
+      if (defs.dusk) this.dusk = new DuskGlow(scene, defs.dusk, defs.far, farPixels, CFG.depth + 0.1);
     }
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
-      this.cave.setVisible(false);
+      // S108: el fondo de cueva va encima de todo lo de afuera (rayos, bruma, bandadas): lo de afuera no se ve adentro.
+      this.cave.setVisible(false).setDepth(CFG.depth + CAVE_DEPTH);
+      if (defs.caveLife && defs.cave) {
+        this.caveLife = new CaveLife(scene, defs.caveLife, defs.cave, this.pixels(defs.cave), this.cave.frame.width, CFG.depth + CAVE_DEPTH + 0.05);
+      }
       this.makeEdgeTexture();
       for (let i = 0; i < 2; i++) {
         this.edges.push(
@@ -128,7 +147,19 @@ export class LevelBackdrop {
 
   /** Todo lo que dibuja el fondo (para que la luz del nivel oscuro no lo toque). */
   get layers(): Phaser.GameObjects.GameObject[] {
-    return [this.far, this.cave, this.fill, this.fillEdge, this.mist, ...(this.sun?.layers ?? []), ...(this.skyLife?.layers ?? []), ...this.rays.map((r) => r.img), ...this.canopyMist.map((m) => m.band)].filter(
+    return [
+      this.far,
+      this.cave,
+      this.fill,
+      this.fillEdge,
+      this.mist,
+      ...(this.sun?.layers ?? []),
+      ...(this.skyLife?.layers ?? []),
+      ...(this.dusk?.layers ?? []),
+      ...(this.caveLife?.layers ?? []),
+      ...this.rays.map((r) => r.img),
+      ...this.canopyMist.map((m) => m.band),
+    ].filter(
       (o): o is NonNullable<typeof o> => o !== undefined,
     );
   }
@@ -164,7 +195,7 @@ export class LevelBackdrop {
     }
     this.updateCanopy(show, left, imageTop - this.maxUncovered);
     if (this.cave) this.updateCave(cam.worldView.x, off, panX);
-    this.updateAmbient(left, imageTop);
+    this.updateAmbient(left, imageTop, off.x);
     if (ambient !== undefined) this.applyTint(ambient);
   }
 
@@ -174,6 +205,8 @@ export class LevelBackdrop {
     const left = span ? Math.max(0, span.left) : 0;
     const right = span ? Math.min(VIEW.width, span.right) : 0;
     cave.setVisible(span !== null);
+    this.caveClip.left = left;
+    this.caveClip.right = right;
     // Cueva de borde a borde: el cielo no se ve.
     this.far?.setVisible(!span || left > 0 || right < VIEW.width);
     if (span) cave.setCrop((left - panX) / cave.scaleX, 0, (right - left) / cave.scaleX, cave.frame.height);
@@ -191,7 +224,7 @@ export class LevelBackdrop {
   }
 
   /** Lluvia y niebla (S59): siguen a la imagen y corren con el tiempo de juego (se paran con la pausa). */
-  private updateAmbient(left: number, imageTop: number): void {
+  private updateAmbient(left: number, imageTop: number, viewLeft: number): void {
     const visible = this.far?.visible === true;
     const now = this.scene.time.now;
     if (this.rainFrames.length > 0 && visible) {
@@ -207,8 +240,20 @@ export class LevelBackdrop {
     }
     // S96: en los mismos px de arte que la imagen (su esquina y su escala), así se mueve con ella en todo el nivel.
     this.sun?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && this.flashes());
+    // S108: la vista está afuera de la cueva si su centro no cae en el tramo de cueva (la espera de los loros empieza ahí).
+    const caveOn = this.cave?.visible === true;
+    const mid = VIEW.width / 2;
+    const outside = !caveOn || this.caveClip.left > mid || this.caveClip.right < mid;
+    const life = this.lifeOn;
     // S98: igual que el sol, en px de arte de la imagen; no titila, así que no depende de «Destellos».
-    this.skyLife?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible);
+    this.skyLife?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && life, outside);
+    // S108: el atardecer y la cueva, en px de arte de su imagen (las dos quedan en el mismo lugar).
+    this.dusk?.update(left, imageTop, this.far?.scaleX ?? 1, this.far?.scaleY ?? 1, now, visible && life, !this.flashes());
+    if (this.caveLife && this.cave) {
+      this.caveScreen.left = viewLeft + this.caveClip.left;
+      this.caveScreen.right = viewLeft + this.caveClip.right;
+      this.caveLife.update(left, imageTop, this.cave.scaleX, this.cave.scaleY, now, caveOn && life, this.caveScreen, this.flashes());
+    }
   }
 
   /**
@@ -248,6 +293,10 @@ export class LevelBackdrop {
     farHeight: number;
     sun: ReturnType<SunShimmer['debugState']> | null;
     skyLife: ReturnType<SkyLife['debugState']> | null;
+    dusk: ReturnType<DuskGlow['debugState']> | null;
+    caveLife: ReturnType<CaveLife['debugState']> | null;
+    /** S108: dónde quedó la esquina de las imágenes en la vista (unidades) y cuántas unidades mide un px de arte. */
+    art: { left: number; top: number; scale: number };
   } {
     return {
       images: this.images.length,
@@ -260,6 +309,11 @@ export class LevelBackdrop {
       farHeight: this.far?.displayHeight ?? 0,
       sun: this.sun?.debugState() ?? null,
       skyLife: this.skyLife?.debugState() ?? null,
+      dusk: this.dusk?.debugState() ?? null,
+      caveLife: this.caveLife?.debugState() ?? null,
+      art: this.images[0]
+        ? { left: this.images[0].x - fixedOffset(this.scene.cameras.main).x, top: this.images[0].y - fixedOffset(this.scene.cameras.main).y, scale: this.images[0].scaleX }
+        : { left: 0, top: 0, scale: 1 },
     };
   }
 
@@ -268,12 +322,28 @@ export class LevelBackdrop {
     this.skyLife?.debugLaunch(this.scene.time.now);
   }
 
+  /** Para medir (S108): apagar partes del atardecer (`rays`, `glow`, `mist`, `covers`). */
+  debugDuskParts(parts: Partial<DuskGlow['parts']>): void {
+    if (this.dusk) Object.assign(this.dusk.parts, parts);
+  }
+
+  /** Para las capturas (S108): el mismo cuadro con y sin la vida del fondo. */
+  debugShowLife(on: boolean): void {
+    this.lifeOn = on;
+  }
+
+  /** Para las capturas (S108): que el próximo grupo de murciélagos y el próximo destello de cristal salgan ya. */
+  debugLaunchCave(): void {
+    this.caveLife?.debugLaunch(this.scene.time.now);
+  }
+
   private applyTint(ambient: number): void {
     const tint = backdropTint(this.brightness, ambient);
     for (const img of this.images) img.setTint(tint);
     this.fill?.setTint(tint);
     this.fillEdge?.setTint(tint);
     this.mist?.setTint(tint);
+    this.dusk?.setTint(tint);
     for (const m of this.canopyMist) m.band.setTint(mixTint(CFG.canopy.mistColor, tint));
   }
 
