@@ -32,3 +32,9 @@ export function topEdgeGaps(dir = TILESETS_DIR) {
   }
   return out;
 }
+
+/** Lee un PNG del disco como { width, height, data } (RGBA). S109: para comparar con lo que da un script. */
+export function readPng(path) {
+  const png = PNG.sync.read(readFileSync(path));
+  return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
+}
