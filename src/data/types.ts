@@ -82,6 +82,12 @@ export interface LevelDef {
    * es la baldosa del relleno del suelo, igual que el terreno (GAMEPLAY.backdrop.earth), y no el fondo lejano.
    */
   earthBackdrop?: boolean;
+  /**
+   * Detalle del terreno (S109): la hoja `tiles/detalle/<sheet>.png` (con su .json) pone variantes del relleno y de los
+   * bordes, elegidas por celda con `seed`, y una capa de calcomanías sobre Ground (GAMEPLAY.backdrop.terrainDetail).
+   * Solo dibujo: las colisiones y el autotile no cambian.
+   */
+  terrainDetail?: { sheet: string; seed: number };
   musicKey: string;
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;

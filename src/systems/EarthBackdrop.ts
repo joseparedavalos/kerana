@@ -12,6 +12,8 @@ const CFG = GAMEPLAY.backdrop.earth;
  * fondo lejano y detrás de todo lo demás; la capa descarta sola lo que queda fuera de la vista.
  * No es el fondo de cueva de l1 (`LevelBackdrop`): ese recorta una imagen fija a la cámara en tramos que ocupan
  * toda la altura; la tierra sigue la forma de cada bloque.
+ * S109: con el detalle del terreno, `extra` es la hoja de variantes y `fillAt(x, y)` la casilla (gid) de cada celda,
+ * la misma que lleva Ground ahí, así la fila tenue de la repisa no se distingue.
  */
 export function addEarthBackdrop(
   map: Phaser.Tilemaps.Tilemap,
@@ -19,12 +21,13 @@ export function addEarthBackdrop(
   depth: Uint8Array,
   tiles: number,
   covered?: (i: number) => boolean,
+  extra?: { tileset: Phaser.Tilemaps.Tileset; fillAt: (x: number, y: number) => number },
 ): Phaser.Tilemaps.TilemapLayer | null {
   const cells = earthCells(depth, map.width, tiles, covered);
   if (cells.length === 0) return null;
-  const layer = map.createBlankLayer("EarthBackdrop", tileset);
+  const layer = map.createBlankLayer("EarthBackdrop", extra ? [tileset, extra.tileset] : tileset);
   if (!layer) return null;
   const fill = tileset.firstgid + CFG.fillTile;
-  for (const c of cells) layer.putTileAt(fill, c.x, c.y, false);
+  for (const c of cells) layer.putTileAt(extra ? extra.fillAt(c.x, c.y) : fill, c.x, c.y, false);
   return layer.setDepth(CFG.depth);
 }

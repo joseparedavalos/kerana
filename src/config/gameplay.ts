@@ -2544,6 +2544,41 @@ export const GAMEPLAY = {
       /** Justo encima del fondo lejano (-20) y detrás de todo lo demás (props hundidos, jefes, tiles). */
       depth: -19,
     },
+    /**
+     * Detalle del terreno (S109; `terrainDetail` en levels.ts, hoy solo l1): variantes del relleno y de los bordes
+     * elegidas por celda con la semilla del nivel, y una capa de calcomanías sobre Ground según la profundidad de la
+     * celda (a cuántos tiles está el aire, en las 8 direcciones). Las probabilidades son por celda (0-1).
+     */
+    terrainDetail: {
+      /** Celdas de relleno (15) con una variante en vez de la base; bordes con variante (14, 11, 7 y 13). */
+      fillChance: 0.8,
+      edgeChance: 0.6,
+      /** Hasta dónde se cuenta la profundidad (más hondo da igual). */
+      maxDepth: 8,
+      /** Piso: raíces largas bajo el pasto (solo en el llano, dos casillas hacia abajo) y raicillas. */
+      rootsChance: 0.16,
+      rootletChance: 0.14,
+      /** El pasto de una esquina de arriba que sale hacia el aire de al lado. */
+      overhangChance: 0.85,
+      /** Las de más de una casilla (canto rodado, capa) solo con todas sus celdas a esta profundidad o más. */
+      multiMinDepth: 2,
+      /** Vetas de cristal: celdas a `reach` tiles o menos del aire de una cueva y hasta `maxDepth` de hondo. */
+      crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0.05 },
+      /** Las vetas de cristal dentro de una zona `Cave` no llevan el tinte de la roca, sino este (brillan apagadas). */
+      crystalCaveTint: 0x9c9cc4,
+      /** Por franja de profundidad: probabilidad de que la celda lleve algo y peso de cada tipo. */
+      bands: [
+        { minDepth: 1, maxDepth: 1, chance: 0.08, kinds: { lichen: 3, crack: 1, pebble: 1 } },
+        { minDepth: 2, maxDepth: 2, chance: 0.08, kinds: { pebble: 2, lichen: 2, stone: 1 } },
+        { minDepth: 3, maxDepth: 4, chance: 0.08, kinds: { boulder: 2, strata: 2, stone: 1, pebble: 1 } },
+        { minDepth: 5, maxDepth: 99, chance: 0.08, kinds: { boulder: 2, strata: 3, stone: 1 } },
+      ],
+      /**
+       * Volumen: cuánto se oscurece la roca según la profundidad (índice = profundidad; más hondo usa el último). Se
+       * multiplica en Ground, en el fondo de tierra y en las calcomanías, en pasos chicos para que no se lea una caja.
+       */
+      depthShade: [1, 1, 0.98, 0.96, 0.94, 0.92, 0.9],
+    },
   },
 
   /**
