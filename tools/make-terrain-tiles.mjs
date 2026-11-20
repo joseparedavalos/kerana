@@ -12,6 +12,7 @@ export const BIOMES = {
   cerro: () => import('./lib/cerro-art.mjs'),
   estero: () => import('./lib/estero-art.mjs'),
   campo: () => import('./lib/campo-art.mjs'),
+  pueblo: () => import('./lib/pueblo-art.mjs'),
 };
 
 const toPng = (img) => {
