@@ -2598,6 +2598,25 @@ export const GAMEPLAY = {
           /** El barro se oscurece más hacia adentro que la roca (las masas del estero son anchas), en pasos de 3 %. */
           depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
         },
+        /**
+         * S111: campo (l3), sobre el tileset real de S56. Sin cristales (no hay cuevas) ni pasto en las esquinas (nada sobre
+         * el aire). Cerca del borde, cantitos de cuarzo, grava de itakurú y alguna galería de hormigas; más adentro, capas
+         * de laterita y piedras de itakurú, sueltas o en concreciones de 2 × 2.
+         */
+        campo: {
+          overhangChance: 0,
+          crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
+          rootsChance: 0.11,
+          rootletChance: 0.09,
+          bands: [
+            { minDepth: 1, maxDepth: 1, chance: 0.05, kinds: { pebble: 2, quartz: 1 } },
+            { minDepth: 2, maxDepth: 2, chance: 0.055, kinds: { pebble: 2, itakuru: 2, quartz: 2, ants: 1 } },
+            { minDepth: 3, maxDepth: 4, chance: 0.055, kinds: { laterite: 4, itakuru: 2, ironstone: 1, ants: 1, quartz: 1 } },
+            { minDepth: 5, maxDepth: 99, chance: 0.055, kinds: { laterite: 4, ironstone: 2, itakuru: 1 } },
+          ],
+          /** La tierra se oscurece hacia adentro como el barro (las masas del campo son anchas), en pasos de 3 %. */
+          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
+        },
       },
     },
     /**
