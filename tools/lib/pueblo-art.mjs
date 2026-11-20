@@ -540,8 +540,15 @@ function paintFoundation(g, v = {}) {
 const airOf = (mask) => ({ up: !(mask & UP), right: !(mask & RIGHT), down: !(mask & DOWN), left: !(mask & LEFT) });
 
 /** Una casilla de las casas (máscara: vecinos sólidos arriba 1, derecha 2, abajo 4, izquierda 8). */
+/** La cal de los bordes sin variante: lisa, con una sola mancha clara y suave (lo que se repite en una fila larga). */
+const edgeCal = () => {
+  const g = plainCal();
+  scatter(g, mulberry32(CAL_SEED + 7), [cloudPixels(mulberry32(CAL_SEED + 8), 'calm', 1, 4, 2, 0.45)], { wrap: false, free: calFree(g) });
+  return g;
+};
+
 export function wallCell(mask, variant = {}) {
-  const g = (variant.base ?? baseCal()).clone();
+  const g = (variant.base ?? (mask === 15 ? baseCal() : edgeCal())).clone();
   const air = airOf(mask);
   if (variant.socle) paintSocle(g, variant.socle, variant.socleVariant);
   edges(g, air, { notch: { ...NOTCH, ...(variant.notch ?? {}) }, fromRow: air.up ? (variant.top === 'brick' ? 8 : TEJA.lip + 1) : 0 });
@@ -570,7 +577,7 @@ export const BEAM = {
   /** Clavos de hierro forjado (x, y). */
   nails: [[3, 1], [12, 4]],
   /** Astillas del canto de abajo. */
-  chips: [0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+  chips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
 };
 export function beamCell(kind /* 'left' | 'center' | 'right' */, variant = {}) {
   const v = { ...BEAM, ...variant };
@@ -579,10 +586,9 @@ export function beamCell(kind /* 'left' | 'center' | 'right' */, variant = {}) {
   for (let x = 0; x < T; x++) {
     for (let y = 0; y < SLAB; y++) g.set(x, y, 'wood', y === 0 ? 6 : y === 1 ? 5 : y === SLAB - 1 ? 2 : (x * 3 + y) % 7 === 0 ? 3 : 4);
     g.set(x, SLAB, 'wood', 0);
-    if (v.chips[x]) g.set(x, SLAB + 1, 'wood', 1);
-    const s0 = SLAB + 1 + v.chips[x];
-    g.set(x, s0, 'shadow', 0, 130);
-    g.set(x, s0 + 1, 'shadow', 0, 55);
+    // La sombra debajo, pareja (una astilla suelta no la corre).
+    g.set(x, SLAB + 1, v.chips[x] ? 'wood' : 'shadow', v.chips[x] ? 1 : 0, v.chips[x] ? 255 : 100);
+    g.set(x, SLAB + 2, 'shadow', 0, 40);
   }
   for (const [y, x0, x1] of v.grain) for (let x = x0; x <= x1; x++) g.set(x, y, 'wood', (x + y) % 4 === 0 ? 2 : 3);
   for (const [x, y] of v.knots) {
@@ -597,14 +603,12 @@ export function beamCell(kind /* 'left' | 'center' | 'right' */, variant = {}) {
   }
   if (kind === 'left') {
     for (const y of [0, 6, 7, 8]) g.clear(0, y);
-    g.clear(1, 8);
     for (let y = 1; y < 6; y++) g.set(0, y, 'wood', y === 1 ? 4 : 2);
     for (let y = 1; y < 6; y++) g.set(1, y, 'wood', y === 3 ? 3 : 5);
     g.set(1, 0, 'wood', 5);
   }
   if (kind === 'right') {
     for (const y of [0, 6, 7, 8]) g.clear(15, y);
-    g.clear(14, 8);
     for (let y = 1; y < 6; y++) g.set(15, y, 'wood', 1);
     for (let y = 1; y < 6; y++) g.set(14, y, 'wood', y === 3 ? 2 : 3);
   }
@@ -867,12 +871,11 @@ function paintPlasterLoss(g, cells) {
 function paintCalFeature(g, kind, rng, lo = 3, hi = 12) {
   switch (kind) {
     case 'damp': {
-      // Humedad: la mancha gris amarillenta con la marca del borde (donde se secó).
-      for (const [x, y, d] of cloud(rng, lo, hi, 3, 2)) {
-        if (g.ramp(x, y) !== 'cal') continue;
-        if (d > 0.82) g.set(x, y, 'damp', 3);
-        else if (d < 0.55 || rng() < 0.5) g.set(x, y, 'damp', 4);
-        else g.set(x, y, 'cal', 4);
+      // Humedad: una mancha suave, apenas tostada en el centro y en medio tono alrededor, de borde tramado.
+      for (const [x, y, d] of cloud(rng, lo, hi, 3.5, 2.2)) {
+        if (!isCal(g, x, y)) continue;
+        if (d < 0.45) g.set(x, y, 'damp', 4);
+        else if (d < 0.75 || (1 - d) / 0.25 > bayer(x, y)) g.set(x, y, 'calm', 0);
       }
       break;
     }
@@ -1032,21 +1035,26 @@ function wallEdgeVariants(rng) {
     return restoreSolidBands(wallCell(14, { base, tejas: t }), wallCell(14), 14);
   });
   const notches = {
-    11: [{ bottom: [0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0] }, { bottom: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1] }],
+    11: [
+      { bottom: [0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0] },
+      { bottom: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1] },
+      { bottom: [0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0] },
+      { bottom: [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0] },
+    ],
     7: [{ left: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0] }, { left: [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0] }],
     13: [{ right: [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] }, { right: [0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0] }],
   };
   for (const mask of [11, 7, 13]) {
     out[mask] = notches[mask].map((notch, k) => {
       const base = baseCal(irange(rng, 1, 1 << 30));
-      paintCalFeature(base, [['damp', 'crack'], ['adobe', 'stroke']][k][mask === 11 ? 0 : 1], rng, 4, 11);
+      paintCalFeature(base, mask === 11 ? ['damp', 'soot', 'fresh', 'hairline'][k] : [['crack'], ['stroke']][k][0], rng, 4, 10);
       return restoreSolidBands(wallCell(mask, { base, notch }), wallCell(mask), mask);
     });
   }
   const beams = [
-    { grain: [[2, 2, 7], [4, 9, 13], [3, 12, 15]], knots: [[5, 3]], nails: [[10, 2]], chips: [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0] },
-    { grain: [[3, 0, 4], [2, 6, 10], [4, 11, 15]], knots: [[12, 2]], nails: [[4, 3]], chips: [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1] },
-    { grain: [[4, 1, 5], [2, 7, 12]], knots: [], nails: [[7, 1], [13, 3]], chips: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0] },
+    { grain: [[2, 2, 7], [4, 9, 13], [3, 12, 15]], knots: [[5, 3]], nails: [[10, 2]], chips: [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    { grain: [[3, 0, 4], [2, 6, 10], [4, 11, 15]], knots: [[12, 2]], nails: [[4, 3]], chips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0] },
+    { grain: [[4, 1, 5], [2, 7, 12]], knots: [], nails: [[7, 1], [13, 3]], chips: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   ];
   out[17] = beams.map((v) => restoreSolidBands(beamCell('center', v), beamCell('center'), LEFT | RIGHT));
   out[22] = PLASTER_CRACKS_ALT.map((c, k) => crackedCell(c, 1124 + k, PLASTER_FALLEN[k + 1]));
