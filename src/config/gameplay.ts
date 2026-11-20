@@ -2619,6 +2619,52 @@ export const GAMEPLAY = {
           /** La tierra se oscurece hacia adentro como el barro (las masas del campo son anchas), en pasos de 3 %. */
           depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
         },
+        /**
+         * S112: pueblo (l4, Capiatá). El mapa se reparte en calle y casas (`town`, `townZones`): cada zona lleva sus
+         * casillas de la hoja y sus calcomanías (`zoneDecals`). Sin cristales ni pasto en las esquinas.
+         */
+        pueblo: {
+          edgeChance: 0.75,
+          overhangChance: 0,
+          crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
+          town: {
+            /** Un piso elevado de la calle (de ladrillo) a 10 filas del fondo o menos: el patio, la terraza, la galería. */
+            streetRows: 10,
+            /** Un piso con terreno arriba a 10 filas o menos es de adentro (el zaguán, la galería): ladrillo. */
+            interiorReach: 10,
+            /** El zócalo de cada casa que da a la calle. */
+            socle: { 'wall.ochre': 2, 'wall.blue': 1, wall: 1 },
+          },
+          zoneDecals: {
+            /** La cal de las casas: grietas, humedad, revoque caído, remiendos, hierros; en el techo, pétalos y yuyos. */
+            wall: {
+              floorChance: 0.3,
+              floor: { roofPetals: 4, roofTuft: 1, eaveStain: 2 },
+              bands: [
+                { minDepth: 1, maxDepth: 1, chance: 0.14, kinds: { crack: 1, damp: 3, iron: 1, retouch: 2 } },
+                { minDepth: 2, maxDepth: 3, chance: 0.16, kinds: { adobe: 2, crack: 1, damp: 3, longCrack: 1, patch: 1, iron: 1, retouch: 2 } },
+                { minDepth: 4, maxDepth: 99, chance: 0.16, kinds: { adobe: 2, damp: 3, crack: 1, longCrack: 1, patch: 1, retouch: 2 } },
+              ],
+            },
+            'wall.ochre': { floorChance: 0, floor: {}, bands: [{ minDepth: 0, maxDepth: 99, chance: 0.3, kinds: { footMoss: 2, rising: 1 } }] },
+            'wall.blue': { floorChance: 0, floor: {}, bands: [{ minDepth: 0, maxDepth: 99, chance: 0.3, kinds: { footMoss: 2, rising: 1 } }] },
+            'wall.brick': { floorChance: 0, floor: {}, bands: [] },
+            'street.cobble': { floorChance: 0.18, floor: { streetPetals: 2, streetWeed: 1 }, bands: [] },
+            'street.brick': { floorChance: 0.15, floor: { streetPetals: 2, streetWeed: 1 }, bands: [] },
+            /** La tierra bajo la calle: el relleno de cascotes cerca del piso; más abajo, piedras, raíces, ladrillos viejos y capas. */
+            'street.earth': {
+              floorChance: 0,
+              floor: {},
+              bands: [
+                { minDepth: 1, maxDepth: 2, chance: 0.08, kinds: { rubble: 3, pebble: 2, shard: 1, stone: 1 } },
+                { minDepth: 3, maxDepth: 4, chance: 0.08, kinds: { stone: 3, root: 3, shard: 1, oldBricks: 2, layer: 3 } },
+                { minDepth: 5, maxDepth: 99, chance: 0.08, kinds: { stone: 3, oldBricks: 2, root: 2, layer: 3 } },
+              ],
+            },
+          },
+          /** La cal y la tierra se oscurecen hacia adentro en pasos de 1,5 % (en la cal blanca, 3 % ya dibuja los cuadros). */
+          depthShade: [1, 1, 0.985, 0.97, 0.955, 0.94, 0.925, 0.91],
+        },
       },
     },
     /**
