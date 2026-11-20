@@ -6,13 +6,11 @@ import {
   canopyFill,
   canopyWeights,
   edgeColumns,
-  mistPuffAlpha,
   mistLayer,
+  mistPuffDither,
   mixColor,
   rainFrame,
   rainMask,
-  rayAlpha,
-  rayAnchors,
   scrollOffset,
   seeded,
   splitRain,
@@ -54,13 +52,14 @@ export class LevelBackdrop {
   private fill?: Phaser.GameObjects.Image;
   /** Fundido sobre el borde de arriba de la imagen lejana (S29): del color del relleno a transparente. */
   private fillEdge?: Phaser.GameObjects.Image;
+  /** S113: el relleno con dosel va a la escala de la imagen y apoyado en su borde (sin fundido: empalma solo). */
+  private fillOnImage = false;
   /** Lluvia que cae (S59): fotogramas de la imagen lejana (`<clave>__rain`, `rain_0`…); vacío si el nivel no tiene. */
   private rainFrames: string[] = [];
   /** Copia de la niebla pintada que corre de costado (S59), y dónde está su franja en la imagen (px de arte). */
   private mist?: Phaser.GameObjects.TileSprite;
   private mistAt = { x: 0, y: 0 };
-  /** El dosel (S60): rayos de luz y bandas de niebla sobre el relleno, con su fase y su lugar. */
-  private rays: { img: Phaser.GameObjects.Image; at: number; phase: number }[] = [];
+  /** El dosel (S60): bandas de niebla sobre el relleno, con su lugar (S113: los rayos van horneados en el relleno). */
   private canopyMist: { band: Phaser.GameObjects.Image; at: number; speed: number; offset: number }[] = [];
   /** El sol que respira y el reflejo que titila (S96); solo si el nivel define `sun`. */
   private sun?: SunShimmer;
@@ -175,7 +174,6 @@ export class LevelBackdrop {
       ...(this.skyLife?.layers ?? []),
       ...(this.dusk?.layers ?? []),
       ...(this.caveLife?.layers ?? []),
-      ...this.rays.map((r) => r.img),
       ...this.canopyMist.map((m) => m.band),
     ].filter(
       (o): o is NonNullable<typeof o> => o !== undefined,
@@ -208,7 +206,8 @@ export class LevelBackdrop {
     const left = off.x + panX;
     const imageTop = off.y + uncovered;
     if (show) {
-      this.fill?.setPosition(left, imageTop - this.maxUncovered);
+      // S113: el dosel va al píxel de la imagen, con su borde de abajo pegado al de arriba de la imagen.
+      this.fill?.setPosition(left, this.fillOnImage ? imageTop : imageTop - this.maxUncovered);
       this.fillEdge?.setPosition(left, imageTop);
     }
     this.updateCanopy(show, left, imageTop - this.maxUncovered);
@@ -280,21 +279,13 @@ export class LevelBackdrop {
   }
 
   /**
-   * El dosel (S60): los rayos respiran y se mecen, las bandas de niebla corren de costado. Siguen al relleno y solo se
-   * dibujan cuando hay franja destapada. Tiempo de juego: se paran con la pausa.
+   * El dosel (S60): las bandas de niebla corren de costado. Siguen al relleno y solo se dibujan cuando hay franja
+   * destapada. Tiempo de juego: se paran con la pausa. (S113: los rayos van quietos, horneados en el relleno.)
    */
   private updateCanopy(show: boolean, left: number, fillTop: number): void {
-    if (this.rays.length === 0 && this.canopyMist.length === 0) return;
-    const rc = CFG.canopy.rays;
+    if (this.canopyMist.length === 0) return;
     const now = this.scene.time.now;
     const width = this.far!.displayWidth;
-    const cycle = (2 * Math.PI * now) / rc.periodMs;
-    for (const r of this.rays) {
-      r.img.setVisible(show);
-      if (!show) continue;
-      const sway = rc.sway * Math.sin(cycle * 0.6 + r.phase * 1.7);
-      r.img.setPosition(left + r.at * width + sway, fillTop).setAlpha(Math.max(0, rc.alpha + rc.pulse * Math.sin(cycle + r.phase)));
-    }
     for (const m of this.canopyMist) {
       m.band.setVisible(show);
       if (!show) continue;
@@ -484,24 +475,30 @@ export class LevelBackdrop {
       }
       if (canopy && top !== undefined) {
         const cc = CFG.canopy;
-        const pxPerUnit = 1 / far.scaleX;
+        const hex = (h: string) => Phaser.Display.Color.HexStringToColor(h).color;
         const weights = canopyWeights(edge, top, cc.darkLo, cc.darkHi);
+        // S113: las primeras filas de la imagen sin las rayas de lluvia: la franja de abajo del dosel las copia.
+        const rows = Math.min(src.height, cc.blend);
+        const head = src.data.subarray(0, src.width * rows * 4);
+        const clean = new Uint8ClampedArray(head.length);
+        splitRain(head, src.width, rows, rainMask(head, src.width, rows, CFG.rain), clean, new Uint8ClampedArray(head.length));
         const out = new Uint8ClampedArray(big.width * big.height * 4);
         canopyFill(edge, top, big.width, big.height, {
           weights,
-          crownColor: Phaser.Display.Color.HexStringToColor(cc.crownColor).color,
-          crownAlpha: cc.crownAlpha,
-          crownHeight: cc.crownHeight,
-          crownVary: cc.crownVary,
-          hazeTop: cc.hazeTop,
-          bottomFade: cc.bottomFade,
+          pixel: cc.pixel,
+          farHeight: cc.farHeight,
+          midHeight: cc.midHeight,
+          nearHeight: cc.nearHeight,
           fringeMin: cc.fringeMin,
           fringeMax: cc.fringeMax,
-          fringeAlpha: cc.fringeAlpha,
-          rMin: cc.radiusMin * pxPerUnit,
-          rMax: cc.radiusMax * pxPerUnit,
+          branches: cc.branches,
+          lianas: cc.lianas,
+          epiphytes: cc.epiphytes,
+          rays: { ...cc.rays, color: hex(cc.rays.color) },
+          haze: { ...cc.haze, color: hex(cc.haze.color) },
+          blend: cc.blend,
           seed: cc.seed,
-        }, out);
+        }, out, { data: clean, rows });
         if (!this.canvasTexture(fillKey, big.width, big.height, out)) return;
         canopyWeightsByKey.set(fillKey, weights);
       } else {
@@ -512,13 +509,21 @@ export class LevelBackdrop {
       this.scene.textures.get(edgeKey).setFilter(Phaser.Textures.FilterMode.LINEAR);
     }
     const width = far.displayWidth;
+    const weights = canopyWeightsByKey.get(fillKey);
+    this.fillOnImage = canopy && weights !== undefined;
     this.fill = this.scene.add
       .image(0, 0, fillKey)
-      .setOrigin(0)
+      .setOrigin(0, this.fillOnImage ? 1 : 0)
       .setScrollFactor(0)
-      .setDisplaySize(width, Math.ceil(this.maxUncovered) + 1)
       .setDepth(CFG.depth - 1)
       .setVisible(false);
+    // S113: el dosel, píxel a píxel con la imagen (las hojas tienen el tamaño de las del fondo); sin fundido encima.
+    if (this.fillOnImage) {
+      this.fill.setScale(far.scaleX, far.scaleY);
+      this.makeCanopyMotion();
+      return;
+    }
+    this.fill.setDisplaySize(width, Math.ceil(this.maxUncovered) + 1);
     this.fillEdge = this.scene.add
       .image(0, 0, edgeKey)
       .setOrigin(0)
@@ -526,52 +531,31 @@ export class LevelBackdrop {
       .setDisplaySize(width, CFG.fillEdgeHeight)
       .setDepth(CFG.depth + 0.5)
       .setVisible(false);
-    const weights = canopyWeightsByKey.get(fillKey);
-    if (canopy && weights) this.makeCanopyMotion(weights);
   }
 
   /**
-   * Rayos y bandas de niebla del dosel (S60): una textura chica (un rayo de 16 × 64 px y un jirón de 128 × 32) que se
-   * estira. Cada banda son jirones sueltos: una banda a lo ancho tapaba más pantalla y costaba cuadros. Delante del relleno y del fundido del borde, detrás de todo el nivel (profundidad del fondo + 0,6 a 0,8).
+   * Las bandas de niebla del dosel (S60): jirones sueltos de una textura chica que se estira (una banda a lo ancho tapaba
+   * más pantalla y costaba cuadros). S113: el jirón va tramado en tres escalones y sin filtro (píxeles como los del
+   * dosel), y los rayos ya no son imágenes: van horneados en el relleno. Delante del relleno, detrás de todo el nivel.
    */
-  private makeCanopyMotion(weights: number[]): void {
+  private makeCanopyMotion(): void {
     const cc = CFG.canopy;
     const rand = seeded(cc.seed + 1);
-    // Un rayo y un jirón en la misma textura (una sola textura más para el dibujo).
-    const key = 'bg_canopy_motion';
+    const key = 'bg_canopy_mist';
+    // El jirón: un texel por píxel del dosel (≈ 1,7 unidades), para que el tramado tenga el tamaño de las hojas.
+    const tw = 96;
+    const th = 18;
     if (!this.scene.textures.exists(key)) {
-      const tex = this.scene.textures.createCanvas(key, 128, 96);
-      if (!tex) return;
-      const put = (alpha: Uint8ClampedArray, w: number, h: number, y: number) => {
-        const img = tex.getContext().createImageData(w, h);
-        alpha.forEach((a, i) => img.data.set([255, 255, 255, a], i * 4));
-        tex.getContext().putImageData(img, 0, y);
-        tex.add(y === 0 ? 'puff' : 'ray', 0, 0, y, w, h);
-      };
-      put(mistPuffAlpha(128, 32, seeded(cc.seed + 2)), 128, 32, 0);
-      put(rayAlpha(16, 64), 16, 64, 32);
-      tex.refresh();
-      tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
-    }
-    const rc = cc.rays;
-    const rayColor = Phaser.Display.Color.HexStringToColor(rc.color).color;
-    for (const at of rayAnchors(weights, rc.count, rand)) {
-      const img = this.scene.add
-        .image(0, 0, key, 'ray')
-        .setOrigin(0.5, 0)
-        .setScrollFactor(0)
-        .setDisplaySize(rc.width, this.maxUncovered * rc.length)
-        .setAngle(rc.tiltDeg)
-        .setTint(rayColor)
-        .setBlendMode(Phaser.BlendModes.ADD)
-        .setDepth(CFG.depth + 0.6)
-        .setVisible(false);
-      this.rays.push({ img, at, phase: rand() * Math.PI * 2 });
+      const alpha = mistPuffDither(tw, th, seeded(cc.seed + 2));
+      const data = new Uint8ClampedArray(tw * th * 4);
+      alpha.forEach((a, i) => data.set([255, 255, 255, a], i * 4));
+      if (!this.canvasTexture(key, tw, th, data)) return;
+      this.scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
     cc.mist.forEach((m, i) => {
       for (let k = 0; k < m.puffs; k++) {
         const band = this.scene.add
-          .image(0, 0, key, 'puff')
+          .image(0, 0, key)
           .setOrigin(0)
           .setScrollFactor(0)
           .setDisplaySize(m.width * (0.8 + 0.4 * rand()), m.height * (0.8 + 0.4 * rand()))

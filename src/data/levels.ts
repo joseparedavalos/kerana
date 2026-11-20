@@ -212,6 +212,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     terrainShell: 3,
     // S100: el relleno (la casilla 15 de selva, sin tinte) tapa las masas huecas: la meseta de x 98-128 y la columna de x 261-263.
     earthBackdrop: true,
+    // S113: el monte de Canindeyú por código (tools/lib/selva-art.mjs): tierra colorada bajo el humus y la hojarasca, y en
+    // la hoja de detalle variantes, raíces, piedras con musgo, semillas, bichos y raicillas que cuelgan de las salientes.
+    terrainDetail: { sheet: 'selva', seed: 113 },
     musicKey: '',
     boss: 'kurupi',
     gift: 'heart_up',

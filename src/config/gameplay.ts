@@ -2192,59 +2192,46 @@ export const GAMEPLAY = {
       feather: 10,
     },
     /**
-     * El dosel de l5 (S60; `canopy` en levels.ts), en el relleno de arriba de la imagen. Todo por código y detrás de
-     * todo el nivel: las copas van horneadas en el relleno (no cuestan cuadros); la niebla y los rayos se mueven.
+     * El dosel de l5 (S60; `canopy` en levels.ts), en el relleno de arriba de la imagen. S113: dibujado de nuevo en
+     * píxeles gruesos (los del fondo pintado), horneado una vez en la textura del relleno: copas en cuatro capas con hojas,
+     * ramas con bromelias y orquídeas, lianas, rayos y una banda de niebla tramados (no cuestan nada: ya se dibujaba el
+     * relleno), y abajo el borde de la imagen espejado que se deshace tramado (sin costura ni el fundido de S29). Lo único
+     * que se mueve son los jirones de niebla, también tramados. Los colores, medidos en l5_far.jpg: `CANOPY_PALETTE`.
      */
     canopy: {
-      /** Siluetas de copas: color (más oscuro que el degradado) y opacidad (0-1). */
-      crownColor: '#1d3320',
-      crownAlpha: 0.85,
-      /** Lo más que suben las copas sobre los árboles de los costados (fracción del alto del relleno). */
-      crownHeight: 0.5,
-      /** Cuánto varía ese alto de un árbol a otro (0 = todas iguales, 1 = de nada a todo). */
-      crownVary: 0.6,
-      /** Opacidad relativa de las copas arriba (la neblina se come las lejanas; 1 = igual que abajo). */
-      hazeTop: 0.4,
-      /** Fracción de abajo del relleno donde las copas se funden con los árboles de la imagen (sin costura). */
-      bottomFade: 0.14,
-      /** El dosel que cuelga del borde de arriba: cuánto baja sobre lo claro y sobre lo oscuro (fracción del alto) y su opacidad. */
-      fringeMin: 0.03,
-      fringeMax: 0.2,
-      fringeAlpha: 0.8,
-      /** Radio de cada copa (unidades): más grande = copas más redondas y menos. */
-      radiusMin: 9,
-      radiusMax: 22,
+      /** Píxeles de arte por píxel del dosel: el «píxel» del fondo pintado mide ≈ 3. */
+      pixel: 3,
+      /** Hasta dónde suben las copas (fracción del alto del relleno): lejanas (sobre el claro), del medio y de adelante (a los costados). */
+      farHeight: 0.62,
+      midHeight: 0.85,
+      nearHeight: 0.62,
+      /** El dosel que cuelga del borde de arriba: cuánto baja sobre lo claro y sobre lo oscuro (fracción del alto). */
+      fringeMin: 0.12,
+      fringeMax: 0.42,
+      /** Ramas que salen de cada costado, lianas cada 100 px de arte de ancho y epífitas (bromelias, helechos, orquídeas) por rama. */
+      branches: 2,
+      lianas: 1.6,
+      epiphytes: 3,
+      /** Rayos de luz entre las hojas, quietos y tramados: cuántos, ancho (px de arte), inclinación (grados; positivo = baja hacia la izquierda), fuerza (0-1) y color. */
+      rays: { count: 4, width: 30, tiltDeg: 12, strength: 0.3, color: '#e9efc0' },
+      /** Banda de niebla quieta y tramada: centro y alto (fracciones del alto del relleno), opacidad (0-1) y color. */
+      haze: { at: 0.58, height: 0.16, alpha: 0.4, color: '#a9bc9a' },
+      /** Alto (px de arte) de la franja de abajo que copia el borde de la imagen y se deshace tramada hacia arriba. */
+      blend: 36,
       /** Qué columna del borde es dosel: oscuridad frente al color de arriba, de `darkLo` (nada) a `darkHi` (todo). */
       darkLo: 0.45,
       darkHi: 0.75,
-      /** Semilla del azar (cambiarla da otras copas, otros rayos y otra niebla). */
+      /** Semilla del azar (cambiarla da otras copas, otras ramas, otros rayos y otra niebla). */
       seed: 5,
-      /** Rayos de luz entre las copas: se suman a lo de atrás (modo ADD). */
-      rays: {
-        count: 4,
-        /** Ancho de cada rayo (unidades) y largo (fracción del alto del relleno). */
-        width: 24,
-        length: 0.9,
-        /** Inclinación (grados; positivo = baja hacia la izquierda). */
-        tiltDeg: 12,
-        color: '#f3f6c6',
-        /** Opacidad media y cuánto sube y baja (0-1): tenues. */
-        alpha: 0.12,
-        pulse: 0.06,
-        /** Cada cuánto respira un rayo (ms) y cuánto se mece de costado (unidades). */
-        periodMs: 7000,
-        sway: 6,
-      },
       /**
-       * Bandas de niebla que cruzan despacio, hechas de jirones sueltos (una banda entera a lo ancho costaba ~5 cuadros
-       * por segundo con el render por software; los jirones tapan menos pantalla). `at`: dónde va el centro de la banda
-       * (fracción del alto del relleno, 0 = arriba); `puffs` jirones de `width` × `height` unidades repartidos a lo ancho.
+       * Jirones de niebla que cruzan despacio (S60), tramados (S113: sin borde borroso). `at`: dónde va el centro de la
+       * banda (fracción del alto del relleno, 0 = arriba); `puffs` jirones de `width` × `height` unidades repartidos a lo
+       * ancho; velocidad en unidades por segundo (positiva, a la derecha) y opacidad (0-1).
        */
       mistColor: '#e2ebd6',
       mist: [
-        /** Velocidad en unidades por segundo (positiva, a la derecha) y opacidad (0-1). */
-        { at: 0.36, puffs: 3, width: 170, height: 30, speed: 5, alpha: 0.32 },
-        { at: 0.74, puffs: 3, width: 190, height: 34, speed: 9, alpha: 0.28 },
+        { at: 0.36, puffs: 2, width: 150, height: 26, speed: 5, alpha: 0.2 },
+        { at: 0.72, puffs: 2, width: 170, height: 30, speed: 9, alpha: 0.18 },
       ],
     },
     /** Terreno como repisa (`terrainShell` en levels.ts): opacidad de la última fila antes del fondo. */
@@ -2664,6 +2651,28 @@ export const GAMEPLAY = {
           },
           /** La cal y la tierra se oscurecen hacia adentro en pasos de 1,5 % (en la cal blanca, 3 % ya dibuja los cuadros). */
           depthShade: [1, 1, 0.985, 0.97, 0.955, 0.94, 0.925, 0.91],
+        },
+        /**
+         * S113: selva (l5, el monte de Canindeyú). Sin cristales (no hay cuevas). Bajo el piso, raíces que bajan del humus;
+         * en las esquinas, el musgo y un helechito que salen al aire; bajo las salientes, raicillas que cuelgan. Cerca del
+         * borde, hojas enterradas, piedritas, semillas y bichos; más adentro, raíces gruesas que cruzan varias celdas,
+         * piedras mojadas con musgo y capas de laterita.
+         */
+        selva: {
+          edgeChance: 0.75,
+          overhangChance: 0.6,
+          hangChance: 0.55,
+          crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
+          rootsChance: 0.16,
+          rootletChance: 0.14,
+          bands: [
+            { minDepth: 1, maxDepth: 1, chance: 0.12, kinds: { leaf: 2, pebble: 2, seed: 1, bug: 1, stone: 1 } },
+            { minDepth: 2, maxDepth: 2, chance: 0.15, kinds: { stone: 2, leaf: 2, seed: 2, bug: 2, root: 3, pebble: 1, patch: 2 } },
+            { minDepth: 3, maxDepth: 4, chance: 0.16, kinds: { root: 4, stone: 3, laterite: 2, bug: 1, seed: 1, leaf: 1, patch: 3, log: 1 } },
+            { minDepth: 5, maxDepth: 99, chance: 0.15, kinds: { root: 3, laterite: 2, stone: 3, seed: 1, patch: 3, log: 1 } },
+          ],
+          /** La tierra se oscurece hacia adentro como el barro del estero (las masas del monte son anchas), en pasos de 3 %. */
+          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
         },
       },
     },

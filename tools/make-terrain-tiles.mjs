@@ -1,4 +1,4 @@
-// Tilesets dibujados por código, por bioma (S109 para cerro; S110 generalizado y estero). Por cada bioma escribe
+// Tilesets dibujados por código, por bioma (S109 para cerro; S110 generalizado y estero; S112 pueblo; S113 selva). Por cada bioma escribe
 // public/assets/tiles/<bioma>.png (las 28 casillas de siempre) y public/assets/tiles/detalle/<bioma>.png + .json
 // (variantes y calcomanías). El arte de cada uno está en tools/lib/<bioma>-art.mjs; lo común, en tools/lib/tile-art.mjs.
 // S111: un bioma cuyo tileset es arte real (campo, montado en S56 con `npm run tileset`) no exporta `buildTileset`: de
@@ -13,6 +13,7 @@ export const BIOMES = {
   estero: () => import('./lib/estero-art.mjs'),
   campo: () => import('./lib/campo-art.mjs'),
   pueblo: () => import('./lib/pueblo-art.mjs'),
+  selva: () => import('./lib/selva-art.mjs'),
 };
 
 const toPng = (img) => {
