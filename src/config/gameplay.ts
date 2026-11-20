@@ -1291,6 +1291,42 @@ export const GAMEPLAY = {
     sinkPx: 1,
   },
   /**
+   * La fruta del ka'i (S115): un fruto de pindó pintado en `kaiFruitArt.ts`. Solo el dibujo: la trayectoria, la
+   * gravedad, el golpe (`projectileHits`, un punto), el daño, los tiempos y el pool siguen en `enemies.ts` y `Thrower.ts`.
+   */
+  kaiFruit: {
+    /** Píxeles de arte por unidad (los del ka'i). */
+    detail: 2,
+    /** Giros por segundo en el aire (cuadros de `SPIN_FRAMES`): gira hacia donde va. */
+    spinFps: 14,
+    /** En el aviso, la fruta en la mano: unidades hacia adelante del centro y sobre los pies (la mano del dibujo). */
+    hand: { forward: 4.5, rise: 8.5 },
+    /** En la mano, el cabito hacia adelante (cuadro de `SPIN_FRAMES` mirando a la derecha; a la izquierda, el espejo). */
+    heldFrame: 2,
+    /** En el aviso, la fruta sube un poco (se la prepara para tirar): unidades de más al final del aviso. */
+    windupLift: 2,
+    /** Profundidad de la fruta (la del círculo de antes) y de lo que salpica. */
+    depth: 7,
+    /** Pulpa que salpica al reventar. */
+    pulp: { count: 9, speedMin: 40, speedMax: 115, gravity: 520, lifeMin: 260, lifeMax: 520, max: 30 },
+    /** El reventón: dos cuadros, ms de cada uno. */
+    popFrameMs: 55,
+    /** La semilla: rebota y se apaga. */
+    seed: {
+      launchVy: -95,
+      launchVx: 38,
+      gravity: 640,
+      restitution: 0.42,
+      friction: 0.6,
+      restSpeed: 30,
+      lifeMs: 1100,
+      fadeMs: 360,
+      fadeSteps: 3,
+      /** Hasta cuántos px por debajo busca el piso al reventar; sin piso, cae y se apaga. */
+      maxDropPx: 96,
+    },
+  },
+  /**
    * La onda del pisotón de Kurupi (S114): la tierra que revienta el suelo. Solo el dibujo: la hitbox (`waveWidth` ×
    * `waveHeight`, con la base en el suelo), la velocidad, la vida y el daño siguen en `kurupi` y en bosses.ts. El arte
    * (cresta, grietas, terrones, raíces, hojas y polvo) se pinta una vez en `kurupiWaveArt.ts`, con los colores medidos
@@ -2805,8 +2841,6 @@ export const GAMEPLAY = {
       mboiHangLipPx: 10,
       /** Ojos del jagua hũ con sprite: unidades hacia adelante y sobre los pies, y tamaño. */
       jaguaHuEyes: { forward: 9, rise: 13, width: 3, height: 2 },
-      /** Fruta que lanza el ka'i (rojo de la fruta del sprite). */
-      fruitColor: 0xb5442c,
     },
   },
   /**
