@@ -1536,15 +1536,25 @@ async function main() {
     await l3Run.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 10000 });
     await sleep(500);
     await freshLevel(l3Run, 'l3', 'monai');
-    // Fondo de tierra (S68, S69, S71): dentro de la meseta va la casilla 15 del suelo, sin tinte, no el cielo.
+    // Fondo de tierra (S68, S69, S71): dentro de la meseta va la casilla 15 del suelo (o, desde S111, su variante de la
+    // hoja de detalle), no el cielo, con el mismo tinte que Ground en esa celda (el oscurecido empalma sin escalón).
     await l3Run.evaluate(() => window.__KERANA_DEBUG__.player.body.reset(200 * 16, 8 * 16));
     await sleep(1200);
     const l3Earth = await l3Run.evaluate(() => {
-      const e = window.__KERANA_DEBUG__.scene.earth;
+      const s = window.__KERANA_DEBUG__.scene;
+      const e = s.earth;
       const meseta = e ? e.getTilesWithin(184, 9, 39, 25, { isNotEmpty: true }) : [];
-      return { tiles: e ? e.getTilesWithin(0, 0, e.layer.width, e.layer.height, { isNotEmpty: true }).length : 0, meseta: meseta.length, tint: meseta[0]?.tint, index: meseta[0]?.index, fill: e ? e.tileset[0].firstgid + 15 : -1, depth: e?.depth };
+      const first = e ? e.tileset[0].firstgid : 0;
+      const fillOk = meseta.every((t) => t.index === first + 15 || t.index >= first + 28);
+      const variants = meseta.filter((t) => t.index >= first + 28).length;
+      const sameTint = meseta.every((t) => t.tint === s.layers.Ground.getTileAt(t.x, t.y)?.tint);
+      const tints = new Set(meseta.map((t) => t.tint)).size;
+      return { tiles: e ? e.getTilesWithin(0, 0, e.layer.width, e.layer.height, { isNotEmpty: true }).length : 0, meseta: meseta.length, fillOk, variants, sameTint, tints, decals: s.terrainDetailLayer?.getTilesWithin(0, 0, 518, 40, { isNotEmpty: true }).length ?? 0, depth: e?.depth };
     });
-    check(l3Earth.tiles > 0 && l3Earth.meseta > 0 && l3Earth.tint === 0xffffff && l3Earth.index === l3Earth.fill && l3Earth.depth === -19, `nivel 3: fondo de tierra detrás de la repisa, la baldosa del relleno sin tinte (${JSON.stringify(l3Earth)})`);
+    check(
+      l3Earth.tiles > 0 && l3Earth.meseta > 0 && l3Earth.fillOk && l3Earth.variants > 0 && l3Earth.sameTint && l3Earth.tints > 2 && l3Earth.decals > 100 && l3Earth.depth === -19,
+      `nivel 3: fondo de tierra detrás de la repisa, el relleno con sus variantes y el tinte de Ground, y las calcomanías (S111) (${JSON.stringify(l3Earth)})`,
+    );
     await freshLevel(l3Run, 'l3', 'monai');
     const l3Info = await l3Run.evaluate(() => {
       const s = window.__KERANA_DEBUG__.scene;

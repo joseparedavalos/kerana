@@ -166,6 +166,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     terrainShell: 3,
     // S68: dentro de la tierra maciza se ve tierra colorada, no el cielo. l2, l4, l5 y l6: la misma línea.
     earthBackdrop: true,
+    // S111: la tierra colorada sin repetirse (variantes por celda sobre el tileset real de S56), con laterita, itakurú,
+    // cuarzo, raíces y galerías de hormigas según la profundidad.
+    terrainDetail: { sheet: 'campo', seed: 111 },
     musicKey: '',
     boss: 'monai',
     gift: 'double_jump',

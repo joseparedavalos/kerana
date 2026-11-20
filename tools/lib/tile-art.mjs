@@ -106,8 +106,61 @@ export class Grid {
   }
 }
 
+/**
+ * S111: grilla de píxeles RGBA directos, para partir de arte real (el tileset de campo, montado en S56 con los materiales
+ * del generador: cientos de colores, sin rampas). Tiene lo que piden `buildDetailSheet` y `blit` (`w`, `h`, `sub`).
+ */
+export class RgbaGrid {
+  constructor(w, h, data = new Uint8Array(w * h * 4)) {
+    this.w = w;
+    this.h = h;
+    this.data = data;
+    this.rgba = true;
+  }
+  /** La casilla `i` (de a 16 × 16, en filas de `columns`) de una imagen { width, height, data }. */
+  static fromImage(img, i, columns = img.width / T) {
+    const g = new RgbaGrid(T, T);
+    const x0 = (i % columns) * T;
+    const y0 = Math.floor(i / columns) * T;
+    for (let y = 0; y < T; y++) g.data.set(img.data.subarray(((y0 + y) * img.width + x0) * 4, ((y0 + y) * img.width + x0 + T) * 4), y * T * 4);
+    return g;
+  }
+  clone() {
+    return new RgbaGrid(this.w, this.h, Uint8Array.from(this.data));
+  }
+  in(x, y) {
+    return x >= 0 && y >= 0 && x < this.w && y < this.h;
+  }
+  /** [r, g, b, a] o null fuera de la grilla. */
+  get(x, y) {
+    if (!this.in(x, y)) return null;
+    const i = (y * this.w + x) * 4;
+    return [this.data[i], this.data[i + 1], this.data[i + 2], this.data[i + 3]];
+  }
+  set(x, y, [r, g, b, a = 255]) {
+    if (!this.in(x, y)) return;
+    const i = (y * this.w + x) * 4;
+    this.data[i] = Math.max(0, Math.min(255, Math.round(r)));
+    this.data[i + 1] = Math.max(0, Math.min(255, Math.round(g)));
+    this.data[i + 2] = Math.max(0, Math.min(255, Math.round(b)));
+    this.data[i + 3] = Math.max(0, Math.min(255, Math.round(a)));
+  }
+  alphaAt(x, y) {
+    return this.in(x, y) ? this.data[(y * this.w + x) * 4 + 3] : 0;
+  }
+  sub(ox, oy, w, h) {
+    const g = new RgbaGrid(w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (this.in(ox + x, oy + y)) g.set(x, y, this.get(ox + x, oy + y));
+    return g;
+  }
+}
+
 /** Pasa una grilla a RGBA dentro de `img` (formato { width, height, data }) en (ox, oy). */
 export function blit(img, grid, ox, oy) {
+  if (grid.rgba) {
+    for (let y = 0; y < grid.h; y++) img.data.set(grid.data.subarray(y * grid.w * 4, (y + 1) * grid.w * 4), ((oy + y) * img.width + ox) * 4);
+    return;
+  }
   const rgb = grid.palette.rgb;
   for (let y = 0; y < grid.h; y++) {
     for (let x = 0; x < grid.w; x++) {
