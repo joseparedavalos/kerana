@@ -35,7 +35,6 @@
 size 336x100
 biome selva
 edge
-point Prop x=11 y=91 kind=trunk
 point Prop x=18 y=88 kind=liana
 enemy k=kuati o=kai s=mboi_colgante y=yaguarete_ava
 sign 1=hint.l5.hongos 2=hint.l5.ramas 3=hint.l5.dosel 4=hint.l5.antesala 5=hint.l5.dash 6=hint.l5.compas 7=hint.l5.dormido
