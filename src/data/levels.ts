@@ -190,6 +190,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // S75: el cuerpo de casa Z, la plaza y la base del campanario se cortó (losas flotantes); el relleno queda para
     // lo poco que sigue macizo (museo, casa del patio, galpón, muelles). tests/holes.test.ts lo exige.
     earthBackdrop: true,
+    // S112: Capiatá por código (tools/lib/pueblo-art.mjs): casas de adobe encalado con tejas y, en la hoja de detalle, la
+    // calle por zonas (tierra, empedrado, ladrillo, zócalo y cimiento), variantes y calcomanías según la profundidad.
+    terrainDetail: { sheet: 'pueblo', seed: 112 },
     musicKey: '',
     boss: 'jasy_jatere',
     gift: 'dash',
