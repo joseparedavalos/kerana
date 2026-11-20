@@ -2,6 +2,7 @@
 // La hoja (`public/assets/tiles/detalle/<hoja>.png`) y su JSON los escribe tools/make-terrain-tiles.mjs. Todo sale de la
 // semilla del nivel y de la posición de la celda: el mismo mapa da siempre el mismo dibujo, en cada partida.
 // S110: la configuración por hoja (`sheets`), el agua (superficie, cuerpo y fondo) y la luz de las grietas del barro seco.
+// S112: las zonas del pueblo (l4): qué celda es calle (tierra, empedrado, ladrillo, cimiento) y cuál es casa (cal, zócalo).
 import { terrainDepths } from './terrainLogic';
 
 /** Una calcomanía de w × h casillas; `ids` en filas de w (índices dentro de la hoja); `flip`: se puede espejar. */
@@ -29,6 +30,11 @@ export interface DetailLayout {
    * `"22"` → casilla de la hoja; `"d<id>"` (variante `id` de la hoja) → casilla de la hoja.
    */
   glow?: Record<string, number>;
+  /**
+   * S112: zonas (las de `townZones`): zona → casilla del autotile → variantes. Una celda de una zona con casilla en su
+   * lista lleva siempre una de esas (la calle no tiene cal en ningún lado); si no, lo de siempre.
+   */
+  zones?: Record<string, Record<string, number[]>>;
 }
 
 export interface DetailBand {
@@ -55,7 +61,44 @@ export interface DetailConfig {
   depthShade: readonly number[];
   /** S110: probabilidad de que la superficie (20) o el cuerpo (21) del agua lleve otra casilla de la hoja. */
   waterChance: number;
+  /** S112: el pueblo: cómo se reparte el mapa en calle y casas (`townZones`). */
+  town?: TownConfig;
+  /** S112: las calcomanías de cada zona (en vez de las franjas de siempre); una zona que no está, sin calcomanías. */
+  zoneDecals?: Readonly<Record<string, ZoneDecals>>;
 }
+
+/** S112: las calcomanías de una zona: las franjas por profundidad y, en el piso (aire arriba), qué va y cuánto. */
+export interface ZoneDecals {
+  bands: readonly DetailBand[];
+  floorChance: number;
+  floor: Readonly<Record<string, number>>;
+}
+
+/** S112: el reparto del pueblo en calle y casas. */
+export interface TownConfig {
+  /** Un piso elevado de la calle (de ladrillo) está a esta cantidad de filas del borde de abajo o menos. */
+  streetRows: number;
+  /** Un piso con terreno arriba a esta distancia o menos es de adentro (el zaguán, la galería, el henil). */
+  interiorReach: number;
+  /** El zócalo de cada casa que se apoya en la calle: zona → peso (`wall`, sin zócalo). */
+  socle: Readonly<Record<string, number>>;
+}
+
+/** S112: los nombres de las zonas del pueblo (las claves de `layout.zones` y de `zoneDecals`). */
+export const TOWN_ZONES = {
+  /** La tierra colorada bajo la calle. */
+  earth: 'street.earth',
+  /** El piso de la calle al aire libre: empedrado. */
+  cobble: 'street.cobble',
+  /** El piso de la calle bajo techo (el zaguán, el galpón): ladrillo. */
+  brick: 'street.brick',
+  /** La calle justo bajo una casa: el cimiento de piedra. */
+  plinth: 'street.plinth',
+  /** Las casas: la cal y las tejas (el tileset). */
+  wall: 'wall',
+  /** Un piso de adentro de una casa (el henil) o elevado (el patio, la terraza, la galería): ladrillo sobre la cal. */
+  wallBrick: 'wall.brick',
+} as const;
 
 /** S110: la configuración de una hoja: la común con lo que cambie esa hoja en `sheets`. */
 export function detailConfigFor(
@@ -164,7 +207,8 @@ export function caveDistance(map: DetailMap, reach: number): Uint8Array {
  * relleno (15) lleva una de `layout.fill` con probabilidad `fillChance`, y cada casilla con variantes en
  * `layout.edges` (bordes del autotile, el medio de la laja), una de ellas con `edgeChance`. `ground(x, y)`: la casilla
  * del tileset (0 a 27) o -1. S110: donde `underWater(x, y)` (agua justo arriba) y la hoja tiene `submerged` para esa
- * casilla, siempre una de esas (el fondo del agua no lleva pasto).
+ * casilla, siempre una de esas (el fondo del agua no lleva pasto). S112: donde `zoneAt(x, y)` da una zona con casillas
+ * propias para esa casilla (`layout.zones`), siempre una de esas.
  */
 export function planTerrainVariants(
   width: number,
@@ -174,6 +218,7 @@ export function planTerrainVariants(
   cfg: Pick<DetailConfig, 'fillChance' | 'edgeChance'>,
   seed: number,
   underWater?: (x: number, y: number) => boolean,
+  zoneAt?: (x: number, y: number) => string | null,
 ): Int16Array {
   const variant = new Int16Array(width * height).fill(-1);
   for (let y = 0; y < height; y++) {
@@ -183,6 +228,13 @@ export function planTerrainVariants(
       const wet = underWater?.(x, y) ? layout.submerged?.[String(t)] : undefined;
       if (wet?.length) {
         variant[y * width + x] = pickOf(wet, cellHash(x, y, seed, 2));
+        continue;
+      }
+      // S112: la celda de una zona con casillas propias lleva siempre una de ellas.
+      const zone = zoneAt?.(x, y);
+      const own = zone ? layout.zones?.[zone]?.[String(t)] : undefined;
+      if (own?.length) {
+        variant[y * width + x] = pickOf(own, cellHash(x, y, seed, 10));
         continue;
       }
       const list = t === AUTOTILE_LAST ? layout.fill : layout.edges[String(t)];
@@ -198,9 +250,16 @@ export function planTerrainVariants(
  * Calcomanías, una por celda como mucho y solo sobre roca que se ve: raíces bajo el pasto del piso (`roots`, dos
  * casillas hacia abajo, o `rootlet`), el pasto que sale por las esquinas de arriba hacia el aire vacío
  * (`overhangLeft` / `overhangRight`), vetas de cristal cerca del aire de las cuevas y, en el resto, lo que diga la
- * franja de profundidad (piedras, capas, grietas, liquen).
+ * franja de profundidad (piedras, capas, grietas, liquen). S112: con `zoneAt` y `cfg.zoneDecals`, cada zona con lo
+ * suyo (y nada en las que no están).
  */
-export function planTerrainDecals(map: DetailMap, layout: DetailLayout, cfg: DetailConfig, seed: number): DecalPlan {
+export function planTerrainDecals(
+  map: DetailMap,
+  layout: DetailLayout,
+  cfg: DetailConfig,
+  seed: number,
+  zoneAt?: (x: number, y: number) => string | null,
+): DecalPlan {
   const { width, height } = map;
   const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < width && y < height;
   const g = (x: number, y: number) => (inside(x, y) ? map.ground(x, y) : 15);
@@ -214,11 +273,15 @@ export function planTerrainDecals(map: DetailMap, layout: DetailLayout, cfg: Det
     return t >= 0 && t <= AUTOTILE_LAST;
   };
   const eligible = (x: number, y: number) => inside(x, y) && autotile(x, y) && map.opaque(x, y) && !used[y * width + x];
+  const zoned = zoneAt && cfg.zoneDecals ? zoneAt : null;
   const place = (x: number, y: number, kind: string, decal: DetailDecal, minDepth = 0): boolean => {
+    const zone = zoned?.(x, y);
     for (let i = 0; i < decal.ids.length; i++) {
       const px = x + (i % decal.w);
       const py = y + Math.floor(i / decal.w);
       if (!eligible(px, py) || depth[py * width + px] < minDepth) return false;
+      // S112: con zonas, todas las celdas de una calcomanía en la misma (no cruza de la casa a la calle).
+      if (zoned && zoned(px, py) !== zone) return false;
     }
     const flip = decal.flip === true && cellHash(x, y, seed, 6) < 0.5;
     for (let i = 0; i < decal.ids.length; i++) {
@@ -261,6 +324,20 @@ export function planTerrainDecals(map: DetailMap, layout: DetailLayout, cfg: Det
       }
       if (!eligible(x, y)) continue;
       const d = depth[i];
+      if (zoned) {
+        // S112: cada zona con sus calcomanías: en el piso (aire arriba) lo de `floor`; adentro, sus franjas.
+        const zone = zoned(x, y);
+        const zd = zone ? cfg.zoneDecals?.[zone] : undefined;
+        if (!zd) continue;
+        const top = !(t & UP);
+        const band = top ? null : zd.bands.find((b) => d >= b.minDepth && d <= b.maxDepth);
+        const chance = top ? zd.floorChance : (band?.chance ?? 0);
+        if (roll >= chance) continue;
+        const kind = weighted(top ? zd.floor : band!.kinds, cellHash(x, y, seed, 4));
+        const decal = kind ? decalOf(kind, x, y) : null;
+        if (kind && decal) place(x, y, kind, decal, !top && decal.ids.length > 1 ? cfg.multiMinDepth : 0);
+        continue;
+      }
       if (!(t & UP)) {
         // Piso: raíces que bajan del pasto (las largas, solo en el piso llano).
         const roots = t === 14 ? decalOf('roots', x, y) : null;
@@ -332,4 +409,91 @@ export function glowTileFor(layout: DetailLayout, tile: number, variant = -1): n
   if (!layout.glow) return -1;
   if (variant >= 0) return layout.glow[`d${variant}`] ?? -1;
   return tile === DRY_MUD ? (layout.glow[String(DRY_MUD)] ?? -1) : -1;
+}
+
+/**
+ * S112: el pueblo por celda (`y * width + x`): la zona de cada celda del autotile (null en el aire y en lo que se
+ * rompe). Medido en el mapa: la calle es la tierra que llega al borde de abajo, desde la línea del piso (la fila más
+ * común donde empieza el tramo sólido que llega abajo; empate, la más honda); su piso al aire libre es empedrado y bajo
+ * techo (terreno arriba a `interiorReach` filas o menos: el zaguán), ladrillo; bajo una casa, el cimiento. Lo demás son
+ * casas: arriba, tejas; ladrillo si es un piso de adentro (el henil) o un piso elevado de la calle (con aire arriba, a
+ * `streetRows` filas del fondo o menos, de dos o más de ancho, sobre un tramo que llega abajo: el patio, la terraza, la
+ * galería; los pretiles de una casilla llevan tejas); donde se apoyan en la calle, el zócalo de esa casa (uno por casa:
+ * las celdas conectadas).
+ */
+export function townZones(
+  width: number,
+  height: number,
+  ground: (x: number, y: number) => number,
+  cfg: TownConfig,
+  seed: number,
+): (string | null)[] {
+  const auto = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return false;
+    const t = ground(x, y);
+    return t >= 0 && t <= AUTOTILE_LAST;
+  };
+  // Dónde empieza en cada columna el tramo que llega abajo, y la línea del piso.
+  const runTop = new Int32Array(width).fill(height);
+  const counts = new Map<number, number>();
+  for (let x = 0; x < width; x++) {
+    let y = height;
+    while (y > 0 && auto(x, y - 1)) y--;
+    runTop[x] = y;
+    if (y < height) counts.set(y, (counts.get(y) ?? 0) + 1);
+  }
+  let line = height;
+  let best = 0;
+  for (const [y, n] of counts) {
+    if (n > best || (n === best && y > line)) {
+      best = n;
+      line = y;
+    }
+  }
+  const isTop = (x: number, y: number) => auto(x, y) && !(ground(x, y) & UP);
+  const inStreet = (x: number, y: number) => auto(x, y) && runTop[x] < height && y >= runTop[x] && y >= line;
+  const raised = (x: number, y: number) => isTop(x, y) && runTop[x] < height && y >= runTop[x] && y >= height - 1 - cfg.streetRows;
+  const interior = (x: number, y: number) => {
+    for (let k = 1; k <= cfg.interiorReach; k++) if (auto(x, y - k)) return true;
+    return false;
+  };
+  // Las casas: celdas conectadas que no son calle; el zócalo es uno por casa.
+  const house = new Int32Array(width * height).fill(-1);
+  const socleOf: string[] = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!auto(x, y) || inStreet(x, y) || house[y * width + x] >= 0) continue;
+      const id = socleOf.length;
+      socleOf.push(weighted({ ...cfg.socle }, cellHash(x, y, seed, 11)) ?? TOWN_ZONES.wall);
+      const stack = [y * width + x];
+      house[y * width + x] = id;
+      while (stack.length) {
+        const i = stack.pop()!;
+        const cx = i % width;
+        const cy = (i - cx) / width;
+        for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]]) {
+          if (!auto(nx, ny) || inStreet(nx, ny) || house[ny * width + nx] >= 0) continue;
+          house[ny * width + nx] = id;
+          stack.push(ny * width + nx);
+        }
+      }
+    }
+  }
+  const out: (string | null)[] = new Array(width * height).fill(null);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!auto(x, y)) continue;
+      const top = isTop(x, y);
+      let zone: string;
+      if (inStreet(x, y)) {
+        if (top) zone = interior(x, y) ? TOWN_ZONES.brick : TOWN_ZONES.cobble;
+        else zone = inStreet(x, y - 1) ? TOWN_ZONES.earth : TOWN_ZONES.plinth;
+      } else if (top) {
+        const floor = interior(x, y) || (raised(x, y) && (raised(x - 1, y) || raised(x + 1, y)));
+        zone = floor ? TOWN_ZONES.wallBrick : TOWN_ZONES.wall;
+      } else zone = inStreet(x, y + 1) ? socleOf[house[y * width + x]] : TOWN_ZONES.wall;
+      out[y * width + x] = zone;
+    }
+  }
+  return out;
 }

@@ -71,7 +71,7 @@ import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
 import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
-import { depthTint, detailConfigFor, glowTileFor, planTerrainDecals, planTerrainVariants, planWaterTiles, type DetailConfig, type DetailLayout } from '../systems/terrainDetailLogic';
+import { depthTint, detailConfigFor, glowTileFor, planTerrainDecals, planTerrainVariants, planWaterTiles, townZones, type DetailConfig, type DetailLayout } from '../systems/terrainDetailLogic';
 import { WaterGlints } from '../systems/WaterGlints';
 import { surfaceRuns } from '../systems/waterGlintLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
@@ -1765,7 +1765,7 @@ export class LevelScene extends Phaser.Scene {
     this.terrainDetailLayer = null;
     this.terrainCrystals = [];
     if (this.def.terrainShell) this.drawTerrainAsLedges(tileset, this.def.terrainShell, detail && variants ? { detail, variants } : null);
-    if (detail && variants) this.addTerrainDetail(detail, variants.base);
+    if (detail && variants) this.addTerrainDetail(detail, variants.base, variants.zones);
     this.waterGlints = null;
     if (this.def.waterGlints) this.addWaterGlints(tileset);
     // Sin borde inferior: se puede caer al pozo.
@@ -1841,7 +1841,7 @@ export class LevelScene extends Phaser.Scene {
   private applyTerrainVariants(
     tileset: Phaser.Tilemaps.Tileset,
     detail: TerrainDetailSheet,
-  ): { base: Int16Array; variant: Int16Array } | null {
+  ): { base: Int16Array; variant: Int16Array; zones: (string | null)[] | null } | null {
     const ground = this.layers.Ground;
     if (!ground) return null;
     const { width, height } = this.map;
@@ -1851,7 +1851,11 @@ export class LevelScene extends Phaser.Scene {
     });
     const water = this.layers.Water;
     const underWater = (x: number, y: number) => y > 0 && (water?.getTileAt(x, y - 1)?.index ?? -1) !== -1;
-    const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, detail.cfg, detail.seed, underWater);
+    // S112: el pueblo (l4): qué celda es calle y cuál es casa, con las casillas de cada zona de la hoja.
+    const town = detail.cfg.town;
+    const zones = town && detail.layout.zones ? townZones(width, height, (x, y) => base[y * width + x], town, detail.seed) : null;
+    const zoneAt = zones ? (x: number, y: number) => zones[y * width + x] : undefined;
+    const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, detail.cfg, detail.seed, underWater, zoneAt);
     ground.forEachTile((tile) => {
       const v = variant[tile.y * width + tile.x];
       if (v >= 0) tile.index = detail.first + v;
@@ -1881,7 +1885,7 @@ export class LevelScene extends Phaser.Scene {
         if (v >= 0) tile.index = detail.first + v;
       });
     }
-    return { base, variant };
+    return { base, variant, zones };
   }
 
   /**
@@ -1892,6 +1896,7 @@ export class LevelScene extends Phaser.Scene {
   private addTerrainDetail(
     detail: TerrainDetailSheet,
     base: Int16Array,
+    zones: (string | null)[] | null = null,
   ): void {
     const ground = this.layers.Ground;
     if (!ground) return;
@@ -1918,6 +1923,7 @@ export class LevelScene extends Phaser.Scene {
       detail.layout,
       cfg,
       detail.seed,
+      zones ? (x, y) => zones[y * width + x] : undefined,
     );
     // Volumen: Ground y el fondo de tierra, según la profundidad.
     const tintAt = (x: number, y: number) => depthTint(plan.depth[y * width + x], cfg.depthShade);
