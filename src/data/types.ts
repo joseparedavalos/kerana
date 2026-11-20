@@ -84,10 +84,16 @@ export interface LevelDef {
   earthBackdrop?: boolean;
   /**
    * Detalle del terreno (S109): la hoja `tiles/detalle/<sheet>.png` (con su .json) pone variantes del relleno y de los
-   * bordes, elegidas por celda con `seed`, y una capa de calcomanías sobre Ground (GAMEPLAY.backdrop.terrainDetail).
+   * bordes, elegidas por celda con `seed`, y una capa de calcomanías sobre Ground (GAMEPLAY.backdrop.terrainDetail; lo
+   * propio de cada hoja, en su `sheets`). S110: también el agua (superficie, cuerpo y fondo) y la luz del barro seco.
    * Solo dibujo: las colisiones y el autotile no cambian.
    */
   terrainDetail?: { sheet: string; seed: number };
+  /**
+   * S110: un brillo que corre por la superficie del agua (trazos de luz que aparecen, corren y se apagan; GAMEPLAY.backdrop
+   * .waterGlints). Solo dibujo; con «Destellos» apagado no se ve.
+   */
+  waterGlints?: boolean;
   musicKey: string;
   /** El nivel de prueba no tiene jefe. */
   boss: BossId | null;

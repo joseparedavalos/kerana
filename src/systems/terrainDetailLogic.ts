@@ -1,6 +1,7 @@
 // Lógica pura del detalle del terreno (S109): qué variante del relleno lleva cada celda y qué calcomanía va encima.
-// La hoja (`public/assets/tiles/detalle/<hoja>.png`) y su JSON los escribe tools/make-cerro-tiles.mjs. Todo sale de la
+// La hoja (`public/assets/tiles/detalle/<hoja>.png`) y su JSON los escribe tools/make-terrain-tiles.mjs. Todo sale de la
 // semilla del nivel y de la posición de la celda: el mismo mapa da siempre el mismo dibujo, en cada partida.
+// S110: la configuración por hoja (`sheets`), el agua (superficie, cuerpo y fondo) y la luz de las grietas del barro seco.
 import { terrainDepths } from './terrainLogic';
 
 /** Una calcomanía de w × h casillas; `ids` en filas de w (índices dentro de la hoja); `flip`: se puede espejar. */
@@ -19,6 +20,15 @@ export interface DetailLayout {
   edges: Record<string, number[]>;
   decals: Record<string, DetailDecal[]>;
   count: number;
+  /** S110: el fondo bajo el agua: casilla del autotile (el piso, 14) → variantes con limo y algas en vez de pasto. */
+  submerged?: Record<string, number[]>;
+  /** S110: el agua honda, que va debajo del cuerpo (21) cuando arriba también hay cuerpo. */
+  water?: { deep: number[] };
+  /**
+   * S110: la luz de las grietas del barro seco (casilla 22 y sus variantes) para la roca que pide el tajo cargado:
+   * `"22"` → casilla de la hoja; `"d<id>"` (variante `id` de la hoja) → casilla de la hoja.
+   */
+  glow?: Record<string, number>;
 }
 
 export interface DetailBand {
@@ -42,6 +52,17 @@ export interface DetailConfig {
   crystal: { reach: number; minDepth: number; maxDepth: number; chance: number };
   /** Las de más de una casilla solo donde todas sus celdas están al menos a esta profundidad (no tocan el borde). */
   multiMinDepth: number;
+  depthShade: readonly number[];
+  /** S110: probabilidad de que la superficie (20) o el cuerpo (21) del agua lleve otra casilla de la hoja. */
+  waterChance: number;
+}
+
+/** S110: la configuración de una hoja: la común con lo que cambie esa hoja en `sheets`. */
+export function detailConfigFor(
+  base: DetailConfig & { readonly sheets?: Readonly<Record<string, Partial<DetailConfig>>> },
+  sheet: string,
+): DetailConfig {
+  return { ...base, ...(base.sheets?.[sheet] ?? {}) };
 }
 
 /** Lo que el plan necesita saber del mapa. Fuera del mapa cuenta como sólido. */
@@ -77,6 +98,9 @@ const UP = 1;
 const RIGHT = 2;
 const LEFT = 8;
 const AUTOTILE_LAST = 15;
+const WATER_SURFACE = 20;
+const WATER_BODY = 21;
+const DRY_MUD = 22;
 
 /** Número de 0 a 1 fijo para (x, y, semilla, sal): el azar de cada celda, igual en cada partida. */
 export function cellHash(x: number, y: number, seed: number, salt = 0): number {
@@ -139,7 +163,8 @@ export function caveDistance(map: DetailMap, reach: number): Uint8Array {
  * Variantes: por celda (`y * width + x`), la casilla de la hoja que reemplaza a la de la capa, o -1. Cada celda de
  * relleno (15) lleva una de `layout.fill` con probabilidad `fillChance`, y cada casilla con variantes en
  * `layout.edges` (bordes del autotile, el medio de la laja), una de ellas con `edgeChance`. `ground(x, y)`: la casilla
- * del tileset (0 a 27) o -1.
+ * del tileset (0 a 27) o -1. S110: donde `underWater(x, y)` (agua justo arriba) y la hoja tiene `submerged` para esa
+ * casilla, siempre una de esas (el fondo del agua no lleva pasto).
  */
 export function planTerrainVariants(
   width: number,
@@ -148,12 +173,18 @@ export function planTerrainVariants(
   layout: DetailLayout,
   cfg: Pick<DetailConfig, 'fillChance' | 'edgeChance'>,
   seed: number,
+  underWater?: (x: number, y: number) => boolean,
 ): Int16Array {
   const variant = new Int16Array(width * height).fill(-1);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const t = ground(x, y);
       if (t < 0) continue;
+      const wet = underWater?.(x, y) ? layout.submerged?.[String(t)] : undefined;
+      if (wet?.length) {
+        variant[y * width + x] = pickOf(wet, cellHash(x, y, seed, 2));
+        continue;
+      }
       const list = t === AUTOTILE_LAST ? layout.fill : layout.edges[String(t)];
       const chance = t === AUTOTILE_LAST ? cfg.fillChance : cfg.edgeChance;
       if (!list?.length || cellHash(x, y, seed, 1) >= chance) continue;
@@ -259,4 +290,46 @@ export function depthTint(d: number, shade: readonly number[]): number {
   const f = shade[Math.min(shade.length - 1, Math.max(0, d))] ?? 1;
   const c = Math.max(0, Math.min(255, Math.round(255 * f)));
   return (c << 16) | (c << 8) | c;
+}
+
+/**
+ * S110: el agua por celda (`y * width + x`): la casilla de la hoja que reemplaza a la de la capa Water, o -1. Donde el
+ * cuerpo (21) tiene cuerpo arriba, el fondo (`layout.water.deep`): así el color baja en tres casillas (superficie, cuerpo,
+ * fondo) y después sigue igual. La superficie y el cuerpo llevan otra casilla (de `layout.edges`) con `chance`.
+ * `water(x, y)`: la casilla del tileset (0 a 27) o -1.
+ */
+export function planWaterTiles(
+  width: number,
+  height: number,
+  water: (x: number, y: number) => number,
+  layout: DetailLayout,
+  chance: number,
+  seed: number,
+): Int16Array {
+  const out = new Int16Array(width * height).fill(-1);
+  const deep = layout.water?.deep ?? [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const t = water(x, y);
+      if (t !== WATER_SURFACE && t !== WATER_BODY) continue;
+      if (t === WATER_BODY && y > 0 && water(x, y - 1) === WATER_BODY && deep.length) {
+        out[y * width + x] = pickOf(deep, cellHash(x, y, seed, 8));
+        continue;
+      }
+      const list = layout.edges[String(t)];
+      if (!list?.length || cellHash(x, y, seed, 7) >= chance) continue;
+      out[y * width + x] = pickOf(list, cellHash(x, y, seed, 9));
+    }
+  }
+  return out;
+}
+
+/**
+ * S110: la casilla de la hoja con la luz de las grietas de una celda de barro seco, o -1. `tile`: la casilla del tileset
+ * (0 a 27) o, si la celda lleva una variante, `-1` y `variant`, su casilla en la hoja.
+ */
+export function glowTileFor(layout: DetailLayout, tile: number, variant = -1): number {
+  if (!layout.glow) return -1;
+  if (variant >= 0) return layout.glow[`d${variant}`] ?? -1;
+  return tile === DRY_MUD ? (layout.glow[String(DRY_MUD)] ?? -1) : -1;
 }

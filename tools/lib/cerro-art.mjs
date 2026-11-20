@@ -1,4 +1,5 @@
-// Tileset de cerro (l1) dibujado por código (S109). Lo usa tools/make-cerro-tiles.mjs; lo prueba tests/cerroTiles.test.ts.
+// Tileset de cerro (l1) dibujado por código (S109). Lo escribe tools/make-terrain-tiles.mjs (npm run cerro-tiles); lo
+// prueba tests/cerroTiles.test.ts. Lo común (azar, grilla, paleta, armado de las hojas) está en tile-art.mjs (S110).
 // Todo sale de una semilla: correr el script dos veces da los mismos bytes.
 //
 // La idea: una roca base de 16 × 16 que se repite sin costura en las dos direcciones (capas inclinadas 1:2 cada 8 filas,
@@ -6,6 +7,26 @@
 // que dan al aire (pasto arriba, grietas y gastado a los costados, sombra y muescas abajo). Como cada tratamiento depende
 // solo de la posición dentro de la casilla y es periódico a lo largo de su lado, dos casillas vecinas empalman siempre.
 // Las variantes del relleno cambian solo el centro (de 2 a 13): el anillo de 2 px es el de la base.
+
+import {
+  buildDetailSheet,
+  buildTilesetImage,
+  DETAIL_COLUMNS,
+  DOWN,
+  Grid,
+  irange,
+  LEFT,
+  makePalette,
+  mod,
+  mulberry32,
+  RIGHT,
+  restoreSolidBands,
+  RING,
+  T,
+  TILESET_COLUMNS,
+  TILESET_ROWS,
+  UP,
+} from './tile-art.mjs';
 
 // ─── Paleta (medida en public/assets/backgrounds/l1_far.jpg y l1_cave.jpg; ver docs/ASSETS.md §6) ────────────────
 // Roca: la sombra más honda sale de la roca de la cueva (#1e2530, #151b27) corrida al violeta; los medios y las luces,
@@ -25,118 +46,17 @@ export const RAMPS = {
   water: ['#24344f', '#2f4a6c', '#41658d', '#5f86ad', '#9bbad6'],
   shadow: ['#10111a'],
 };
-const RAMP_IDS = Object.keys(RAMPS);
-const RID = Object.fromEntries(RAMP_IDS.map((k, i) => [k, i]));
+export const PALETTE = makePalette(RAMPS);
+/** Una grilla vacía con la paleta del cerro. */
+const grid = (w, h) => new Grid(w, h, PALETTE);
 
-export const T = 16;
+export { T };
 const SEAM_PERIOD = 8; // filas entre dos capas (pendiente 1:2: baja 1 cada 2)
 const SEAM_OFFSET = 3;
 /** Tramos de la capa a lo largo de su línea cerrada de 32 px (on, off, on, off…): suman 32. */
 const SEAM_RUNS = [6, 5, 4, 8, 5, 4];
 
-// ─── Azar con semilla ─────────────────────────────────────────────────────────────────────────────────────────────
-export function mulberry32(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const pick = (rng, list) => list[Math.floor(rng() * list.length)];
-const irange = (rng, a, b) => a + Math.floor(rng() * (b - a + 1));
-
-// ─── Grilla de materiales: cada píxel es (rampa, tono) o transparente; `alpha` para sombras ────────────────────────
-export class Grid {
-  constructor(w, h) {
-    this.w = w;
-    this.h = h;
-    this.code = new Int16Array(w * h).fill(-1);
-    this.alpha = new Uint8Array(w * h).fill(255);
-  }
-  clone() {
-    const g = new Grid(this.w, this.h);
-    g.code.set(this.code);
-    g.alpha.set(this.alpha);
-    return g;
-  }
-  in(x, y) {
-    return x >= 0 && y >= 0 && x < this.w && y < this.h;
-  }
-  get(x, y) {
-    return this.in(x, y) ? this.code[y * this.w + x] : -1;
-  }
-  ramp(x, y) {
-    const c = this.get(x, y);
-    return c < 0 ? null : RAMP_IDS[c >> 4];
-  }
-  step(x, y) {
-    const c = this.get(x, y);
-    return c < 0 ? -1 : c & 15;
-  }
-  set(x, y, ramp, step, alpha = 255) {
-    if (!this.in(x, y)) return;
-    const r = RAMPS[ramp];
-    const s = Math.max(0, Math.min(r.length - 1, step));
-    this.code[y * this.w + x] = (RID[ramp] << 4) | s;
-    this.alpha[y * this.w + x] = alpha;
-  }
-  clear(x, y) {
-    if (!this.in(x, y)) return;
-    this.code[y * this.w + x] = -1;
-    this.alpha[y * this.w + x] = 255;
-  }
-  opaque(x, y) {
-    return this.get(x, y) >= 0;
-  }
-  /** Copia `src` encima en (ox, oy): solo los píxeles no transparentes. */
-  stamp(src, ox, oy) {
-    for (let y = 0; y < src.h; y++) {
-      for (let x = 0; x < src.w; x++) {
-        const c = src.code[y * src.w + x];
-        if (c < 0 || !this.in(ox + x, oy + y)) continue;
-        this.code[(oy + y) * this.w + ox + x] = c;
-        this.alpha[(oy + y) * this.w + ox + x] = src.alpha[y * src.w + x];
-      }
-    }
-  }
-  sub(ox, oy, w, h) {
-    const g = new Grid(w, h);
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        g.code[y * w + x] = this.get(ox + x, oy + y);
-        if (this.in(ox + x, oy + y)) g.alpha[y * w + x] = this.alpha[(oy + y) * this.w + ox + x];
-      }
-    }
-    return g;
-  }
-}
-
-const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-const RGB = RAMP_IDS.map((k) => RAMPS[k].map(hex));
-
-/** Pasa una grilla a RGBA dentro de `img` (formato { width, height, data }) en (ox, oy). */
-export function blit(img, grid, ox, oy) {
-  for (let y = 0; y < grid.h; y++) {
-    for (let x = 0; x < grid.w; x++) {
-      const c = grid.code[y * grid.w + x];
-      const i = ((oy + y) * img.width + ox + x) * 4;
-      if (c < 0) {
-        img.data[i + 3] = 0;
-        continue;
-      }
-      const [r, g, b] = RGB[c >> 4][c & 15];
-      img.data[i] = r;
-      img.data[i + 1] = g;
-      img.data[i + 2] = b;
-      img.data[i + 3] = grid.alpha[y * grid.w + x];
-    }
-  }
-}
-
 // ─── La roca base ─────────────────────────────────────────────────────────────────────────────────────────────────
-const mod = (a, n) => ((a % n) + n) % n;
 /** Fase de la capa en (x, y): 0 sobre la línea de una capa; 1 a 7 entre dos. `copy` dice cuál de las dos líneas. */
 export function seamPhase(x, y) {
   const p = mod(y - Math.floor(x / 2) - SEAM_OFFSET, 2 * SEAM_PERIOD);
@@ -159,7 +79,7 @@ function seamVisibleAt(along, runs = SEAM_RUNS) {
  */
 export function baseRock(seed = 109, seamAt = null) {
   const rng = mulberry32(seed);
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   const vis = (x, y, along) => (seamAt ? seamAt(x, y, along) : seamVisibleAt(along));
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
@@ -209,11 +129,6 @@ export const NOTCH = {
 };
 /** Grietas que entran desde el aire: [posición a lo largo del lado, largo]. */
 export const SIDE_CRACKS = { left: [[5, 4], [11, 2]], right: [[3, 3], [9, 4]], bottom: [[4, 3], [12, 2]] };
-
-const UP = 1;
-const RIGHT = 2;
-const DOWN = 4;
-const LEFT = 8;
 
 /**
  * Una casilla del autotile (máscara: vecinos sólidos arriba 1, derecha 2, abajo 4, izquierda 8). `variant` cambia el
@@ -364,7 +279,7 @@ export const PLATFORM = {
 
 export function platformCell(kind /* 'left' | 'center' | 'right' */, variant = {}) {
   const v = { ...PLATFORM, ...variant };
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   const SLAB = 7; // filas 0 a 6: la laja; 7: contorno (con astillas que cuelgan a la 8); 8 y 9: sombra
   const chips = v.chips;
   for (let x = 0; x < T; x++) {
@@ -418,7 +333,7 @@ export function platformCell(kind /* 'left' | 'center' | 'right' */, variant = {
 
 // ─── Espinas: piedra filosa, lajas partidas en punta con el filo claro ─────────────────────────────────────────────
 export function spikesCell() {
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   // [x de la base, ancho de la base, alto, inclinación de la punta]: de atrás para adelante.
   const shards = [[9, 6, 14, 1], [0, 6, 9, 1], [3, 6, 13, 0], [7, 5, 10, -1], [12, 4, 8, 0]];
   for (const [bx, bw, h, lean] of shards) {
@@ -453,7 +368,7 @@ export function spikesCell() {
 
 // ─── Agua del cerro: azul de la cueva, semitransparente ────────────────────────────────────────────────────────────
 export function waterCell(surface, alpha = 200) {
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   for (let y = 0; y < T; y++) {
     for (let x = 0; x < T; x++) {
       let step = y < 6 ? 2 : 1;
@@ -495,7 +410,7 @@ export function crackedCell() {
 
 // ─── Decoración del borde (casillas 23 a 25), apoyada abajo ───────────────────────────────────────────────────────
 export function grassTuftCell() {
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   // [x, alto, inclinación, seco]
   const blades = [[3, 4, -1, false], [4, 6, 0, false], [5, 8, 1, false], [6, 5, 0, true], [7, 9, 0, false], [8, 7, -1, false], [9, 6, 1, true], [10, 8, 1, false], [11, 5, 0, false], [12, 3, 1, false]];
   for (const [x, h, lean, dry] of blades) {
@@ -511,7 +426,7 @@ export function grassTuftCell() {
 }
 
 export function flowersCell() {
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   const stems = [[4, 5], [8, 7], [11, 4]];
   for (const [x, h] of stems) for (let k = 0; k < h; k++) g.set(x + (k > 3 ? 1 : 0), T - 1 - k, 'moss', k < 2 ? 2 : 3);
   const heads = [[5, T - 6, 'violet'], [9, T - 8, 'glow'], [12, T - 5, 'lichen']];
@@ -529,7 +444,7 @@ export function flowersCell() {
 }
 
 export function stonesCell() {
-  const g = new Grid(T, T);
+  const g = grid(T, T);
   paintStone(g, 6, T - 4, 3.2, 2.4, 0.2);
   paintStone(g, 11, T - 3, 2.1, 1.6, 0.7);
   paintStone(g, 3, T - 2, 1.4, 1.1, 0.4);
@@ -699,21 +614,6 @@ export function paintRoot(g, x, y, len, rng, thick = true) {
 }
 
 // ─── Variantes y calcomanías ───────────────────────────────────────────────────────────────────────────────────────
-const RING = 2;
-/** Copia de `ref` las bandas de 2 px de los lados sólidos de `mask` (lo que toca a un vecino queda igual a la base). */
-export function restoreSolidBands(tile, ref, mask) {
-  for (let y = 0; y < T; y++) {
-    for (let x = 0; x < T; x++) {
-      const band =
-        (mask & UP && y < RING) || (mask & DOWN && y >= T - RING) || (mask & LEFT && x < RING) || (mask & RIGHT && x >= T - RING);
-      if (!band) continue;
-      tile.code[y * T + x] = ref.code[y * T + x];
-      tile.alpha[y * T + x] = ref.alpha[y * T + x];
-    }
-  }
-  return tile;
-}
-
 /** Una base distinta: los tramos de las capas cambian solo en el centro (de 2 a 13). */
 function variantBase(rng) {
   const runs = [];
@@ -875,7 +775,7 @@ export function decals(seed = 1093) {
   const rng = mulberry32(seed);
   const out = {};
   const one = (fn) => {
-    const g = new Grid(T, T);
+    const g = grid(T, T);
     fn(g);
     return g;
   };
@@ -902,7 +802,7 @@ export function decals(seed = 1093) {
     [15, 19, 13, 8, false, true, false],
     [16.5, 17.5, 9.5, 10, false, false, true],
   ].map(([cx, cy, rx, ry, warm, lichen, crack], k) => {
-    const g = new Grid(2 * T, 2 * T);
+    const g = grid(2 * T, 2 * T);
     paintStone(g, cx, cy, rx, ry, 0.9, { warm });
     if (crack) paintCrack(g, crackPath(rng, Math.round(cx) - 3 + k, Math.round(cy - ry * 0.6), 7, k % 2 ? -1 : 1, 1));
     if (lichen) paintLichen(g, Math.round(cx - rx * 0.4 + k * 3), Math.round(cy - ry * 0.55), 2, rng);
@@ -918,7 +818,7 @@ export function decals(seed = 1093) {
   });
   out.strata = [0, 1, 0, 1].map((k, n) => {
     const cols = n < 2 ? 3 : 2;
-    const g = new Grid(cols * T, 2 * T);
+    const g = grid(cols * T, 2 * T);
     const x0 = 3;
     const x1 = cols * T - 4;
     // Un estrato entre dos capas de la base: grosor parejo (6), puntas que se afinan en 5 px y se deshilachan; cuerpo
@@ -949,7 +849,7 @@ export function decals(seed = 1093) {
     return g;
   });
   out.roots = [0, 1].map((k) => {
-    const g = new Grid(T, 2 * T);
+    const g = grid(T, 2 * T);
     paintRoot(g, k ? 10 : 6, 7, k ? 18 : 22, rng);
     paintRoot(g, k ? 4 : 12, 7, k ? 9 : 11, rng, false);
     if (k) paintRoot(g, 14, 7, 5, rng, false);
@@ -994,29 +894,24 @@ export function decals(seed = 1093) {
 }
 
 // ─── Las dos hojas ─────────────────────────────────────────────────────────────────────────────────────────────────
-export const TILESET_COLUMNS = 4;
-export const TILESET_ROWS = 7;
-const newImage = (w, h) => ({ width: w, height: h, data: new Uint8Array(w * h * 4) });
+export { TILESET_COLUMNS, TILESET_ROWS, DETAIL_COLUMNS };
 
 /** public/assets/tiles/cerro.png: las 28 casillas de siempre (ASSETS §6). */
 export function buildCerroTileset() {
-  const img = newImage(T * TILESET_COLUMNS, T * TILESET_ROWS);
-  const put = (i, g) => blit(img, g, (i % TILESET_COLUMNS) * T, Math.floor(i / TILESET_COLUMNS) * T);
-  for (let mask = 0; mask < 16; mask++) put(mask, mask === 15 ? baseRock() : autotileCell(mask));
-  put(16, platformCell('left'));
-  put(17, platformCell('center'));
-  put(18, platformCell('right'));
-  put(19, spikesCell());
-  put(20, waterCell(true));
-  put(21, waterCell(false));
-  put(22, crackedCell());
-  put(23, grassTuftCell());
-  put(24, flowersCell());
-  put(25, stonesCell());
-  return img;
+  const cells = [];
+  for (let mask = 0; mask < 16; mask++) cells[mask] = mask === 15 ? baseRock() : autotileCell(mask);
+  cells[16] = platformCell('left');
+  cells[17] = platformCell('center');
+  cells[18] = platformCell('right');
+  cells[19] = spikesCell();
+  cells[20] = waterCell(true);
+  cells[21] = waterCell(false);
+  cells[22] = crackedCell();
+  cells[23] = grassTuftCell();
+  cells[24] = flowersCell();
+  cells[25] = stonesCell();
+  return buildTilesetImage(cells);
 }
-
-export const DETAIL_COLUMNS = 8;
 
 /**
  * public/assets/tiles/detalle/cerro.png y su .json (S109): variantes del relleno y de los bordes, y calcomanías.
@@ -1024,28 +919,10 @@ export const DETAIL_COLUMNS = 8;
  * (tipo → [{ w, h, ids, flip }], ids en filas de w; `flip`: se puede espejar a lo ancho).
  */
 export function buildCerroDetail() {
-  const cells = [];
-  const add = (g) => {
-    cells.push(g);
-    return cells.length - 1;
-  };
-  const layout = { tile: T, columns: DETAIL_COLUMNS, fill: [], edges: {}, decals: {} };
-  for (const g of fillVariants()) layout.fill.push(add(g));
-  for (const [mask, list] of Object.entries(edgeVariants())) layout.edges[mask] = list.map(add);
   // Las capas siguen la pendiente de la base y el pasto de las esquinas mira a un lado: esas no se espejan.
-  const fixed = new Set(['strata', 'overhangLeft', 'overhangRight']);
-  for (const [kind, list] of Object.entries(decals())) {
-    layout.decals[kind] = list.map((g) => {
-      const w = g.w / T;
-      const h = g.h / T;
-      const ids = [];
-      for (let ty = 0; ty < h; ty++) for (let tx = 0; tx < w; tx++) ids.push(add(g.sub(tx * T, ty * T, T, T)));
-      return { w, h, ids, flip: !fixed.has(kind) };
-    });
-  }
-  const rows = Math.ceil(cells.length / DETAIL_COLUMNS);
-  const img = newImage(T * DETAIL_COLUMNS, T * rows);
-  cells.forEach((g, i) => blit(img, g, (i % DETAIL_COLUMNS) * T, Math.floor(i / DETAIL_COLUMNS) * T));
-  layout.count = cells.length;
-  return { img, layout };
+  return buildDetailSheet({ fill: fillVariants(), edges: edgeVariants(), decals: decals(), fixed: ['strata', 'overhangLeft', 'overhangRight'] });
 }
+
+/** Lo que usa tools/make-terrain-tiles.mjs. */
+export const buildTileset = buildCerroTileset;
+export const buildDetail = buildCerroDetail;

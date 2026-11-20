@@ -68,10 +68,8 @@ function describe_(cells: { x: number; y: number }[]): string {
 // Excepciones conocidas (S75): niveles que hoy tienen agujeros y quedan pendientes (docs/PENDIENTES.md, punto 26). Cada
 // una guarda la huella exacta (cuántas celdas y en qué tramos): si el nivel gana un agujero nuevo, el test falla igual;
 // si se arregla, también falla, para que se saque de la lista. No se agregan niveles acá para que el test pase.
-const KNOWN_HOLES: Record<string, { cells: number; where: string }> = {
-  // Pendiente (S75, no se tocó): falta el relleno (earthBackdrop) o adelgazar.
-  l2: { cells: 218, where: 'x 144-150, filas 28-32; x 157-158, filas 20-26; x 241-250, filas 14-32' },
-};
+// S110: l2, el último, salió con el relleno: la lista queda vacía.
+const KNOWN_HOLES: Record<string, { cells: number; where: string }> = {};
 
 describe('nada de agujeros: ninguna masa sólida deja ver el fondo por dentro (S75)', () => {
   const levels = Object.values(LEVELS).filter((l) => l && mapOf(l.mapKey));

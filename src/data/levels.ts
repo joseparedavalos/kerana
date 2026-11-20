@@ -142,8 +142,12 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // S96: el sol respira y el reflejo titila. Medido en l2_far.jpg: el disco va de x 712 a 741 y de y 324 a 341.
     backgrounds: { far: 'bg_l2_far', sun: { at: [726, 334], reflection: [692, 354, 764, 442] } },
     terrainShell: 3,
-    // S68: fondo de tierra apagado; con true se ve tierra (no el cielo) dentro de la tierra maciza.
-    earthBackdrop: false,
+    // S110: el barro macizo del albardón, la pared y la cima va relleno (eran los últimos agujeros del juego).
+    earthBackdrop: true,
+    // S110: el barro del estero sin repetirse (variantes por celda), con detalle según la profundidad, el agua en tres
+    // tonos y el brillo que corre por la superficie.
+    terrainDetail: { sheet: 'estero', seed: 110 },
+    waterGlints: true,
     musicKey: '',
     boss: 'mboi_tui',
     gift: 'heart_up',

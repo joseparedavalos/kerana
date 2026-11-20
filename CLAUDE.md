@@ -51,7 +51,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `npm run maps`: `tools/levels/*.txt` → `public/assets/maps/*.json`
 - `npm run sprites`: `raw/` → `public/assets/sprites/` (ver `docs/ASSETS.md`)
 - `npm run tileset -- <bioma>`: `raw/tiles/<bioma>/` → `public/assets/tiles/<bioma>.png` (ver `docs/RECETA-TILESET.md`)
-- `npm run cerro-tiles`: dibuja por código `public/assets/tiles/cerro.png` y la hoja de detalle de l1 (RECETA-TILESET §6)
+- `npm run terrain-tiles -- <bioma>`: dibuja por código el tileset del bioma y su hoja de detalle (cerro y estero; sin bioma, todos; RECETA-TILESET §6). `npm run cerro-tiles` hace solo cerro
 - `npm run smoke`: prueba de humo con navegador headless (si está disponible)
 - `npm run preview`: sirve `dist/`
 
@@ -102,7 +102,7 @@ tests/                    Vitest
 - La clase de un objeto puede venir en `type` o en `class`: lee ambos.
 - Nada que haya que saltar (postes, muros, escalones) puede medir más de 3 tiles, salvo que el nivel ofrezca otro camino: el salto llega a unos 4.
 - Si `levels.ts` dice `mapSource: 'tiled'`, el autor editó ese mapa en Tiled: **no lo regeneres desde el ASCII**.
-- **Nada de agujeros.** Nunca se ve el fondo por dentro de una masa sólida: un edificio o un cerro con un rectángulo de cielo o de árboles adentro es un error, no un efecto. Dos arreglos válidos y ninguno más: rellenar la masa (`earthBackdrop: true` en `levels.ts`) o adelgazarla en el ASCII hasta una plataforma delgada con aire alrededor (el corte hasta el fondo, sin muñones). Una plataforma flotante no es un agujero. Lo hace cumplir `tests/holes.test.ts` (S75): falla con el nivel y las coordenadas; no se toca el test, se arregla el mapa (RECETA-NIVEL, al principio). l2 y l5 están en su lista `KNOWN_HOLES` como pendientes (l6 salió en S78 y l1 en S87, con el relleno), con la huella exacta: no se agregan niveles ahí.
+- **Nada de agujeros.** Nunca se ve el fondo por dentro de una masa sólida: un edificio o un cerro con un rectángulo de cielo o de árboles adentro es un error, no un efecto. Dos arreglos válidos y ninguno más: rellenar la masa (`earthBackdrop: true` en `levels.ts`) o adelgazarla en el ASCII hasta una plataforma delgada con aire alrededor (el corte hasta el fondo, sin muñones). Una plataforma flotante no es un agujero. Lo hace cumplir `tests/holes.test.ts` (S75): falla con el nivel y las coordenadas; no se toca el test, se arregla el mapa (RECETA-NIVEL, al principio). Su lista `KNOWN_HOLES` está vacía desde S110 (l6 salió en S78, l1 en S87, l5 en S100 y l2, el último, en S110, con el relleno): no se agregan niveles ahí.
 
 ## Assets
 
