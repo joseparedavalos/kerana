@@ -2604,6 +2604,8 @@ export const GAMEPLAY = {
          * de laterita y piedras de itakurú, sueltas o en concreciones de 2 × 2.
          */
         campo: {
+          /** Los bordes con variante, más que en cerro: el piso del campo (la 14, cinco variantes) es lo que más se ve. */
+          edgeChance: 0.75,
           overhangChance: 0,
           crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
           rootsChance: 0.11,

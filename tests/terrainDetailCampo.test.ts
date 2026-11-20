@@ -43,7 +43,8 @@ describe('detalle del terreno de l3 (S111)', () => {
     // Cerro (l1) sigue con la configuración común, sin tocar.
     expect(detailConfigFor(base, 'cerro')).toEqual({ ...base });
     expect(CFG.fillChance).toBe(base.fillChance);
-    expect(CFG.edgeChance).toBe(base.edgeChance);
+    // El piso del campo es lo que más se ve: más bordes con variante que en cerro.
+    expect(CFG.edgeChance).toBeGreaterThan(base.edgeChance);
     // Nada sobre el aire: sin el pasto de las esquinas; sin cristales (l3 no tiene cuevas).
     expect(CFG.overhangChance).toBe(0);
     expect(CFG.crystal.chance).toBe(0);

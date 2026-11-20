@@ -85,7 +85,7 @@ describe('detalle del terreno de campo (S111)', () => {
   });
 
   it('las variantes conservan el anillo de 2 px de la casilla que reemplazan (el pasto del piso, solo en el centro)', () => {
-    expect(layout.fill).toHaveLength(12);
+    expect(layout.fill).toHaveLength(16);
     for (const id of layout.fill) expect(ring(d(id)), `relleno ${id}`).toEqual(ring(tiles[15]));
     expect(Object.keys(layout.edges).sort()).toEqual(['11', '13', '14', '7']);
     for (const mask of [11, 7, 13]) for (const id of layout.edges[String(mask)]) expect(ring(d(id)), `${mask}: ${id}`).toEqual(ring(tiles[mask]));

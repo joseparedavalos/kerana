@@ -148,11 +148,11 @@ function paintDirtFeature(g, kind, rng, lo = 3, hi = 12) {
       break;
     case 'red':
       // Moteado de la laterita: hematita (más roja) …
-      cloud(rng, lo, hi, tone([1.06, 0.84, 0.78]));
+      cloud(rng, lo, hi, tone([1.04, 0.88, 0.83]));
       break;
     case 'ochre':
       // … y goethita (más amarilla).
-      cloud(rng, lo, hi, tone([1.08, 1.16, 1.06]));
+      cloud(rng, lo, hi, tone([1.06, 1.12, 1.04]));
       break;
     case 'pores':
       // Poros: el agujero oscuro y su labio de abajo, con luz.
@@ -208,6 +208,10 @@ const FILL_FEATURES = [
   ['trace'],
   ['damp', 'grit'],
   ['ochre', 'iron'],
+  ['red', 'grit'],
+  ['dry', 'iron'],
+  ['ochre', 'pores'],
+  ['damp', 'trace'],
 ];
 
 /** Otra tierra para una variante: el grano corrido y sus rasgos, con el anillo de la 15. */
@@ -229,7 +233,7 @@ function variantGrass(grass, shift, flip) {
   return g;
 }
 
-/** Las 12 variantes del relleno (casilla 15). */
+/** Las 16 variantes del relleno (casilla 15). */
 export function fillVariants(src = campoSource(), seed = 1111) {
   const rng = mulberry32(seed);
   return FILL_FEATURES.map((features) => variantDirt(src.dirt, rng, features));
@@ -243,6 +247,8 @@ export function edgeVariants(src = campoSource(), seed = 1112) {
     { features: ['dry'], shift: 5, flip: false },
     { features: ['pores'], shift: 9, flip: true },
     { features: ['red'], shift: 12, flip: false },
+    { features: ['ochre'], shift: 3, flip: true },
+    { features: ['grit'], shift: 7, flip: false },
   ].map((v) => campoCell(14, variantDirt(src.dirt, rng, v.features), variantGrass(src.grass, v.shift, v.flip)));
   const features = { 11: [['damp'], ['iron']], 7: [['grit'], ['ochre']], 13: [['trace'], ['damp']] };
   for (const mask of [11, 7, 13]) out[mask] = features[mask].map((f) => campoCell(mask, variantDirt(src.dirt, rng, f), src.grass));
@@ -384,16 +390,38 @@ function ironstoneBoulders(rng) {
   });
 }
 
-/** Grava de itakurú: nódulos de 2 a 4 px con su luz y su sombra. */
-function ironPebbles(rng) {
-  const sets = [
-    [[[3, 7], [5, 5], [8, 6], [8, 9], [4, 9]], [[9, 10], [12, 9], [13, 11], [12, 13], [9, 13]]],
-    [[[4, 9], [6, 8], [9, 8], [10, 11], [5, 12]], [[10, 5], [12, 5], [13, 7], [11, 8]]],
-    [[[6, 6], [9, 5], [11, 7], [10, 9], [6, 9]], [[3, 11], [5, 10], [7, 11], [6, 13], [3, 13]]],
-  ];
-  return sets.map((polys) => {
+/**
+ * Grava de itakurú: nódulos de 3 a 5 px dibujados a mano (con contorno alrededor, un nódulo tan chico se lee como un
+ * anillo): la luz arriba (5, 4), el cuerpo (3, 2), abajo oscuro (1, 0), la sombra en la tierra (s) y la tierra que lo
+ * tapa (d).
+ */
+const IRON_PEBBLES = [
+  [[4, 6, ['.54.', '5432', '2210', 'dss.']], [10, 9, ['54.', '321', 'ss.']], [6, 12, ['45', '10', 'ss']]],
+  [[3, 9, ['45.', '321', 'd0s']], [8, 6, ['.554.', '54332', '32211', 'd000d', '.sss.']], [12, 11, ['54', '21', 'ss']]],
+  [[5, 5, ['54.', '432', '1d0', '.s.']], [9, 9, ['.45.', '5432', '2211', '.ss.']], [4, 11, ['45', '21', 'ss']]],
+];
+const PEBBLE_LEGEND = {
+  0: [ITAKURU[0], 255],
+  1: [ITAKURU[1], 255],
+  2: [ITAKURU[2], 255],
+  3: [ITAKURU[3], 255],
+  4: [ITAKURU[4], 255],
+  5: [ITAKURU[5], 255],
+  d: [DIRT[2], 215],
+  s: [DIRT[0], 140],
+};
+
+function ironPebbles() {
+  return IRON_PEBBLES.map((set) => {
     const g = blank();
-    for (const poly of polys) paintStone(g, poly, ITAKURU, rng, { pits: 1, glints: 1, buried: 0.3 });
+    for (const [ox, oy, rows] of set) {
+      rows.forEach((row, y) => [...row].forEach((ch, x) => {
+        const entry = PEBBLE_LEGEND[ch];
+        if (!entry) return;
+        if (entry[1] >= 255) g.set(ox + x, oy + y, opaque(entry[0]));
+        else over(g, ox + x, oy + y, entry[0], entry[1]);
+      }));
+    }
     return g;
   });
 }
@@ -452,8 +480,8 @@ function lateriteLayers(rng) {
 }
 
 /**
- * Galerías de hormigas, como en un corte del suelo: cámaras chatas (el techo en sombra, el hueco, el piso con luz)
- * unidas por túneles de 1 px casi verticales que se pierden en la tierra por las puntas.
+ * Galerías de hormigas, como en un corte del suelo: cámaras chatas (el hueco oscuro y el piso con luz; con el techo en
+ * sombra se leían como una «^») unidas por túneles de 1 px casi verticales que se pierden en la tierra por las puntas.
  */
 const ANT_NESTS = [
   { w: 1, chambers: [[6, 6], [9, 11]], tunnels: [[[7, 1], [6, 3], [7, 5]], [[8, 7], [9, 8], [9, 10]], [[11, 12], [12, 14], [12, 15]]] },
@@ -490,7 +518,6 @@ function antGalleries() {
     for (const [x, y] of chambers) {
       for (let dx = -2; dx <= 3; dx++) {
         const rim = dx === -2 || dx === 3;
-        if (!rim) over(g, x + dx, y - 1, ITAKURU[1], 130);
         over(g, x + dx, y, ITAKURU[0], rim ? 120 : 200);
         over(g, x + dx, y + 1, OCHRE[3], rim ? 70 : 125);
       }
@@ -539,7 +566,7 @@ export function decals(seed = 1113) {
   return {
     itakuru: itakuruStones(rng),
     ironstone: ironstoneBoulders(rng),
-    pebble: ironPebbles(rng),
+    pebble: ironPebbles(),
     quartz: quartzChips(rng),
     laterite: lateriteLayers(rng),
     ants: antGalleries(),
