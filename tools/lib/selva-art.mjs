@@ -933,14 +933,7 @@ function paintFeature(g, kind, rng, lo = 3, hi = 12) {
       break;
     }
     case 'pebbles':
-      for (let k = 0; k < 3; k++) {
-        const x = c();
-        const y = c();
-        g.set(x, y, 'stone', 3);
-        g.set(x + 1, y, 'stone', 2);
-        g.set(x, y + 1, 'stone', 1);
-        g.set(x + 1, y + 1, 'earth', 1);
-      }
+      paintMossStone(g, c() + 0.5, c() + 0.5, 1.6 + rng(), 1.2 + rng() * 0.5, false);
       break;
     case 'fiber': {
       const x = irange(rng, lo, hi - 5);
@@ -1001,7 +994,7 @@ export function edgeVariants(seed = 1133) {
   ];
   out[11] = ceil.map((v, k) => {
     const base = vbase();
-    paintFeature(base, ['fiber', 'pebbles', 'damp'][k], rng, 4, 11);
+    paintFeature(base, ['fiber', 'dry', 'damp'][k], rng, 4, 11);
     return restoreSolidBands(autotileCell(11, { base, ...v }), autotileCell(11), 11);
   });
   // Las paredes: otras muescas y raíces; una con un hongo de repisa pegado, otra con musgo.
@@ -1012,7 +1005,7 @@ export function edgeVariants(seed = 1133) {
   for (const mask of [7, 13]) {
     out[mask] = walls[mask].map((v, k) => {
       const base = vbase();
-      paintFeature(base, ['pebbles', 'fiber', 'damp'][k], rng, 4, 11);
+      paintFeature(base, ['damp', 'fiber', 'dry'][k], rng, 4, 11);
       const g = autotileCell(mask, { base, ...v });
       if (k === 0) paintBracket(g, mask === 7 ? 'left' : 'right', 7);
       if (k >= 1) paintWallMoss(g, mask === 7 ? 'left' : 'right', k === 1 ? 2 : 6);
@@ -1097,8 +1090,10 @@ function paintFloorProp(g, kind, topsoil) {
 /** Hongo de repisa (yesquero) pegado a la pared, de `side` (el aire), a la altura `y`. */
 function paintBracket(g, side, y) {
   const fx = (x) => (side === 'left' ? x : T - 1 - x);
-  for (const [x, dy, s] of [[0, 0, 4], [1, 0, 5], [2, 0, 4], [3, 0, 3], [0, 1, 2], [1, 1, 3], [2, 1, 2], [0, 2, 1], [1, 2, 1]]) g.set(fx(x), y + dy, 'fungus', s);
+  // El yesquero: pardo, con el borde claro arriba y la panza oscura (no naranja: de lejos parecía un clavo).
+  for (const [x, dy, r, s] of [[0, 0, 'wood', 2], [1, 0, 'wood', 3], [2, 0, 'wood', 2], [3, 0, 'wood', 1], [0, 1, 'litter', 2], [1, 1, 'litter', 3], [2, 1, 'litter', 2], [3, 1, 'litter', 1], [0, 2, 'bark', 1], [1, 2, 'bark', 0]]) g.set(fx(x), y + dy, r, s);
   g.set(fx(4), y + 1, 'earth', 1);
+  g.set(fx(2), y + 2, 'shadow', 0, 90);
 }
 
 /** Musgo pegado a la pared: un manchón que baja, con la luz afuera. */
