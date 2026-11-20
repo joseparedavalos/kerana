@@ -21,6 +21,7 @@
     "monai": "node tools/monai-run.mjs",
     "luison": "node tools/luison-run.mjs",
     "tau": "node tools/tau-run.mjs",
+    "kurupi": "node tools/kurupi-run.mjs",
     "mobile": "node tools/mobile-check.mjs",
     "backgrounds": "node tools/backgrounds.mjs"
   },

@@ -1290,6 +1290,38 @@ export const GAMEPLAY = {
     /** Lo que baja más de tantos px bajo el suelo de la arena se apaga (se mete en la tierra, no la atraviesa). */
     sinkPx: 1,
   },
+  /**
+   * La onda del pisotón de Kurupi (S114): la tierra que revienta el suelo. Solo el dibujo: la hitbox (`waveWidth` ×
+   * `waveHeight`, con la base en el suelo), la velocidad, la vida y el daño siguen en `kurupi` y en bosses.ts. El arte
+   * (cresta, grietas, terrones, raíces, hojas y polvo) se pinta una vez en `kurupiWaveArt.ts`, con los colores medidos
+   * del piso de selva y de las hojas de Kurupi. Lo que sale por distancia y no por cuadros: lo mismo a cualquier FPS.
+   */
+  kurupiWave: {
+    /** Cuadros por segundo de la cresta (la tierra que se revuelve) y de su derrumbe cuando la onda se apaga. */
+    crestFps: 14,
+    collapseFps: 16,
+    /** Profundidades: grietas (como las huellas), polvo (detrás de la cresta), cresta (la del rectángulo de antes) y lo que salta. */
+    depth: { crack: 3, dust: 5.9, crest: 6, debris: 8 },
+    /**
+     * Grietas: una cada `everyPx` de avance, detrás de la cresta (se empalman: miden 16 px). Se cierran en tres pasos
+     * (`stageMs`, ms de cada uno) y se apagan. A lo sumo `max` a la vez: si faltan, se recicla la más vieja.
+     */
+    crack: { everyPx: 14, stageMs: [320, 260, 200] as readonly number[], max: 40 },
+    /** Lo que salta: un terrón cada `everyPx` de avance; cada `leafEvery` terrones, también una hoja; cada `rootEvery`, una raíz. */
+    debris: { everyPx: 7, leafEvery: 3, rootEvery: 5, maxPerFrame: 3 },
+    /** Terrones y raíces: velocidad (px/s), abanico (grados; -90 es arriba), gravedad, vida (ms) y cuántos vivos a la vez. */
+    clod: { speedMin: 50, speedMax: 120, angle: [-150, -30] as readonly number[], gravityY: 520, lifespanMin: 380, lifespanMax: 560, max: 32 },
+    root: { speedMin: 60, speedMax: 110, gravityY: 460, lifespanMin: 420, lifespanMax: 600, max: 8 },
+    /** Hojas (las de Kurupi y las de la hojarasca): caen más despacio y aletean (cuadros por segundo, sin girar el pixel art). */
+    leaf: { speedMin: 40, speedMax: 90, gravityY: 170, lifespanMin: 650, lifespanMax: 950, max: 16, flutterFps: 12 },
+    /** Polvo: un puñado cada `everyPx`, detrás de la cresta; sube y se deshace en tramado (cuadros por segundo), sin fundido. */
+    dust: { everyPx: 9, speedX: 14, speedYMin: -26, speedYMax: -10, fps: 12, max: 16 },
+    /** Al reventar (el pisotón) y al apagarse la onda: cuántos de cada uno salen de golpe. */
+    burst: { clods: 6, leaves: 2, roots: 1, dust: 3 },
+    end: { clods: 4, dust: 2 },
+    /** Lo que baja más de tantos px bajo el suelo se apaga (se mete en la tierra). */
+    sinkPx: 1,
+  },
   /** Ao Ao (GDD §6.6). Los tiempos de cada ataque están en src/data/bosses.ts. */
   aoAo: {
     width: 44,

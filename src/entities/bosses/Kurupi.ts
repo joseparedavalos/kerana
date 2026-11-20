@@ -5,6 +5,7 @@ import { skinIfAvailable, type SpriteSkin } from '../../systems/SpriteSkin';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import { KurupiFx } from './kurupiFx';
+import { KurupiWaves } from './kurupiWave';
 import { isFastRun } from './kurupiFxLogic';
 import { callPlan, pickRealSlot, runDirection, runTargetX, toeSide, type CallPlan } from './kurupiLogic';
 
@@ -12,17 +13,10 @@ const CFG = GAMEPLAY.kurupi;
 const TILE = 16;
 const BODY_TEXTURE = 'kurupi_placeholder';
 const LEAF_COLOR = 0x5cc85c;
-const WAVE_COLOR = 0x3f7a3a;
 const PRINT_COLOR = 0x6a5236;
 const DUST_COLOR = 0xb5aa9c;
-/** Ondas de hojas en el suelo a la vez (2 por pisotón). */
+/** Ondas de tierra en el suelo a la vez (2 por pisotón). */
 const WAVE_POOL = 4;
-
-interface Wave {
-  rect: Phaser.GameObjects.Rectangle;
-  vx: number;
-  lifeMs: number;
-}
 
 interface Footprint {
   sole: Phaser.GameObjects.Ellipse;
@@ -65,14 +59,14 @@ export class Kurupi extends Boss {
   /** Estela y lo que levanta al correr rápido (S104). Solo dibujo. */
   private readonly fx: KurupiFx;
   private readonly copies: Copy[] = [];
-  private readonly waves: Wave[] = [];
+  /** Las ondas del pisotón (S114: la tierra que revienta el suelo; la hitbox, la de siempre). */
+  private readonly waves: KurupiWaves;
   private readonly footprints: Footprint[] = [];
   private readonly leaves: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly dust: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly timers: Phaser.Time.TimerEvent[] = [];
   private readonly bodyRect = new Phaser.Geom.Rectangle();
   private readonly copyRect = new Phaser.Geom.Rectangle();
-  private readonly waveRect = new Phaser.Geom.Rectangle();
   private readonly plan: CallPlan = { kind: 'kuati', count: 0 };
   private facing: 1 | -1 = -1;
   private harmful = false;
@@ -102,10 +96,7 @@ export class Kurupi extends Boss {
     this.body = scene.add.image(0, ctx.floorY, BODY_TEXTURE).setOrigin(0.5, 1).setDepth(5);
     this.skin = skinIfAvailable(scene, this.body, 'kurupi', { sourceFacesRight: true });
     this.fx = new KurupiFx(scene, this.skin?.sprite ?? this.body, ctx.arena, ctx.floorY);
-    for (let i = 0; i < WAVE_POOL; i++) {
-      const rect = scene.add.rectangle(0, ctx.floorY, CFG.waveWidth, CFG.waveHeight, WAVE_COLOR).setOrigin(0.5, 1).setDepth(6).setVisible(false);
-      this.waves.push({ rect, vx: 0, lifeMs: 0 });
-    }
+    this.waves = new KurupiWaves(scene, ctx.arena, ctx.floorY, WAVE_POOL);
     this.leaves = scene.add.particles(0, 0, 'fx_particle', {
       speedX: { min: -60, max: 60 },
       speedY: { min: -80, max: -20 },
@@ -264,18 +255,14 @@ export class Kurupi extends Boss {
     this.ctx.spawnMinion('kai', x, y);
   }
 
-  /** Pisotón: dos ondas de hojas por el suelo, una a cada lado. */
+  /** Pisotón: dos ondas de tierra por el suelo, una a cada lado. */
   private stomp(): void {
     this.pose(1);
     this.ctx.sfx('stomp');
     this.ctx.shake(160, 0.008);
     this.leaves.emitParticleAt(this.body.x, this.ctx.floorY - 4, 10);
-    for (const dir of [-1, 1]) {
-      const wave = this.waves.find((w) => w.lifeMs <= 0);
-      if (!wave) break;
-      wave.vx = dir * CFG.waveSpeed;
-      wave.lifeMs = CFG.waveLifeMs;
-      wave.rect.setPosition(this.body.x + dir * (CFG.width / 2), this.ctx.floorY).setVisible(true).setAlpha(1);
+    for (const dir of [-1, 1] as const) {
+      if (!this.waves.spawn(this.body.x + dir * (CFG.width / 2), dir)) break;
     }
   }
 
@@ -377,7 +364,7 @@ export class Kurupi extends Boss {
     this.harmful = false;
     this.printing = false;
     this.dissolveCopies(false);
-    this.hideWaves();
+    this.waves.clear();
     this.stopMove();
     this.fx.clear();
     this.scene.tweens.killTweensOf(this.body);
@@ -385,11 +372,7 @@ export class Kurupi extends Boss {
   }
 
   hurtsPlayer(playerRect: Phaser.Geom.Rectangle): boolean {
-    for (const w of this.waves) {
-      if (w.lifeMs <= 0) continue;
-      const r = w.rect;
-      if (Phaser.Geom.Rectangle.Overlaps(this.waveRect.setTo(r.x - r.width / 2, r.y - r.height, r.width, r.height), playerRect)) return true;
-    }
+    if (this.waves.hurts(playerRect)) return true;
     if (!this.harmful) return false;
     if (Phaser.Geom.Rectangle.Overlaps(this.boundsAt(this.body.x, this.bodyRect), playerRect)) return true;
     for (const c of this.copies) if (c.alive && Phaser.Geom.Rectangle.Overlaps(this.boundsAt(c.image.x, this.copyRect), playerRect)) return true;
@@ -409,7 +392,7 @@ export class Kurupi extends Boss {
   protected updateVisuals(deltaMs: number): void {
     this.body.setFlipX(this.facing < 0);
     this.fx.update(deltaMs, isFastRun(this.brain.state, this.brain.attack?.id), this.body.x, this.ctx.floorY, this.runDir);
-    this.updateWaves(deltaMs);
+    this.waves.update(deltaMs);
     // Las copias parpadean al aparecer (aviso del engaño).
     if (this.blinkMs > 0) {
       this.blinkMs -= deltaMs;
@@ -442,22 +425,6 @@ export class Kurupi extends Boss {
     });
   }
 
-  private updateWaves(deltaMs: number): void {
-    const arena = this.ctx.arena;
-    const dt = deltaMs / 1000;
-    for (const w of this.waves) {
-      if (w.lifeMs <= 0) continue;
-      w.lifeMs -= deltaMs;
-      w.rect.x += w.vx * dt;
-      // Las hojas se levantan y bajan al avanzar.
-      w.rect.scaleY = 0.8 + 0.2 * Math.sin(w.lifeMs / 60);
-      if (w.lifeMs <= 0 || w.rect.x < arena.left || w.rect.x > arena.right) {
-        w.lifeMs = 0;
-        w.rect.setVisible(false);
-      }
-    }
-  }
-
   protected resetVisuals(): void {
     for (const timer of this.timers) timer.remove();
     this.timers.length = 0;
@@ -474,19 +441,12 @@ export class Kurupi extends Boss {
       this.scene.tweens.killTweensOf(c.image);
       c.image.setVisible(false);
     }
-    this.hideWaves();
+    this.waves.clear();
     this.fx.clear();
     for (const f of this.footprints) {
       this.scene.tweens.killTweensOf([f.sole, f.toe]);
       f.sole.setVisible(false);
       f.toe.setVisible(false);
-    }
-  }
-
-  private hideWaves(): void {
-    for (const w of this.waves) {
-      w.lifeMs = 0;
-      w.rect.setVisible(false);
     }
   }
 
