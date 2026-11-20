@@ -321,33 +321,81 @@ export function scallop(width: number, base: (x: number) => number, rMin: number
   return out;
 }
 
+/**
+ * S113: los colores del dosel, medidos en l5_far.jpg (de lo oscuro a lo claro). `leaf`: las copas del frente (#0a130b …
+ * #485828) y la luz filtrada en las hojas de arriba (#6b7c34, #8f9f43); `haze`: el árbol del medio, en la niebla
+ * (#3a4f3b … #94a87e); `fog`: la niebla y el cielo de la lluvia (#5f7058 … #a5b796); `bark`: los troncos y las ramas
+ * (#11170e … #374022, corridos al marrón); `moss`: el musgo de las ramas; `bromel` y `orchid`: las flores de las
+ * bromelias y de las orquídeas (las del prop `l5_altura/orchids`).
+ */
+export const CANOPY_PALETTE = {
+  leaf: [0x070f09, 0x0b150c, 0x111d10, 0x182714, 0x223419, 0x2e421e, 0x3c5223, 0x4f652b, 0x6b7c34, 0x8f9f43],
+  haze: [0x3a4f3b, 0x435942, 0x495f44, 0x516848, 0x60774f, 0x758c66, 0x819875, 0x94a87e],
+  fog: [0x5f7058, 0x75886f, 0x879a7d, 0x94a787, 0xa5b796, 0xb9c8a8],
+  bark: [0x0d0b08, 0x16120c, 0x221a11, 0x2f2417, 0x3d301e, 0x4e3e27],
+  moss: [0x1d2a14, 0x2b3d1a, 0x3d5320, 0x536b28, 0x6f8732],
+  bromel: [0x46111d, 0x741d2b, 0xa93138, 0xd65646],
+  orchid: [0x6e3d6a, 0xa0629a, 0xd39ccb],
+} as const;
+
 export interface CanopyLook {
   /** Cuánto es dosel cada columna (`canopyWeights`). */
   weights: readonly number[];
-  /** Color (0xRRGGBB) y opacidad de las copas. */
-  crownColor: number;
-  crownAlpha: number;
-  /** Lo más que suben las copas de los costados sobre el borde de la imagen (fracción del alto del relleno). */
-  crownHeight: number;
-  /** Cuánto varía ese alto de un árbol a otro (0 = todas iguales, 1 = de nada a todo). */
-  crownVary: number;
-  /** Opacidad relativa de las copas arriba del todo (la neblina se come las lejanas; abajo, 1). */
-  hazeTop: number;
-  /** Fracción de abajo del relleno donde las copas se funden con el borde de la imagen (sin costura). */
-  bottomFade: number;
-  /** El dosel que cuelga del borde de arriba: cuánto baja en lo claro y en lo oscuro (fracciones del alto) y su opacidad. */
+  /** Píxeles de arte por píxel del dosel: el «píxel» del fondo pintado (≈ 3), para que las hojas tengan su tamaño. */
+  pixel: number;
+  /** Copas lejanas (en la niebla, sobre el claro), del medio y de adelante (a los costados): hasta dónde suben (fracción del alto). */
+  farHeight: number;
+  midHeight: number;
+  nearHeight: number;
+  /** El dosel que cuelga del borde de arriba: cuánto baja en lo claro y en lo oscuro (fracciones del alto). */
   fringeMin: number;
   fringeMax: number;
-  fringeAlpha: number;
-  /** Radio de cada copa (px de la textura). */
-  rMin: number;
-  rMax: number;
+  /** Ramas que salen de los costados (por lado), lianas cada 100 px de arte y bromelias o epífitas por rama. */
+  branches: number;
+  lianas: number;
+  epiphytes: number;
+  /** Rayos de luz horneados entre las hojas (tramados): cuántos, ancho (px de arte), inclinación, fuerza (0-1) y color. */
+  rays: { count: number; width: number; tiltDeg: number; strength: number; color: number };
+  /** Una banda de niebla quieta y tramada entre las copas: centro y alto (fracciones del alto), opacidad y color. */
+  haze: { at: number; height: number; alpha: number; color: number };
+  /** Alto (px de arte) de la franja de abajo que copia el borde de la imagen y se deshace tramada (sin costura). */
+  blend: number;
   seed: number;
 }
 
+/** Tramado ordenado (Bayer 4 × 4): umbral de 0 a 1 en cada celda. */
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+export const bayer4 = (x: number, y: number): number => (BAYER4[(((y % 4) + 4) % 4) * 4 + (((x % 4) + 4) % 4)]! + 0.5) / 16;
+/** Ruido suave (0 a 1) en celdas de `cell` píxeles: los bordes tramados salen en grumos, no en damero. */
+export function lumpNoise(x: number, y: number, seed: number, cell = 4): number {
+  const h = (ix: number, iy: number) => {
+    let v = Math.imul(ix, 0x27d4eb2d) ^ Math.imul(iy, 0x165667b1) ^ Math.imul(seed | 0, 0x85ebca6b);
+    v ^= v >>> 15;
+    v = Math.imul(v, 0x2c1b3c6d);
+    v ^= v >>> 13;
+    return (v >>> 0) / 4294967296;
+  };
+  const fx = x / cell;
+  const fy = y / cell;
+  const ix = Math.floor(fx);
+  const iy = Math.floor(fy);
+  const tx = smoothstep(0, 1, fx - ix);
+  const ty = smoothstep(0, 1, fy - iy);
+  const a = h(ix, iy) + (h(ix + 1, iy) - h(ix, iy)) * tx;
+  const b = h(ix, iy + 1) + (h(ix + 1, iy + 1) - h(ix, iy + 1)) * tx;
+  return a + (b - a) * ty;
+}
+/** Borde tramado: por dentro (`t` ≥ `solid`) la mezcla entera; en el borde, en grumos de ruido; afuera, nada. */
+const edgeMix = (t: number, solid: number, x: number, y: number, seed: number): boolean =>
+  t >= solid || (t > 0 && t / solid > 0.35 + 0.65 * lumpNoise(x, y, seed, 2) * (0.6 + 0.4 * bayer4(x, y)));
+
 /**
- * Relleno con dosel (S60): el degradado de S59 (`top` arriba, el color del borde abajo, por columnas) con las
- * siluetas de las copas encima, horneadas en la misma textura (no cuesta dibujar nada más). Escribe RGBA en `out`.
+ * Relleno con dosel (S60; dibujado de nuevo en S113): el degradado de S59 (`top` arriba, el color del borde abajo, por
+ * columnas) y encima, en píxeles gruesos del tamaño de los del fondo, las copas en cuatro capas con hojas dibujadas
+ * (lejanas y comidas por la niebla sobre el claro, del medio, de adelante a los costados y el dosel que cuelga de arriba),
+ * una banda de niebla quieta y tramada, rayos de luz tramados entre las hojas, ramas con musgo, bromelias y orquídeas, y
+ * lianas que cuelgan. La franja de abajo es el borde de la imagen (`seam`: sus primeras filas, sin la lluvia), espejado
+ * hacia arriba y deshecho en tramado: no hay costura. Escribe RGBA en `out` (una sola vez por partida).
  */
 export function canopyFill(
   edge: readonly number[],
@@ -356,47 +404,297 @@ export function canopyFill(
   height: number,
   look: CanopyLook,
   out: Uint8ClampedArray,
+  seam?: { data: ArrayLike<number>; rows: number },
 ): void {
+  const P = Math.max(1, Math.round(look.pixel));
+  const w = Math.ceil(width / P);
+  const h = Math.ceil(height / P);
   const rand = seeded(look.seed);
-  const w = (x: number) => weightAt(look.weights, x, width);
-  const vary = waves(width, rand);
-  const tall = (x: number, k: number) => w(x) * look.crownHeight * height * k * (1 - look.crownVary + look.crownVary * vary(x));
-  // Dos filas de copas: atrás, más altas y comidas por la neblina; adelante, más bajas y oscuras.
-  const rows = [
-    { edge: leafy(scallop(width, (x) => tall(x, 1), look.rMin, look.rMax, rand), look.rMin, rand), alpha: 0.45 },
-    { edge: leafy(scallop(width, (x) => tall(x, 0.6), look.rMin * 0.8, look.rMax * 0.8, rand), look.rMin, rand), alpha: 1 },
-  ];
-  const varyTop = waves(width, rand);
-  const fringeAt = (x: number) => (look.fringeMin + (look.fringeMax - look.fringeMin) * w(x)) * height * (0.4 + 0.6 * varyTop(x));
-  const fringe = leafy(scallop(width, fringeAt, look.rMin * 0.6, look.rMax * 0.8, rand), look.rMin, rand);
-  for (let x = 0; x < width; x++) {
-    const ec = colorAt(edge, x, width);
-    for (let y = 0; y < height; y++) {
-      const t = height > 1 ? y / (height - 1) : 1;
-      let c = mixColor(top, ec, t);
-      // Copas que suben desde el borde de la imagen (borde suave de 1 px).
-      const up = height - 1 - y;
-      const haze = look.hazeTop + (1 - look.hazeTop) * t;
-      const fade = smoothstep(1, 1 - look.bottomFade, t);
-      for (const row of rows) {
-        const inCrown = Math.min(1, Math.max(0, row.edge[x]! - up + 0.5));
-        if (inCrown > 0) c = mixColor(c, look.crownColor, inCrown * row.alpha * look.crownAlpha * haze * fade);
+  const pal = CANOPY_PALETTE;
+  const lr = new Int32Array(w * h);
+  // El peso de cada columna, suavizado a lo ancho (±7 % del ancho): las copas no se cortan en vertical donde cambia el borde.
+  const raw = Array.from({ length: w }, (_, x) => weightAt(look.weights, (x + 0.5) * P, width));
+  const R = Math.max(1, Math.round(w * 0.07));
+  const soft = raw.map((_, x) => {
+    let sum = 0;
+    let n = 0;
+    for (let k = -R; k <= R; k++) {
+      const v = raw[Math.min(w - 1, Math.max(0, x + k))]!;
+      const g = 1 - Math.abs(k) / (R + 1);
+      sum += v * g;
+      n += g;
+    }
+    return sum / n;
+  });
+  const wAt = (x: number) => soft[Math.min(w - 1, Math.max(0, x))]!;
+  // 0. El cielo de la lluvia: el degradado de S59.
+  for (let y = 0; y < h; y++) {
+    const t = h > 1 ? y / (h - 1) : 1;
+    for (let x = 0; x < w; x++) lr[y * w + x] = mixColor(top, colorAt(edge, (x + 0.5) * P, width), t);
+  }
+  const vary = waves(w, rand);
+  const vary2 = waves(w, rand);
+  const vary3 = waves(w, rand);
+  const smooth = (v: number) => smoothstep(0, 1, v);
+  // Lo que sube desde abajo (alto sobre el borde de la imagen) y lo que cuelga de arriba, por columna. Copas redondas
+  // (envolventes de círculos) de alturas distintas: entre una y otra se ve la capa de atrás.
+  const far = scallop(w, (x) => look.farHeight * h * (0.3 + 0.7 * (1 - wAt(Math.round(x)))) * (0.5 + 0.5 * vary(x)), 6, 13, rand);
+  const mid = scallop(w, (x) => look.midHeight * h * (0.15 + 0.85 * smooth(wAt(Math.round(x)))) * (0.4 + 0.6 * vary2(x)), 6, 14, rand);
+  const near = scallop(w, (x) => look.nearHeight * h * smooth(Math.max(0, wAt(Math.round(x)) * 1.6 - 0.6)) * (0.3 + 0.7 * vary3(x)), 5, 12, rand);
+  const fringeBase = (x: number) => (look.fringeMin + (look.fringeMax - look.fringeMin) * smooth(wAt(Math.round(x)))) * h * (0.35 + 0.65 * vary(x + w / 3));
+  const fringe = leafyEdge(scallop(w, fringeBase, 4, 10, rand).map((v) => v - 4), rand);
+  // Cada fila se corre un poco a lo ancho (ruido suave): los bordes de las masas no quedan en vertical.
+  const jit = Array.from({ length: h }, (_, y) => Math.round((lumpNoise(0, y, look.seed + 11, 5) - 0.5) * 16));
+  const col = (x: number, y: number) => Math.min(w - 1, Math.max(0, x + jit[y]!));
+  const up = (row: Float32Array) => (x: number, y: number) => h - 1 - y < row[col(x, y)]!;
+  const down = (row: Float32Array) => (x: number, y: number) => y < row[col(x, y)]!;
+  // Copas redondas a los costados (círculos grandes): el claro no queda con paredes rectas sino con copas que asoman.
+  const crowns = new Uint8Array(w * h);
+  const crownCount = Math.round(w / 9);
+  for (let k = 0; k < crownCount; k++) {
+    const x = Math.floor(rand() * w);
+    if (wAt(x) < 0.45 + 0.3 * rand()) continue;
+    const r = h * (0.1 + 0.14 * rand());
+    const cy = h * (0.12 + 0.62 * rand());
+    for (let y = Math.max(0, Math.floor(cy - r)); y < Math.min(h, Math.ceil(cy + r)); y++) {
+      for (let xx = Math.max(0, Math.floor(x - r)); xx < Math.min(w, Math.ceil(x + r)); xx++) {
+        if ((xx - x) ** 2 + (y - cy) ** 2 <= r * r) crowns[y * w + xx] = 1;
       }
-      const inFringe = Math.min(1, Math.max(0, fringe[x]! - y + 0.5));
-      if (inFringe > 0) c = mixColor(c, look.crownColor, inFringe * look.fringeAlpha);
+    }
+  }
+
+  // 1. Copas lejanas, comidas por la niebla. 2. La niebla quieta. 3. Copas del medio, más claras que las de adelante.
+  foliage(lr, w, h, up(far), pal.haze, 0, 7, { density: 1.1, rMin: 1.4, rMax: 2.8, fog: top, fogMix: 0.42 }, rand);
+  hazeBand(lr, w, h, look.haze, rand, look.seed);
+  const midUp = up(mid);
+  foliage(lr, w, h, (x, y) => midUp(x, y) || crowns[y * w + x] === 1, pal.leaf, 3, 8, { density: 1.2, rMin: 1.3, rMax: 2.6, fog: top, fogMix: 0.22 }, rand);
+  // 4. Rayos de luz que bajan por lo claro (detrás de las hojas de adelante): parejos por dentro, tramados en el borde.
+  const anchors = rayAnchors(look.weights, look.rays.count, rand);
+  const tilt = Math.tan((look.rays.tiltDeg * Math.PI) / 180);
+  const half = look.rays.width / P / 2;
+  anchors.forEach((at, n) => {
+    const cx = at * w;
+    const strength = look.rays.strength * (0.7 + 0.6 * rand());
+    const reach = 0.55 + 0.4 * rand();
+    for (let y = 0; y < h; y++) {
+      const t = y / (h - 1);
+      if (t > reach) break;
+      const fade = smoothstep(0, 0.12, t) * (1 - smoothstep(reach * 0.45, reach, t));
+      const c = cx - tilt * y;
+      for (let x = Math.max(0, Math.floor(c - half)); x <= Math.min(w - 1, Math.ceil(c + half)); x++) {
+        const across = 1 - Math.abs(x + 0.5 - c) / half;
+        if (across <= 0) continue;
+        const v = Math.min(1, across * 2) * fade;
+        if (edgeMix(v, 0.75, x, y, look.seed + 31 * n)) lr[y * w + x] = mixColor(lr[y * w + x]!, look.rays.color, strength * (v >= 0.75 ? 1 : 0.6));
+      }
+    }
+  });
+  // 5. Copas de adelante a los costados y el dosel que cuelga de arriba (casi negro, la luz arriba de cada mata).
+  foliage(lr, w, h, up(near), pal.leaf, 0, 6, { density: 1.3, rMin: 1.1, rMax: 2.6 }, rand);
+  foliage(lr, w, h, down(fringe), pal.leaf, 0, 7, { density: 1.4, rMin: 1, rMax: 2.3, lit: 0.6 }, rand);
+  // 6. Ramas que salen de los costados con musgo, bromelias y orquídeas; 7. lianas que cuelgan del dosel y de las ramas.
+  const hangFrom: [number, number][] = [];
+  for (let side = 0; side < 2; side++) {
+    for (let k = 0; k < look.branches; k++) {
+      // Una rama grande y una más chica por lado: salen del follaje, suben y se arquean hacia el claro.
+      const big = k === 0;
+      const len = w * (big ? 0.34 + 0.1 * rand() : 0.2 + 0.08 * rand());
+      const y0 = h * (big ? 0.45 + 0.15 * rand() : 0.2 + 0.15 * rand());
+      const y1 = y0 - h * (0.1 + 0.12 * rand());
+      const bow = h * (0.06 + 0.06 * rand());
+      const pts: [number, number][] = [];
+      for (let i = 0; i <= len; i++) {
+        const t = i / len;
+        const x = side === 0 ? i : w - 1 - i;
+        pts.push([x, y0 + (y1 - y0) * t - bow * Math.sin(t * Math.PI) + 0.8 * Math.sin(i * 0.4)]);
+      }
+      branch(lr, w, h, pts, big ? 8 : 5, rand);
+      // Matas de adelante que tapan la rama en partes (no queda pegada encima de todo).
+      for (let c = 0; c < 4; c++) {
+        const [cx, cy] = pts[Math.floor(len * rand() * 0.8)]!;
+        const r = 2 + rand() * 3;
+        foliage(lr, w, h, (x, y) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r, pal.leaf, 1, 6, { density: 1.5, rMin: 1, rMax: 2 }, rand);
+      }
+      for (let e = 0; e < look.epiphytes; e++) {
+        const [ex, ey] = pts[Math.floor(len * (0.35 + 0.6 * rand()))]!;
+        epiphyte(lr, w, h, Math.round(ex), Math.round(ey) - 2, rand);
+      }
+      for (let l = 0; l < 3; l++) {
+        const [lx, ly] = pts[Math.floor(len * (0.2 + 0.75 * rand()))]!;
+        hangFrom.push([Math.round(lx), Math.round(ly) + 1]);
+      }
+    }
+  }
+  // Las lianas cuelgan del dosel de arriba, más en el borde del claro (donde se ven contra la luz).
+  const lianaCount = Math.round((look.lianas * width) / 100);
+  for (let i = 0; i < lianaCount; i++) {
+    let x = Math.floor(rand() * w);
+    if (rand() < 0.5) for (let t = 0; t < 8 && Math.abs(wAt(x) - 0.5) > 0.3; t++) x = Math.floor(rand() * w);
+    hangFrom.push([x, Math.max(0, Math.round(fringe[x]!) - 1)]);
+  }
+  for (const [x, y] of hangFrom) liana(lr, w, h, x, y, Math.round(h * (0.12 + 0.4 * rand())), rand);
+  // A píxeles de arte, y abajo el borde de la imagen espejado que se deshace tramado.
+  for (let y = 0; y < height; y++) {
+    const ly = Math.min(h - 1, Math.floor(y / P));
+    const d = height - 1 - y;
+    for (let x = 0; x < width; x++) {
+      const lx = Math.min(w - 1, Math.floor(x / P));
       const i = (y * width + x) * 4;
-      out[i] = (c >> 16) & 0xff;
-      out[i + 1] = (c >> 8) & 0xff;
-      out[i + 2] = c & 0xff;
+      if (seam && d < look.blend && d < seam.rows && 0.15 + 0.85 * lumpNoise(lx, ly, look.seed + 3, 3) >= d / look.blend) {
+        const j = (d * width + x) * 4;
+        out[i] = seam.data[j]!;
+        out[i + 1] = seam.data[j + 1]!;
+        out[i + 2] = seam.data[j + 2]!;
+      } else {
+        const c = lr[ly * w + lx]!;
+        out[i] = (c >> 16) & 0xff;
+        out[i + 1] = (c >> 8) & 0xff;
+        out[i + 2] = c & 0xff;
+      }
       out[i + 3] = 255;
     }
   }
 }
 
-/** Borde de hojas: copitas chicas sobre el borde de las grandes (como el dibujo del fondo, no círculos lisos). */
-function leafy(edge: Float32Array, rMin: number, rand: () => number): Float32Array {
-  const small = scallop(edge.length, (x) => edge[Math.round(x)]!, rMin * 0.25, rMin * 0.5, rand);
-  return edge.map((v, x) => (v > 0 ? Math.max(v, small[x]!) : v));
+/**
+ * Follaje en píxeles gruesos (S113): primero el hueco oscuro de la mata y encima muchas matitas (círculos chicos) con la
+ * luz arriba a la izquierda y la sombra abajo a la derecha, más claras cuanto más arriba (la luz llega de arriba). Así
+ * se ve como las copas del fondo: hojas, no una mancha. `lo`..`hi`: tonos de `ramp`; `fog`, mezcla con la niebla.
+ */
+function foliage(
+  lr: Int32Array,
+  w: number,
+  h: number,
+  inside: (x: number, y: number) => boolean,
+  ramp: readonly number[],
+  lo: number,
+  hi: number,
+  opt: { density: number; rMin: number; rMax: number; fog?: number; fogMix?: number; lit?: number },
+  rand: () => number,
+): void {
+  const cells: number[] = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (inside(x, y)) cells.push(y * w + x);
+  if (cells.length === 0) return;
+  const paint = (x: number, y: number, tone: number) => {
+    let c = ramp[Math.max(lo, Math.min(hi, tone))]!;
+    if (opt.fog !== undefined && opt.fogMix) c = mixColor(c, opt.fog, opt.fogMix);
+    lr[y * w + x] = c;
+  };
+  for (const i of cells) paint(i % w, Math.floor(i / w), lo);
+  const r2 = (opt.rMin + opt.rMax) / 2;
+  const count = Math.round((cells.length * opt.density) / (Math.PI * r2 * r2 * 0.8));
+  const blobs: [number, number, number][] = [];
+  for (let k = 0; k < count; k++) {
+    const i = cells[Math.floor(rand() * cells.length)]!;
+    blobs.push([i % w, Math.floor(i / w), opt.rMin + (opt.rMax - opt.rMin) * rand()]);
+  }
+  blobs.sort((a, b) => a[1] - b[1]);
+  // La luz: arriba de cada mata (y de toda la masa, si `lit`), con un poco de azar.
+  let minY = h;
+  let maxY = 0;
+  for (const i of cells) {
+    const y = Math.floor(i / w);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  const span = Math.max(1, maxY - minY);
+  for (const [bx, by, r] of blobs) {
+    const height01 = 1 - (by - minY) / span;
+    const base = lo + 1 + Math.round((hi - lo - 2) * (opt.lit !== undefined ? opt.lit * (1 - height01) + (1 - opt.lit) * rand() : 0.25 + 0.55 * height01 * rand() + 0.2 * rand()));
+    const R = Math.ceil(r);
+    for (let dy = -R; dy <= R; dy++) {
+      for (let dx = -R; dx <= R; dx++) {
+        const x = bx + dx;
+        const y = by + dy;
+        if (x < 0 || y < 0 || x >= w || y >= h || dx * dx + dy * dy > r * r || !inside(x, y)) continue;
+        const side = (dx + dy) / r;
+        paint(x, y, base + (side < -0.55 ? 1 : side > 0.6 ? -1 : 0));
+      }
+    }
+    // Un brillo de luz filtrada en las matas de más arriba.
+    if (height01 > 0.6 && rand() < 0.25 && inside(bx - 1, by - 1)) paint(bx - 1, by - 1, hi + 1);
+  }
+}
+
+/** Banda de niebla quieta (S113): jirones a lo ancho de una campana a lo alto, parejos por dentro y tramados en el borde. */
+function hazeBand(lr: Int32Array, w: number, h: number, haze: CanopyLook['haze'], rand: () => number, seed: number): void {
+  const cy = haze.at * h;
+  const hh = Math.max(1, haze.height * h);
+  const ph = [rand(), rand(), rand()].map((v) => v * Math.PI * 2);
+  for (let y = Math.max(0, Math.floor(cy - hh)); y < Math.min(h, Math.ceil(cy + hh)); y++) {
+    const v = (y - cy) / hh;
+    const bell = Math.max(0, 1 - v * v);
+    for (let x = 0; x < w; x++) {
+      const cloud = 0.55 + 0.45 * Math.sin((x / w) * Math.PI * 6 + ph[0]! + v * 1.5) * Math.sin((x / w) * Math.PI * 2.3 + ph[1]!) + 0.12 * Math.sin((x / w) * Math.PI * 17 + ph[2]!);
+      const t = bell * Math.max(0, Math.min(1, cloud));
+      if (edgeMix(t, 0.5, x, y, seed + 7)) lr[y * w + x] = mixColor(lr[y * w + x]!, haze.color, haze.alpha * (t >= 0.5 ? 1 : 0.55));
+    }
+  }
+}
+
+/** Rama gruesa por `pts` (de afuera hacia adentro, se afina): corteza con la luz arriba y la sombra abajo, musgo encima. */
+function branch(lr: Int32Array, w: number, h: number, pts: [number, number][], thick: number, rand: () => number): void {
+  const pal = CANOPY_PALETTE;
+  const set = (x: number, y: number, c: number) => {
+    if (x >= 0 && y >= 0 && x < w && y < h) lr[y * w + x] = c;
+  };
+  pts.forEach(([px, py], i) => {
+    const t = i / Math.max(1, pts.length - 1);
+    const th = Math.max(1, Math.round(thick * (1 - 0.7 * t)));
+    const x = Math.round(px);
+    const y0 = Math.round(py - th / 2);
+    for (let d = 0; d < th; d++) {
+      const tone = th === 1 ? 2 : d === 0 ? 4 : d === 1 ? 3 : d === th - 1 ? 0 : (x + d) % 4 === 0 ? 1 : 2;
+      set(x, y0 + d, pal.bark[tone]!);
+    }
+    // Musgo sobre la rama, en matas.
+    if (lumpNoise(x, 0, 17, 3) > 0.45) set(x, y0 - 1, pal.moss[lumpNoise(x, 1, 19, 2) > 0.6 ? 3 : 1 + Math.floor(rand() * 2)]!);
+  });
+}
+
+/** Borde de abajo del dosel que cuelga: matitas de hojas que bajan de a una o dos celdas (no una línea pareja). */
+function leafyEdge(edge: Float32Array, rand: () => number): Float32Array {
+  return edge.map((v) => (v > 0 && rand() < 0.35 ? v + 1 + Math.floor(rand() * 2) : v));
+}
+
+/** Una epífita sobre una rama: una bromelia (roseta con el corazón rojo), un helechito o una orquídea. */
+function epiphyte(lr: Int32Array, w: number, h: number, x: number, y: number, rand: () => number): void {
+  const pal = CANOPY_PALETTE;
+  const set = (dx: number, dy: number, c: number) => {
+    if (x + dx >= 0 && y + dy >= 0 && x + dx < w && y + dy < h) lr[(y + dy) * w + x + dx] = c;
+  };
+  const r = rand();
+  if (r < 0.5) {
+    // Bromelia: hojas duras que se abren y el corazón rojo.
+    for (const [dx, dy, s] of [[-2, 0, 2], [2, 0, 2], [-1, -1, 3], [1, -1, 3], [-2, -1, 1], [2, -1, 1], [0, -2, 3], [-1, 0, 2], [1, 0, 2]] as const) set(dx, dy, pal.moss[s]!);
+    set(0, 0, pal.bromel[2]!);
+    set(0, -1, pal.bromel[3]!);
+  } else if (r < 0.8) {
+    // Helechito: frondas que cuelgan a los dos lados.
+    for (const [dx, dy, s] of [[0, 0, 2], [-1, 0, 3], [1, 0, 3], [-2, 1, 2], [2, 1, 2], [-3, 2, 1], [3, 2, 1], [0, -1, 4]] as const) set(dx, dy, pal.moss[s]!);
+  } else {
+    // Orquídea: hojas chicas y dos flores claras.
+    for (const [dx, dy, s] of [[0, 0, 1], [-1, 0, 2], [1, 0, 2]] as const) set(dx, dy, pal.moss[s]!);
+    set(-1, -1, pal.orchid[2]!);
+    set(1, -2, pal.orchid[1]!);
+    set(0, -1, pal.orchid[0]!);
+  }
+}
+
+/** Liana que cuelga desde (x, y): un hilo oscuro que se mece apenas, con la luz de un lado y alguna hoja. */
+function liana(lr: Int32Array, w: number, h: number, x0: number, y0: number, len: number, rand: () => number): void {
+  const pal = CANOPY_PALETTE;
+  const sway = (rand() - 0.5) * 3;
+  const phase = rand() * Math.PI * 2;
+  for (let k = 0; k < len; k++) {
+    const y = y0 + k;
+    if (y < 0 || y >= h) break;
+    const x = Math.round(x0 + sway * Math.sin((k / Math.max(1, len)) * Math.PI) + 0.6 * Math.sin(k * 0.35 + phase));
+    if (x < 0 || x >= w) continue;
+    lr[y * w + x] = k % 7 === 3 ? pal.bark[3]! : pal.leaf[k % 3 === 0 ? 4 : 3]!;
+    if (k % 9 === 5 && x + 1 < w) lr[y * w + x + 1] = pal.leaf[5]!;
+    if (k === len - 1 && rand() < 0.6 && x - 1 >= 0) lr[y * w + x - 1] = pal.leaf[4]!;
+  }
 }
 
 /** Ondas suaves a lo ancho (0 a 1): de un árbol a otro las copas no miden lo mismo. */
@@ -415,15 +713,14 @@ export function rayAnchors(weights: readonly number[], count: number, rand: () =
   return Array.from({ length: count }, (_, k) => from + step * (k + 0.25 + 0.5 * rand()));
 }
 
-/** Textura de un rayo (alfa 0-255): suave a los costados, asoma arriba y se apaga hacia abajo. */
-export function rayAlpha(width: number, height: number): Uint8ClampedArray {
+/** S113: un jirón de niebla tramado (alfa 0-255 en tres escalones): el de S60 sin el borde borroso. */
+export function mistPuffDither(width: number, height: number, rand: () => number, alpha = 255): Uint8ClampedArray {
+  const soft = mistPuffAlpha(width, height, rand);
   const out = new Uint8ClampedArray(width * height);
   for (let y = 0; y < height; y++) {
-    const t = y / Math.max(1, height - 1);
-    const v = smoothstep(0, 0.12, t) * Math.pow(1 - t, 1.3);
     for (let x = 0; x < width; x++) {
-      const d = (x + 0.5) / width - 0.5;
-      out[y * width + x] = Math.round(255 * v * Math.exp(-(d * d) / 0.035));
+      const v = soft[y * width + x]! / 255;
+      out[y * width + x] = Math.round(alpha * Math.min(3, Math.floor(v * 3 + bayer4(x, y) * 0.999)) / 3);
     }
   }
   return out;

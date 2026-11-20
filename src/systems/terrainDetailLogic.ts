@@ -61,6 +61,11 @@ export interface DetailConfig {
   depthShade: readonly number[];
   /** S110: probabilidad de que la superficie (20) o el cuerpo (21) del agua lleve otra casilla de la hoja. */
   waterChance: number;
+  /**
+   * S113: raicillas que cuelgan en el aire debajo de una saliente (`hang` en la hoja): probabilidad por celda de aire con
+   * terreno justo arriba y al menos `HANG_CLEAR` filas de aire debajo (en un pasaje bajo estorbarían). Sin ella, nada.
+   */
+  hangChance?: number;
   /** S112: el pueblo: cómo se reparte el mapa en calle y casas (`townZones`). */
   town?: TownConfig;
   /** S112: las calcomanías de cada zona (en vez de las franjas de siempre); una zona que no está, sin calcomanías. */
@@ -144,6 +149,8 @@ const AUTOTILE_LAST = 15;
 const WATER_SURFACE = 20;
 const WATER_BODY = 21;
 const DRY_MUD = 22;
+/** S113: filas de aire que tiene que haber debajo de una saliente para que cuelguen raicillas (el túnel de l5 tiene 3). */
+export const HANG_CLEAR = 4;
 
 /** Número de 0 a 1 fijo para (x, y, semilla, sal): el azar de cada celda, igual en cada partida. */
 export function cellHash(x: number, y: number, seed: number, salt = 0): number {
@@ -251,7 +258,7 @@ export function planTerrainVariants(
  * casillas hacia abajo, o `rootlet`), el pasto que sale por las esquinas de arriba hacia el aire vacío
  * (`overhangLeft` / `overhangRight`), vetas de cristal cerca del aire de las cuevas y, en el resto, lo que diga la
  * franja de profundidad (piedras, capas, grietas, liquen). S112: con `zoneAt` y `cfg.zoneDecals`, cada zona con lo
- * suyo (y nada en las que no están).
+ * suyo (y nada en las que no están). S113: con `cfg.hangChance`, raicillas (`hang`) en el aire bajo las salientes.
  */
 export function planTerrainDecals(
   map: DetailMap,
@@ -308,17 +315,31 @@ export function planTerrainDecals(
       const t = map.ground(x, y);
       const roll = cellHash(x, y, seed, 3);
       if (t === -1) {
+        if (!map.emptyAir(x, y)) continue;
         // El pasto de una esquina de arriba sale hacia el aire vacío de al lado.
-        if (!map.emptyAir(x, y) || roll >= cfg.overhangChance) continue;
-        // Una esquina de arriba en (cx, y) con aire del lado `side` (el de esta celda).
-        const cornerAt = (cx: number, side: number) => autotile(cx, y) && !(g(cx, y) & UP) && !(g(cx, y) & side) && map.opaque(cx, y);
-        let kind: string | null = null;
-        if (cornerAt(x + 1, LEFT)) kind = 'overhangLeft';
-        else if (cornerAt(x - 1, RIGHT)) kind = 'overhangRight';
-        const decal = kind ? decalOf(kind, x, y) : null;
-        if (kind && decal) {
-          used[i] = 1;
-          decals.push({ x, y, id: decal.ids[0], kind, flip: false });
+        if (roll < cfg.overhangChance) {
+          // Una esquina de arriba en (cx, y) con aire del lado `side` (el de esta celda).
+          const cornerAt = (cx: number, side: number) => autotile(cx, y) && !(g(cx, y) & UP) && !(g(cx, y) & side) && map.opaque(cx, y);
+          let kind: string | null = null;
+          if (cornerAt(x + 1, LEFT)) kind = 'overhangLeft';
+          else if (cornerAt(x - 1, RIGHT)) kind = 'overhangRight';
+          const decal = kind ? decalOf(kind, x, y) : null;
+          if (kind && decal) {
+            used[i] = 1;
+            decals.push({ x, y, id: decal.ids[0], kind, flip: false });
+            continue;
+          }
+        }
+        // S113: raicillas que cuelgan debajo de una saliente, donde abajo hay aire de sobra.
+        const hang = cfg.hangChance ?? 0;
+        if (hang > 0 && cellHash(x, y, seed, 12) < hang && autotile(x, y - 1) && map.opaque(x, y - 1)) {
+          let clear = true;
+          for (let k = 0; k < HANG_CLEAR && clear; k++) clear = inside(x, y + k) && map.ground(x, y + k) === -1;
+          const decal = clear ? decalOf('hang', x, y) : null;
+          if (decal) {
+            used[i] = 1;
+            decals.push({ x, y, id: decal.ids[0], kind: 'hang', flip: decal.flip === true && cellHash(x, y, seed, 6) < 0.5 });
+          }
         }
         continue;
       }

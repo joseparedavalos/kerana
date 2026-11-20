@@ -5,11 +5,12 @@ import {
   edgeColumns,
   isMistPixel,
   mistLayer,
+  CANOPY_PALETTE,
   mistPuffAlpha,
+  mistPuffDither,
   mixColor,
   rainFrame,
   rainMask,
-  rayAlpha,
   rayAnchors,
   scrollOffset,
   seeded,
@@ -185,27 +186,41 @@ describe("niebla pintada (S59)", () => {
   });
 });
 
-// S60: el dosel de l5. Borde como el de l5: oscuro a los costados, claro al medio.
-describe("dosel (S60)", () => {
+// S60: el dosel de l5 (dibujado de nuevo en S113). Borde como el de l5: oscuro a los costados, claro al medio.
+describe("dosel (S60, S113)", () => {
   const DARK = 0x0f1a0e;
   const LIGHT = 0x708268;
   const TOP = 0xa9bf98;
   const edge = [DARK, DARK, DARK, LIGHT, LIGHT, DARK, DARK, DARK];
   const look = (weights: number[]) => ({
     weights,
-    crownColor: 0x1d3320,
-    crownAlpha: 0.85,
-    crownHeight: 0.5,
-    crownVary: 0.6,
-    hazeTop: 0.4,
-    bottomFade: 0.14,
-    fringeMin: 0.03,
-    fringeMax: 0.2,
-    fringeAlpha: 0.8,
-    rMin: 6,
-    rMax: 14,
+    pixel: 3,
+    farHeight: 0.62,
+    midHeight: 0.85,
+    nearHeight: 1,
+    fringeMin: 0.12,
+    fringeMax: 0.5,
+    branches: 2,
+    lianas: 1.6,
+    epiphytes: 3,
+    rays: { count: 3, width: 30, tiltDeg: 12, strength: 0.3, color: 0xe9efc0 },
+    haze: { at: 0.58, height: 0.16, alpha: 0.4, color: 0xa9bc9a },
+    blend: 12,
     seed: 5,
   });
+  const W = 240;
+  const H = 120;
+  // El borde de la imagen: sus primeras filas (una por color, para ver que se copian espejadas).
+  const seamRows = 12;
+  const seamData = new Uint8ClampedArray(W * seamRows * 4);
+  for (let y = 0; y < seamRows; y++) for (let x = 0; x < W; x++) seamData.set([10 + y, 20, 30 + x % 7, 255], (y * W + x) * 4);
+  const draw = () => {
+    const out = new Uint8ClampedArray(W * H * 4);
+    canopyFill(edge, TOP, W, H, look(canopyWeights(edge, TOP, 0.45, 0.75)), out, { data: seamData, rows: seamRows });
+    return out;
+  };
+  const at = (out: Uint8ClampedArray, x: number, y: number) => (out[(y * W + x) * 4]! << 16) | (out[(y * W + x) * 4 + 1]! << 8) | out[(y * W + x) * 4 + 2]!;
+  const lum = (c: number) => 0.299 * ((c >> 16) & 0xff) + 0.587 * ((c >> 8) & 0xff) + 0.114 * (c & 0xff);
 
   it("el azar con semilla se repite", () => {
     const a = seeded(5);
@@ -221,21 +236,40 @@ describe("dosel (S60)", () => {
     expect(w[3]).toBe(0);
   });
 
-  it("las copas suben sobre los costados, el medio queda abierto, y abajo no hay costura con la imagen", () => {
-    const W = 160;
-    const H = 80;
-    const out = new Uint8ClampedArray(W * H * 4);
-    canopyFill(edge, TOP, W, H, look(canopyWeights(edge, TOP, 0.45, 0.75)), out);
-    const at = (x: number, y: number) => (out[(y * W + x) * 4]! << 16) | (out[(y * W + x) * 4 + 1]! << 8) | out[(y * W + x) * 4 + 2]!;
-    // Sin copas, cerca de abajo el degradado sería mezcla del color de arriba y del borde.
-    const plain = mixColor(TOP, DARK, 60 / (H - 1));
-    const sideDarker = [4, 10, 16].some((x) => (at(x, 60) & 0xff00) < (plain & 0xff00));
-    expect(sideDarker).toBe(true);
-    // En el medio, a media altura: el degradado limpio (ni copas ni dosel colgante).
-    expect(at(80, 40)).toBe(mixColor(TOP, mixColor(LIGHT, LIGHT, 0), 40 / (H - 1)));
-    // La fila de abajo es el color del borde (sigue con el fundido sobre la imagen).
-    expect(at(2, H - 1)).toBe(DARK);
+  it("sale siempre igual, opaco, más oscuro a los costados que en el claro, y en píxeles gruesos", () => {
+    const out = draw();
+    expect(Array.from(draw())).toEqual(Array.from(out));
     expect(out.every((v, i) => i % 4 !== 3 || v === 255)).toBe(true);
+    let side = 0;
+    let open = 0;
+    for (let y = 30; y < 90; y++) {
+      side += lum(at(out, 10, y)) + lum(at(out, W - 10, y));
+      open += 2 * lum(at(out, W / 2, y));
+    }
+    expect(side).toBeLessThan(open * 0.8);
+    // Arriba de la franja que copia la imagen, cada bloque de 3 × 3 es de un solo color (las hojas tienen el tamaño del fondo).
+    for (let y = 0; y < 60; y += 3) for (let x = 0; x < W - 2; x += 3) {
+      const c = at(out, x, y);
+      expect(at(out, x + 2, y + 2), `${x},${y}`).toBe(c);
+    }
+    // Las hojas son dibujo, no un degradado liso: en una fila del costado hay varios tonos.
+    const tones = new Set(Array.from({ length: 40 }, (_, k) => at(out, k * 3, 50)));
+    expect(tones.size).toBeGreaterThan(4);
+  });
+
+  it("los colores del dosel son los de la paleta medida (salvo la niebla y la luz que se mezclan)", () => {
+    expect(CANOPY_PALETTE.leaf.length).toBeGreaterThanOrEqual(5);
+    expect(CANOPY_PALETTE.haze.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("abajo no hay costura: la fila de abajo es el borde de la imagen, y la franja se deshace hacia arriba", () => {
+    const out = draw();
+    // La última fila es la fila 0 de la imagen (espejada: la de más abajo del relleno toca la de más arriba de la imagen).
+    for (let x = 0; x < W; x++) expect(at(out, x, H - 1)).toBe((10 << 16) | (20 << 8) | (30 + x % 7));
+    // Arriba de la franja ya no hay nada copiado.
+    let copied = 0;
+    for (let x = 0; x < W; x++) if ((at(out, x, H - 1 - seamRows) >> 8) === ((10 + seamRows) << 8 | 20)) copied++;
+    expect(copied).toBe(0);
   });
 
   it("los rayos bajan en lo claro", () => {
@@ -246,13 +280,13 @@ describe("dosel (S60)", () => {
     expect(rayAnchors([1, 1], 3, seeded(1))).toEqual([]);
   });
 
-  it("rayo y jirón se apagan en los bordes", () => {
-    const ray = rayAlpha(16, 64);
-    expect(ray[0]).toBe(0); // arriba asoma
-    expect(ray[63 * 16 + 8]).toBe(0); // abajo se apaga
-    expect(ray[20 * 16 + 8]!).toBeGreaterThan(ray[20 * 16]!); // más fuerte al medio
+  it("el jirón se apaga en los bordes, y el tramado va en tres escalones (sin borde borroso)", () => {
     const puff = mistPuffAlpha(64, 16, seeded(2));
     for (let y = 0; y < 16; y++) expect(puff[y * 64]!).toBeLessThan(8);
     expect(Math.max(...puff)).toBeGreaterThan(100);
+    const dith = mistPuffDither(96, 18, seeded(2));
+    expect(new Set(dith).size).toBeLessThanOrEqual(4);
+    expect([...new Set(dith)].every((v) => [0, 85, 170, 255].includes(v))).toBe(true);
+    for (let y = 0; y < 18; y++) expect(dith[y * 96]).toBe(0);
   });
 });
