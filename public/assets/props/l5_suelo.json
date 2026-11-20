@@ -18,7 +18,8 @@
       "sourceSize": {
         "w": 72,
         "h": 128
-      }
+      },
+      "sink": 2
     },
     "buttress_roots": {
       "frame": {
@@ -39,25 +40,25 @@
         "w": 228,
         "h": 192
       },
-      "sink": 4,
+      "sink": 5,
       "tufts": [
         {
           "prop": "l5_suelo/ferns",
           "x": 0.12,
           "scale": 0.4,
-          "sink": 2
+          "sink": 7.5
         },
         {
           "prop": "l5_suelo/undergrowth",
           "x": 0.5,
           "scale": 0.3,
-          "sink": 2
+          "sink": 8
         },
         {
           "prop": "l5_suelo/ferns",
           "x": 0.88,
           "scale": 0.4,
-          "sink": 2,
+          "sink": 7.5,
           "flip": true
         }
       ]
@@ -81,19 +82,19 @@
         "w": 100,
         "h": 80
       },
-      "sink": 1,
+      "sink": 4.5,
       "tufts": [
         {
           "prop": "l5_suelo/leaf_litter",
           "x": 0.14,
           "scale": 0.3,
-          "sink": 2
+          "sink": 9.5
         },
         {
           "prop": "l5_suelo/leaf_litter",
           "x": 0.86,
           "scale": 0.3,
-          "sink": 2,
+          "sink": 9.5,
           "flip": true
         }
       ]
@@ -117,19 +118,19 @@
         "w": 128,
         "h": 56
       },
-      "sink": 1,
+      "sink": 5,
       "tufts": [
         {
           "prop": "l5_suelo/ferns",
           "x": 0.1,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l5_suelo/ferns",
           "x": 0.9,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
@@ -152,7 +153,8 @@
       "sourceSize": {
         "w": 144,
         "h": 73
-      }
+      },
+      "sink": 3.5
     },
     "saplings": {
       "frame": {
@@ -172,7 +174,8 @@
       "sourceSize": {
         "w": 68,
         "h": 160
-      }
+      },
+      "sink": 2
     },
     "stream_bed": {
       "frame": {
@@ -192,7 +195,8 @@
       "sourceSize": {
         "w": 160,
         "h": 23
-      }
+      },
+      "sink": 2.5
     },
     "undergrowth": {
       "frame": {
@@ -212,7 +216,8 @@
       "sourceSize": {
         "w": 160,
         "h": 49
-      }
+      },
+      "sink": 3.5
     }
   },
   "meta": {

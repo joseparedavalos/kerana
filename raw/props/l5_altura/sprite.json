@@ -44,6 +44,30 @@
     },
     "lianas_hanging": {
       "hang": true
+    },
+    "branch_platform": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 8 filas angostas (9, 9, 33, 33, 73, 75, 137, 139 de 190 px: la panza de la rama) → 6",
+      "sink": 6
+    },
+    "bromeliads": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 7 filas angostas (7, 8, 28, 57, 66, 113, 116 de 160 px: la panza de la rama) → 5,5",
+      "sink": 5.5
+    },
+    "canopy": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 5 filas angostas (14, 46, 82, 113, 140 de 205 px) → 4,5",
+      "sink": 4.5
+    },
+    "hollow_trunk": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: base plana, el corte del tronco (104 de 104 px) → 2",
+      "sink": 2
+    },
+    "orchids": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 2 filas angostas (57, 57 de 128 px) → 3",
+      "sink": 3
+    },
+    "vines_trunk": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 1 fila angosta (10 de 39 px) → 2,5",
+      "sink": 2.5
     }
   }
 }

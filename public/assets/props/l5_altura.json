@@ -39,7 +39,8 @@
       "sourceSize": {
         "w": 192,
         "h": 45
-      }
+      },
+      "sink": 6
     },
     "bromeliads": {
       "frame": {
@@ -59,7 +60,8 @@
       "sourceSize": {
         "w": 160,
         "h": 46
-      }
+      },
+      "sink": 5.5
     },
     "canopy": {
       "frame": {
@@ -79,7 +81,8 @@
       "sourceSize": {
         "w": 256,
         "h": 127
-      }
+      },
+      "sink": 4.5
     },
     "hollow_trunk": {
       "frame": {
@@ -99,7 +102,8 @@
       "sourceSize": {
         "w": 104,
         "h": 192
-      }
+      },
+      "sink": 2
     },
     "lianas_hanging": {
       "frame": {
@@ -140,7 +144,8 @@
       "sourceSize": {
         "w": 128,
         "h": 34
-      }
+      },
+      "sink": 3
     },
     "vines_trunk": {
       "frame": {
@@ -160,7 +165,8 @@
       "sourceSize": {
         "w": 39,
         "h": 192
-      }
+      },
+      "sink": 2.5
     }
   },
   "meta": {

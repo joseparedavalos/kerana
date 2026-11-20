@@ -44,67 +44,87 @@
   },
   "sheets": {
     "buttress_roots": {
-      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido)",
-      "sink": 4,
+      "note": "S48: hundido poco para no comerse las raíces (lo mejor del dibujo); lo que queda lo tapan las matas de `tufts` (props de pasto ya existentes, colocados solos junto al tronco: x = fracción del ancho del dibujo, scale = la del pasto, sink = su hundido) · S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 6 filas angostas (7, 15, 43, 73, 94, 124 de 181 px) → 5, antes 4 · Las matas de `tufts` van al mismo borde: su sink (a escala 1) = sus filas angostas / detail + 2 / su escala.",
+      "sink": 5,
       "tufts": [
         {
           "prop": "l5_suelo/ferns",
           "x": 0.12,
           "scale": 0.4,
-          "sink": 2
+          "sink": 7.5
         },
         {
           "prop": "l5_suelo/undergrowth",
           "x": 0.5,
           "scale": 0.3,
-          "sink": 2
+          "sink": 8
         },
         {
           "prop": "l5_suelo/ferns",
           "x": 0.88,
           "scale": 0.4,
-          "sink": 2,
+          "sink": 7.5,
           "flip": true
         }
       ]
     },
     "leaf_litter": {
-      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y helechos chicos de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
-      "sink": 1,
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y helechos chicos de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1) · S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 6 filas angostas (5, 21, 41, 65, 77, 87 de 128 px) → 5, antes 1 · Las matas de `tufts` van al mismo borde: su sink (a escala 1) = sus filas angostas / detail + 2 / su escala.",
+      "sink": 5,
       "tufts": [
         {
           "prop": "l5_suelo/ferns",
           "x": 0.1,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l5_suelo/ferns",
           "x": 0.9,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
     },
     "ferns": {
-      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y hojarasca chica de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
-      "sink": 1,
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y hojarasca chica de esta carpeta a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1) · S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 5 filas angostas (1, 1, 22, 41, 55 de 81 px) → 4,5, antes 1 · Las matas de `tufts` van al mismo borde: su sink (a escala 1) = sus filas angostas / detail + 2 / su escala.",
+      "sink": 4.5,
       "tufts": [
         {
           "prop": "l5_suelo/leaf_litter",
           "x": 0.14,
           "scale": 0.3,
-          "sink": 2
+          "sink": 9.5
         },
         {
           "prop": "l5_suelo/leaf_litter",
           "x": 0.86,
           "scale": 0.3,
-          "sink": 2,
+          "sink": 9.5,
           "flip": true
         }
       ]
+    },
+    "bracket_fungi": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: base plana, el corte del tronco (57 de 72 px desde la fila de abajo) → 2",
+      "sink": 2
+    },
+    "rotting_logs": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 3 filas angostas (10, 49, 95 de 143 px) → 3,5",
+      "sink": 3.5
+    },
+    "saplings": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: la fila de abajo es la más ancha (el pie de los arbolitos, 21 px; los tallos, 8) → 2",
+      "sink": 2
+    },
+    "stream_bed": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 1 fila angosta (61 de 160 px) → 2,5",
+      "sink": 2.5
+    },
+    "undergrowth": {
+      "note": "S114: como en S97 (la primera fila ancha de la base, ≥ 75 % de la fila más ancha de las 6 unidades de abajo), contra el borde visible del piso nuevo de selva.png (S113): las filas 0 y 1 de las casillas de borde son ralas (2 y 4 a 6 de 16 px) y la fila 2 es la primera llena, así que sink = filas angostas / detail + 2. Más = más enterrado. Medido: 3 filas angostas (20, 69, 109 de 159 px) → 3,5",
+      "sink": 3.5
     }
   }
 }
