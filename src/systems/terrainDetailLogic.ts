@@ -3,6 +3,7 @@
 // semilla del nivel y de la posición de la celda: el mismo mapa da siempre el mismo dibujo, en cada partida.
 // S110: la configuración por hoja (`sheets`), el agua (superficie, cuerpo y fondo) y la luz de las grietas del barro seco.
 // S112: las zonas del pueblo (l4): qué celda es calle (tierra, empedrado, ladrillo, cimiento) y cuál es casa (cal, zócalo).
+// S118: zonas por rectángulo (la terraza de la arena de Yvága) y la quilla que cuelga bajo las islas del cielo.
 import { terrainDepths } from './terrainLogic';
 
 /** Una calcomanía de w × h casillas; `ids` en filas de w (índices dentro de la hoja); `flip`: se puede espejar. */
@@ -35,6 +36,8 @@ export interface DetailLayout {
    * lista lleva siempre una de esas (la calle no tiene cal en ningún lado); si no, lo de siempre.
    */
   zones?: Record<string, Record<string, number[]>>;
+  /** S118: la losa de piedra que se mueve (Mover) en la hoja: casilla de la izquierda, del medio y de la derecha. */
+  mover?: { left: number; center: number; right: number };
 }
 
 export interface DetailBand {
@@ -70,6 +73,26 @@ export interface DetailConfig {
   town?: TownConfig;
   /** S112: las calcomanías de cada zona (en vez de las franjas de siempre); una zona que no está, sin calcomanías. */
   zoneDecals?: Readonly<Record<string, ZoneDecals>>;
+  /** S118: zonas por rectángulo (`regionZones`), en vez del pueblo. */
+  regions?: RegionConfig;
+  /**
+   * S118: la quilla bajo las islas del cielo: en la celda de aire justo debajo de un terreno, una calcomanía según la forma
+   * de la isla (`keelMid`, `keelLeft`, `keelRight`, `keelSolo`) con `chance`; si debajo hay menos de `clear` filas de
+   * aire libre (un pasaje), la corta (`keelShort…`), y con menos de `shortClear`, nada.
+   */
+  keel?: {
+    chance: number;
+    clear: number;
+    shortClear: number;
+    /** Un cono de dos celdas (`keelDeep`) bajo una celda con isla a `reach` o más a cada lado y `clear` filas libres. */
+    deep?: { chance: number; clear: number; reach: number };
+  };
+}
+
+/** S118: rectángulos del mapa (en tiles) con su zona; lo demás del autotile va a `rest`. */
+export interface RegionConfig {
+  rest: string;
+  rects: ReadonlyArray<{ zone: string; x: number; y: number; w: number; h: number }>;
 }
 
 /** S112: las calcomanías de una zona: las franjas por profundidad y, en el piso (aire arriba), qué va y cuánto. */
@@ -145,6 +168,8 @@ export interface DecalPlan {
 const UP = 1;
 const RIGHT = 2;
 const LEFT = 8;
+/** S118: las formas de la quilla, según qué vecinos tiene la casilla de arriba (izquierda, derecha). */
+const KEEL_SHAPES = ['Solo', 'Left', 'Right', 'Mid'] as const;
 const AUTOTILE_LAST = 15;
 const WATER_SURFACE = 20;
 const WATER_BODY = 21;
@@ -327,6 +352,34 @@ export function planTerrainDecals(
           if (kind && decal) {
             used[i] = 1;
             decals.push({ x, y, id: decal.ids[0], kind, flip: false });
+            continue;
+          }
+        }
+        // S118: la quilla bajo una isla del cielo (la colisión no cambia: va en la celda de aire).
+        const keel = cfg.keel;
+        if (keel && autotile(x, y - 1) && map.opaque(x, y - 1) && cellHash(x, y, seed, 13) < keel.chance) {
+          const above = g(x, y - 1);
+          const look = Math.max(keel.clear, keel.deep?.clear ?? 0);
+          let clear = 0;
+          while (clear < look && inside(x, y + clear) && map.ground(x, y + clear) === -1 && map.emptyAir(x, y + clear)) clear++;
+          const shape = KEEL_SHAPES[(above & RIGHT ? 1 : 0) + (above & LEFT ? 2 : 0)];
+          // En el corazón de una isla ancha, a veces un cono de dos celdas (`keelDeep`), con aire de sobra debajo.
+          if (shape === 'Mid' && keel.deep && clear >= keel.deep.clear && !used[i + width] && cellHash(x, y, seed, 14) < keel.deep.chance) {
+            let reach = 0;
+            while (reach < keel.deep.reach && autotile(x - reach - 1, y - 1) && autotile(x + reach + 1, y - 1)) reach++;
+            const deep = reach >= keel.deep.reach ? decalOf('keelDeep', x, y) : null;
+            if (deep && deep.ids.length === 2) {
+              used[i] = 1;
+              used[i + width] = 1;
+              decals.push({ x, y, id: deep.ids[0], kind: 'keelDeep', flip: false }, { x, y: y + 1, id: deep.ids[1], kind: 'keelDeep', flip: false });
+              continue;
+            }
+          }
+          const kind = clear >= keel.clear ? `keel${shape}` : clear >= keel.shortClear ? `keelShort${shape}` : null;
+          const decal = kind ? decalOf(kind, x, y) : null;
+          if (kind && decal) {
+            used[i] = 1;
+            decals.push({ x, y, id: decal.ids[0], kind, flip: decal.flip === true && cellHash(x, y, seed, 6) < 0.5 });
             continue;
           }
         }
@@ -514,6 +567,24 @@ export function townZones(
         zone = floor ? TOWN_ZONES.wallBrick : TOWN_ZONES.wall;
       } else zone = inStreet(x, y + 1) ? socleOf[house[y * width + x]] : TOWN_ZONES.wall;
       out[y * width + x] = zone;
+    }
+  }
+  return out;
+}
+
+/**
+ * S118: zonas por rectángulo: cada celda del autotile lleva la zona del primer rectángulo que la contiene o `rest` (null en
+ * el aire y en lo que no es del autotile). Con `zoneDecals`, `rest` también tiene que estar ahí o esas celdas quedan sin
+ * calcomanías.
+ */
+export function regionZones(width: number, height: number, ground: (x: number, y: number) => number, cfg: RegionConfig): (string | null)[] {
+  const out: (string | null)[] = new Array(width * height).fill(null);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const t = ground(x, y);
+      if (t < 0 || t > AUTOTILE_LAST) continue;
+      const r = cfg.rects.find((q) => x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h);
+      out[y * width + x] = r ? r.zone : cfg.rest;
     }
   }
   return out;

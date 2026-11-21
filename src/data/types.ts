@@ -30,6 +30,12 @@ export interface LevelBackgrounds {
    */
   climb?: boolean;
   /**
+   * El cielo vivo (S118, Yvága): capas de nubes que se deslizan delante del fondo a distintas velocidades de parallax
+   * mientras se sube, detrás de todo lo jugable, y una estrella fugaz de vez en cuando en la noche de arriba
+   * (GAMEPLAY.backdrop.skyDrift). Con «Destellos» apagado, sin estrellas fugaces.
+   */
+  skyDrift?: boolean;
+  /**
    * El sol de la imagen (S96; px de arte): `at`, el centro del disco; `reflection`, el rectángulo (x0, y0, x1, y1) de la
    * columna dorada del agua. Un halo respira sobre el sol y titilan destellos en el reflejo (GAMEPLAY.backdrop.sun).
    */

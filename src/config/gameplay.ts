@@ -1002,6 +1002,24 @@ export const GAMEPLAY = {
     streakLifeMs: 500,
     streakChanceWarn: 0.15,
     streakChanceGust: 0.5,
+    /**
+     * S118: en el cielo (zonas sin pasto, `grass=false`: Yvága), además de las rayas, jirones de nube que corren con la
+     * ráfaga (windWispPaint.ts): tamaños (unidades), paleta (cola, cabeza), alfa del borde y del cuerpo, velocidad (px/s),
+     * vida (ms) y probabilidad por frame en el aviso y en la ráfaga.
+     */
+    wisps: {
+      sizes: [
+        [48, 7],
+        [36, 6],
+        [62, 8],
+      ] as ReadonlyArray<readonly [number, number]>,
+      palette: [0xb7aae2, 0xfbf8ff],
+      alphas: [0.5, 0.85],
+      speed: 160,
+      lifeMs: 1300,
+      chanceWarn: 0.06,
+      chanceGust: 0.2,
+    },
   },
   hypnosis: {
     /** Controles invertidos (ms), GDD §4.8. */
@@ -1577,6 +1595,26 @@ export const GAMEPLAY = {
     /** Sin tileset (o la versión sólida): rectángulo liso de estos colores. */
     color: 0x8a6a48,
     edgeColor: 0xc9a67a,
+    /**
+     * S118: aspecto propio por bioma (moverLook.ts); los que no están se ven como siempre. Cielo (Yvága): una losa de
+     * piedra flotante de la hoja de detalle (`mover` en `detalle/cielo.json`, 12 filas de arte: la cara, el cascajo y sus
+     * dientes) con un brillo suave debajo, que respira despacio (quieto con «Destellos» apagado).
+     */
+    looks: {
+      cielo: {
+        source: 'detail' as const,
+        artRows: 12,
+        glow: {
+          pad: 6,
+          height: 16,
+          colors: [0xd8f4ff, 0x9fd8f0, 0x8a86d8, 0x6a4fb0],
+          alphas: [0.16, 0.3, 0.46],
+          steps: [0.08, 0.3, 0.55],
+        },
+        breathMs: 2600,
+        breath: 0.35,
+      },
+    },
   },
 
   /** Disparador (`Switch`): piedra que se enciende con el sable o con la onda de luz. */
@@ -1832,9 +1870,29 @@ export const GAMEPLAY = {
     trueClearPx: 44,
     pullOverlapPx: 24,
     /** Estrella encendida: brillo y escala. */
-    starColor: 0xf2eee3,
-    starLitColor: 0xf2c14e,
     starLitScale: 1.5,
+    /**
+     * S118: el dibujo de las siete estrellas (tauStarPaint.ts, TauStars.ts): estrellas de cristal en pixel art a
+     * `detail` píxeles por unidad (radio `outer`, entrada `inner`, en unidades: las de la estrella de código de antes),
+     * con su halo, un destello que titila cada `twinkle.periodMs` (desfasado por estrella) y, la que la fase 3 enciende,
+     * dorada, con un halo grande que respira y rayos que giran. Solo el dibujo: dónde están y cuándo se encienden, igual.
+     * Con «Destellos» apagado, quietas.
+     */
+    starLook: {
+      detail: 2,
+      outer: 7,
+      inner: 3,
+      /** Del contorno a la luz: cristal lila (en reposo) y dorado (la encendida). */
+      idle: [0x2b2260, 0x5a52a8, 0x8f88d8, 0xc4c0f2, 0xeae9ff, 0xffffff],
+      lit: [0x6a3a12, 0xc27c22, 0xf2c14e, 0xffe08a, 0xfff4cc, 0xffffff],
+      haloIdle: { radius: 10, colors: [0x6c62c8, 0xd8d4ff], alphas: [0.12, 0.2, 0.3], alpha: [0.45, 0.75] },
+      haloLit: { radius: 20, colors: [0xb86a1e, 0xfff0b0], alphas: [0.1, 0.24, 0.45], alpha: [0.8, 1] },
+      idleBreathMs: 900,
+      litBreathMs: 260,
+      glint: { arm: 5, color: 0xffffff, at: [-2.5, -3] },
+      twinkle: { periodMs: [2200, 3600], offsetMs: 1370, flashMs: 420 },
+      rays: { length: 22, color: 0xfff0b8, spinMs: 9000 },
+    },
   },
 
   /** Enjambre de abejas (GDD §5.2 Swarm): se dibuja con partículas. */
@@ -2376,6 +2434,70 @@ export const GAMEPLAY = {
 
   backdrop: {
     /** Fondo del nivel fijo a la cámara (sin repetir): cuánto se agranda sobre la vista para poder desplazarse. */
+    /**
+     * S118: el cielo vivo de Yvága (`skyDrift` en levels.ts; SkyDrift.ts, skyDriftLogic.ts, skyDriftPaint.ts). Tres capas
+     * de nubes con su parallax (el fondo recorre ≈ 0,19 de lo que sube la cámara; lo jugable, 1), cuánto corren de
+     * costado (unidades/s), cada cuánto hay una (unidades de la capa) y su alfa. Las formas (unidades), una paleta por
+     * altura (de abajo, el mar de nubes; del medio, el violeta; de la noche, casi del color del cielo) y cuántas quedan
+     * de cada altura. Tres escalones de alfa con el borde tramado, como la bruma de S103. La estrella fugaz, la de la
+     * portada: cada 10 a 20 s, en la franja de noche del fondo (hasta `nightBottom` px de arte de `bg_yvaga_subida`).
+     */
+    skyDrift: {
+      depth: -19.4,
+      seed: 118,
+      layers: [
+        { parallax: 0.32, drift: -2.2, spacing: 64, alpha: 0.55 },
+        { parallax: 0.5, drift: 4, spacing: 92, alpha: 0.72 },
+        { parallax: 0.72, drift: -6.5, spacing: 150, alpha: 0.85 },
+      ],
+      /** Formas por altura: en la noche, tiras finas; en el violeta, bancos medianos; en el atardecer, tiras largas y chatas; abajo, bancos con lomo. */
+      sizes: {
+        high: [
+          [190, 9],
+          [130, 7],
+          [240, 11],
+        ],
+        mid: [
+          [150, 20],
+          [104, 16],
+          [196, 24],
+        ],
+        dusk: [
+          [220, 14],
+          [160, 11],
+          [280, 16],
+        ],
+        low: [
+          [150, 30],
+          [110, 24],
+          [196, 36],
+        ],
+      } as Readonly<Record<'low' | 'dusk' | 'mid' | 'high', ReadonlyArray<readonly [number, number]>>>,
+      /** Cuánto se estiran los lóbulos a lo ancho (sobre su alto). */
+      stretch: { high: 3.2, mid: 1.9, dusk: 3, low: 1.6 },
+      /**
+       * Paletas (de la sombra a la luz), medidas en el fondo donde va cada una: la noche (#171135 … #322259), el violeta
+       * (#594082 … #aa6b9f), el atardecer (#a56aa1 … #fabcac) y el mar de nubes (#464084 … #cd93bc); un poco más claras
+       * (están delante y les da la luz).
+       */
+      palettes: {
+        high: [0x251c4e, 0x2d2358, 0x362963, 0x40306d, 0x4c3a78],
+        mid: [0x4d3879, 0x5d4385, 0x6f4e8f, 0x835a98, 0x9a68a2, 0xb277aa],
+        dusk: [0xa26ba3, 0xb977a7, 0xcd85a9, 0xdf94ab, 0xeda6af, 0xf8bdb5],
+        low: [0x51478f, 0x62539b, 0x7563a7, 0x8b70b1, 0xa580b9, 0xc493c1],
+      },
+      alphas: [0.3, 0.55, 0.8],
+      steps: [0.16, 0.4, 0.68],
+      /** Qué hay detrás (filas de la imagen de 1132 unidades): la noche, el violeta, el atardecer y, hasta el pie, el mar de nubes. */
+      bands: [
+        [430, 'high'],
+        [620, 'mid'],
+        [800, 'dusk'],
+        [99999, 'low'],
+      ] as ReadonlyArray<readonly [number, 'low' | 'dusk' | 'mid' | 'high']>,
+      density: { low: 0.9, dusk: 0.8, mid: 0.6, high: 0.3 },
+      shooting: { everyMs: [10000, 20000] as const, durationMs: 800, travel: 150, angle: 0.42, minBand: 70, nightBottom: 900 },
+    },
     overscale: 1.12,
     /** Fracción del margen sobrante que recorre de punta a punta del nivel (1 = todo el margen; parallax lento). */
     panRange: 1,
@@ -2941,6 +3063,35 @@ export const GAMEPLAY = {
            * contornos de la profundidad son cuadrados: con pasos grandes hasta el fondo se leían anillos), hasta 0,76.
            */
           depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82, 0.8, 0.78, 0.76],
+        },
+        /**
+         * S118: cielo (Yvága), ruinas de piedra clara con musgo. Casi todo son islas de una fila: el piso (aire arriba)
+         * lleva el detalle de la cara del sillar (musgo que baja, enredaderas, flores, grietas, desportillados y alguna
+         * runa gastada). Debajo de cada isla, la quilla de roca con dientes y raíces (`keel`); en un pasaje de menos de 4
+         * filas, la corta. El piso de la arena (x 0-43, filas 18-25) es la zona `terrace`: losas, friso y sillares.
+         */
+        cielo: {
+          edgeChance: 0.8,
+          overhangChance: 0,
+          rootsChance: 0,
+          rootletChance: 0,
+          crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
+          keel: { chance: 1, clear: 4, shortClear: 1, deep: { chance: 0.4, clear: 6, reach: 3 } },
+          regions: { rest: 'island', rects: [{ zone: 'terrace', x: 0, y: 18, w: 44, h: 8 }] },
+          zoneDecals: {
+            island: {
+              floorChance: 0.34,
+              floor: { mossFace: 4, vine: 2, bloom: 3, fern: 2, crack: 2, chip: 2, rune: 1 },
+              bands: [{ minDepth: 1, maxDepth: 99, chance: 0.12, kinds: { crack: 2, chip: 2, rune: 1 } }],
+            },
+            terrace: {
+              floorChance: 0.2,
+              floor: { terraceMoss: 2, terraceCrack: 1 },
+              bands: [{ minDepth: 1, maxDepth: 99, chance: 0.14, kinds: { crack: 2, chip: 2, rune: 2 } }],
+            },
+          },
+          /** Las masas son finas (una o dos filas; la base y la terraza, tres): el oscurecido casi no se ve, en pasos de 2 %. */
+          depthShade: [1, 1, 0.98, 0.96, 0.94],
         },
       },
     },

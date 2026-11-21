@@ -35,7 +35,8 @@ import { LightWaveMotor } from '../entities/LightWaveMotor';
 import { CHARGE_STAR_UNITS, ensureChargeStar, ensureCrescent, FX_TEX_DETAIL } from '../entities/ChargeFx';
 import { Gate } from '../entities/Gate';
 import { OfferingDoor } from '../entities/OfferingDoor';
-import { Mover } from '../entities/Mover';
+import { Mover, type MoverArt } from '../entities/Mover';
+import type { MoverLook } from '../entities/moverLook';
 import type { MoverMode } from '../entities/MoverMotor';
 import { Switch } from '../entities/Switch';
 import { SwitchBoard, swordStrikes, waveStrikes } from '../entities/SwitchMotor';
@@ -72,7 +73,7 @@ import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
 import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
-import { depthTint, detailConfigFor, glowTileFor, planTerrainDecals, planTerrainVariants, planWaterTiles, townZones, type DetailConfig, type DetailLayout } from '../systems/terrainDetailLogic';
+import { depthTint, detailConfigFor, glowTileFor, planTerrainDecals, planTerrainVariants, planWaterTiles, regionZones, townZones, type DetailConfig, type DetailLayout } from '../systems/terrainDetailLogic';
 import { WaterGlints } from '../systems/WaterGlints';
 import { surfaceRuns } from '../systems/waterGlintLogic';
 import { LevelBackdrop } from '../systems/LevelBackdrop';
@@ -1846,6 +1847,23 @@ export class LevelScene extends Phaser.Scene {
     return { first: tileset.firstgid + TILESET_COLUMNS * TILESET_ROWS, layout, seed: opt.seed, cfg, key: combined };
   }
 
+  /**
+   * S118: el aspecto propio de la plataforma móvil del bioma (`GAMEPLAY.mover.looks`; en Yvága, la losa de piedra de la
+   * hoja de detalle con su brillo). Sin entrada para el bioma o sin la hoja, undefined: las casillas 16 a 18 de siempre.
+   */
+  private moverArt(): MoverArt | undefined {
+    const look = (GAMEPLAY.mover.looks as Partial<Record<string, MoverLook>>)[this.def.biome];
+    const pieces = this.terrainDetail?.layout.mover;
+    if (!look || !pieces || !this.terrainDetail) return undefined;
+    const first = TILESET_COLUMNS * TILESET_ROWS;
+    return {
+      texture: this.terrainDetail.key,
+      pieces: { left: first + pieces.left, center: first + pieces.center, right: first + pieces.right },
+      look,
+      flashes: () => SaveManager.current.settings.flashes,
+    };
+  }
+
   /** S109: cada celda de Ground con variante pasa a la casilla de la hoja. Devuelve las casillas de antes y el plan. */
   private applyTerrainVariants(
     tileset: Phaser.Tilemaps.Tileset,
@@ -1862,7 +1880,16 @@ export class LevelScene extends Phaser.Scene {
     const underWater = (x: number, y: number) => y > 0 && (water?.getTileAt(x, y - 1)?.index ?? -1) !== -1;
     // S112: el pueblo (l4): qué celda es calle y cuál es casa, con las casillas de cada zona de la hoja.
     const town = detail.cfg.town;
-    const zones = town && detail.layout.zones ? townZones(width, height, (x, y) => base[y * width + x], town, detail.seed) : null;
+    const groundAt = (x: number, y: number) => base[y * width + x];
+    // S118: o las zonas por rectángulo (la terraza de la arena de Yvága).
+    const regions = detail.cfg.regions;
+    const zones = !detail.layout.zones
+      ? null
+      : town
+        ? townZones(width, height, groundAt, town, detail.seed)
+        : regions
+          ? regionZones(width, height, groundAt, regions)
+          : null;
     const zoneAt = zones ? (x: number, y: number) => zones[y * width + x] : undefined;
     const variant = planTerrainVariants(width, height, (x, y) => base[y * width + x], detail.layout, detail.cfg, detail.seed, underWater, zoneAt);
     ground.forEachTile((tile) => {
@@ -2222,6 +2249,7 @@ export class LevelScene extends Phaser.Scene {
             },
             objectProp(obj, 'solid') === true,
             tilesetKey(this.def.biome),
+            this.moverArt(),
           );
           this.movers.push(mover);
           const id = objectProp(obj, 'id');

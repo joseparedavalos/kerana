@@ -150,7 +150,8 @@ describe('Yvága: la forma de la subida (S92)', () => {
 
   it('el fondo es el cielo vertical y se recorre con la subida; ningún otro nivel usa la opción', () => {
     const yvaga = getLevel('yvaga');
-    expect(yvaga.backgrounds).toEqual({ far: 'bg_yvaga_subida', climb: true });
+    // S118: el mismo fondo y el mismo recorrido; encima, el cielo vivo (capas de nubes y estrellas fugaces).
+    expect(yvaga.backgrounds).toEqual({ far: 'bg_yvaga_subida', climb: true, skyDrift: true });
     expect(yvaga.cameraLookUp).toBeGreaterThan(0);
     for (const l of Object.values(LEVELS)) {
       if (!l || l.id === 'yvaga') continue;
