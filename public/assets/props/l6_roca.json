@@ -18,7 +18,8 @@
       "sourceSize": {
         "w": 156,
         "h": 128
-      }
+      },
+      "sink": 4.5
     },
     "crevice_grasses": {
       "frame": {
@@ -39,19 +40,19 @@
         "w": 160,
         "h": 99
       },
-      "sink": 1,
+      "sink": 5,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
@@ -95,19 +96,19 @@
         "w": 160,
         "h": 94
       },
-      "sink": 1,
+      "sink": 5,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
@@ -130,7 +131,8 @@
       "sourceSize": {
         "w": 144,
         "h": 60
-      }
+      },
+      "sink": 4
     },
     "sandstone_outcrop": {
       "frame": {
@@ -151,19 +153,19 @@
         "w": 160,
         "h": 94
       },
-      "sink": 1,
+      "sink": 6,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 14
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 14,
           "flip": true
         }
       ]
@@ -187,7 +189,7 @@
         "w": 144,
         "h": 68
       },
-      "sink": 3
+      "sink": 5.5
     },
     "windbent_tree": {
       "frame": {
@@ -208,19 +210,19 @@
         "w": 167,
         "h": 192
       },
-      "sink": 1,
+      "sink": 5,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
