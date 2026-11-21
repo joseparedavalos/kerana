@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
 import { getBossDef } from '../../data/bosses';
 import { skinIfAvailable, spriteDetail, type SpriteSkin } from '../../systems/SpriteSkin';
+import { SaveManager } from '../../systems/SaveManager';
 import { Boss, type BossContext } from './Boss';
 import type { BossTransition } from './BossBrain';
 import {
@@ -17,6 +18,7 @@ import {
   type TauExtents,
   type TauForm,
 } from './tauLogic';
+import { STAR_K, TauStars } from './TauStars';
 
 const CFG = GAMEPLAY.tau;
 const TILE = 16;
@@ -67,7 +69,9 @@ export class Tau extends Boss {
   /** Forma real con sprite (humo violeta con ojos rojos): reemplaza al óvalo y a los ojos de código. */
   private readonly trueSkin?: SpriteSkin;
   private readonly smokeFx: Phaser.GameObjects.Particles.ParticleEmitter;
-  private readonly stars: Phaser.GameObjects.Star[] = [];
+  /** S118: los cristales de las siete estrellas (los mueven los tweens de siempre); `starLook`, su halo y su titilar. */
+  private readonly stars: Phaser.GameObjects.Image[] = [];
+  private readonly starLook: TauStars;
   private readonly starCenters: number[] = [];
   private readonly starTops: number[] = [];
   private readonly starBoxes: StarBox[] = [];
@@ -98,13 +102,14 @@ export class Tau extends Boss {
     super(scene, getBossDef('tau'), ctx);
     ensureTexture(scene);
     // Las siete estrellas sobre sus plataformas (el mapa pone la plataforma, acá va el brillo).
+    this.starLook = new TauStars(scene, () => SaveManager.current.settings.flashes);
     for (const [tx, row] of CFG.starTiles) {
       const cx = this.tileX(tx + CFG.starWidthTiles / 2);
       const top = ctx.arena.top + row * TILE;
       this.starCenters.push(cx);
       this.starTops.push(top);
       this.starBoxes.push({ left: this.tileX(tx), right: this.tileX(tx + CFG.starWidthTiles), top });
-      this.stars.push(scene.add.star(cx, top - 1, 5, 3, 7, CFG.starColor, 0.9).setDepth(2));
+      this.stars.push(this.starLook.add(cx, top - 1, 2).setAlpha(0.9));
     }
     this.smokeRect = scene.add
       .rectangle(ctx.arena.left, ctx.floorY, ctx.arena.width, CFG.smokeTiles * TILE, CFG.smokeColor, 0.8)
@@ -362,7 +367,8 @@ export class Tau extends Boss {
     this.litStar = i;
     this.stars.forEach((star, j) => {
       const lit = j === i;
-      star.setFillStyle(lit ? CFG.starLitColor : CFG.starColor, lit ? 1 : 0.9).setScale(lit ? CFG.starLitScale : 1);
+      this.starLook.setLit(j, lit, lit ? CFG.starLitScale : 1);
+      star.setAlpha(lit ? 1 : 0.9);
     });
     if (i >= 0) this.scene.tweens.add({ targets: this.stars[i], angle: 72, duration: 600 });
   }
@@ -456,7 +462,7 @@ export class Tau extends Boss {
       for (const eye of this.eyes) eye.setVisible(true);
       this.smokeFx.startFollow(this.core);
       this.smokeFx.emitting = true;
-      for (const star of this.stars) this.scene.tweens.add({ targets: star, alpha: 1, scale: 1.2, duration: 300, yoyo: true });
+      for (const star of this.stars) this.scene.tweens.add({ targets: star, alpha: 1, scale: 1.2 * STAR_K, duration: 300, yoyo: true });
     }
     this.appliedPhase = phase;
   }
@@ -468,7 +474,10 @@ export class Tau extends Boss {
     this.smokeFx.emitting = false;
     this.body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     // Los siete hijos brillan juntos.
-    for (const star of this.stars) star.setFillStyle(CFG.starLitColor, 1).setScale(CFG.starLitScale);
+    this.stars.forEach((star, j) => {
+      this.starLook.setLit(j, true, CFG.starLitScale);
+      star.setAlpha(1);
+    });
   }
 
   hurtsPlayer(playerRect: Phaser.Geom.Rectangle): boolean {

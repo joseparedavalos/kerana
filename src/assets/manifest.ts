@@ -146,7 +146,7 @@ export const tilesetKey = (biome: string): string => `tiles_${biome}`;
 /** Hoja de detalle del terreno (S109) y su JSON: `tiles/detalle/<hoja>.png` y `.json` (tools/make-terrain-tiles.mjs). */
 export const terrainDetailKey = (sheet: string): string => `tiles_detail_${sheet}`;
 export const terrainDetailLayoutKey = (sheet: string): string => `tiles_detail_${sheet}_layout`;
-const TERRAIN_DETAIL_SHEETS = { cerro: [128, 176], estero: [128, 144], campo: [128, 144], pueblo: [128, 320], selva: [128, 256], montana: [128, 192] } as const;
+const TERRAIN_DETAIL_SHEETS = { cerro: [128, 176], estero: [128, 144], campo: [128, 144], pueblo: [128, 320], selva: [128, 256], montana: [128, 192], cielo: [128, 192] } as const;
 
 export const MANIFEST: AssetEntry[] = [
   ...BIOMES.map(

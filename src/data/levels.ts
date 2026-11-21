@@ -271,9 +271,13 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     biome: 'cielo',
     // S92: un solo cielo vertical, del mar de nubes (la base) a la noche con estrellas (la arena); se recorre entero
     // con la subida (`climb`). `bg_yvaga_far` queda para el título.
-    backgrounds: { far: 'bg_yvaga_subida', climb: true },
+    // S118: el cielo vivo: capas de nubes con parallax y estrellas fugaces en la noche (`skyDrift`).
+    backgrounds: { far: 'bg_yvaga_subida', climb: true, skyDrift: true },
     // S92: la cámara mira 2,5 tiles hacia arriba: subiendo, sobre la cabeza de Kerana se ven unas 10 filas (sin esto, 7).
     cameraLookUp: 40,
+    // S118: las ruinas flotantes por código (tools/lib/cielo-art.mjs): variantes de los sillares, la quilla bajo las
+    // islas, el detalle de la cara (musgo, flores, grietas, runas) y la terraza de la arena (zona `terrace`).
+    terrainDetail: { sheet: 'cielo', seed: 118 },
     musicKey: '',
     boss: 'tau',
     gift: null,

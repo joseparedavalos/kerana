@@ -1,10 +1,13 @@
 import Phaser from 'phaser';
 import { GAMEPLAY } from '../../config/gameplay';
+import { uploadAtlas } from '../../systems/pixelArt';
 import { WindCycle, type WindPhase } from './WindCycle';
+import { wispAtlasFrames, wispFrame } from './windWispPaint';
 
 const CFG = GAMEPLAY.wind;
 const GRASS_COLOR = 0xc9a63a;
 const STREAK_TINT = 0xf2eee3;
+const WISP_ATLAS = 'wind_wisps';
 
 // Zona de viento (GDD §4.8, §6.3): ráfagas que empujan a Kerana en una dirección.
 // Aviso: el pasto se inclina y aparecen partículas 1 s antes de soplar.
@@ -12,6 +15,8 @@ export class WindZone {
   readonly cycle: WindCycle;
   private readonly blades: Phaser.GameObjects.Rectangle[] = [];
   private readonly streaks: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** S118: jirones de nube que corren con la ráfaga (solo sin pasto: el viento del cielo). */
+  private readonly wisps?: Phaser.GameObjects.Particles.ParticleEmitter;
   private lean = 0;
 
   constructor(
@@ -43,6 +48,26 @@ export class WindZone {
         frequency: -1,
       })
       .setDepth(12);
+    if (!grass) {
+      const W = CFG.wisps;
+      uploadAtlas(scene, WISP_ATLAS, wispAtlasFrames());
+      // Nacen del lado de donde viene el viento y cruzan la zona (con la cabeza hacia donde sopla).
+      const from = dir > 0 ? zone.left - 30 : zone.right + 30;
+      this.wisps = scene.add
+        .particles(0, 0, WISP_ATLAS, {
+          frame: W.sizes.map((_, i) => wispFrame(i)),
+          x: { min: from - 20, max: from + 20 },
+          y: { min: zone.top + 4, max: zone.bottom - 6 },
+          speedX: { min: dir * W.speed * 0.8, max: dir * W.speed * 1.2 },
+          speedY: { min: -4, max: 4 },
+          lifespan: W.lifeMs,
+          // Aparece y se apaga suave (sube en el primer cuarto de la vida, baja en el último).
+          alpha: { onEmit: () => 0, onUpdate: (_p: unknown, _k: string, t: number) => Math.min(1, t * 4, (1 - t) * 4) },
+          scaleX: dir,
+          frequency: -1,
+        })
+        .setDepth(11);
+    }
   }
 
   /** Velocidad (px/s) que suma a Kerana si está adentro y sopla. */
@@ -58,5 +83,6 @@ export class WindZone {
     this.lean += (target - this.lean) * Math.min(1, deltaMs / 150);
     for (let i = 0; i < this.blades.length; i++) this.blades[i].setAngle(this.dir * this.lean + Math.sin(i) * 3);
     if (phase !== 'calm' && Math.random() < (phase === 'gust' ? CFG.streakChanceGust : CFG.streakChanceWarn)) this.streaks.explode(1);
+    if (this.wisps && phase !== 'calm' && Math.random() < (phase === 'gust' ? CFG.wisps.chanceGust : CFG.wisps.chanceWarn)) this.wisps.explode(1);
   }
 }

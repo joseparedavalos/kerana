@@ -17,6 +17,7 @@ import {
 } from './ambientLogic';
 import { backdropClimbHeight, backdropClimbTop, backdropFit, backdropPanX, backdropPanY, backdropTint, caveSpan, rectHidden } from './backdropLogic';
 import { CaveLife, DuskGlow, SkyLife, SunShimmer } from './Backdrops';
+import { SkyDrift } from './SkyDrift';
 import { fixedOffset, VIEW } from './View';
 
 const CFG = GAMEPLAY.backdrop;
@@ -65,6 +66,8 @@ export class LevelBackdrop {
   private sun?: SunShimmer;
   /** Bandadas y sombras de nubes (S98); solo si el nivel define `skyLife`. */
   private skyLife?: SkyLife;
+  /** S118: las capas de nubes con parallax y las estrellas fugaces del cielo de Yvága; solo con `skyDrift`. */
+  private skyDrift?: SkyDrift;
   /** El atardecer (S108): rayos y bruma en los valles; solo si el nivel define `dusk`. */
   private dusk?: DuskGlow;
   /** La cueva con vida (S108); solo si el nivel define `caveLife`. */
@@ -129,6 +132,8 @@ export class LevelBackdrop {
       if (defs.skyLife) this.skyLife = new SkyLife(scene, defs.skyLife, this.far.frame.width, CFG.depth + 0.3);
       // S108: detrás de las bandadas; el fondo de cueva (encima) lo tapa donde se ve la cueva.
       if (defs.dusk) this.dusk = new DuskGlow(scene, defs.dusk, defs.far, farPixels, CFG.depth + 0.1);
+      // S118: delante del fondo y de su vida (bandadas, sol), detrás de todo lo jugable.
+      if (defs.skyDrift) this.skyDrift = new SkyDrift(scene, mapHeight, this.climbTravel, CFG.skyDrift.depth, flashes);
     }
     this.cave = this.makeImage(defs.cave);
     if (this.cave) {
@@ -172,6 +177,7 @@ export class LevelBackdrop {
       this.mist,
       ...(this.sun?.layers ?? []),
       ...(this.skyLife?.layers ?? []),
+      ...(this.skyDrift?.layers ?? []),
       ...(this.dusk?.layers ?? []),
       ...(this.caveLife?.layers ?? []),
       ...this.canopyMist.map((m) => m.band),
@@ -220,6 +226,7 @@ export class LevelBackdrop {
     this.caveScreen.left = off.x + this.caveClip.left;
     this.caveScreen.right = off.x + this.caveClip.right;
     this.updateAmbient(left, imageTop);
+    this.skyDrift?.update(off, cam.worldView.x, cam.worldView.y, imageTop, this.far?.scaleY ?? 1);
     if (ambient !== undefined) this.applyTint(ambient);
   }
 
