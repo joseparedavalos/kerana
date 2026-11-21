@@ -1,8 +1,8 @@
-// Tilesets dibujados por código, por bioma (S109 para cerro; S110 generalizado y estero; S112 pueblo; S113 selva). Por cada bioma escribe
+// Tilesets dibujados por código, por bioma (S109 para cerro; S110 generalizado y estero; S112 pueblo; S113 selva; S116 montana). Por cada bioma escribe
 // public/assets/tiles/<bioma>.png (las 28 casillas de siempre) y public/assets/tiles/detalle/<bioma>.png + .json
 // (variantes y calcomanías). El arte de cada uno está en tools/lib/<bioma>-art.mjs; lo común, en tools/lib/tile-art.mjs.
 // S111: un bioma cuyo tileset es arte real (campo, montado en S56 con `npm run tileset`) no exporta `buildTileset`: de
-// ese solo se escribe la hoja de detalle, y su PNG de las 28 casillas queda como está.
+// ese solo se escribe la hoja de detalle, y su PNG de las 28 casillas queda como está. S116: montana (l6), igual.
 // Uso: npm run terrain-tiles [-- <bioma>…] (sin bioma: todos) · npm run cerro-tiles · --preview deja tmp/tiles/<bioma>-x8.png
 // y <bioma>-detalle-x8.png. Todo sale de semillas fijas: siempre los mismos bytes. No usa raw/ ni npm run tileset.
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -14,6 +14,7 @@ export const BIOMES = {
   campo: () => import('./lib/campo-art.mjs'),
   pueblo: () => import('./lib/pueblo-art.mjs'),
   selva: () => import('./lib/selva-art.mjs'),
+  montana: () => import('./lib/montana-art.mjs'),
 };
 
 const toPng = (img) => {

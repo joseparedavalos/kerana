@@ -2742,6 +2742,29 @@ export const GAMEPLAY = {
           /** La tierra se oscurece hacia adentro como el barro del estero (las masas del monte son anchas), en pasos de 3 %. */
           depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
         },
+        /**
+         * S116: montana (l6, el cerro guaireño), sobre su tileset real. Sin cristales (no hay cuevas) ni pasto en las
+         * esquinas (el borde es una línea fina). Cerca del aire, liquen en la roca, grava y cantitos de cuarzo; más
+         * adentro, capas de arenisca con estratificación cruzada, juntas entre capas, bloques sueltos y vetas de hierro.
+         */
+        montana: {
+          edgeChance: 0.75,
+          overhangChance: 0,
+          crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
+          rootsChance: 0.11,
+          rootletChance: 0.09,
+          bands: [
+            { minDepth: 1, maxDepth: 1, chance: 0.05, kinds: { lichen: 3, pebble: 1, quartz: 1 } },
+            { minDepth: 2, maxDepth: 2, chance: 0.055, kinds: { lichen: 2, pebble: 2, quartz: 1, iron: 1, block: 1 } },
+            { minDepth: 3, maxDepth: 4, chance: 0.045, kinds: { sandstone: 3, seam: 2, iron: 2, block: 2, boulder: 1, quartz: 1 } },
+            // El corazón de las masas es enorme (6300 celdas en l6) y va oscuro: menos, para no pasar de ≈ 650 en el nivel.
+            { minDepth: 5, maxDepth: 99, chance: 0.02, kinds: { sandstone: 3, seam: 3, boulder: 1, iron: 2, block: 1 } },
+          ],
+          /** Las masas del cerro son anchas y hondas (la cumbre 1 tiene 24 de ancho y 50 de alto): se cuenta más hondo. */
+          maxDepth: 10,
+          /** La tierra se oscurece hacia adentro en pasos de 3 %, hasta 0,73 en el corazón del cerro. */
+          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82, 0.79, 0.76, 0.73],
+        },
       },
     },
     /**

@@ -47,7 +47,7 @@ describe('detalle del terreno (S109)', () => {
   const map = l1Map();
   const seed = LEVELS.l1!.terrainDetail!.seed;
 
-  it('l1 lo usa con la hoja de cerro (y, desde S110, l2 con la del estero; desde S111, l3 con la de campo; desde S112, l4 con la del pueblo; desde S113, l5 con la de selva)', () => {
+  it('l1 lo usa con la hoja de cerro (y, desde S110, l2 con la del estero; desde S111, l3 con la de campo; desde S112, l4 con la del pueblo; desde S113, l5 con la de selva; desde S116, l6 con la de montana)', () => {
     const using = Object.values(LEVELS).filter((l) => l?.terrainDetail);
     expect(using.map((l) => [l!.id, l!.terrainDetail!.sheet])).toEqual([
       ['l1', 'cerro'],
@@ -55,6 +55,7 @@ describe('detalle del terreno (S109)', () => {
       ['l3', 'campo'],
       ['l4', 'pueblo'],
       ['l5', 'selva'],
+      ['l6', 'montana'],
     ]);
   });
 
