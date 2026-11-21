@@ -185,7 +185,7 @@ describe('tileset del cielo por código (S118)', () => {
   });
 
   it('las calcomanías de la cara y la losa móvil están en la hoja', () => {
-    for (const kind of ['rune', 'crack', 'chip', 'mossFace', 'vine', 'bloom', 'fern', 'terraceMoss', 'terraceCrack']) {
+    for (const kind of ['rune', 'carved', 'crack', 'chip', 'mossFace', 'vine', 'bloom', 'fern', 'terraceMoss', 'terraceCrack']) {
       expect(layout.decals[kind]?.length ?? 0, kind).toBeGreaterThan(0);
       for (const d of layout.decals[kind]) for (const id of d.ids) expect(id).toBeLessThan(layout.count);
     }

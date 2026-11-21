@@ -66,22 +66,36 @@ describe('detalle del terreno de Yvága (S118)', () => {
     for (const x of top) expect(LAYOUT.zones!.terrace['14']).toContain(v[23 * width + x]);
   });
 
-  it('la quilla: una por celda de aire bajo cada isla, con la forma de la isla, nunca sobre una plataforma', () => {
+  it('la quilla: en cada punta de isla siempre, en el medio en parte, con la forma de la isla, nunca sobre una plataforma', () => {
     const keels = plan.decals.filter((d) => d.kind.startsWith('keel'));
     const at = new Map(keels.map((d) => [d.y * width + d.x, d]));
-    let bottoms = 0;
+    let ends = 0;
+    let mids = 0;
+    let midKeels = 0;
     for (let y = 1; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const above = g(x, y - 1);
         if (above < 0 || above > 15 || g(x, y) !== -1 || !map.emptyAir(x, y)) continue;
-        bottoms++;
-        const d = at.get(y * width + x);
-        expect(d, `quilla en ${x},${y}`).toBeDefined();
         const shape = above & 2 && above & 8 ? 'Mid' : above & 2 ? 'Left' : above & 8 ? 'Right' : 'Solo';
-        if (d!.kind !== 'keelDeep') expect(d!.kind.endsWith(shape), `${d!.kind} en ${x},${y}`).toBe(true);
+        const d = at.get(y * width + x);
+        if (shape === 'Mid') {
+          mids++;
+          if (d) {
+            midKeels++;
+            expect(d.kind === 'keelDeep' || d.kind.endsWith('Mid'), `${d.kind} en ${x},${y}`).toBe(true);
+          }
+          continue;
+        }
+        ends++;
+        expect(d, `quilla en la punta ${x},${y}`).toBeDefined();
+        expect(d!.kind.endsWith(shape), `${d!.kind} en ${x},${y}`).toBe(true);
       }
     }
-    expect(bottoms).toBeGreaterThan(400);
+    expect(ends).toBeGreaterThan(40);
+    expect(mids).toBeGreaterThan(350);
+    // El medio: lo que pide la configuración (la de dos celdas cuenta una), con margen.
+    expect(midKeels / mids).toBeGreaterThan(0.4);
+    expect(midKeels / mids).toBeLessThan(0.75);
     for (const d of keels) expect(map.emptyAir(d.x, d.y), `quilla en el aire libre ${d.x},${d.y}`).toBe(true);
   });
 
@@ -91,13 +105,13 @@ describe('detalle del terreno de Yvága (S118)', () => {
       while (y + n < height && g(x, y + n) === -1 && map.emptyAir(x, y + n)) n++;
       return n;
     };
-    // Los pasajes del tramo 5: bajo las islas de las filas 114 y 131 hay 3 filas.
-    for (const [x, y] of [[23, 115], [28, 132]]) {
+    // Los pasajes del tramo 5: bajo las islas de las filas 114 y 131 hay 3 filas (la punta de cada una, siempre).
+    for (const [x, y] of [[15, 115], [35, 132]]) {
       const d = plan.decals.find((q) => q.x === x && q.y === y);
       expect(d?.kind, `${x},${y}`).toMatch(/^keelShort/);
     }
     const deep = plan.decals.filter((d) => d.kind === 'keelDeep');
-    expect(deep.length).toBeGreaterThan(20);
+    expect(deep.length).toBeGreaterThan(16);
     for (let i = 0; i < deep.length; i += 2) {
       const d = deep[i];
       expect(clearBelow(d.x, d.y)).toBeGreaterThanOrEqual(CFG.keel!.deep!.clear);
@@ -116,8 +130,8 @@ describe('detalle del terreno de Yvága (S118)', () => {
     const cells = new Set(plan.decals.map((d) => d.y * width + d.x));
     expect(cells.size).toBe(plan.decals.length);
     const face = plan.decals.filter((d) => !d.kind.startsWith('keel'));
-    expect(face.length).toBeGreaterThan(80);
-    expect(plan.decals.length).toBeLessThan(900);
+    expect(face.length).toBeGreaterThan(40);
+    expect(plan.decals.length).toBeLessThan(650);
     for (const d of face) expect(g(d.x, d.y)).not.toBe(-1);
   });
 });

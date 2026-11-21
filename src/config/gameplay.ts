@@ -2446,7 +2446,7 @@ export const GAMEPLAY = {
       depth: -19.4,
       seed: 118,
       layers: [
-        { parallax: 0.32, drift: -2.2, spacing: 64, alpha: 0.55 },
+        { parallax: 0.32, drift: -2.2, spacing: 84, alpha: 0.55 },
         { parallax: 0.5, drift: 4, spacing: 92, alpha: 0.72 },
         { parallax: 0.72, drift: -6.5, spacing: 150, alpha: 0.85 },
       ],
@@ -2495,7 +2495,7 @@ export const GAMEPLAY = {
         [800, 'dusk'],
         [99999, 'low'],
       ] as ReadonlyArray<readonly [number, 'low' | 'dusk' | 'mid' | 'high']>,
-      density: { low: 0.9, dusk: 0.8, mid: 0.6, high: 0.3 },
+      density: { low: 0.7, dusk: 0.75, mid: 0.6, high: 0.3 },
       shooting: { everyMs: [10000, 20000] as const, durationMs: 800, travel: 150, angle: 0.42, minBand: 70, nightBottom: 900 },
     },
     overscale: 1.12,
@@ -3066,8 +3066,8 @@ export const GAMEPLAY = {
         },
         /**
          * S118: cielo (Yvága), ruinas de piedra clara con musgo. Casi todo son islas de una fila: el piso (aire arriba)
-         * lleva el detalle de la cara del sillar (musgo que baja, enredaderas, flores, grietas, desportillados y alguna
-         * runa gastada). Debajo de cada isla, la quilla de roca con dientes y raíces (`keel`); en un pasaje de menos de 4
+         * lleva el detalle de la cara del sillar (musgo que baja, enredaderas, flores, grietas, desportillados, sillares
+         * tallados y alguna runa gastada). Debajo de cada isla, la quilla de roca con dientes y raíces (`keel`); en un pasaje de menos de 4
          * filas, la corta. El piso de la arena (x 0-43, filas 18-25) es la zona `terrace`: losas, friso y sillares.
          */
         cielo: {
@@ -3076,18 +3076,19 @@ export const GAMEPLAY = {
           rootsChance: 0,
           rootletChance: 0,
           crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
-          keel: { chance: 1, clear: 4, shortClear: 1, deep: { chance: 0.4, clear: 6, reach: 3 } },
+          /** S118, tras medir FPS: el medio de las islas, en el 45 % de las celdas (cada calcomanía es un cuadro más). */
+          keel: { chance: 1, midChance: 0.45, clear: 4, shortClear: 1, deep: { chance: 0.3, clear: 6, reach: 3 } },
           regions: { rest: 'island', rects: [{ zone: 'terrace', x: 0, y: 18, w: 44, h: 8 }] },
           zoneDecals: {
             island: {
-              floorChance: 0.34,
-              floor: { mossFace: 4, vine: 2, bloom: 3, fern: 2, crack: 2, chip: 2, rune: 1 },
-              bands: [{ minDepth: 1, maxDepth: 99, chance: 0.12, kinds: { crack: 2, chip: 2, rune: 1 } }],
+              floorChance: 0.2,
+              floor: { mossFace: 4, vine: 2, bloom: 3, fern: 2, crack: 2, chip: 2, carved: 2, rune: 1 },
+              bands: [{ minDepth: 1, maxDepth: 99, chance: 0.06, kinds: { crack: 2, chip: 2, carved: 2, rune: 1 } }],
             },
             terrace: {
               floorChance: 0.2,
               floor: { terraceMoss: 2, terraceCrack: 1 },
-              bands: [{ minDepth: 1, maxDepth: 99, chance: 0.14, kinds: { crack: 2, chip: 2, rune: 2 } }],
+              bands: [{ minDepth: 1, maxDepth: 99, chance: 0.14, kinds: { crack: 2, chip: 2, carved: 2, rune: 2 } }],
             },
           },
           /** Las masas son finas (una o dos filas; la base y la terraza, tres): el oscurecido casi no se ve, en pasos de 2 %. */

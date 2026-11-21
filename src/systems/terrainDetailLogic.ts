@@ -77,11 +77,13 @@ export interface DetailConfig {
   regions?: RegionConfig;
   /**
    * S118: la quilla bajo las islas del cielo: en la celda de aire justo debajo de un terreno, una calcomanía según la forma
-   * de la isla (`keelMid`, `keelLeft`, `keelRight`, `keelSolo`) con `chance`; si debajo hay menos de `clear` filas de
+   * de la isla (`keelMid`, `keelLeft`, `keelRight`, `keelSolo`) con `chance` (`midChance` en el medio); si debajo hay menos de `clear` filas de
    * aire libre (un pasaje), la corta (`keelShort…`), y con menos de `shortClear`, nada.
    */
   keel?: {
+    /** Probabilidad en las puntas y en una isla de una casilla; `midChance`, en el medio de una isla (y `deep`, antes). */
     chance: number;
+    midChance: number;
     clear: number;
     shortClear: number;
     /** Un cono de dos celdas (`keelDeep`) bajo una celda con isla a `reach` o más a cada lado y `clear` filas libres. */
@@ -357,14 +359,17 @@ export function planTerrainDecals(
         }
         // S118: la quilla bajo una isla del cielo (la colisión no cambia: va en la celda de aire).
         const keel = cfg.keel;
-        if (keel && autotile(x, y - 1) && map.opaque(x, y - 1) && cellHash(x, y, seed, 13) < keel.chance) {
+        if (keel && autotile(x, y - 1) && map.opaque(x, y - 1)) {
           const above = g(x, y - 1);
+          const mid = above & RIGHT && above & LEFT;
           const look = Math.max(keel.clear, keel.deep?.clear ?? 0);
           let clear = 0;
           while (clear < look && inside(x, y + clear) && map.ground(x, y + clear) === -1 && map.emptyAir(x, y + clear)) clear++;
           const shape = KEEL_SHAPES[(above & RIGHT ? 1 : 0) + (above & LEFT ? 2 : 0)];
+          // Las puntas, siempre (la isla se afina); el medio, en una parte de las celdas (lo demás termina en el cascajo).
+          const keelRoll = cellHash(x, y, seed, 13);
           // En el corazón de una isla ancha, a veces un cono de dos celdas (`keelDeep`), con aire de sobra debajo.
-          if (shape === 'Mid' && keel.deep && clear >= keel.deep.clear && !used[i + width] && cellHash(x, y, seed, 14) < keel.deep.chance) {
+          if (mid && keel.deep && clear >= keel.deep.clear && !used[i + width] && cellHash(x, y, seed, 14) < keel.deep.chance) {
             let reach = 0;
             while (reach < keel.deep.reach && autotile(x - reach - 1, y - 1) && autotile(x + reach + 1, y - 1)) reach++;
             const deep = reach >= keel.deep.reach ? decalOf('keelDeep', x, y) : null;
@@ -375,13 +380,14 @@ export function planTerrainDecals(
               continue;
             }
           }
-          const kind = clear >= keel.clear ? `keel${shape}` : clear >= keel.shortClear ? `keelShort${shape}` : null;
+          const take = keelRoll < (mid ? keel.midChance : keel.chance);
+          const kind = !take ? null : clear >= keel.clear ? `keel${shape}` : clear >= keel.shortClear ? `keelShort${shape}` : null;
           const decal = kind ? decalOf(kind, x, y) : null;
           if (kind && decal) {
             used[i] = 1;
             decals.push({ x, y, id: decal.ids[0], kind, flip: decal.flip === true && cellHash(x, y, seed, 6) < 0.5 });
-            continue;
           }
+          continue;
         }
         // S113: raicillas que cuelgan debajo de una saliente, donde abajo hay aire de sobra.
         const hang = cfg.hangChance ?? 0;

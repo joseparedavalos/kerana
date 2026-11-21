@@ -138,7 +138,7 @@ export class Mover implements SwitchTarget {
       this.block.setVisible(false);
       const glow = art ? glowTexture(scene, zone.width, art.look) : null;
       if (glow && art?.look.glow) {
-        this.glow = scene.add.image(zone.x, zone.y, glow).setOrigin(0, 0).setDepth(2.9).setBlendMode(Phaser.BlendModes.ADD);
+        this.glow = scene.add.image(zone.x, zone.y, glow).setOrigin(0, 0).setDepth(2.9);
       }
     }
     scene.physics.add.existing(this.block);

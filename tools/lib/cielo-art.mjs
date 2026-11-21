@@ -729,6 +729,30 @@ export function decals() {
     // Un rombo con luz que se apaga (el único que brilla, apenas).
     one((g) => carve(g, [[8, 5], [7, 6], [9, 6], [6, 7], [10, 7], [7, 8], [9, 8], [8, 9]], true)),
   ];
+  // Sillares tallados: un panel rehundido (sombra arriba y a la izquierda, labio de luz abajo y a la derecha), uno con
+  // una guarda de escalones adentro; gastados en una esquina.
+  const panel = (x0, y0, w, h, inner = []) =>
+    one((g) => {
+      for (let y = y0; y < y0 + h; y++) {
+        for (let x = x0; x < x0 + w; x++) {
+          const edgeTop = y === y0;
+          const edgeLeft = x === x0;
+          const edgeBottom = y === y0 + h - 1;
+          const edgeRight = x === x0 + w - 1;
+          if (edgeTop || edgeLeft) g.set(x, y, 'stone', 1);
+          else if (edgeBottom || edgeRight) g.set(x, y, 'stone', 6);
+          else g.set(x, y, 'stone', 3);
+        }
+      }
+      for (const [x, y, t] of inner) g.set(x, y, 'stone', t);
+      // La esquina de abajo a la derecha, comida.
+      g.set(x0 + w - 1, y0 + h - 1, 'stone', 2);
+    });
+  out.carved = [
+    panel(3, 5, 10, 6, [[5, 8, 5], [6, 7, 5], [7, 8, 5], [8, 7, 5], [9, 8, 5], [10, 7, 5]]),
+    panel(5, 5, 7, 5),
+    panel(2, 6, 6, 5, [[4, 8, 1], [5, 8, 5]]),
+  ];
   // Grietas finas que bajan del musgo por el sillar, con un quiebre de lado.
   const crackDecal = (pts) =>
     one((g) => {

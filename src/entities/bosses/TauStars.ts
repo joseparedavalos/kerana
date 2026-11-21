@@ -33,10 +33,10 @@ export class TauStars {
   /** Una estrella en (x, y): devuelve el cristal (para los tweens de Tau). */
   add(x: number, y: number, depth: number): Phaser.GameObjects.Image {
     const s = this.scene;
-    this.halos.push(s.add.image(x, y, ATLAS, STAR_FRAMES.haloIdle).setScale(STAR_K).setDepth(depth - 0.1).setBlendMode(Phaser.BlendModes.ADD));
-    this.rays.push(s.add.image(x, y, ATLAS, STAR_FRAMES.rays).setScale(STAR_K).setDepth(depth - 0.05).setBlendMode(Phaser.BlendModes.ADD).setVisible(false));
+    this.halos.push(s.add.image(x, y, ATLAS, STAR_FRAMES.haloIdle).setScale(STAR_K).setDepth(depth - 0.1));
+    this.rays.push(s.add.image(x, y, ATLAS, STAR_FRAMES.rays).setScale(STAR_K).setDepth(depth - 0.05).setVisible(false));
     const crystal = s.add.image(x, y, ATLAS, STAR_FRAMES.idle).setScale(STAR_K).setDepth(depth);
-    this.glints.push(s.add.image(x, y, ATLAS, STAR_FRAMES.glint).setScale(STAR_K).setDepth(depth + 0.05).setBlendMode(Phaser.BlendModes.ADD).setVisible(false));
+    this.glints.push(s.add.image(x, y, ATLAS, STAR_FRAMES.glint).setScale(STAR_K).setDepth(depth + 0.05).setVisible(false));
     this.crystals.push(crystal);
     this.lit.push(false);
     return crystal;
