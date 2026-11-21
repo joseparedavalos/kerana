@@ -68,12 +68,13 @@ describe('Jaguarú: el guardián del tiempo', () => {
     expect(Object.keys(sheet.sheets).sort()).toEqual(['attack', 'idle']);
   });
 
-  it('la dentellada va delante del cuerpo, hacia donde mira', () => {
+  it('S117: ya no muerde (el rayo de los ojos reemplaza a la dentellada); los ojos quedan delante del cuerpo', () => {
+    expect('strike' in J).toBe(false);
     const half = ENEMIES.jaguaru.width / 2;
-    const left = strikeZone(100, 200, -1, half, J.strike);
+    expect(J.laser.muzzle.forward).toBeGreaterThan(half);
+    // La zona de la mordida de Karaí Vosá sigue igual.
+    const left = strikeZone(100, 200, -1, half, GAMEPLAY.karaiVosa.strike);
     expect(left.x + left.width).toBe(100 - half);
-    expect(left.width).toBe(J.strike.reach);
-    expect(left.y).toBe(200 - J.strike.height);
   });
 });
 
