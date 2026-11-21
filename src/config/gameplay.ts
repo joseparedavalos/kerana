@@ -2796,8 +2796,11 @@ export const GAMEPLAY = {
           ],
           /** Las masas del cerro son anchas y hondas (la cumbre 1 tiene 24 de ancho y 50 de alto): se cuenta más hondo. */
           maxDepth: 10,
-          /** La tierra se oscurece hacia adentro en pasos de 3 %, hasta 0,73 en el corazón del cerro. */
-          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82, 0.79, 0.76, 0.73],
+          /**
+           * La tierra se oscurece hacia adentro en pasos de 3 % y, desde la profundidad 7, de 2 % (en masas tan grandes los
+           * contornos de la profundidad son cuadrados: con pasos grandes hasta el fondo se leían anillos), hasta 0,76.
+           */
+          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82, 0.8, 0.78, 0.76],
         },
       },
     },

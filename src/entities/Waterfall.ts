@@ -136,11 +136,37 @@ export class Waterfall {
       .setDepth(CFG.depth + 2);
     const m = CFG.cullMargin;
     this.view = new Phaser.Geom.Rectangle(z.x - m, z.y - m, z.width + m * 2, z.height + m * 2);
+    // Cada objeto de los pools empieza en su lugar (no en el origen del mundo).
+    for (const g of this.glints) this.placeGlint(g);
+    for (const r of this.ripples) this.placeRipple(r);
+    for (const f of this.foams) this.placeFoam(f);
+  }
+
+  /** Un brillo nuevo: en una columna al azar, sobre el filo de la cresta. */
+  private placeGlint(g: Pooled<Phaser.GameObjects.Rectangle>): void {
+    const z = this.zone;
+    const col = Math.floor(this.rand() * (z.width - CFG.glints.width));
+    g.x = z.x + col;
+    g.y = z.y - CFG.art.lipRise + (this.crest[col + CFG.art.lipLead] ?? 0) + 1;
+  }
+
+  /** Una onda nueva: cerca del pie del chorro, sobre la poza. */
+  private placeRipple(r: Pooled<Phaser.GameObjects.Image>): void {
+    r.x = this.zone.centerX + (this.rand() - 0.5) * this.zone.width * 0.5;
+    r.y = this.poolY + 2 + this.rand() * 2;
+  }
+
+  /** Una mancha de espuma nueva: una parte donde el chorro golpea un piso (la cornisa); el resto, en la poza. */
+  private placeFoam(f: Pooled<Phaser.GameObjects.Image>): void {
+    const z = this.zone;
+    const ledge = this.ledges.length && this.rand() < CFG.ledge.foamShare ? this.ledges[Math.floor(this.rand() * this.ledges.length)]! : null;
+    f.x = ledge ? ledge.x0 + this.rand() * (ledge.x1 - ledge.x0) : z.x + this.rand() * z.width;
+    f.y = ledge ? ledge.y - 1 : this.poolY + this.rand() * 3;
   }
 
   /** Azar barato y fijo para los pools (sin Math.random: se puede repetir una captura). */
   private rand(): number {
-    this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
+    this.seed = (Math.imul(this.seed, 1103515245) + 12345) & 0x7fffffff;
     return this.seed / 0x7fffffff;
   }
 
@@ -155,21 +181,17 @@ export class Waterfall {
       g.t += deltaMs / g.life;
       if (g.t >= 1) {
         g.t -= 1;
-        const col = Math.floor(this.rand() * (z.width - CFG.glints.width));
-        g.x = z.x + col;
-        g.y = z.y - CFG.art.lipRise + (this.crest[col + CFG.art.lipLead] ?? 0) + 1;
+        this.placeGlint(g);
       }
       const fall = g.t * CFG.glints.travel;
       g.obj.setPosition(g.x, Math.round(g.y + fall)).setAlpha(Math.sin(Math.PI * g.t) * CFG.glints.alpha);
     }
     // Ondas en la poza: salen del pie del chorro hacia los costados, se abren y se apagan.
-    const cx = z.centerX;
     for (const r of this.ripples) {
       r.t += deltaMs / r.life;
       if (r.t >= 1) {
         r.t -= 1;
-        r.x = cx + (this.rand() - 0.5) * z.width * 0.5;
-        r.y = this.poolY + 2 + this.rand() * 2;
+        this.placeRipple(r);
       }
       const s = CFG.ripples.scale[0] + (CFG.ripples.scale[1] - CFG.ripples.scale[0]) * r.t;
       r.obj.setPosition(r.x, r.y).setScale(s, 0.6 + s * 0.4).setAlpha((1 - r.t) * CFG.ripples.alpha);
@@ -179,10 +201,7 @@ export class Waterfall {
       f.t += deltaMs / f.life;
       if (f.t >= 1) {
         f.t -= 1;
-        // Una parte de la espuma va donde el chorro golpea un piso (la cornisa); el resto, en la poza.
-        const ledge = this.ledges.length && this.rand() < CFG.ledge.foamShare ? this.ledges[Math.floor(this.rand() * this.ledges.length)]! : null;
-        f.x = ledge ? ledge.x0 + this.rand() * (ledge.x1 - ledge.x0) : z.x + this.rand() * z.width;
-        f.y = ledge ? ledge.y - 1 : this.poolY + this.rand() * 3;
+        this.placeFoam(f);
       }
       f.obj
         .setPosition(Math.round(f.x + Math.sin(f.t * 6) * 1.5), Math.round(f.y - f.t * CFG.foam.rise))
