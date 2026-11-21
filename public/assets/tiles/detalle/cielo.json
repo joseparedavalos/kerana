@@ -1,0 +1,455 @@
+{
+ "tile": 16,
+ "columns": 8,
+ "fill": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "edges": {
+  "0": [
+   10
+  ],
+  "2": [
+   11,
+   12
+  ],
+  "8": [
+   13,
+   14
+  ],
+  "10": [
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22
+  ],
+  "11": [
+   23,
+   24
+  ],
+  "14": [
+   25,
+   26,
+   27
+  ],
+  "17": [
+   28,
+   29,
+   30
+  ]
+ },
+ "decals": {
+  "keelMid": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     31
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     32
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     33
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     34
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     35
+    ],
+    "flip": false
+   }
+  ],
+  "keelDeep": [
+   {
+    "w": 1,
+    "h": 2,
+    "ids": [
+     36,
+     37
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 2,
+    "ids": [
+     38,
+     39
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 2,
+    "ids": [
+     40,
+     41
+    ],
+    "flip": false
+   }
+  ],
+  "keelLeft": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     42
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     43
+    ],
+    "flip": false
+   }
+  ],
+  "keelRight": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     44
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     45
+    ],
+    "flip": false
+   }
+  ],
+  "keelSolo": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     46
+    ],
+    "flip": false
+   }
+  ],
+  "keelShortMid": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     47
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     48
+    ],
+    "flip": false
+   }
+  ],
+  "keelShortLeft": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     49
+    ],
+    "flip": false
+   }
+  ],
+  "keelShortRight": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     50
+    ],
+    "flip": false
+   }
+  ],
+  "keelShortSolo": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     51
+    ],
+    "flip": false
+   }
+  ],
+  "rune": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     52
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     53
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     54
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     55
+    ],
+    "flip": false
+   }
+  ],
+  "crack": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     56
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     57
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     58
+    ],
+    "flip": true
+   }
+  ],
+  "chip": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     59
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     60
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     61
+    ],
+    "flip": true
+   }
+  ],
+  "mossFace": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     62
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     63
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     64
+    ],
+    "flip": true
+   }
+  ],
+  "vine": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     65
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     66
+    ],
+    "flip": true
+   }
+  ],
+  "bloom": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     67
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     68
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     69
+    ],
+    "flip": true
+   }
+  ],
+  "fern": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     70
+    ],
+    "flip": true
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     71
+    ],
+    "flip": true
+   }
+  ],
+  "terraceMoss": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     72
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     73
+    ],
+    "flip": false
+   }
+  ],
+  "terraceCrack": [
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     74
+    ],
+    "flip": false
+   },
+   {
+    "w": 1,
+    "h": 1,
+    "ids": [
+     75
+    ],
+    "flip": false
+   }
+  ]
+ },
+ "mover": {
+  "left": 85,
+  "center": 86,
+  "right": 87
+ },
+ "count": 88,
+ "zones": {
+  "terrace": {
+   "11": [
+    76,
+    77
+   ],
+   "14": [
+    78,
+    79,
+    80,
+    81
+   ],
+   "15": [
+    82,
+    83,
+    84
+   ]
+  }
+ }
+}
