@@ -1509,7 +1509,7 @@ export class LevelScene extends Phaser.Scene {
   private updateProjectiles(): void {
     for (const enemy of this.enemies) {
       if (!enemy.active) continue;
-      if (enemy.projectileHits(this.playerRect)) this.hurtPlayer(enemy.x);
+      if (enemy.projectileHits(this.playerRect)) this.hurtPlayer(enemy.x, enemy.projectileDamage);
     }
   }
 
@@ -2104,7 +2104,7 @@ export class LevelScene extends Phaser.Scene {
           if (enemy instanceof Caster) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
           // La fruta del ka'i (S115) revienta al caer al piso y su semilla rebota en él.
           if (enemy instanceof Thrower) this.wireThrower(enemy);
-          // Karaí Vosá (S72) no ve a Kerana a través de un fardo o un muro.
+          // Karaí Vosá (S72) no ve a Kerana a través de un fardo o un muro; el rayo del Jaguarú (S117) se corta ahí.
           if (enemy instanceof Guard) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
           // El yaguareté avá (S76) corre y salta solo sobre el terreno, y no persigue a Kerana sobre algo que se mueve.
           if (enemy instanceof Pouncer) {

@@ -2149,9 +2149,9 @@ export const GAMEPLAY = {
     hp: 3,
     /** Ojos cerrados (ms): la hoja `idle`, el tiempo para pasar. */
     restMs: 2000,
-    /** Abre los ojos (ms), el aviso: cuadros 0 a 3 de `attack`. */
+    /** Abre los ojos (ms), el aviso: cuadros 0 a 3 de `attack`. Con Kerana a la vista, fija la mira (S117). */
     telegraphMs: 800,
-    /** La dentellada (ms): cuadros 4 y 5, las fauces abiertas. Lastima una vez por ciclo. */
+    /** El rayo (ms; hasta S116, la dentellada): cuadros 4 y 5, las fauces abiertas. Lastima una vez por ciclo. */
     activeMs: 500,
     /** Cierra los ojos (ms): los cuadros del aviso al revés (3 a 0). Ya no lastima. */
     recoverMs: 700,
@@ -2160,10 +2160,150 @@ export const GAMEPLAY = {
     /** Cuadros de `attack` (primero y último) de cada tiempo; el de cerrar los ojos va al revés. */
     frames: { telegraph: [0, 3], active: [4, 5], recover: [3, 0] } as const,
     /**
-     * Zona de la dentellada delante del cuerpo (px): `reach` desde el borde del cuerpo (las fauces del dibujo llegan
-     * a 29 delante de las patas de adelante en el cuadro 4) y `height` desde los pies (la cabeza, gacha).
+     * El rayo de los ojos (S117; reemplaza a la dentellada). Al abrir los ojos, si Kerana está adelante (no gira), a la
+     * vista (contra Ground, con los fardos) y en el alcance, fija la mira donde está ella; en el golpe dispara por esa
+     * línea, que sigue hasta lo sólido. Lógica en `jaguaruLaser.ts`; el dibujo en `jaguaruLaserArt.ts` y `JaguaruLaserFx.ts`.
      */
-    strike: { reach: 28, height: 36 },
+    laser: {
+      /** Alcance para fijar la mira (px), de los ojos al centro de Kerana: 10 tiles. */
+      range: 160,
+      /** Largo máximo del rayo si no choca con nada (px): 20 tiles. */
+      maxLength: 320,
+      /** Paso (px) para ver a Kerana y para buscar dónde se corta el rayo. */
+      losStep: 2,
+      /** Medio grosor del rayo que lastima (px), sumado al cuerpo de Kerana (el núcleo y el cuerpo claro del dibujo). */
+      hitHalfWidth: 2,
+      /** Cuánto adelante de los ojos tiene que estar Kerana (px): detrás de los ojos (o debajo de la cabeza), no dispara. */
+      minAhead: 0,
+      /** Corazones que saca. Pasa por el mismo camino que el daño de 1 (inmunidad, Luz de Arasy, god y retroceso). */
+      damage: 2,
+      /**
+       * De dónde sale (px desde los pies, hacia donde mira y hacia arriba): el centro de los ojos de la cara en los
+       * cuadros 4 y 5 (en el cuadro de 200 × 88 a 2 por unidad: (28, 31) desde la esquina de arriba a la izquierda).
+       */
+      muzzle: { forward: 36, up: 28.5 },
+      /** Dibujo (pixel art; texturas generadas una vez por partida). */
+      art: {
+        /**
+         * La rampa de los ojos, medida en el sprite (cuadros 1 a 5 de `attack`, 1405 píxeles a 4 del centro de cada ojo,
+         * en siete tramos de luminancia), de hondo a claro, y el núcleo blanco caliente (blanco con un tinte rosado).
+         */
+        ramp: [0x400b6c, 0x560f8a, 0x6b0ea5, 0x7a11b6, 0xc353df, 0xfb94fc, 0xfeacfe, 0xfff4ff],
+        /** Píxeles de textura por unidad (como Kerana y los enemigos). */
+        detail: 2,
+        /** El cuadro de la hoja `attack` (px de textura) y dónde van los pies (abajo al centro). */
+        frame: [200, 88] as const,
+        /**
+         * Los ojos de cada cuadro de `attack` (px del cuadro, mirando a la izquierda como la hoja), medidos (los núcleos
+         * claros de cada ojo): 5 en el cuadro 0, 7 en el 1 al 3 (tres pares en la cara y el del lomo), 4 o 5 en el golpe.
+         */
+        eyes: [
+          [[23, 37.5], [32.5, 37], [22, 44.5], [31.5, 45], [57, 22]],
+          [[22.5, 40], [21.5, 46], [34, 39], [34.5, 46], [43, 38], [43, 45.5], [60.5, 22]],
+          [[23.5, 39.5], [23, 46.5], [36, 38.5], [36, 45.5], [45, 37.5], [45, 45], [60, 21.5]],
+          [[28.5, 30.5], [27.5, 36.5], [41, 29], [41.5, 36], [49.5, 27.5], [49.5, 35.5], [65, 17]],
+          [[23.5, 25.5], [32.5, 28], [28, 34], [58, 21.5]],
+          [[23.5, 30], [32.5, 31.5], [29, 38], [20.5, 35], [58, 21.5]],
+        ] as readonly (readonly (readonly [number, number])[])[],
+        /** Cuántos de cada lista son de la cara (el resto, el del lomo): de ahí sale la mira. */
+        faceEyes: [4, 6, 6, 6, 3, 4] as const,
+        /** El cuerpo del rayo: largo y alto de la textura (px de textura; el alto, impar) y variantes del borde. */
+        beamLength: 48,
+        beamHeight: 15,
+        beamVariants: 4,
+        /** Probabilidad de las tres filas de afuera por columna (de adentro hacia afuera): el borde que vibra. */
+        edgeChance: [0.85, 0.55, 0.25],
+        streaks: 7,
+        streakLength: [3, 9] as const,
+        /** El halo aditivo: alto (px de textura) y opacidad del centro. */
+        haloHeight: 31,
+        haloAlpha: 0.55,
+        /** La mira: largo del dibujo que se repite y del pulso claro (px de textura). */
+        aimLength: 24,
+        aimPulse: 3,
+        glowRadius: 5,
+        flashRadius: 12,
+        flashCore: 2.5,
+        ringRadius: 15,
+        ringWidth: 3,
+        smokeRadius: 6,
+        /** El humo de la roca quemada: gris violáceo, entre la tierra de l6 y el pelo del Jaguarú; el borde y el centro. */
+        smokeColor: 0x4c3f4e,
+        smokeCore: 0xa8979f,
+        smokeAlpha: 0.75,
+      },
+      /** Cómo se mueve el dibujo. */
+      fx: {
+        /** Profundidad del rayo, la mira y lo que salta (delante de Kerana, detrás de la cascada y del Foreground). */
+        depth: 7,
+        /** El brillo de los ojos en el aviso: opacidad y escala del principio al final, y el pulso (Hz). */
+        eyeAlpha: [0.3, 1] as const,
+        eyeScale: [0.45, 1.05] as const,
+        eyePulseHz: 7,
+        /** El halo de la cara en el aviso (escala y opacidad del principio al final). */
+        faceScale: [1.1, 2.4] as const,
+        faceAlpha: [0.12, 0.5] as const,
+        /** Al cerrar los ojos, el brillo se apaga en esta parte del tiempo de cerrar (0-1). */
+        eyeFadeOut: 0.45,
+        /** Partículas que se juntan en los ojos: cada cuánto (ms) al principio y al final, de dónde (radio, px) y vida. */
+        gatherEveryMs: [35, 8] as const,
+        gatherRadius: [12, 26] as const,
+        gatherLifeMs: [260, 380] as const,
+        /** La mira: opacidad del principio al final, cuánto titila, cada cuánto (ms) y velocidad del pulso (px/s). */
+        aimAlpha: [0.3, 0.75] as const,
+        aimFlicker: 0.45,
+        aimFlickerMs: 45,
+        aimSpeed: 140,
+        /** En la última parte del aviso la mira parpadea (0-1 del aviso). */
+        aimBlinkFrom: 0.8,
+        aimBlinkMs: 60,
+        /** El rayo: en qué parte del golpe se ensancha y en cuál se afina y se apaga (0-1), y el grosor al apagarse. */
+        growUntil: 0.1,
+        thinFrom: 0.68,
+        thinTo: 0.12,
+        /** Cada cuánto cambia la variante del borde (ms) y cuánto vibra el grosor (±). */
+        vibrateMs: 40,
+        vibrate: 0.12,
+        /** Cuánto corre el dibujo del rayo (px/s, hacia afuera) y cuánto titila el halo (±). */
+        flowSpeed: 260,
+        haloFlicker: 0.2,
+        /** Cuánta luz pierde el rayo a lo largo (0-1, a su largo máximo): en el aire se disipa. */
+        farFade: 1,
+        /** El destello de los ojos al disparar (ms y escala del principio al final). */
+        flashMs: 150,
+        flashScale: [0.35, 1.5] as const,
+        /** La bola de luz en los ojos mientras dispara. */
+        orbScale: 2.4,
+        /** Chispas a lo largo del rayo: cada cuánto (ms), velocidad (px/s) y vida (ms). */
+        sparkEveryMs: 12,
+        sparkSpeed: [12, 40] as const,
+        sparkLifeMs: [160, 320] as const,
+        /** Donde se corta contra lo sólido: chispas (cada cuánto, velocidad, abanico en grados, gravedad, vida). */
+        cutEveryMs: 14,
+        cutSpeed: [50, 130] as const,
+        cutSpread: 70,
+        cutGravity: 380,
+        cutLifeMs: [180, 360] as const,
+        /** El punto caliente en la pared (escala) y el humo (cada cuánto, cuánto sube, cuánto se aparta de la pared, cuánto crece, vida). */
+        hotScale: 2.4,
+        smokeEveryMs: 45,
+        smokeRise: [24, 42] as const,
+        smokeDrift: 14,
+        smokeGrow: [0.7, 2.6] as const,
+        smokeLifeMs: 900,
+        /** Cada bocanada, distinta: tamaño y vida (× los de arriba; también el ritmo) y cuánto se corre al nacer (px). */
+        smokeSize: [0.7, 1.35] as const,
+        smokeLife: [0.7, 1.15] as const,
+        smokeJitter: 2.5,
+        smokePool: 8,
+        /** El estallido sobre Kerana: el anillo (ms, escala), el destello y las chispas. */
+        burstMs: 280,
+        burstScale: [0.3, 2.2] as const,
+        burstSparks: 22,
+        /** Sin destellos (Opciones): opacidad del destello y del estallido, y la mira sin titilar. */
+        calmFlashAlpha: 0.35,
+      },
+    },
   },
 
   /**

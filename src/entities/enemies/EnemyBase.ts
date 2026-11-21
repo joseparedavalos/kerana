@@ -123,6 +123,11 @@ export abstract class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
+  /** Corazones que saca un proyectil propio que toca a Kerana (el rayo del Jaguarú saca 2, S117). */
+  get projectileDamage(): number {
+    return GAMEPLAY.damage.enemyContact;
+  }
+
   /** El tajo corta proyectiles propios que toca (payé del payesero, S62); devuelve si cortó alguno. */
   cutProjectiles(_rect: Phaser.Geom.Rectangle): boolean {
     return false;
