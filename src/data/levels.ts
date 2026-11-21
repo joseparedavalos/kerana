@@ -235,6 +235,9 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // S78: dentro del cerro en zigzag, la baldosa de montana rodeada por los cuatro lados, al mismo tono que el
     // terreno (sin tinte ni degradado), en la grilla de 16 px: no se ve el cielo de tormenta adentro.
     earthBackdrop: true,
+    // S116: la tierra del cerro sin repetirse (variantes por celda sobre el tileset real de montana), con capas y bloques
+    // de arenisca, vetas de hierro, cuarzo, liquen y raíces según la profundidad.
+    terrainDetail: { sheet: 'montana', seed: 116 },
     musicKey: '',
     boss: 'ao_ao',
     gift: 'heart_up',

@@ -45,84 +45,84 @@
       "ignore": true
     },
     "sandstone_outcrop": {
-      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
-      "sink": 1,
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1) · S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 8, 35, 66, 96, 111, 115 / 157 (k 6); en l6 a escala 0,7: 1 → 6. Sus matas de scree_pile (k 5) a 0,25 × 0,7: 2 → 14",
+      "sink": 6,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 14
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 14,
           "flip": true
         }
       ]
     },
     "crevice_grasses": {
-      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
-      "sink": 1,
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1) · S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 8, 30, 64, 96, 107, 115 / 155 (k 6); en l6 a escala 1: 1 → 5. Sus matas de scree_pile (k 5) a 0,25: 2 → 10,5",
+      "sink": 5,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
     },
     "lichen_moss": {
-      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
-      "sink": 1,
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1) · S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 7, 30, 65, 96, 108, 115 / 155 (k 6); en l6 a escala 1: 1 → 5. Sus matas de scree_pile (k 5) a 0,25: 2 → 10,5",
+      "sink": 5,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
     },
     "windbent_tree": {
-      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1)",
-      "sink": 1,
+      "note": "S50: base curva, tocaba el suelo solo en el centro y los extremos quedaban en el aire (hundir más se comía el prop): hundido poco y piedras sueltas de esta carpeta (scree_pile chico) a los dos lados (`tufts`: x = fracción del ancho del dibujo, scale = la de la mata, sink = su hundido, a escala 1) · S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 7, 31, 64, 72, 110, 120 / 161 (k 6); en l6 a escala 1: 1 → 5. Sus matas de scree_pile (k 5) a 0,25: 2 → 10,5",
+      "sink": 5,
       "tufts": [
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.08,
           "scale": 0.25,
-          "sink": 2
+          "sink": 10.5
         },
         {
           "prop": "l6_roca/scree_pile",
           "x": 0.92,
           "scale": 0.25,
-          "sink": 2,
+          "sink": 10.5,
           "flip": true
         }
       ]
     },
     "scree_pile": {
-      "note": "S50: base curva, los extremos quedaban en el aire: hundido (es pedregal: perder la base no se lleva nada). Como piedras sueltas al pie de otros props de esta carpeta (`tufts`), el hundido lo pone cada uno",
-      "sink": 3
+      "note": "S50: base curva, los extremos quedaban en el aire: hundido (es pedregal: perder la base no se lleva nada). Como piedras sueltas al pie de otros props de esta carpeta (`tufts`), el hundido lo pone cada uno · S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 5, 29, 50, 77, 96 / 138 (k 5); en l6 a escala 0,7 y 0,6: 3 → 5,5 (2,5 + 2 / 0,65)",
+      "sink": 5.5
     },
     "karanday_palm": {
       "note": "S78: el fondo no es magenta puro sino rosa fuerte (251, 1, 161): a 94 del magenta, más que la tolerancia de 90. Con 120 se va entero (la palmera más cercana queda a más de 200). Borde también `magenta`: el rosa mezclado con el contorno oscuro (rojo bajo) no lo toma `chroma`",
@@ -131,6 +131,14 @@
         "chroma",
         "magenta"
       ]
+    },
+    "balanced_boulders": {
+      "note": "S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 25, 77, 101 / 154 (k 3); en l6 a escala 0,7: 0 → 4,5 (1,5 + 2 / 0,7)",
+      "sink": 4.5
+    },
+    "rock_ledge": {
+      "note": "S116: el borde de montana.png tiene ralas las filas 0 y 1 (2 y 8 de 16 px): el borde visible está 2 unidades bajo la línea del suelo. sink = k / 2 + 2 / escala (k = filas de la punta angosta; la regla de S97 y S114). Medido: 9, 17, 18, 23 / 37 (k 4); no está en l6, a escala 1: 0 → 4",
+      "sink": 4
     }
   }
 }

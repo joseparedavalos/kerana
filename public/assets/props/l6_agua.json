@@ -40,7 +40,7 @@
         "w": 160,
         "h": 59
       },
-      "sink": 6
+      "sink": 8
     },
     "shallow_pool": {
       "frame": {
@@ -61,6 +61,7 @@
         "w": 144,
         "h": 50
       },
+      "sink": 4,
       "flow": {
         "dir": "side",
         "region": [
@@ -69,8 +70,7 @@
           0.92,
           0.85
         ]
-      },
-      "sink": 3
+      }
     },
     "thin_stream": {
       "frame": {
@@ -91,6 +91,7 @@
         "w": 123,
         "h": 224
       },
+      "sink": 4,
       "flow": {
         "dir": "down",
         "region": [
@@ -125,6 +126,7 @@
         "w": 192,
         "h": 224
       },
+      "sink": 5.5,
       "flow": {
         "dir": "down",
         "region": [
@@ -158,7 +160,8 @@
       "sourceSize": {
         "w": 102,
         "h": 112
-      }
+      },
+      "sink": 3.5
     }
   },
   "meta": {

@@ -56,6 +56,7 @@ import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } fro
 import { CameraController, type CameraFloor } from '../systems/CameraController';
 import { Chase } from '../systems/Chase';
 import { Waterfall } from '../entities/Waterfall';
+import { waterfallLedges } from '../entities/waterfallArt';
 import { Darkness, type LevelLight } from '../systems/Darkness';
 import { DialogueBox } from '../systems/DialogueBox';
 import { EventBus, GameEvents } from '../systems/EventBus';
@@ -668,7 +669,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateJungle(delta, body);
     this.updateProjectiles();
     this.updateWind(delta, body);
-    for (const w of this.waterfalls) w.update(delta);
+    for (const w of this.waterfalls) w.update(delta, this.cameras.main);
     this.updateHypnosisIcon(delta);
     this.updateSleep(body);
     this.updateFallingHazards(delta);
@@ -2126,9 +2127,14 @@ export class LevelScene extends Phaser.Scene {
           this.chaseZone = { rect, speed: Number(objectProp(obj, 'speed') ?? GAMEPLAY.chase.speed) };
           break;
         }
-        case 'Waterfall':
-          this.waterfalls.push(new Waterfall(this, new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16)), FX_PARTICLE));
+        case 'Waterfall': {
+          // S116: donde el chorro cruza un piso (la cornisa del secreto) salpica y hace espuma.
+          const zone = new Phaser.Geom.Rectangle(x, y, Number(obj.width ?? 16), Number(obj.height ?? 16));
+          const tile = this.map.tileWidth;
+          const ledges = waterfallLedges(zone, tile, (cx, cy) => this.tileAt('Ground', cx * tile + tile / 2, cy * tile + tile / 2));
+          this.waterfalls.push(new Waterfall(this, zone, ledges));
           break;
+        }
         case 'Pickup': {
           const kind = String(objectProp(obj, 'kind') ?? 'guavira') as PickupKind;
           if (kind === 'pluma') {

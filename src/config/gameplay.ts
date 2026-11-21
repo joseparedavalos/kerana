@@ -1463,28 +1463,62 @@ export const GAMEPLAY = {
   },
 
   /**
-   * Cascada (S31, el salto de l6): decoración por código delante de Kerana, sin choque. Detrás puede haber una cornisa.
+   * Cascada (S31, el salto de l6; S116, el dibujo nuevo, `src/entities/waterfallArt.ts`): decoración por código delante
+   * de Kerana, sin choque. Detrás puede haber una cornisa: la lámina es translúcida para que se adivine.
    */
   waterfall: {
-    /** Color del cuerpo (las capas lo tiñen). */
-    color: 0xcfe8f0,
-    /** Capa de atrás: opacidad y velocidad de caída (px/s). Más lenta y más opaca: el grosor. */
-    backAlpha: 0.55,
+    /** Profundidad de la lámina de atrás; la de adelante, la cresta, la poza y la espuma van 1 y 2 más arriba. */
+    depth: 10,
+    /** Velocidad de caída de cada lámina (px/s): la de atrás, el cuerpo; la de adelante, los hilos claros. */
     backSpeed: 70,
-    /** Capa de adelante: más rápida y más clara, para que se lean dos velocidades. */
-    frontAlpha: 0.4,
-    frontSpeed: 130,
-    /** Bordes brillantes (px de ancho y opacidad): enmarcan el chorro. */
-    edgeWidth: 2,
-    edgeAlpha: 0.5,
-    /** Hilos que caen adelante (cantidad por tile de ancho, velocidad en px/s, largo en px). */
-    streaksPerTile: 6,
-    streakSpeed: 200,
-    streakLength: 16,
-    streakAlpha: 0.85,
-    /** Espuma al pie (partículas por segundo) y rocío que sube. */
-    foamPerSec: 22,
-    mistPerSec: 9,
+    frontSpeed: 150,
+    /** Filas en que la cresta y las láminas se pisan (la cresta se desvanece encima de ellas). */
+    lipOverlap: 5,
+    /** Fuera de cámara (con este margen, en unidades) no se emite ni se anima nada más que las láminas. */
+    cullMargin: 48,
+    art: {
+      /**
+       * Seis tonos de agua y el brillo. Medidos en el prop l6_agua/waterfall (`#323e4c`, `#6b6e7d`, `#909cb2`, `#a5b4c9`,
+       * `#c1cddd`, `#effdff`) y en la bruma de l6_far.jpg (`#485164`, `#6a7084`), más fríos: la tormenta.
+       */
+      ramp: [0x2f3b4c, 0x46566b, 0x627691, 0x8698b2, 0xaabbd0, 0xd2deeb, 0xeef8ff],
+      /** Opacidad de cada tono en la lámina de atrás: los hondos más transparentes (se ve la roca detrás). */
+      backAlpha: [0.34, 0.42, 0.5, 0.58, 0.66, 0.76],
+      /** Alto de las láminas (se repiten hacia abajo). */
+      period: 96,
+      /** Rendijas por cada 16 de ancho, su largo y su opacidad. */
+      slitsPerTile: 5,
+      slitLength: [8, 22],
+      slitAlpha: 0.16,
+      /** Hilos claros por cada 16 de ancho (atrás y adelante) y su largo. */
+      backThreadsPerTile: 9,
+      frontThreadsPerTile: 4,
+      threadLength: [8, 26],
+      /** Opacidad de los hilos de adelante: el cuerpo del hilo y su cabeza (el brillo). */
+      frontAlpha: [0.55, 0.9],
+      /** La cresta: alto de su textura, cuánto sube sobre el borde de arriba del chorro y cuánto empieza antes (sobre la roca). */
+      lipHeight: 20,
+      lipRise: 3,
+      lipLead: 5,
+      lipDrop: 5,
+    },
+    /** Brillos que bajan por la cresta: cuántos, ancho, cuánto bajan (unidades), vida (ms) y opacidad. */
+    glints: { count: 5, width: 2, travel: 7, lifeMs: 700, alpha: 0.9 },
+    /**
+     * Donde el chorro cruza un piso: alto de la franja de espuma, cuánto se mete en el piso, opacidad, gotas por segundo,
+     * qué parte de ellas lleva rocío y qué parte de las manchas de espuma va ahí (el resto, en la poza).
+     */
+    ledge: { foamHeight: 4, foamSink: 2, foamAlpha: 0.75, dropsPerSec: 22, mistShare: 0.3, foamShare: 0.5 },
+    /** La poza al pie: alto y cuánto se pasa del chorro a cada lado. */
+    pool: { height: 12, overhang: 14 },
+    /** Ondas en la poza: cuántas a la vez, tamaño de la textura, escala de y hasta, vida (ms) y opacidad. */
+    ripples: { count: 4, width: 22, height: 5, scale: [0.4, 1.7], lifeMs: 1500, alpha: 0.8 },
+    /** Manchas de espuma al pie: cuántas, tamaño, vida (ms), cuánto suben y opacidad. */
+    foam: { count: 10, width: 7, height: 4, lifeMs: 900, rise: 4, alpha: 0.85 },
+    /** Gotas que saltan al pie: por segundo, velocidad hacia arriba (de y hasta, px/s), hacia los lados, gravedad y vida (ms). */
+    drops: { perSec: 18, speedY: [-110, -45], speedX: 45, gravity: 320, lifeMs: 520 },
+    /** Nube de rocío: bocanadas por segundo, tamaño, velocidades, escala de y hasta, opacidad y vida (ms). */
+    mist: { perSec: 5, width: 20, height: 12, speedY: [-18, -6], speedX: 10, scale: [0.7, 1.9], alpha: 0.6, lifeMs: 2400 },
   },
 
   /** Vacas sueltas de Capiatá (extra del nivel 4): caminan despacio, mugen y sirven de plataforma. */
@@ -2741,6 +2775,32 @@ export const GAMEPLAY = {
           ],
           /** La tierra se oscurece hacia adentro como el barro del estero (las masas del monte son anchas), en pasos de 3 %. */
           depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82],
+        },
+        /**
+         * S116: montana (l6, el cerro guaireño), sobre su tileset real. Sin cristales (no hay cuevas) ni pasto en las
+         * esquinas (el borde es una línea fina). Cerca del aire, liquen en la roca, grava y cantitos de cuarzo; más
+         * adentro, capas de arenisca con estratificación cruzada, juntas entre capas, bloques sueltos y vetas de hierro.
+         */
+        montana: {
+          edgeChance: 0.75,
+          overhangChance: 0,
+          crystal: { reach: 2, minDepth: 2, maxDepth: 3, chance: 0 },
+          rootsChance: 0.11,
+          rootletChance: 0.09,
+          bands: [
+            { minDepth: 1, maxDepth: 1, chance: 0.05, kinds: { lichen: 3, pebble: 1, quartz: 1 } },
+            { minDepth: 2, maxDepth: 2, chance: 0.055, kinds: { lichen: 2, pebble: 2, quartz: 1, iron: 1, block: 1 } },
+            { minDepth: 3, maxDepth: 4, chance: 0.045, kinds: { sandstone: 3, seam: 2, iron: 2, block: 2, boulder: 1, quartz: 1 } },
+            // El corazón de las masas es enorme (6300 celdas en l6) y va oscuro: menos, para no pasar de ≈ 650 en el nivel.
+            { minDepth: 5, maxDepth: 99, chance: 0.02, kinds: { sandstone: 3, seam: 3, boulder: 1, iron: 2, block: 1 } },
+          ],
+          /** Las masas del cerro son anchas y hondas (la cumbre 1 tiene 24 de ancho y 50 de alto): se cuenta más hondo. */
+          maxDepth: 10,
+          /**
+           * La tierra se oscurece hacia adentro en pasos de 3 % y, desde la profundidad 7, de 2 % (en masas tan grandes los
+           * contornos de la profundidad son cuadrados: con pasos grandes hasta el fondo se leían anillos), hasta 0,76.
+           */
+          depthShade: [1, 1, 0.97, 0.94, 0.91, 0.88, 0.85, 0.82, 0.8, 0.78, 0.76],
         },
       },
     },
