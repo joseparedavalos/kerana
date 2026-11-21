@@ -16,7 +16,7 @@ import { createBoss, type Boss, type BossContext } from '../entities/bosses';
 import { onRefuge, refugeUnder, type Refuge } from '../entities/bosses/aoAoLogic';
 import { panFor } from '../entities/bosses/jasyLogic';
 import { Cow } from '../entities/Cow';
-import { Caster, createEnemy, Guard, Pouncer } from '../entities/enemies';
+import { Caster, createEnemy, Guard, Pouncer, Thrower } from '../entities/enemies';
 import { Diver } from '../entities/enemies/Diver';
 import { Lurker } from '../entities/enemies/Lurker';
 import { Swarm } from '../entities/enemies/Swarm';
@@ -1472,9 +1472,17 @@ export class LevelScene extends Phaser.Scene {
     const facing: 1 | -1 = this.player.x >= x ? 1 : -1;
     const minion = createEnemy(this, kind, x, y, facing, true);
     this.glowEnemyParts(minion);
+    if (minion instanceof Thrower) this.wireThrower(minion);
     // En el lugar: el overlap guarda la referencia a este arreglo.
     this.enemies.push(minion);
     this.bossMinions.push(minion);
+  }
+
+  /** La fruta del ka'i (S115) revienta al caer al piso y su semilla rebota en él. */
+  private wireThrower(enemy: Thrower): void {
+    enemy.groundAt = (px, py) => this.tileAt('Ground', px, py);
+    enemy.platformAt = (px, py) => this.tileAt('Platforms', px, py);
+    enemy.tileSize = this.map.tileWidth;
   }
 
   private clearBossMinions(): void {
@@ -2093,6 +2101,8 @@ export class LevelScene extends Phaser.Scene {
           }
           // El payé del payesero (S62) se deshace contra el suelo y las paredes; las plataformas de un sentido no lo frenan.
           if (enemy instanceof Caster) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
+          // La fruta del ka'i (S115) revienta al caer al piso y su semilla rebota en él.
+          if (enemy instanceof Thrower) this.wireThrower(enemy);
           // Karaí Vosá (S72) no ve a Kerana a través de un fardo o un muro.
           if (enemy instanceof Guard) enemy.solidAt = (px, py) => this.tileAt('Ground', px, py);
           // El yaguareté avá (S76) corre y salta solo sobre el terreno, y no persigue a Kerana sobre algo que se mueve.

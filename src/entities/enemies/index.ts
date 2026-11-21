@@ -45,3 +45,4 @@ export { Caster } from './Caster';
 export { EnemyBase } from './EnemyBase';
 export { Guard } from './Guard';
 export { Pouncer } from './Pouncer';
+export { Thrower } from './Thrower';
