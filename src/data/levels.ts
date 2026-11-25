@@ -185,7 +185,7 @@ export const LEVELS: Partial<Record<LevelId, LevelDef>> = {
     // Fondo lejano (cerros, campanario, lapacho). La calle es el tileset, como en l3.
     // S73: es el original entero, sin deformar. Bajado 96: la imagen crece pareja (×1,33 sobre la vista) y el patio con
     // vacas (desde la fila 760 de 1008) queda bajo el borde de abajo de la pantalla aun con la cámara al fondo del nivel.
-    backgrounds: { far: 'bg_l4_far', shiftY: -96, skyLife: { birds: [80, 200] }, sun: { at: [544, 104], reflection: [0, 0, 1, 1] } },
+    backgrounds: { far: 'bg_l4_far', shiftY: -96, skyLife: { birds: [80, 200] }, sun: { at: [565, 75], reflection: [0, 0, 1, 1] } },
     terrainShell: 3,
     // S75: el cuerpo de casa Z, la plaza y la base del campanario se cortó (losas flotantes); el relleno queda para
     // lo poco que sigue macizo (museo, casa del patio, galpón, muelles). tests/holes.test.ts lo exige.
