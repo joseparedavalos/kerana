@@ -418,6 +418,34 @@ export class AudioManager {
     }
     const pending = this.rendering.get(key);
     if (pending) return pending;
+
+    // Si existe un MP3 en public/assets/audio/music/, se usa; si no, se genera.
+    const fileJob = this.loadMusicFile(ctx, key).then((buf) => {
+      if (buf) {
+        this.buffers.set(key, buf);
+        while (this.buffers.size > CFG.cacheTracks) this.buffers.delete(this.buffers.keys().next().value!);
+        return buf;
+      }
+      return this.renderProcedural(ctx, key);
+    });
+    this.rendering.set(key, fileJob);
+    return fileJob;
+  }
+
+  /** Carga `public/assets/audio/music/<key>.mp3`. `null` si no existe. */
+  private static async loadMusicFile(ctx: AudioContext, key: MusicKey): Promise<AudioBuffer | null> {
+    try {
+      const res = await fetch(`/assets/audio/music/${key}.mp3`);
+      if (!res.ok) return null;
+      const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
+      return buffer;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Genera la pista con ZzFX (el camino de siempre). */
+  private static renderProcedural(ctx: AudioContext, key: MusicKey): Promise<AudioBuffer | null> {
     const def = trackDef(key);
     if (!def) {
       console.warn(`[MÚSICA FALTANTE] ${key}: el juego sigue sin música.`);
