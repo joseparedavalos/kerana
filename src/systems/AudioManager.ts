@@ -435,7 +435,7 @@ export class AudioManager {
   /** Carga `public/assets/audio/music/<key>.mp3`. `null` si no existe. */
   private static async loadMusicFile(ctx: AudioContext, key: MusicKey): Promise<AudioBuffer | null> {
     try {
-      const res = await fetch(`/assets/audio/music/${key}.mp3`);
+      const res = await fetch(`assets/audio/music/${key}.mp3`);
       if (!res.ok) return null;
       const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
       return buffer;
