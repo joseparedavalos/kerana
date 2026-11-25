@@ -2611,8 +2611,8 @@ export const GAMEPLAY = {
       radiusMin: 34,
       radiusMax: 46,
       /** Opacidad del halo (aditivo) en su mínimo y en su máximo. */
-      alphaMin: 0.1,
-      alphaMax: 0.22,
+      alphaMin: 0.18,
+      alphaMax: 0.38,
       /** Color del halo. */
       color: '#ffb45a',
       /** Dónde pesa el halo: fracción del radio con el brillo más alto (más adentro, la mitad: no lava el disco). */
