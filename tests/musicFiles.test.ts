@@ -43,8 +43,8 @@ describe('la tabla de las pistas en archivo (S119)', () => {
       expect(file.bytes, `${key}: ${RERUN}`).toBe(f.bytes);
       const info = file.info;
       expect(info, key).not.toBeNull();
-      // Contar cuadros no descuenta el retardo del codificador (menos de dos cuadros).
-      expect(Math.abs(info!.duration - f.duration), key).toBeLessThan(0.08);
+      // Contando cuadros da lo mismo que ffmpeg a menos de 1 ms (la tabla va redondeada al ms).
+      expect(Math.abs(info!.duration - f.duration), key).toBeLessThan(0.01);
     }
   });
 

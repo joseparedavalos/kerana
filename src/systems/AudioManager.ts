@@ -414,10 +414,11 @@ export class AudioManager {
   /** Arranca una pista en archivo con su fundido. `false` si no se pudo armar (entonces se genera). */
   private static startStream(ctx: AudioContext, key: MusicKey, file: MusicFile): boolean {
     let first = this.cued.get(key);
+    let second: Deck | undefined;
     this.cued.delete(key);
     try {
       first ??= this.cueDeck(ctx, key, file);
-      const second = this.cueDeck(ctx, key, file);
+      second = this.cueDeck(ctx, key, file);
       const stream = new MusicStream(ctx, key, file, first, second, this.bus(ctx), {
         release: (deck) => this.releaseDeck(deck),
         error: (s, message) => this.streamError(s, message),
@@ -433,6 +434,7 @@ export class AudioManager {
       return true;
     } catch (e) {
       if (first) this.releaseDeck(first);
+      if (second) this.releaseDeck(second);
       this.streamFailed.add(key);
       this.fail(`stream ${key}: ${String(e)}`);
       return false;
