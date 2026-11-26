@@ -65,17 +65,6 @@ export const SFX_SAMPLES: Partial<Record<SfxKey, SampleDef>> = {
   uiMove: { sources: ['interface:select_001'] },
   uiConfirm: { sources: ['interface:confirmation_001'] },
   uiBack: { sources: ['interface:back_002'] },
-  // Combate y movimiento.
-  jump: { sources: ['impact:impactGeneric_light_000'], pitchJitter: 0.06 },
-  dash: { sources: ['impact:impactGeneric_light_001'], pitchJitter: 0.05 },
-  hurt: { sources: ['impact:impactGeneric_light_002'], pitchJitter: 0.05 },
-  bite: { sources: ['rpg:chop'], pitchJitter: 0.06 },
-  peck: { sources: ['rpg:knifeSlice'], pitchJitter: 0.05 },
-  // Carga del tajo.
-  chargeUp: { sources: ['rpg:drawKnife1'], pitchJitter: 0.04 },
-  chargeReady: { sources: ['interface:confirmation_001'] },
-  // Ambiente.
-  wind: { sources: ['rpg:cloth1'], pitchJitter: 0.03 },
   // La liberación ya no es grabada (S107): es el jingle de la estrella, generado con los instrumentos de la música
   // (`JINGLES` en src/data/music.ts). El pizzicato de Kenney (`jingles:jingles_PIZZI10`) queda en su zip, sin usar.
 };
