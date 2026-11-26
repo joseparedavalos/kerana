@@ -449,8 +449,9 @@ async function main() {
       } else since = -1;
     }
     check(
-      loopAfter?.stream?.loops === 1 && loopWin.length > 100 && loopGap < 500,
-      `música: la vuelta del bucle entra sin silencio (${loopAfter?.stream?.loops} vuelta, hueco más largo ${Math.round(loopGap)} ms, de vuelta en ${loopAfter?.stream?.position.toFixed(1)} s)`,
+      // Con el render por software el hilo del juego va cargado: el temporizador mide cada 20 a 70 ms.
+      loopAfter?.stream?.loops === 1 && loopWin.length >= 30 && loopGap < 500,
+      `música: la vuelta del bucle entra sin silencio (${loopAfter?.stream?.loops} vuelta, hueco más largo ${Math.round(loopGap)} ms en ${loopWin.length} muestras, de vuelta en ${loopAfter?.stream?.position.toFixed(1)} s)`,
     );
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
