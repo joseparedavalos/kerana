@@ -142,7 +142,7 @@ describe('el sol de l2 (S96)', () => {
 
   it('solo l2 tiene sol, y el reflejo queda debajo del sol', () => {
     const withSun = Object.values(LEVELS).filter((l) => l.backgrounds.sun);
-    expect(withSun.map((l) => l.id)).toEqual(['l2']);
+    expect(withSun.map((l) => l.id).sort()).toEqual(['l2', 'l4']);
     const s = withSun[0]!.backgrounds.sun!;
     const [x0, y0, x1, y1] = s.reflection;
     expect(x0).toBeLessThan(s.at[0]);
