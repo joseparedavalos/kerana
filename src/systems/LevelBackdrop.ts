@@ -127,7 +127,7 @@ export class LevelBackdrop {
       if (this.maxUncovered > 0) this.makeFill(defs.far, defs.fillTop, defs.canopy === true);
       if (defs.rain) this.makeRain(defs.far);
       if (defs.mist) this.makeMist(defs.far, defs.mist.region);
-      const farPixels = defs.sun || defs.dusk ? this.pixels(defs.far) : undefined;
+      const farPixels = defs.sun?.reflection || defs.dusk ? this.pixels(defs.far) : undefined;
       if (defs.sun) this.sun = new SunShimmer(scene, defs.sun, farPixels, CFG.depth + 0.3);
       if (defs.skyLife) this.skyLife = new SkyLife(scene, defs.skyLife, this.far.frame.width, CFG.depth + 0.3);
       // S108: detrás de las bandadas; el fondo de cueva (encima) lo tapa donde se ve la cueva.

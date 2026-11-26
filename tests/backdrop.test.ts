@@ -140,11 +140,14 @@ describe('el sol de l2 (S96)', () => {
     expect(pickGlint([], 2, 6, 0.5, 0.5, 0.5, out)).toBe(false);
   });
 
-  it('solo l2 tiene sol, y el reflejo queda debajo del sol', () => {
+  it('l2 y l4 tienen sol; el reflejo de l2 queda debajo del sol y Capiatá, sin agua, no tiene reflejo (S119)', () => {
     const withSun = Object.values(LEVELS).filter((l) => l.backgrounds.sun);
     expect(withSun.map((l) => l.id).sort()).toEqual(['l2', 'l4']);
-    const s = withSun[0]!.backgrounds.sun!;
-    const [x0, y0, x1, y1] = s.reflection;
+    expect(LEVELS.l4!.backgrounds.sun!.reflection).toBeUndefined();
+    const s = LEVELS.l2!.backgrounds.sun!;
+    expect(s.at).toEqual([726, 334]);
+    const [x0, y0, x1, y1] = s.reflection!;
+    expect([x0, y0, x1, y1]).toEqual([692, 354, 764, 442]);
     expect(x0).toBeLessThan(s.at[0]);
     expect(x1).toBeGreaterThan(s.at[0]);
     expect(y0).toBeGreaterThan(s.at[1]);
