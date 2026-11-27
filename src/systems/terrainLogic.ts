@@ -109,3 +109,54 @@ export function caveColumns(areas: ReadonlyArray<{ x: number; width: number }>, 
   }
   return out;
 }
+
+/** S120: cómo se pinta cada celda con la repisa (ver `shellPaint`). Índice de la celda (x, y): `y * width + x`. */
+export interface ShellPaint {
+  /** A cuántos tiles del aire está cada celda (`terrainDepths`). */
+  depth: Uint8Array;
+  /** Opacidad de la casilla de Ground: 1 entera, `fadeAlpha` la fila tenue, 0 no se dibuja (también en el aire). */
+  alpha: Float32Array;
+  /** 1 si la celda lleva el fondo de tierra (`earthCells`) debajo. */
+  earth: Uint8Array;
+  /**
+   * 1 en la roca honda de las cuevas: las celdas que van enteras solo por estar en una columna de cueva (sin eso, la
+   * repisa las dejaba tenues o sin dibujar). Las calcomanías del terreno no van ahí, como antes de S120.
+   */
+  caveDeep: Uint8Array;
+}
+
+/**
+ * Lo que dibuja la repisa (S28) con el piso de S29 y el fondo de tierra (S68): una sola cuenta para la escena y los
+ * tests. Se dibujan enteras, sin repisa y sin tierra, las celdas del piso (`keepFloor`) y, desde S120, las de las
+ * columnas de cueva (`caves`, de `caveColumns`): detrás está la imagen de la cueva, y la roca honda de l1 la dejaba
+ * ver (la fila tenue al 55 % y lo de adentro sin dibujar, en bloques claros con forma de escalón).
+ */
+export function shellPaint(
+  solid: (x: number, y: number) => boolean,
+  width: number,
+  height: number,
+  tiles: number,
+  fadeAlpha: number,
+  opts: { keepFloor: boolean; earth: boolean; caves?: Uint8Array },
+): ShellPaint {
+  const depth = terrainDepths(solid, width, height, tiles);
+  const floor = terrainFloor(solid, width, height);
+  const floorAt = (x: number, y: number) => opts.keepFloor && isFloorTile(floor, x, y);
+  const whole = (x: number, y: number) => floorAt(x, y) || opts.caves?.[x] === 1;
+  const alpha = new Float32Array(width * height);
+  const caveDeep = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!solid(x, y)) continue;
+      const i = y * width + x;
+      const shell = floorAt(x, y) ? 1 : terrainAlpha(depth[i], tiles, fadeAlpha);
+      if (shell < 1 && opts.caves?.[x] === 1) caveDeep[i] = 1;
+      alpha[i] = whole(x, y) ? 1 : shell;
+    }
+  }
+  const earth = new Uint8Array(width * height);
+  if (opts.earth) {
+    for (const c of earthCells(depth, width, tiles, (i) => whole(i % width, Math.floor(i / width)))) earth[c.y * width + c.x] = 1;
+  }
+  return { depth, alpha, earth, caveDeep };
+}

@@ -71,7 +71,7 @@ import { ensureSoftGlow } from '../utils/softGlow';
 import { fixedOffset, setupView, VIEW } from '../systems/View';
 import { addYvagaSky } from '../systems/Backdrops';
 import { cowPatrol } from '../systems/cowLogic';
-import { caveColumns, isFloorTile, terrainAlpha, terrainDepths, terrainFloor } from '../systems/terrainLogic';
+import { caveColumns, shellPaint } from '../systems/terrainLogic';
 import { addEarthBackdrop } from '../systems/EarthBackdrop';
 import { depthTint, detailConfigFor, glowTileFor, planTerrainDecals, planTerrainVariants, planWaterTiles, regionZones, townZones, type DetailConfig, type DetailLayout } from '../systems/terrainDetailLogic';
 import { WaterGlints } from '../systems/WaterGlints';
@@ -268,6 +268,8 @@ export class LevelScene extends Phaser.Scene {
   /** S109: la capa de calcomanías del terreno (`terrainDetail` en levels.ts) y dónde van los cristales (sin tinte de cueva). */
   terrainDetailLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private terrainCrystals: { x: number; y: number }[] = [];
+  /** S120: la roca honda de las cuevas (`ShellPaint.caveDeep`), que va entera pero sin calcomanías. */
+  private caveDeep: Uint8Array | null = null;
   /** S110: la hoja de detalle del nivel (null sin `terrainDetail`), para la roca que se rompe. */
   private terrainDetail: TerrainDetailSheet | null = null;
   /** S110: el brillo que corre por el agua (`waterGlints` en levels.ts). */
@@ -1772,6 +1774,7 @@ export class LevelScene extends Phaser.Scene {
       });
     }
     this.earth = null;
+    this.caveDeep = null;
     this.terrainDetailLayer = null;
     this.terrainCrystals = [];
     if (this.def.terrainShell) this.drawTerrainAsLedges(tileset, this.def.terrainShell, detail && variants ? { detail, variants } : null);
@@ -1949,6 +1952,8 @@ export class LevelScene extends Phaser.Scene {
         height,
         ground: (x, y) => base[y * width + x],
         opaque: (x, y) => {
+          // S120: la roca honda de las cuevas ya se dibuja entera, pero sin calcomanías (casi negra, no se verían).
+          if (this.caveDeep?.[y * width + x] === 1) return false;
           const t = ground.getTileAt(x, y);
           if (t && t.visible && t.alpha >= 1) return true;
           return (this.earth?.getTileAt(x, y)?.index ?? -1) !== -1;
@@ -1983,7 +1988,10 @@ export class LevelScene extends Phaser.Scene {
     this.terrainDetailLayer = layer;
   }
 
-  /** Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo. Solo dibujo. */
+  /**
+   * Terreno como repisa (S28): los tiles de Ground hondos no se dibujan y se ve el fondo, o el fondo de tierra. Van
+   * enteros el piso (S29) y, desde S120, las columnas de cueva (`shellPaint`). Solo dibujo.
+   */
   private drawTerrainAsLedges(
     tileset: Phaser.Tilemaps.Tileset,
     tiles: number,
@@ -1994,17 +2002,8 @@ export class LevelScene extends Phaser.Scene {
     const { width, height } = this.map;
     const solid = (x: number, y: number) => (ground.getTileAt(x, y)?.index ?? -1) !== -1;
     const earth = this.def.earthBackdrop === true;
-    const depth = terrainDepths(solid, width, height, tiles);
-    const floor = terrainFloor(solid, width, height);
-    const keepFloor = this.def.solidFloor !== false;
-    ground.forEachTile((tile) => {
-      if (tile.index === -1 || (keepFloor && isFloorTile(floor, tile.x, tile.y))) return;
-      const alpha = terrainAlpha(depth[tile.y * width + tile.x], tiles, GAMEPLAY.backdrop.terrainFadeAlpha);
-      if (alpha <= 0) tile.setVisible(false);
-      else tile.setAlpha(alpha);
-    });
-    if (!earth) return;
-    // S87: bajo las zonas `Cave` (l1) la roca honda muestra el fondo de cueva, no la tierra: esas columnas no llevan.
+    // S87: las columnas de las zonas `Cave` (l1) no llevan tierra. S120: ahí la roca va entera, sin repisa (detrás
+    // está la imagen de la cueva y se veía a través de la roca maciza), igual que el piso de S29.
     const caves = caveColumns(
       (this.map.getObjectLayer('Objects')?.objects ?? [])
         .filter((o) => objectClass(o) === 'Cave')
@@ -2012,6 +2011,19 @@ export class LevelScene extends Phaser.Scene {
       width,
       this.map.tileWidth,
     );
+    const paint = shellPaint(solid, width, height, tiles, GAMEPLAY.backdrop.terrainFadeAlpha, {
+      keepFloor: this.def.solidFloor !== false,
+      earth,
+      caves,
+    });
+    this.caveDeep = paint.caveDeep;
+    ground.forEachTile((tile) => {
+      if (tile.index === -1) return;
+      const alpha = paint.alpha[tile.y * width + tile.x];
+      if (alpha <= 0) tile.setVisible(false);
+      else if (alpha < 1) tile.setAlpha(alpha);
+    });
+    if (!earth) return;
     // S109: con detalle, cada celda del fondo de tierra lleva la misma variante que Ground ahí.
     const fillAt = detail
       ? (x: number, y: number) => {
@@ -2022,9 +2034,9 @@ export class LevelScene extends Phaser.Scene {
     this.earth = addEarthBackdrop(
       this.map,
       tileset,
-      depth,
+      paint.depth,
       tiles,
-      (i) => caves[i % width] === 1 || (keepFloor && isFloorTile(floor, i % width, Math.floor(i / width))),
+      (i) => paint.earth[i] !== 1,
       fillAt,
     );
   }
