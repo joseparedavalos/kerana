@@ -2398,6 +2398,32 @@ async function main() {
     );
     await floorPage.close();
 
+    // 1g3) La roca maciza se pinta opaca en la escena real (S120; tests/solidPaint.test.ts mira la cuenta): toda casilla
+    // sólida de Ground está entera, o tenue o sin dibujar con el fondo de tierra debajo, y entonces la misma casilla con el
+    // mismo tinte (si no, la fila tenue se nota). En l1 pasaba en las cuevas: se veía la imagen de la cueva en la roca.
+    for (const id of ['1', '2', '3', '4', '5', '6', '7', 'yvaga']) {
+      const rockPage = await open(`/?debug=1&level=${id}&god=1`);
+      await rockPage.waitForFunction(() => window.__KERANA_READY__ === true, { timeout: 15000 });
+      const rock = await rockPage.evaluate(() => {
+        const s = window.__KERANA_DEBUG__.scene;
+        const out = { solid: 0, seeThrough: [], mismatch: [] };
+        s.layers.Ground.forEachTile((t) => {
+          if (t.index === -1) return;
+          out.solid++;
+          if (t.visible && t.alpha >= 1) return;
+          const e = s.earth?.getTileAt(t.x, t.y);
+          if (!e || e.index === -1) out.seeThrough.push([t.x, t.y]);
+          else if (t.visible && t.alpha > 0 && (e.index !== t.index || e.tint !== t.tint || e.flipX !== t.flipX)) out.mismatch.push([t.x, t.y]);
+        });
+        return { solid: out.solid, seeThrough: out.seeThrough.length, mismatch: out.mismatch.length, first: [...out.seeThrough, ...out.mismatch].slice(0, 6) };
+      });
+      check(
+        rock.solid > 0 && rock.seeThrough === 0 && rock.mismatch === 0,
+        `nivel ${id}: la roca maciza va opaca, ninguna casilla sólida deja ver el fondo (${JSON.stringify(rock)})`,
+      );
+      await rockPage.close();
+    }
+
     // 1h0) l6 de punta a punta (S31): el piloto cruza Guairá por la ruta principal (la escalera de lajas, la columna de roca,
     // el pozo de la piedra, el hongo de un uso, la segunda escalera, el filo, la grieta con viento, el hongo dormido y las
     // balsas sobre la cascada, las cadenas, LA PERSECUCIÓN de Ao Ao y la cadena de bajada) y después la liberación hasta
