@@ -121,10 +121,10 @@ const GLINT_KEY = 'bg_sun_glint';
 /** Lado de la textura del halo (px): se estira al radio del momento, con filtro lineal. */
 const HALO_TEX = 64;
 
-/** El sol de un fondo y su reflejo (`sun` en levels.ts), en px de arte de la imagen. */
+/** El sol de un fondo y su reflejo (`sun` en levels.ts), en px de arte de la imagen. Sin reflejo, sin destellos. */
 export interface SunPlacement {
   at: readonly [number, number];
-  reflection: readonly [number, number, number, number];
+  reflection?: readonly [number, number, number, number];
 }
 
 /**
@@ -149,7 +149,7 @@ export class SunShimmer {
   ) {
     makeSunTextures(scene);
     const g = SUN.glints;
-    this.runs = pixels ? glintRuns(pixels.data, pixels.width, place.reflection, g.minRed, g.minGreen, g.widthMin) : [];
+    this.runs = pixels && place.reflection ? glintRuns(pixels.data, pixels.width, place.reflection, g.minRed, g.minGreen, g.widthMin) : [];
     this.halo = scene.add
       .image(0, 0, HALO_KEY)
       .setScrollFactor(0)
@@ -158,7 +158,7 @@ export class SunShimmer {
       .setDepth(depth)
       .setVisible(false);
     const glintColor = Phaser.Display.Color.HexStringToColor(g.color).color;
-    for (let i = 0; i < g.count; i++) {
+    for (let i = 0; i < (place.reflection ? g.count : 0); i++) {
       const img = scene.add.image(0, 0, GLINT_KEY).setOrigin(0).setScrollFactor(0).setTint(glintColor).setDepth(depth + 0.01).setVisible(false);
       // Arrancan escalonados, apagados.
       this.glints.push({ img, x: 0, y: 0, width: 0, born: this.rand.between(0, g.gapMaxMs), life: 0 });

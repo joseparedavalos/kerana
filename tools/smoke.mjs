@@ -86,7 +86,16 @@ async function main() {
       else if (m.type() === 'warn' || m.type() === 'warning') warnings.push(m.text());
     });
     page.on('pageerror', (e) => errors.push(`[${path}] ${e.message}`));
-    page.on('requestfailed', (r) => errors.push(`[${path}] request failed: ${r.url()}`));
+    // S119: la música en archivo suena en streaming: el elemento <audio> corta sus propias descargas por rangos (y al
+    // soltarlo, la que tenía en curso). Eso no es una falla.
+    page.on('requestfailed', (r) => {
+      if (/\/audio\/music\/[^/]+\.mp3$/.test(r.url()) && r.failure()?.errorText === 'net::ERR_ABORTED') return;
+      errors.push(`[${path}] request failed: ${r.url()}`);
+    });
+    // S119: solo se piden las pistas que tienen archivo (la tabla de src/data/musicFiles.ts): ningún 404 de música.
+    page.on('response', (r) => {
+      if (r.status() === 404 && r.url().includes('/audio/music/')) errors.push(`[${path}] música pedida sin archivo: ${r.url()}`);
+    });
     await page.goto(base + path.replace(/^\//, ''), { waitUntil: 'load' });
     return page;
   }
@@ -415,6 +424,35 @@ async function main() {
       l1Cached = await audioState(title);
     }
     check(['l1_boss', 'liberation'].every((k) => l1Cached?.cached.includes(k)), `música: la pelea y la liberación quedan listas desde el recorrido (${JSON.stringify(l1Cached?.cached)})`);
+    // S119: la del nivel suena desde su MP3 en streaming (no queda decodificada en memoria) y la vuelta del bucle entra
+    // sin silencio: 3 s antes del punto del bucle, el nivel del bus (AnalyserNode) no baja 40 dB de su mediana por más
+    // de 0,5 s (los primeros 300 ms no cuentan: el salto de depuración rellena el búfer).
+    check(
+      l1Cached?.stream?.key === 'l1' && !l1Cached.generated.includes('l1') && !l1Cached.generated.includes('l1_boss'),
+      `música: el nivel 1 suena desde su MP3 en streaming, sin decodificarlo (${JSON.stringify(l1Cached?.stream)}, generadas ${JSON.stringify(l1Cached?.generated)})`,
+    );
+    // Con la pista ya avanzando (recién pedida, el elemento todavía está bajando el principio).
+    for (let t = 0, st = l1Cached; t < 8000 && !(st?.stream && st.stream.position > st.stream.start + 1); t += 200) {
+      await sleep(200);
+      st = await audioState(title);
+    }
+    await title.evaluate(() => window.__KERANA_AUDIO__.seekMusic(3));
+    const loopLevel = (await title.evaluate(() => window.__KERANA_AUDIO__.watchLevel(6500, 20))) ?? [];
+    const loopAfter = await audioState(title);
+    const loopWin = loopLevel.filter((x) => x.t >= 300);
+    const loopFloor = (loopWin.map((x) => x.rms).sort((a, b) => a - b)[loopWin.length >> 1] ?? 0) * 0.01;
+    let loopGap = 0;
+    for (let i = 0, since = -1; i < loopWin.length; i++) {
+      if (loopWin[i].rms < loopFloor) {
+        if (since < 0) since = loopWin[i].t;
+        loopGap = Math.max(loopGap, loopWin[i].t - since);
+      } else since = -1;
+    }
+    check(
+      // Con el render por software el hilo del juego va cargado: el temporizador mide cada 20 a 70 ms.
+      loopAfter?.stream?.loops === 1 && loopWin.length >= 30 && loopGap < 500,
+      `música: la vuelta del bucle entra sin silencio (${loopAfter?.stream?.loops} vuelta, hueco más largo ${Math.round(loopGap)} ms en ${loopWin.length} muestras, de vuelta en ${loopAfter?.stream?.position.toFixed(1)} s)`,
+    );
     await sleep(500);
     await title.screenshot({ path: join(SHOTS, 'level.png') });
     // Fondos (S12e, S13a): l1_cave solo dentro de las zonas Cave y l1_far solo fuera; en la boca, los dos con un degradado.

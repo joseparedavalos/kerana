@@ -52,6 +52,7 @@ Una viñeta por documento: qué contiene y cuándo leerlo.
 - `npm run sprites`: `raw/` → `public/assets/sprites/` (ver `docs/ASSETS.md`)
 - `npm run tileset -- <bioma>`: `raw/tiles/<bioma>/` → `public/assets/tiles/<bioma>.png` (ver `docs/RECETA-TILESET.md`)
 - `npm run terrain-tiles -- <bioma>`: dibuja por código el tileset del bioma y su hoja de detalle (cerro y estero; sin bioma, todos; RECETA-TILESET §6). `npm run cerro-tiles` hace solo cerro
+- `npm run music-points`: `public/assets/audio/music/*.mp3` → `src/data/musicFiles.ts` (dónde empieza a sonar y dónde empieza el fundido de cada pista; necesita ffmpeg). Correlo al agregar o cambiar un MP3 (S119)
 - `npm run smoke`: prueba de humo con navegador headless (si está disponible)
 - `npm run preview`: sirve `dist/`
 

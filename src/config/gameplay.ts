@@ -3263,8 +3263,17 @@ export const GAMEPLAY = {
     /** Con un diálogo abierto la música baja a esta fracción, en `duckMs`. */
     duckFactor: 0.35,
     duckMs: 250,
-    /** Pistas generadas que se guardan en memoria (unos 2 MB cada una). */
+    /** Pistas generadas que se guardan en memoria (unos 2 MB cada una). Las de archivo no: suenan en streaming. */
     cacheTracks: 4,
+    /**
+     * Pistas en archivo (S119, `src/data/musicFiles.ts`): al llegar al comienzo de su fundido final, la misma pista
+     * vuelve a entrar desde donde empieza a sonar, con un fundido cruzado de esto (ms) entre los dos elementos <audio>.
+     */
+    loopCrossfadeMs: 2000,
+    /** Cada cuánto (ms) se mira por dónde va la pista para entrar en el bucle a tiempo. */
+    streamPollMs: 50,
+    /** Elementos <audio> que se crean con el primer gesto (en iOS cada uno se desbloquea por separado). */
+    streamPool: 6,
     /**
      * Pasos de Kerana (S106): grabaciones de Impact Sounds según el suelo (`BIOME_FOOTSTEPS` en `src/data/sfxSamples.ts`).
      * Suenan al apoyar un pie en la animación de correr.

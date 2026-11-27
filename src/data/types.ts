@@ -38,8 +38,9 @@ export interface LevelBackgrounds {
   /**
    * El sol de la imagen (S96; px de arte): `at`, el centro del disco; `reflection`, el rectángulo (x0, y0, x1, y1) de la
    * columna dorada del agua. Un halo respira sobre el sol y titilan destellos en el reflejo (GAMEPLAY.backdrop.sun).
+   * Sin `reflection` (S119: Capiatá, sin agua), solo el halo: ni reflejo ni destellos.
    */
-  sun?: { at: readonly [number, number]; reflection: readonly [number, number, number, number] };
+  sun?: { at: readonly [number, number]; reflection?: readonly [number, number, number, number] };
   /**
    * El cielo y la llanura con vida (S98; px de arte, filas y0 y1 de la imagen): `birds`, la franja del cielo por donde
    * cruzan las bandadas; `shadows`, la franja de la llanura por donde corren las sombras de nubes (GAMEPLAY.backdrop.skyLife).

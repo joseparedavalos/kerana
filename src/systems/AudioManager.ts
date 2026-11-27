@@ -1,5 +1,7 @@
 import { GAMEPLAY } from '../config/gameplay';
 import { BOSS_LAYER, BOSS_LEVEL_TRACKS, INSTRUMENTS, JINGLES, TRACKS, type MusicKey, type TrackId } from '../data/music';
+import { MUSIC_DIR, MUSIC_FILES, type MusicFile } from '../data/musicFiles';
+import { MusicStream, type Deck } from './MusicStream';
 import { bossVariant, normalize, peak, renderJingle, renderTrack, rms, type JingleDef, type TrackDef } from './musicLogic';
 import { SaveManager } from './SaveManager';
 import type { MusicJob, MusicResult } from './musicWorker';
@@ -14,9 +16,12 @@ import { gainFor, jitter, loudness, pickVariant, soundSpan } from './sfxLogic';
 // Mientras cargan, o si faltan, suena el ZzFX. Los pasos de Kerana solo existen grabados.
 // S107: los jingles (`JINGLES` en src/data/music.ts) se generan al arrancar con los instrumentos de la música y suenan
 // como el efecto de su clave (la liberación), a la sonoridad de su ZzFX. Mientras se generan, suena el ZzFX.
+// S119: las pistas de src/data/musicFiles.ts suenan desde su MP3 en streaming (`MusicStream`: dos <audio> que se
+// turnan para el bucle, sin decodificar la pista entera); las demás se siguen generando. Si el archivo falla, se genera.
 
 type ZzfxModule = typeof import('zzfx');
-type Playing = { key: MusicKey; source: AudioBufferSourceNode; gain: GainNode };
+/** Lo que suena: un buffer generado (`source`) o una pista en archivo (`stream`), con su volumen para los fundidos. */
+type Playing = { key: MusicKey; gain: GainNode; source?: AudioBufferSourceNode; stream?: MusicStream };
 /** Un efecto que se puede cortar; sin `source` todavía mientras carga ZzFX. */
 type Voice = { source?: AudioBufferSourceNode; gain?: GainNode };
 /** Las variantes grabadas de un efecto: cada una con la ganancia que la lleva a la sonoridad pedida. */
@@ -60,12 +65,24 @@ export class AudioManager {
   private static readonly jinglesPlayed: SfxKey[] = [];
   /** Para la prueba de humo: pasos que sonaron, por suelo. */
   private static readonly stepsPlayed: Partial<Record<Surface, number>> = {};
+  /** S119: pistas en archivo sonando o yéndose con su fundido. */
+  private static readonly streams = new Set<MusicStream>();
+  /** S119: pistas en archivo que vienen (`upcoming`), con su elemento ya bajando el principio. */
+  private static readonly cued = new Map<MusicKey, Deck>();
+  /** S119: elementos <audio> libres (creados con un gesto: en iOS cada uno se desbloquea por separado). */
+  private static readonly freeDecks: Deck[] = [];
+  private static decksMade = 0;
+  private static decksUnlocked = false;
+  /** S119: pistas en archivo que fallaron: desde entonces se generan. */
+  private static readonly streamFailed = new Set<MusicKey>();
+  /** Para la prueba de humo: el nivel de lo que sale del bus de música. */
+  private static analyser: AnalyserNode | null = null;
 
   /** Una vez, al arrancar el juego: escucha el primer gesto y el foco de la ventana. */
   static install(): void {
     if (this.installed || typeof window === 'undefined') return;
     this.installed = true;
-    const onGesture = () => this.onGesture();
+    const onGesture = (e: Event) => this.onGesture(e.type);
     for (const ev of UNLOCK_EVENTS) window.addEventListener(ev, onGesture, { capture: true, passive: true });
     const onFocus = () => this.setAway(document.hidden || !document.hasFocus());
     document.addEventListener('visibilitychange', onFocus);
@@ -76,6 +93,8 @@ export class AudioManager {
       renderAll: () => this.debugRenderAll(),
       sfxRms: (keys: SfxKey[]) => this.debugSfxRms(keys),
       samples: () => this.debugSamples(),
+      seekMusic: (beforeLoop: number) => this.debugSeekMusic(beforeLoop),
+      watchLevel: (ms: number, everyMs: number) => this.debugWatchLevel(ms, everyMs),
     };
     void this.loadSamples();
   }
@@ -313,8 +332,10 @@ export class AudioManager {
 
   // ── Desbloqueo y foco ────────────────────────────────────────────────────
 
-  private static onGesture(): void {
+  private static onGesture(type: string): void {
     this.gestured = true;
+    this.unlockDecks(type);
+    for (const stream of this.streams) stream.kick();
     // Con el módulo ya cargado, se reanuda dentro del gesto (iOS lo exige); si no, apenas cargue.
     if (this.zz) this.resumeContext();
     else void this.zzfxModule().then(() => this.resumeContext(), () => undefined);
@@ -331,6 +352,8 @@ export class AudioManager {
   private static setAway(away: boolean): void {
     if (away === this.away) return;
     this.away = away;
+    // Los <audio> no se paran solos con el contexto: se pausan y se reanudan con él.
+    for (const stream of this.streams) stream.setAway(away);
     const ctx = this.zz?.ZZFX.audioContext;
     if (!ctx || !this.gestured) return;
     if (away) void ctx.suspend().catch(() => undefined);
@@ -346,6 +369,11 @@ export class AudioManager {
     if (this.playing?.key === key) return;
     this.fadeOutCurrent(ctx);
     if (!key) return;
+    const file = this.streamFailed.has(key) ? undefined : MUSIC_FILES[key];
+    if (file && this.startStream(ctx, key, file)) {
+      this.prefetchUpcoming();
+      return;
+    }
     void this.buffer(ctx, key).then((buffer) => {
       // Mientras se generaba, la escena pudo pedir otra pista (o ya está sonando esta).
       if (!buffer || this.wanted !== key || this.playing?.key === key) return;
@@ -355,11 +383,135 @@ export class AudioManager {
     this.prefetchUpcoming();
   }
 
-  /** Después de la pista pedida (el worker las genera en orden): las que vienen, si no están ya. */
+  /**
+   * Después de la pista pedida (el worker las genera en orden): las que vienen, si no están ya. Las de archivo no se
+   * generan ni se decodifican: un elemento con `preload` empieza a bajar su principio (S119).
+   */
   private static prefetchUpcoming(): void {
     const ctx = this.zz?.ZZFX.audioContext;
     if (!ctx || !this.gestured) return;
-    for (const key of this.upcoming) if (key !== this.wanted && !this.buffers.has(key)) void this.buffer(ctx, key);
+    for (const [key, deck] of this.cued) {
+      if (this.upcoming.includes(key)) continue;
+      this.cued.delete(key);
+      this.releaseDeck(deck);
+    }
+    for (const key of this.upcoming) {
+      if (key === this.wanted) continue;
+      const file = this.streamFailed.has(key) ? undefined : MUSIC_FILES[key];
+      if (file) {
+        if (this.cued.has(key) || this.playing?.key === key) continue;
+        try {
+          this.cued.set(key, this.cueDeck(ctx, key, file));
+        } catch (e) {
+          this.fail(`cue ${key}: ${String(e)}`);
+        }
+      } else if (!this.buffers.has(key)) void this.buffer(ctx, key);
+    }
+  }
+
+  // ── Pistas en archivo (S119) ─────────────────────────────────────────────
+
+  /** Arranca una pista en archivo con su fundido. `false` si no se pudo armar (entonces se genera). */
+  private static startStream(ctx: AudioContext, key: MusicKey, file: MusicFile): boolean {
+    let first = this.cued.get(key);
+    let second: Deck | undefined;
+    this.cued.delete(key);
+    try {
+      first ??= this.cueDeck(ctx, key, file);
+      second = this.cueDeck(ctx, key, file);
+      const stream = new MusicStream(ctx, key, file, first, second, this.bus(ctx), {
+        release: (deck) => this.releaseDeck(deck),
+        error: (s, message) => this.streamError(s, message),
+        disposed: (s) => this.streams.delete(s),
+      });
+      this.streams.add(stream);
+      const g = stream.gain.gain;
+      g.setValueAtTime(0, ctx.currentTime);
+      g.linearRampToValueAtTime(1, ctx.currentTime + CFG.fadeInMs / 1000);
+      stream.start(this.away);
+      this.playing = { key, gain: stream.gain, stream };
+      this.started.push(key);
+      return true;
+    } catch (e) {
+      if (first) this.releaseDeck(first);
+      if (second) this.releaseDeck(second);
+      this.streamFailed.add(key);
+      this.fail(`stream ${key}: ${String(e)}`);
+      return false;
+    }
+  }
+
+  /** Un elemento del pool apuntando al archivo, parado donde la pista empieza a sonar. */
+  private static cueDeck(ctx: AudioContext, key: MusicKey, file: MusicFile): Deck {
+    const deck = this.freeDecks.pop() ?? this.makeDeck();
+    try {
+      if (!deck.node) {
+        deck.node = ctx.createMediaElementSource(deck.el);
+        deck.gain = ctx.createGain();
+        deck.node.connect(deck.gain);
+      }
+    } catch (e) {
+      this.freeDecks.push(deck);
+      throw e;
+    }
+    deck.el.preload = 'auto';
+    deck.el.src = `${MUSIC_DIR}${key}.mp3`;
+    deck.el.currentTime = file.start;
+    // Si el navegador no guardó la posición antes de tener los metadatos, se pone al llegar (mientras espera).
+    deck.el.onloadedmetadata = () => {
+      if (!deck.live && deck.el.currentTime < file.start) deck.el.currentTime = file.start;
+    };
+    deck.el.onerror = () => this.cueError(key, deck);
+    return deck;
+  }
+
+  private static makeDeck(): Deck {
+    this.decksMade++;
+    return { el: new Audio(), node: null, gain: null, live: false };
+  }
+
+  /** Sin `src`: el navegador corta la descarga y suelta lo que tenía. El elemento queda desbloqueado para la próxima. */
+  private static releaseDeck(deck: Deck): void {
+    deck.live = false;
+    deck.el.onerror = null;
+    deck.el.onended = null;
+    deck.el.onloadedmetadata = null;
+    deck.el.pause();
+    deck.el.removeAttribute('src');
+    deck.el.load();
+    deck.gain?.disconnect();
+    this.freeDecks.push(deck);
+  }
+
+  /**
+   * Con los gestos del principio: crea el pool de elementos y los toca dentro del gesto (en iOS, `load()` en un gesto
+   * desbloquea ese elemento para sonar después sin gesto, como en el bucle). Se repite hasta un gesto que iOS cuenta.
+   */
+  private static unlockDecks(type: string): void {
+    if (this.decksUnlocked) return;
+    while (this.decksMade < CFG.streamPool) this.freeDecks.push(this.makeDeck());
+    for (const deck of this.freeDecks) deck.el.load();
+    if (type !== 'pointerdown') this.decksUnlocked = true;
+  }
+
+  private static cueError(key: MusicKey, deck: Deck): void {
+    if (this.cued.get(key) !== deck) return;
+    this.cued.delete(key);
+    this.releaseDeck(deck);
+    this.streamFailed.add(key);
+    this.fail(`stream ${key}: código ${deck.el.error?.code ?? '?'}`);
+    console.warn(`[ASSET FALTANTE] ${MUSIC_DIR}${key}.mp3: se genera con ZzFX.`);
+  }
+
+  /** El archivo falló: desde ahora esa pista se genera, y si era la que sonaba entra la generada. */
+  private static streamError(stream: MusicStream, message: string): void {
+    this.streamFailed.add(stream.key);
+    this.fail(`stream ${message}`);
+    console.warn(`[ASSET FALTANTE] ${MUSIC_DIR}${stream.key}.mp3: se genera con ZzFX.`);
+    const wasPlaying = this.playing?.stream === stream;
+    if (wasPlaying) this.playing = null;
+    stream.dispose();
+    if (wasPlaying) this.switchMusic();
   }
 
   private static startTrack(ctx: AudioContext, key: MusicKey, buffer: AudioBuffer): void {
@@ -389,12 +541,17 @@ export class AudioManager {
     old.gain.gain.cancelScheduledValues(now);
     old.gain.gain.setValueAtTime(old.gain.gain.value, now);
     old.gain.gain.linearRampToValueAtTime(0, end);
+    if (old.stream) {
+      old.stream.stopAt(end);
+      return;
+    }
+    const source = old.source!;
     try {
-      old.source.stop(end);
+      source.stop(end);
     } catch {
       /* ya estaba parada */
     }
-    old.source.onended = () => old.gain.disconnect();
+    source.onended = () => old.gain.disconnect();
   }
 
   private static bus(ctx: AudioContext): GainNode {
@@ -418,34 +575,7 @@ export class AudioManager {
     }
     const pending = this.rendering.get(key);
     if (pending) return pending;
-
-    // Si existe un MP3 en public/assets/audio/music/, se usa; si no, se genera.
-    const fileJob = this.loadMusicFile(ctx, key).then((buf) => {
-      if (buf) {
-        this.buffers.set(key, buf);
-        while (this.buffers.size > CFG.cacheTracks) this.buffers.delete(this.buffers.keys().next().value!);
-        return buf;
-      }
-      return this.renderProcedural(ctx, key);
-    });
-    this.rendering.set(key, fileJob);
-    return fileJob;
-  }
-
-  /** Carga `public/assets/audio/music/<key>.mp3`. `null` si no existe. */
-  private static async loadMusicFile(ctx: AudioContext, key: MusicKey): Promise<AudioBuffer | null> {
-    try {
-      const res = await fetch(`assets/audio/music/${key}.mp3`);
-      if (!res.ok) return null;
-      const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
-      return buffer;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Genera la pista con ZzFX (el camino de siempre). */
-  private static renderProcedural(ctx: AudioContext, key: MusicKey): Promise<AudioBuffer | null> {
+    // Las pistas en archivo no pasan por acá (suenan en streaming); solo llega una si su archivo falló.
     const def = trackDef(key);
     if (!def) {
       console.warn(`[MÚSICA FALTANTE] ${key}: el juego sigue sin música.`);
@@ -554,14 +684,60 @@ export class AudioManager {
       gestured: this.gestured,
       ducked: this.ducked,
       started: [...this.started],
-      cached: [...this.buffers.keys()],
+      // Las listas para fundirse: las generadas en memoria y las de archivo con su elemento ya bajando (S119).
+      cached: [...this.buffers.keys(), ...this.cued.keys()],
       failures: [...this.failures],
       busGain: this.musicBus?.gain.value ?? 0,
+      // S119: la pista en archivo que suena, el volumen de su fundido y los elementos <audio> en uso.
+      stream: this.playing?.stream?.debugState() ?? null,
+      trackGain: this.playing?.gain.gain.value ?? 0,
+      streams: this.streams.size,
+      decks: { made: this.decksMade, free: this.freeDecks.length, cued: [...this.cued.keys()], unlocked: this.decksUnlocked },
+      generated: [...this.buffers.keys()],
       voices: [...this.voices.keys()],
       steps: { ...this.stepsPlayed },
       jingles: [...this.jinglesPlayed],
       renderer: this.worker ? 'worker' : this.worker === null ? 'hilo principal' : 'sin usar',
     };
+  }
+
+  /** S119: lleva la pista en archivo que suena a `beforeLoop` segundos antes de su punto de bucle. */
+  private static debugSeekMusic(beforeLoop: number) {
+    const stream = this.playing?.stream;
+    if (!stream) return null;
+    const { fadeStart } = stream.debugState();
+    return { key: stream.key, fadeStart, position: stream.debugSeek(fadeStart - beforeLoop) };
+  }
+
+  /**
+   * S119: el nivel (RMS) que sale del bus de música, cada `everyMs` durante `ms`, medido con un AnalyserNode; junto con
+   * el volumen de la pista (su fundido), la pista que suena y las vueltas que dio. Para medir huecos de silencio.
+   */
+  private static debugWatchLevel(ms: number, everyMs: number) {
+    const bus = this.musicBus;
+    if (!bus) return Promise.resolve(null);
+    if (!this.analyser) {
+      this.analyser = bus.context.createAnalyser();
+      this.analyser.fftSize = 2048;
+      bus.connect(this.analyser);
+    }
+    const analyser = this.analyser;
+    const data = new Float32Array(analyser.fftSize);
+    const t0 = performance.now();
+    const out: { t: number; rms: number; gain: number; key: string | null; loops: number }[] = [];
+    return new Promise<typeof out>((resolve) => {
+      const timer = setInterval(() => {
+        analyser.getFloatTimeDomainData(data);
+        let e = 0;
+        for (let i = 0; i < data.length; i++) e += data[i] * data[i];
+        const t = performance.now() - t0;
+        out.push({ t, rms: Math.sqrt(e / data.length), gain: this.playing?.gain.gain.value ?? 0, key: this.playing?.key ?? null, loops: this.playing?.stream?.loops ?? 0 });
+        if (t >= ms) {
+          clearInterval(timer);
+          resolve(out);
+        }
+      }, everyMs);
+    });
   }
 
   /** Genera todas las pistas y las variantes de jefe; devuelve duración, intensidad y pico de cada una. */
