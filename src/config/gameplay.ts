@@ -1735,6 +1735,40 @@ export const GAMEPLAY = {
     speedA: 9,
     speedB: 15.5,
     tintDip: 0.12,
+    /**
+     * S121: unidades que la fogata se hunde bajo el borde del tile (apagada y encendida, la misma base). La parte
+     * hundida la tapa la franja del piso de delante (`front`).
+     */
+    sink: 3,
+    /**
+     * Mancha de tierra y ceniza bajo la ronda (S121), pintada a `detail` píxeles por unidad, detrás de la ronda y
+     * delante del piso. Elipse centrada `centerY` unidades bajo el borde del tile; `rim` es la fracción de afuera que
+     * se trama con el piso; `ash` y `char`, la parte del centro con ceniza y con carbón.
+     */
+    patch: {
+      detail: 2,
+      halfWidth: 11.5,
+      halfHeight: 2,
+      centerY: -0.5,
+      rim: 0.32,
+      ash: 0.22,
+      char: 0.16,
+      colors: { soil: 0x3d2c22, soilDark: 0x2b1f19, rimSoil: 0x4e3a2a, ash: 0x8f8a84, ashLight: 0xb3ada6, char: 0x221b18 },
+    },
+    /**
+     * Franja del piso del bioma delante de la base (S121): copia de las casillas de piso que hay bajo la fogata
+     * (`below` unidades bajo el borde, `above` sobre él, `halfWidth` a cada lado), con su tinte, y encima matas de
+     * pasto que nacen de los píxeles verdes del borde (hasta `blades.max` unidades; `chance` de cada columna). La
+     * tierra y la ceniza manchan el borde del piso bajo la ronda (`stain`: media elipse de `halfWidth` × `depth`
+     * unidades, mezclada `strength` con los colores de `patch`; la fracción `edge` de afuera, tramada).
+     */
+    front: {
+      halfWidth: 12,
+      above: 3,
+      below: 4,
+      stain: { halfWidth: 10, depth: 2.5, strength: 0.8, edge: 0.35 },
+      blades: { halfWidth: 9.5, max: 2, chance: 0.55, tipLighten: 0.25 },
+    },
   },
 
   /** Velas que se encienden al liberar a Luisón (GDD §6.7). */

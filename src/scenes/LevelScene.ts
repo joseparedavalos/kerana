@@ -56,6 +56,7 @@ import { canReturnForChipas, chipaReturnTarget, OfferingMotor, offeringLineKey, 
 import { findTraps, trapGridFromMap, trapReach, TrapWatch, type TrapObject } from '../systems/trapLogic';
 import { CameraController, type CameraFloor } from '../systems/CameraController';
 import { Chase } from '../systems/Chase';
+import { CheckpointBase } from '../systems/CheckpointBase';
 import { Waterfall } from '../entities/Waterfall';
 import { waterfallLedges } from '../entities/waterfallArt';
 import { Darkness, type LevelLight } from '../systems/Darkness';
@@ -212,6 +213,8 @@ export class LevelScene extends Phaser.Scene {
   private dashTrail!: DashTrail;
   private splashMs = 0;
   private sinkers: Sinking[] = [];
+  /** Pinta la franja de piso de cada fogata (S121), después de los objetos. */
+  private checkpointFronts: (() => void)[] = [];
   /** Zonas de agua baja (GDD §4.8): frenan la carrera. */
   private shallowZones: Phaser.Geom.Rectangle[] = [];
   /** Zonas de viento (GDD §4.8, §6.3). */
@@ -442,7 +445,10 @@ export class LevelScene extends Phaser.Scene {
     // El fondo no recibe la luz del nivel oscuro: se tiñe con el ambiente (la oscuridad sigue por encima).
     for (const layer of this.backdrop.layers) this.darkness?.glow(layer);
     if (this.def.finale && !this.backdrop.hasImage) addYvagaSky(this, this.map.widthInPixels, this.map.heightInPixels);
+    this.checkpointFronts = [];
     const spawn = this.buildObjects();
+    // S121: la franja de piso delante de cada fogata, con los tintes de cueva ya puestos.
+    for (const paint of this.checkpointFronts) paint();
     this.linkBreakables();
     this.syncRhythmLurkers();
     if (DEBUG.boss) this.spawnAtLastCheckpoint(spawn);
@@ -2054,7 +2060,7 @@ export class LevelScene extends Phaser.Scene {
           spawn.set(x, y);
           break;
         case 'Checkpoint': {
-          const sprite = this.makeCheckpointSprite(x, y);
+          const sprite = this.makeCheckpointSprite(x, y, this.checkpoints.length);
           const id = Number(objectProp(obj, 'id') ?? this.checkpoints.length);
           const zone = new Phaser.Geom.Rectangle(x - 8, y - 24, 16, 24);
           const lc = GAMEPLAY.lantern;
@@ -2659,13 +2665,29 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  /** Fuego del checkpoint: fire_off sin activar, fire_on encendido (o los cuadros 0 y 4 del placeholder). */
-  private makeCheckpointSprite(x: number, y: number): Phaser.GameObjects.Sprite {
-    if (hasArt(this, FIRE_OFF) && hasArt(this, FIRE_ON)) {
-      return this.add.sprite(x, y, FIRE_OFF).setOrigin(0.5, 1).setScale(1 / ART_DETAIL);
+  /**
+   * Fuego del checkpoint: fire_off sin activar, fire_on encendido (o los cuadros 0 y 4 del placeholder). S121: la ronda
+   * se hunde `sink` bajo el borde del tile, sobre una mancha de tierra y ceniza y detrás de una franja del piso del
+   * bioma (`CheckpointBase`). Las dos texturas apoyan en el mismo pie: encendida o apagada, la ronda no se mueve. En
+   * una plataforma de un solo sentido, sin la mancha.
+   */
+  private makeCheckpointSprite(x: number, y: number, index: number): Phaser.GameObjects.Sprite {
+    const art = hasArt(this, FIRE_OFF) && hasArt(this, FIRE_ON);
+    // Sobre una plataforma de un solo sentido (las nubes de Yvága) se hunde igual, pero sin tierra ni ceniza.
+    const tx = Math.floor(x / this.map.tileWidth);
+    const ty = Math.floor(y / this.map.tileHeight);
+    const soil = (this.layers.Ground?.getTileAt(tx, ty)?.index ?? -1) !== -1 || !this.layers.Platforms?.getTileAt(tx, ty);
+    if (art && soil) CheckpointBase.addPatch(this, x, y);
+    const foot = y + GAMEPLAY.checkpointFire.sink;
+    let sprite: Phaser.GameObjects.Sprite;
+    if (art) sprite = this.add.sprite(x, foot, FIRE_OFF).setOrigin(0.5, 1).setScale(1 / ART_DETAIL);
+    else {
+      ensurePlaceholder(this, FIRE_PLACEHOLDER, 16, 24, 8);
+      sprite = this.add.sprite(x, foot, FIRE_PLACEHOLDER, 0).setOrigin(0.5, 1);
     }
-    ensurePlaceholder(this, FIRE_PLACEHOLDER, 16, 24, 8);
-    return this.add.sprite(x, y, FIRE_PLACEHOLDER, 0).setOrigin(0.5, 1);
+    const layers = [this.layers.Ground, this.layers.Platforms, this.terrainDetailLayer];
+    this.checkpointFronts.push(CheckpointBase.addFront(this, x, y, `checkpoint_front_${this.def.id}_${index}`, layers, soil).paint);
+    return sprite;
   }
 
   private setFire(cp: Checkpoint, on: boolean): void {
